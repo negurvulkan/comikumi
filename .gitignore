@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 dist/
+*.tsbuildinfo
 
 # Local runtime data — global font/image/SVG library, thumbnail cache, and the
 # "last opened project" pointer (app-state.json holds an absolute, machine-specific
