@@ -3,16 +3,53 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "main": "electron/dist/main.js",
   "scripts": {
     "postinstall": "npm --prefix server install && npm --prefix client install",
     "dev": "concurrently -k -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "build": "npm --prefix server run build && npm --prefix client run build",
-    "test": "npm --prefix server run test && npm --prefix client run test"
+    "test": "npm --prefix server run test && npm --prefix client run test",
+    "electron:build:main": "tsc -p electron",
+    "electron:dev": "npm run electron:build:main && concurrently -k -n server,client,electron -c blue,green,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\" \"electron electron/dist/main.js\"",
+    "electron:build": "npm run build && npm run electron:build:main && electron-builder"
   },
   "dependencies": {
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "concurrently": "^10.0.5",
+    "electron": "^43.4.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "^7.0.2"
+  },
+  "build": {
+    "appId": "app.comikumi.desktop",
+    "productName": "ComiKumi",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/dist/**/*",
+      "electron/build/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "server/dist",
+        "to": "server/dist"
+      },
+      {
+        "from": "server/node_modules",
+        "to": "server/node_modules"
+      },
+      {
+        "from": "client/dist",
+        "to": "client/dist"
+      }
+    ],
+    "win": {
+      "icon": "electron/build/icon.png",
+      "target": "nsis"
+    }
   }
 }

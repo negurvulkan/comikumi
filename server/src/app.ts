@@ -17,14 +17,30 @@ import { browseRouter } from "./routes/browse.js";
 import { readSettings, NoActiveProjectError } from "./lib/projectStore.js";
 import { asyncHandler } from "./lib/asyncHandler.js";
 
+export interface CreateAppOptions {
+  /** Absolute path to a built client SPA (client/dist) to serve as static files —
+   * used by the Electron main process to host client+API on one localhost port
+   * (BrowserWindow loads http://..., not file://, since the client's /api/* fetches
+   * are root-relative and need a same-origin server to catch them). Registered
+   * before the API routes; a static-file miss falls through to them via next(),
+   * so no separate SPA-fallback route is needed (the app uses createHashRouter —
+   * only "/" itself is ever requested from the server, everything else is a
+   * client-side #/... route). Omitted by index.ts's dev server and every test. */
+  staticDir?: string;
+}
+
 /** Builds the Express app (routers + error middleware) without binding a port —
  * split out of index.ts so tests can mount it via supertest(createApp()) without
  * starting a real server. index.ts is the only caller that also calls .listen(). */
-export function createApp(): Express {
+export function createApp(opts: CreateAppOptions = {}): Express {
   const app = express();
 
   app.use(cors());
   app.use(express.json({ limit: "5mb" }));
+
+  if (opts.staticDir) {
+    app.use(express.static(opts.staticDir));
+  }
 
   app.use("/api/volumes", volumesRouter);
   app.use("/api/volumes", pagesRouter);
