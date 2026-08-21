@@ -357,6 +357,15 @@
       "presetGovernsHint": "Von Preset „{{name}}“ vorgegeben.",
       "directionVerticalRtl": "Vertikal, Spalten rechts → links (JP)",
       "deleteBubble": "Bubble löschen"
+    },
+    "curvedTextInspector": {
+      "dragHint": "Kurventext — Linie im Canvas ziehen zum Verschieben, die 4 Eck-Greifer zum Verformen der Kurve.",
+      "fontSizeBaseLabel": "Schriftgröße (Basis)",
+      "shrinkHint": "Schrumpft automatisch weiter, falls der Text nicht auf die Kurve passt.",
+      "alignOnCurveLabel": "Ausrichtung auf der Kurve",
+      "alignStart": "Kurvenanfang",
+      "alignEnd": "Kurvenende",
+      "deleteCurvedText": "Kurventext löschen"
     }
   },
   "exportPanel": {

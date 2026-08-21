@@ -357,6 +357,15 @@
       "presetGovernsHint": "Défini par le préréglage « {{name}} ».",
       "directionVerticalRtl": "Vertical, colonnes droite → gauche (JP)",
       "deleteBubble": "Supprimer la bulle"
+    },
+    "curvedTextInspector": {
+      "dragHint": "Texte courbe — faites glisser la ligne dans le canevas pour déplacer, les 4 poignées d'angle pour déformer la courbe.",
+      "fontSizeBaseLabel": "Taille de police (de base)",
+      "shrinkHint": "Se réduit automatiquement davantage si le texte ne tient pas sur la courbe.",
+      "alignOnCurveLabel": "Alignement sur la courbe",
+      "alignStart": "Début de la courbe",
+      "alignEnd": "Fin de la courbe",
+      "deleteCurvedText": "Supprimer le texte courbe"
     }
   },
   "exportPanel": {

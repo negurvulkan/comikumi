@@ -357,6 +357,15 @@
       "presetGovernsHint": "Definido por el preajuste «{{name}}».",
       "directionVerticalRtl": "Vertical, columnas derecha → izquierda (JP)",
       "deleteBubble": "Eliminar bocadillo"
+    },
+    "curvedTextInspector": {
+      "dragHint": "Texto curvo — arrastra la línea en el lienzo para mover, los 4 controladores de esquina para deformar la curva.",
+      "fontSizeBaseLabel": "Tamaño de fuente (base)",
+      "shrinkHint": "Se reduce aún más automáticamente si el texto no cabe en la curva.",
+      "alignOnCurveLabel": "Alineación en la curva",
+      "alignStart": "Inicio de la curva",
+      "alignEnd": "Fin de la curva",
+      "deleteCurvedText": "Eliminar texto curvo"
     }
   },
   "exportPanel": {

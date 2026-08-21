@@ -357,6 +357,15 @@
       "presetGovernsHint": "Set by preset \"{{name}}\".",
       "directionVerticalRtl": "Vertical, columns right → left (JP)",
       "deleteBubble": "Delete bubble"
+    },
+    "curvedTextInspector": {
+      "dragHint": "Curved text — drag the line in the canvas to move it, the 4 corner handles to reshape the curve.",
+      "fontSizeBaseLabel": "Font size (base)",
+      "shrinkHint": "Shrinks further automatically if the text doesn't fit on the curve.",
+      "alignOnCurveLabel": "Alignment on the curve",
+      "alignStart": "Start of curve",
+      "alignEnd": "End of curve",
+      "deleteCurvedText": "Delete curved text"
     }
   },
   "exportPanel": {

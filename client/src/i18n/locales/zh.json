@@ -351,6 +351,15 @@
       "presetGovernsHint": "由预设“{{name}}”指定。",
       "directionVerticalRtl": "竖排，从右到左分栏（日文）",
       "deleteBubble": "删除气泡"
+    },
+    "curvedTextInspector": {
+      "dragHint": "曲线文字——在画布中拖动线条可移动，拖动4个角的控制点可改变曲线形状。",
+      "fontSizeBaseLabel": "字号（基础）",
+      "shrinkHint": "如果文字无法容纳在曲线上，会自动进一步缩小。",
+      "alignOnCurveLabel": "曲线上的对齐方式",
+      "alignStart": "曲线起点",
+      "alignEnd": "曲线终点",
+      "deleteCurvedText": "删除曲线文字"
     }
   },
   "exportPanel": {

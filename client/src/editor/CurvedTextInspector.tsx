@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { CurvedTextElement, TextAlign, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
 import { resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function CurvedTextInspector({ element, activeLanguage, glossary, presets, onChange, onDelete }: Props) {
+  const { t } = useTranslation();
   // Resolved via the shared resolver (language override > linked preset > own base
   // value) — same single source of truth used by the canvas preview and PNG export,
   // instead of the field-by-field override chains this component used to duplicate.
@@ -119,11 +121,11 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
   return (
     <div className="inspector">
       <p className="hint" style={{ margin: 0 }}>
-        Kurventext — Linie im Canvas ziehen zum Verschieben, die 4 Eck-Greifer zum Verformen der Kurve.
+        {t("editor.curvedTextInspector.dragHint")}
       </p>
 
       <label>
-        Text ({activeLanguage})
+        {t("editor.bubbleInspector.textLabel", { language: activeLanguage })}
         <GlossaryHighlightedTextarea
           value={element.text[activeLanguage] ?? ""}
           onChange={setText}
@@ -134,9 +136,9 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       </label>
 
       <label>
-        Preset
+        {t("managers.presets.title")}
         <select value={element.presetId ?? ""} onChange={(e) => onChange({ presetId: e.target.value || null })}>
-          <option value="">– kein Preset –</option>
+          <option value="">{t("editor.contextMenu.noPreset")}</option>
           {presets.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -146,9 +148,9 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       </label>
       {preset && (
         <p className="hint" style={{ margin: "-4px 0 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span>Verknüpft mit „{preset.name}" — legt fest, was unten deaktiviert ist.</span>
+          <span>{t("editor.bubbleInspector.presetLinkedHint", { name: preset.name })}</span>
           <button type="button" onClick={detachFromPreset}>
-            Vom Preset lösen
+            {t("editor.bubbleInspector.detachFromPreset")}
           </button>
         </p>
       )}
@@ -168,7 +170,7 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
 
       <label>
         <span className="field-label-row">
-          Schriftgröße (Basis)
+          {t("editor.curvedTextInspector.fontSizeBaseLabel")}
           <ScopeSwitch
             activeLanguage={activeLanguage}
             scope={fontSizeOverride !== undefined ? "language" : "all"}
@@ -188,12 +190,12 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
         />
       </label>
       <p className="hint" style={{ margin: "-4px 0 8px" }}>
-        Schrumpft automatisch weiter, falls der Text nicht auf die Kurve passt.
+        {t("editor.curvedTextInspector.shrinkHint")}
       </p>
 
       <label>
         <span className="field-label-row">
-          Ausrichtung auf der Kurve
+          {t("editor.curvedTextInspector.alignOnCurveLabel")}
           <ScopeSwitch
             activeLanguage={activeLanguage}
             scope={alignOverride !== undefined ? "language" : "all"}
@@ -209,9 +211,9 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
             else onChange({ align: v });
           }}
         >
-          <option value="left">Kurvenanfang</option>
-          <option value="center">Zentriert</option>
-          <option value="right">Kurvenende</option>
+          <option value="left">{t("editor.curvedTextInspector.alignStart")}</option>
+          <option value="center">{t("managers.presets.alignCenter")}</option>
+          <option value="right">{t("editor.curvedTextInspector.alignEnd")}</option>
         </select>
       </label>
 
@@ -232,7 +234,7 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       />
 
       <button onClick={onDelete} style={{ color: "#ff8a95" }}>
-        Kurventext löschen
+        {t("editor.curvedTextInspector.deleteCurvedText")}
       </button>
     </div>
   );

@@ -351,6 +351,15 @@
       "presetGovernsHint": "프리셋 \"{{name}}\"에 의해 지정됨.",
       "directionVerticalRtl": "세로, 열이 오른쪽 → 왼쪽 (일본어)",
       "deleteBubble": "말풍선 삭제"
+    },
+    "curvedTextInspector": {
+      "dragHint": "곡선 텍스트 — 캔버스에서 선을 드래그하면 이동, 네 모서리 핸들로 곡선을 변형합니다.",
+      "fontSizeBaseLabel": "글꼴 크기 (기본)",
+      "shrinkHint": "텍스트가 곡선에 맞지 않으면 자동으로 더 축소됩니다.",
+      "alignOnCurveLabel": "곡선 위 정렬",
+      "alignStart": "곡선 시작",
+      "alignEnd": "곡선 끝",
+      "deleteCurvedText": "곡선 텍스트 삭제"
     }
   },
   "exportPanel": {

@@ -351,6 +351,15 @@
       "presetGovernsHint": "プリセット「{{name}}」で指定されています。",
       "directionVerticalRtl": "縦書き、列は右→左（日本語）",
       "deleteBubble": "吹き出しを削除"
+    },
+    "curvedTextInspector": {
+      "dragHint": "曲線テキスト — キャンバスで線をドラッグすると移動、4つの角のハンドルでカーブを変形できます。",
+      "fontSizeBaseLabel": "フォントサイズ（基準）",
+      "shrinkHint": "テキストがカーブに収まらない場合、自動的にさらに縮小されます。",
+      "alignOnCurveLabel": "カーブ上の配置",
+      "alignStart": "カーブの始点",
+      "alignEnd": "カーブの終点",
+      "deleteCurvedText": "曲線テキストを削除"
     }
   },
   "exportPanel": {

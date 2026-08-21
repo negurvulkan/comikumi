@@ -6,6 +6,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 ## Inhalt
 
 - [Projektverwaltung](#projektverwaltung)
+- [UI-Sprache](#ui-sprache)
 - [Bände & Seiten](#bände--seiten)
 - [Sprachverwaltung](#sprachverwaltung)
 - [Charakterverwaltung](#charakterverwaltung)
@@ -57,6 +58,33 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - **Migration alter Projekte**: Einmalig und automatisch werden alte
   Einzelprojekt-Dateien (`settings.json`/`languages.json` aus Vorgängerversionen) beim
   ersten Start in eine echte Projektdatei überführt, ohne die Originale anzufassen.
+
+## UI-Sprache
+
+- Die **Oberfläche selbst** (Labels, Buttons, Menüs, Tooltips, Bestätigungsdialoge,
+  Fehlermeldungen) ist in sieben Sprachen verfügbar: Englisch, Deutsch, Japanisch,
+  Französisch, Spanisch, Chinesisch (vereinfacht) und Koreanisch — umsetzt über
+  `react-i18next` (`client/src/i18n/`).
+- **Wichtige Abgrenzung**: Das ist komplett unabhängig von der
+  [Sprachverwaltung](#sprachverwaltung) weiter oben — jene verwaltet die
+  Content-Sprachen eines *Projekts* (in welchen Sprachen die Comic-Dialoge selbst
+  übersetzt werden). Ein Nutzer kann die UI z. B. auf Englisch stellen und trotzdem
+  Deutsch/Japanisch als Übersetzungssprachen im Projekt pflegen.
+- **Umschalter** in der App-Kopfzeile (neben "Einstellungen"), zeigt jede Sprache in
+  ihrer eigenen Bezeichnung (z. B. "日本語", "한국어"). Wechsel übersetzt die aktuell
+  sichtbare Seite sofort, ohne Neuladen.
+- **Standardsprache**: Beim allerersten Start wird die Browser-/System-Sprache erkannt;
+  passt keine der sieben, ist Englisch der Fallback. Die getroffene Wahl wird
+  client-seitig in `localStorage` gespeichert (Schlüssel `comikumi.uiLocale`) — eine
+  reine Maschinen-/Browser-Einstellung, kein Teil der Projektdatei.
+- **Server-Fehlercodes**: API-Fehlerantworten sind stabile `snake_case`-Codes
+  (`{ error, params? }`) statt roher Prosa — der Client übersetzt sie über den
+  `errors.*`-Namensraum (`client/src/api/client.ts`s `ApiError` +
+  `client/src/i18n/translateApiError.ts`).
+- **Übersetzungsqualität**: Alle sieben Sprachversionen wurden direkt erstellt (kein
+  externer Übersetzungsdienst) — fachlich sauber, aber ohne Muttersprachler-Review. Für
+  den internen Gebrauch ausreichend; bei einer öffentlichen Veröffentlichung wäre ein
+  Korrekturdurchgang durch Muttersprachler empfehlenswert.
 
 ## Bände & Seiten
 
