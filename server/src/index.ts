@@ -5,7 +5,7 @@ const PORT = Number(process.env.PORT ?? 3001);
 const app = createApp();
 
 app.listen(PORT, async () => {
-  console.log(`Lettering-Tool server läuft auf http://localhost:${PORT}`);
+  console.log(`ComiKumi server läuft auf http://localhost:${PORT}`);
   try {
     const settings = await readSettings();
     console.log(`Scan-Root: ${settings.scanRoot}`);

@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** .../lettering-tool/server/src/lib -> .../lettering-tool/server */
+/** .../comikumi/server/src/lib -> .../comikumi/server */
 const SERVER_ROOT = path.resolve(__dirname, "..", "..");
 
 /**

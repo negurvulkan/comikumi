@@ -1,5 +1,5 @@
 {
-  "name": "@lettering-tool/server",
+  "name": "@comikumi/server",
   "private": true,
   "version": "0.1.0",
   "type": "module",
