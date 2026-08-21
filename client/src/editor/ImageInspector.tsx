@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ImageElement } from "../../../shared/src/layoutSchema";
 import { api, type ImageEntry } from "../api/client";
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ImageInspector({ element, activeLanguage, activeLanguageLabel, onChange, onDelete }: Props) {
+  const { t } = useTranslation();
   const [library, setLibrary] = useState<ImageEntry[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -42,9 +44,9 @@ export function ImageInspector({ element, activeLanguage, activeLanguageLabel, o
   return (
     <div className="inspector">
       <label>
-        Bild für „{activeLanguageLabel}"
+        {t("editor.imageInspector.imageForLanguage", { language: activeLanguageLabel })}
         <select value={currentFile ?? ""} onChange={(e) => assign(e.target.value)}>
-          {!currentFile && <option value="">– kein eigenes Bild (zeigt Fallback) –</option>}
+          {!currentFile && <option value="">{t("editor.imageInspector.noImage")}</option>}
           {library.map((img) => (
             <option key={img.fileName} value={img.fileName}>
               {img.fileName}
@@ -62,7 +64,7 @@ export function ImageInspector({ element, activeLanguage, activeLanguageLabel, o
       )}
 
       <label className="image-picker-upload" style={{ textAlign: "left" }}>
-        {uploading ? "Lädt hoch…" : `Neues Bild für „${activeLanguageLabel}" hochladen`}
+        {uploading ? t("editor.imagePicker.uploading") : t("editor.imageInspector.uploadForLanguage", { language: activeLanguageLabel })}
         <input
           ref={fileInput}
           type="file"
@@ -74,7 +76,7 @@ export function ImageInspector({ element, activeLanguage, activeLanguageLabel, o
       </label>
 
       <label>
-        Deckkraft ({Math.round(element.opacity * 100)} %)
+        {t("editor.imageInspector.opacityLabel", { percent: Math.round(element.opacity * 100) })}
         <input
           type="range"
           min={0}
@@ -86,11 +88,11 @@ export function ImageInspector({ element, activeLanguage, activeLanguageLabel, o
       </label>
 
       <p className="hint" style={{ margin: 0 }}>
-        Ecken im Canvas ziehen zum Skalieren, Drehen oder perspektivisch Verzerren. Fläche ziehen zum Verschieben.
+        {t("editor.imageInspector.dragHint")}
       </p>
 
       <button onClick={onDelete} style={{ color: "#ff8a95" }}>
-        Bild-Element löschen
+        {t("editor.imageInspector.deleteElement")}
       </button>
     </div>
   );

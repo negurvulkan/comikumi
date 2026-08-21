@@ -24,7 +24,7 @@ charactersRouter.post(
   asyncHandler(async (req, res) => {
     const parsed = CharacterInputSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid character", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_character", details: parsed.error.flatten() });
       return;
     }
     const characters = await readCharacters();
@@ -39,13 +39,13 @@ charactersRouter.put(
   asyncHandler(async (req, res) => {
     const parsed = CharacterInputSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid character", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_character", details: parsed.error.flatten() });
       return;
     }
     const characters = await readCharacters();
     const idx = characters.findIndex((c) => c.id === req.params.id);
     if (idx === -1) {
-      res.status(404).json({ error: "Charakter nicht gefunden" });
+      res.status(404).json({ error: "character_not_found" });
       return;
     }
     const next = [...characters];
@@ -61,7 +61,7 @@ charactersRouter.delete(
     const characters = await readCharacters();
     const next = characters.filter((c) => c.id !== req.params.id);
     if (next.length === characters.length) {
-      res.status(404).json({ error: "Charakter nicht gefunden" });
+      res.status(404).json({ error: "character_not_found" });
       return;
     }
     await writeCharacters(next);

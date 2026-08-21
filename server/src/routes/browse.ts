@@ -46,7 +46,7 @@ browseRouter.get(
     try {
       dirEntries = await fs.readdir(rawPath, { withFileTypes: true });
     } catch (err) {
-      res.status(400).json({ error: `Ordner konnte nicht gelesen werden: ${(err as Error).message}` });
+      res.status(400).json({ error: "folder_read_failed", params: { reason: (err as Error).message } });
       return;
     }
 

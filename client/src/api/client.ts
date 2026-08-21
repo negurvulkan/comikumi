@@ -6,6 +6,33 @@ import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "
 import type { ProjectSettings } from "../../../shared/src/settings";
 import type { ProjectFile } from "../../../shared/src/project";
 
+/** Thrown for any non-ok API response whose body is the `{ error, params? }` shape
+ * every server route now returns (see server/src/routes/*.ts) — `code` is a stable
+ * snake_case key translatable via the client's `errors.*` i18n namespace
+ * (see i18n/translateApiError.ts), `params` carries any interpolation values. */
+export class ApiError extends Error {
+  code: string;
+  params?: Record<string, string>;
+
+  constructor(code: string, params?: Record<string, string>) {
+    super(code);
+    this.code = code;
+    this.params = params;
+  }
+}
+
+async function throwApiError(res: Response): Promise<never> {
+  const text = await res.text().catch(() => res.statusText);
+  let body: { error?: string; params?: Record<string, string> } | undefined;
+  try {
+    body = JSON.parse(text) as { error?: string; params?: Record<string, string> };
+  } catch {
+    // Not JSON (network error page, etc.) — fall through to the generic Error below.
+  }
+  if (body?.error) throw new ApiError(body.error, body.params);
+  throw new Error(`API-Fehler ${res.status}: ${text}`);
+}
+
 export interface CurrentProject {
   filePath: string;
   name: string;
@@ -68,10 +95,7 @@ export interface BubbleSvgEntry {
 }
 
 async function json<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`API-Fehler ${res.status}: ${text}`);
-  }
+  if (!res.ok) await throwApiError(res);
   return res.json() as Promise<T>;
 }
 
@@ -119,10 +143,7 @@ export const api = {
 
   exportLayoutsZip: async (volumeId: string) => {
     const res = await fetch(`/api/volumes/${encodeURIComponent(volumeId)}/layouts/export-zip`);
-    if (!res.ok) {
-      const text = await res.text().catch(() => res.statusText);
-      throw new Error(`API-Fehler ${res.status}: ${text}`);
-    }
+    if (!res.ok) await throwApiError(res);
     return res.blob();
   },
 

@@ -25,7 +25,7 @@ presetsRouter.post(
   asyncHandler(async (req, res) => {
     const parsed = PresetInputSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid preset", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_preset", details: parsed.error.flatten() });
       return;
     }
     const presets = await readPresets();
@@ -40,13 +40,13 @@ presetsRouter.put(
   asyncHandler(async (req, res) => {
     const parsed = PresetInputSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid preset", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_preset", details: parsed.error.flatten() });
       return;
     }
     const presets = await readPresets();
     const idx = presets.findIndex((p) => p.id === req.params.id);
     if (idx === -1) {
-      res.status(404).json({ error: "Preset nicht gefunden" });
+      res.status(404).json({ error: "preset_not_found" });
       return;
     }
     const next = [...presets];
@@ -62,7 +62,7 @@ presetsRouter.delete(
     const presets = await readPresets();
     const next = presets.filter((p) => p.id !== req.params.id);
     if (next.length === presets.length) {
-      res.status(404).json({ error: "Preset nicht gefunden" });
+      res.status(404).json({ error: "preset_not_found" });
       return;
     }
     await writePresets(next);

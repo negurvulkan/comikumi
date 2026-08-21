@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
 import { ScopeSwitch } from "./ScopeSwitch";
 
@@ -33,25 +34,26 @@ export function TextEffectsFields({
   onToggleLanguageOverride,
   disabled,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <>
       <label>
-        Farbe
+        {t("managers.presets.colorLabel")}
         <input type="color" value={color} onChange={(e) => onColorChange(e.target.value)} disabled={disabled} />
       </label>
       {disabled && (
         <p className="hint" style={{ margin: "-4px 0 8px" }}>
-          Von Preset vorgegeben.
+          {t("editor.textEffects.presetOverrideHint")}
         </p>
       )}
       {gradient.enabled && (
         <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
-          Wird durch den Farbverlauf unten ersetzt, solange dieser aktiv ist.
+          {t("editor.textEffects.gradientOverridesColorHint")}
         </p>
       )}
 
       <div className="field-label-row">
-        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Umrandung &amp; Farbverlauf</span>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("editor.textEffects.outlineAndGradientLabel")}</span>
         <ScopeSwitch
           activeLanguage={activeLanguage}
           scope={hasLanguageOverride ? "language" : "all"}
@@ -61,16 +63,16 @@ export function TextEffectsFields({
 
       <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <input type="checkbox" checked={outline.enabled} onChange={(e) => onOutlineChange({ enabled: e.target.checked })} disabled={disabled} />
-        Textumrandung
+        {t("managers.presets.textOutlineLabel")}
       </label>
       {outline.enabled && (
         <div className="field-row">
           <label>
-            Randfarbe (Text)
+            {t("editor.textEffects.strokeColorTextLabel")}
             <input type="color" value={outline.color} onChange={(e) => onOutlineChange({ color: e.target.value })} disabled={disabled} />
           </label>
           <label>
-            Randbreite (Text)
+            {t("editor.textEffects.strokeWidthTextLabel")}
             <input
               type="number"
               min={1}
@@ -84,20 +86,20 @@ export function TextEffectsFields({
 
       <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <input type="checkbox" checked={gradient.enabled} onChange={(e) => onGradientChange({ enabled: e.target.checked })} disabled={disabled} />
-        Farbverlauf
+        {t("managers.presets.textGradientLabel")}
       </label>
       {gradient.enabled && (
         <div className="field-row">
           <label>
-            Startfarbe
+            {t("editor.textEffects.startColorLabel")}
             <input type="color" value={gradient.colorStart} onChange={(e) => onGradientChange({ colorStart: e.target.value })} disabled={disabled} />
           </label>
           <label>
-            Endfarbe
+            {t("editor.textEffects.endColorLabel")}
             <input type="color" value={gradient.colorEnd} onChange={(e) => onGradientChange({ colorEnd: e.target.value })} disabled={disabled} />
           </label>
           <label>
-            Winkel (°)
+            {t("editor.textEffects.angleLabel")}
             <input
               type="number"
               step={5}

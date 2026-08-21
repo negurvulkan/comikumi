@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Bubble, Panel } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import { characterName, groupBubblesByPanel, sortBubblesByPosition, uniqueCharacterNames } from "./reportUtils";
@@ -18,6 +19,7 @@ function toSingleLine(text: string): string {
  * which characters appear on the page, and which characters appear per panel — all
  * computed live from the already-loaded layout, no extra request needed. */
 export function ReportModal({ bubbles, panels, characters, activeLanguage, onClose }: Props) {
+  const { t } = useTranslation();
   const ordered = sortBubblesByPosition(bubbles, activeLanguage);
   const byPanel = groupBubblesByPanel(bubbles, panels, activeLanguage);
   const pageCharacters = uniqueCharacterNames(bubbles, characters);
@@ -27,32 +29,32 @@ export function ReportModal({ bubbles, panels, characters, activeLanguage, onClo
 
   return (
     <div className="inspector" style={{ width: 480, maxWidth: "85vw", maxHeight: "80vh" }}>
-      <p style={{ margin: 0, fontWeight: 600 }}>Bericht — diese Seite ({activeLanguage})</p>
+      <p style={{ margin: 0, fontWeight: 600 }}>{t("editor.reportModal.title", { language: activeLanguage })}</p>
 
       <p className="report-heading" style={{ margin: 0 }}>
-        Wer sagt was?
+        {t("editor.reportModal.whoSaysWhat")}
       </p>
       {ordered.length === 0 ? (
         <p className="hint" style={{ margin: 0 }}>
-          Keine Blasen auf dieser Seite.
+          {t("editor.reportModal.noBubbles")}
         </p>
       ) : (
         <div className="text-list" style={{ flex: "0 0 auto", maxHeight: 160 }}>
           {ordered.map((b) => (
             <div key={b.id} className="text-list-row" style={{ cursor: "default" }}>
               <span className="text-list-type">{characterName(characters, b.characterId)}</span>
-              <span className="text-list-content">{toSingleLine(b.text[activeLanguage] ?? "") || "(kein Text)"}</span>
+              <span className="text-list-content">{toSingleLine(b.text[activeLanguage] ?? "") || t("volumeReport.noText")}</span>
             </div>
           ))}
         </div>
       )}
 
       <p className="report-heading" style={{ margin: 0 }}>
-        Wer sagt was in welchem Panel?
+        {t("editor.reportModal.whoSaysWhatByPanel")}
       </p>
       {byPanel.length === 0 ? (
         <p className="hint" style={{ margin: 0 }}>
-          Keine Panels auf dieser Seite.
+          {t("editor.reportModal.noPanels")}
         </p>
       ) : (
         byPanel.map((group) => (
@@ -60,13 +62,13 @@ export function ReportModal({ bubbles, panels, characters, activeLanguage, onClo
             <p style={{ margin: "0 0 2px", fontSize: 12, fontWeight: 600 }}>{group.label}</p>
             {group.bubbles.length === 0 ? (
               <p className="hint" style={{ margin: "0 0 0 8px" }}>
-                (keine Blasen)
+                {t("editor.reportModal.noBubblesShort")}
               </p>
             ) : (
               group.bubbles.map((b) => (
                 <div key={b.id} className="text-list-row" style={{ cursor: "default" }}>
                   <span className="text-list-type">{characterName(characters, b.characterId)}</span>
-                  <span className="text-list-content">{toSingleLine(b.text[activeLanguage] ?? "") || "(kein Text)"}</span>
+                  <span className="text-list-content">{toSingleLine(b.text[activeLanguage] ?? "") || t("volumeReport.noText")}</span>
                 </div>
               ))
             )}
@@ -75,18 +77,18 @@ export function ReportModal({ bubbles, panels, characters, activeLanguage, onClo
       )}
 
       <p className="report-heading" style={{ margin: 0 }}>
-        Welche Charaktere kommen auf der Seite vor?
+        {t("editor.reportModal.charactersOnPage")}
       </p>
       <p className="hint" style={{ margin: 0 }}>
-        {pageCharacters.length > 0 ? pageCharacters.join(", ") : "Keine Charaktere zugeordnet."}
+        {pageCharacters.length > 0 ? pageCharacters.join(", ") : t("volumeReport.noCharacters")}
       </p>
 
       <p className="report-heading" style={{ margin: 0 }}>
-        Welche Charaktere kommen in welchen Panels vor?
+        {t("editor.reportModal.charactersByPanel")}
       </p>
       {panelCharacters.length === 0 ? (
         <p className="hint" style={{ margin: 0 }}>
-          Keine Panels mit zugeordneten Charakteren.
+          {t("editor.reportModal.noPanelsWithCharacters")}
         </p>
       ) : (
         panelCharacters.map((g) => (
@@ -96,7 +98,7 @@ export function ReportModal({ bubbles, panels, characters, activeLanguage, onClo
         ))
       )}
 
-      <button onClick={onClose}>Schließen</button>
+      <button onClick={onClose}>{t("common.close")}</button>
     </div>
   );
 }

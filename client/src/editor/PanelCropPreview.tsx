@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { Panel } from "../../../shared/src/layoutSchema";
 import { polygonBounds } from "../../../shared/src/layoutSchema";
 import { useHtmlImage } from "./useHtmlImage";
@@ -16,6 +17,7 @@ interface Props {
  * true polygon mask (simpler, and panels are usually close to their bounding box anyway
  * since they mark a region rather than an exact shape). */
 export function PanelCropPreview({ imageUrl, panel, width = 220 }: Props) {
+  const { t } = useTranslation();
   const image = useHtmlImage(imageUrl);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bounds = polygonBounds(panel.points);
@@ -32,7 +34,7 @@ export function PanelCropPreview({ imageUrl, panel, width = 220 }: Props) {
     ctx.drawImage(image, bounds.minX, bounds.minY, w, h, 0, 0, canvas.width, canvas.height);
   }, [image, bounds.minX, bounds.minY, w, h]);
 
-  if (!image) return <p className="hint">Lädt…</p>;
+  if (!image) return <p className="hint">{t("common.loading")}</p>;
 
   return <canvas ref={canvasRef} width={width} height={targetHeight} style={{ width: "100%", borderRadius: 4, border: "1px solid var(--border)" }} />;
 }

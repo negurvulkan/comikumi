@@ -3,6 +3,8 @@ import { v4 as uuid } from "uuid";
 import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, PageLayout, Panel, Point } from "../../../shared/src/layoutSchema";
 import { boxCorners, createBubble, createCurvedTextElement, createImageElement, createPanel } from "../../../shared/src/layoutSchema";
 import { api } from "../api/client";
+import i18n from "../i18n";
+import { translateApiError } from "../i18n/translateApiError";
 
 const MAX_HISTORY = 50;
 // Rapid-fire updates (typing in a text field, dragging a handle across many
@@ -146,7 +148,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         const layout = await api.getLayout(volumeId, page);
         set({ layout, loading: false, dirty: false });
       } catch (e) {
-        set({ loading: false, error: (e as Error).message });
+        set({ loading: false, error: translateApiError(e, i18n.t) });
       }
     },
 
@@ -388,7 +390,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         await api.saveLayout(volumeId, page, layout);
         set({ saving: false, dirty: false });
       } catch (e) {
-        set({ saving: false, error: (e as Error).message });
+        set({ saving: false, error: translateApiError(e, i18n.t) });
       }
     },
 

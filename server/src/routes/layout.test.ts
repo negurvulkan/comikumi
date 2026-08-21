@@ -33,7 +33,7 @@ describe("PUT /:id/pages/:page/layout", () => {
   it("rejects a body that doesn't match PageLayoutSchema", async () => {
     const res = await request(app).put(`/api/volumes/${VOLUME_ID}/pages/page_01/layout`).send({ page: "page_01" });
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe("invalid layout");
+    expect(res.body.error).toBe("invalid_layout");
   });
 
   it("saves a valid layout and it's readable back afterward", async () => {
@@ -97,7 +97,7 @@ describe("POST /:id/layouts/import-zip", () => {
       .post(`/api/volumes/${VOLUME_ID}/layouts/import-zip`)
       .attach("zip", Buffer.from("not a zip"), "layouts.zip");
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/ZIP-Archiv/);
+    expect(res.body.error).toBe("invalid_zip_file");
   });
 
   it("imports valid entries and skips invalid ones, reporting both", async () => {

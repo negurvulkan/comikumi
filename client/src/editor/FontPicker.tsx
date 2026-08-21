@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { api, type FontEntry } from "../api/client";
 import { registerFonts, invalidateFontsCache, FALLBACK_FONTS } from "./fontLoader";
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function FontPicker({ value, onChange, labelExtra, disabled }: Props) {
+  const { t } = useTranslation();
   const [fonts, setFonts] = useState<FontEntry[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -50,7 +52,7 @@ export function FontPicker({ value, onChange, labelExtra, disabled }: Props) {
   return (
     <label>
       <span className="field-label-row">
-        Schriftart
+        {t("managers.presets.fontFamilyLabel")}
         {labelExtra}
       </span>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={{ fontFamily: value }} disabled={disabled}>
@@ -60,7 +62,7 @@ export function FontPicker({ value, onChange, labelExtra, disabled }: Props) {
           </option>
         ))}
         {projectFamilies.length > 0 && (
-          <optgroup label="Projekt">
+          <optgroup label={t("common.scopeProject")}>
             {projectFamilies.map((family) => (
               <option key={family} value={family} style={{ fontFamily: family }}>
                 {family}
@@ -69,7 +71,7 @@ export function FontPicker({ value, onChange, labelExtra, disabled }: Props) {
           </optgroup>
         )}
         {globalFamilies.length > 0 && (
-          <optgroup label="Gemeinsam">
+          <optgroup label={t("common.scopeShared")}>
             {globalFamilies.map((family) => (
               <option key={family} value={family} style={{ fontFamily: family }}>
                 {family}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type {
   Bubble,
   BubbleForm,
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export function BubbleInspector({ bubble, activeLanguage, panels, characters, glossary, presets, onChange, onDelete }: Props) {
+  const { t } = useTranslation();
   const style = resolveBubbleStyle(bubble, activeLanguage, presets);
   const form = resolveBubbleForm(bubble, activeLanguage, presets);
   const hasFormOverride = !!bubble.formOverride?.[activeLanguage];
@@ -223,7 +225,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
   return (
     <div className="inspector">
       <label>
-        Text ({activeLanguage})
+        {t("editor.bubbleInspector.textLabel", { language: activeLanguage })}
         <GlossaryHighlightedTextarea
           value={bubble.text[activeLanguage] ?? ""}
           onChange={setText}
@@ -239,7 +241,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
       </label>
       {style.direction === "vertical-rl" && (
         <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
-          Furigana: <code>{"{漢字|かんじ}"}</code> · Zahlen-/Lateinpaare (z. B. „21“) werden automatisch quer gesetzt.
+          {t("editor.bubbleInspector.furiganaHintPrefix")} <code>{"{漢字|かんじ}"}</code> {t("editor.bubbleInspector.furiganaHintSuffix")}
         </p>
       )}
 
@@ -250,7 +252,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
             value={bubble.panelId ?? ""}
             onChange={(e) => onChange({ panelId: e.target.value || null, readingOrderOverride: undefined })}
           >
-            <option value="">– kein Panel –</option>
+            <option value="">{t("editor.contextMenu.noPanel")}</option>
             {panels.map((p, i) => (
               <option key={p.id} value={p.id}>
                 {panelDisplayLabel(p, i)}
@@ -259,9 +261,9 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
           </select>
         </label>
         <label>
-          Charakter
+          {t("editor.bubbleInspector.characterLabel")}
           <select value={bubble.characterId ?? ""} onChange={(e) => onChange({ characterId: e.target.value || null })}>
-            <option value="">– kein Charakter –</option>
+            <option value="">{t("editor.contextMenu.noCharacter")}</option>
             {characters.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -275,15 +277,15 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
         if (!speaker?.voiceNotes.trim()) return null;
         return (
           <p className="hint" style={{ margin: "-4px 0 8px", whiteSpace: "pre-wrap" }}>
-            <strong style={{ color: "var(--text)" }}>Voice Notes ({speaker.name}):</strong> {speaker.voiceNotes}
+            <strong style={{ color: "var(--text)" }}>{t("editor.bubbleInspector.voiceNotesFor", { name: speaker.name })}</strong> {speaker.voiceNotes}
           </p>
         );
       })()}
 
       <label>
-        Preset
+        {t("managers.presets.title")}
         <select value={bubble.presetId ?? ""} onChange={(e) => onChange({ presetId: e.target.value || null })}>
-          <option value="">– kein Preset –</option>
+          <option value="">{t("editor.contextMenu.noPreset")}</option>
           {presets.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -293,26 +295,26 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
       </label>
       {preset && (
         <p className="hint" style={{ margin: "-4px 0 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span>Verknüpft mit „{preset.name}" — legt fest, was unten deaktiviert ist.</span>
+          <span>{t("editor.bubbleInspector.presetLinkedHint", { name: preset.name })}</span>
           <button type="button" onClick={detachFromPreset}>
-            Vom Preset lösen
+            {t("editor.bubbleInspector.detachFromPreset")}
           </button>
         </p>
       )}
 
       <label>
-        Form
+        {t("editor.bubbleInspector.shapeLabel")}
         <select value={bubble.shape} onChange={(e) => changeShape(e.target.value as BubbleShapeKind)}>
-          <option value="rect">Rechteck</option>
-          <option value="oval">Oval</option>
-          <option value="quad">Perspektive (Viereck)</option>
+          <option value="rect">{t("editor.toolStrip.rect")}</option>
+          <option value="oval">{t("editor.bubbleInspector.shapeOval")}</option>
+          <option value="quad">{t("editor.bubbleInspector.shapeQuad")}</option>
         </select>
       </label>
 
       {bubble.shape !== "quad" && (
         <>
           <div className="field-label-row">
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Form &amp; Stil</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("editor.bubbleInspector.formAndStyleLabel")}</span>
             <ScopeSwitch
               activeLanguage={activeLanguage}
               scope={hasFormOverride ? "language" : "all"}
@@ -321,22 +323,22 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
           </div>
           {hasFormOverride && (
             <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>
-              Position/Größe/Rotation im Canvas anpassen — wirkt nur für „{activeLanguage}".
+              {t("editor.bubbleInspector.formOverrideHint", { language: activeLanguage })}
             </p>
           )}
 
           <label>
-            Blasenstil
+            {t("managers.presets.bubbleStyleLabel")}
             <select
               value={form.bubbleStyle}
               onChange={(e) => setFormField({ bubbleStyle: e.target.value as BubbleVisualStyle })}
               disabled={backgroundPresetGoverns("bubbleStyle")}
             >
-              <option value="none">Keine (unsichtbar, vorhandene Grafik)</option>
-              <option value="speech">Sprechblase</option>
-              <option value="thought">Gedankenblase</option>
-              <option value="shout">Effekt (gezackt)</option>
-              <option value="svg">SVG-Sprechblase</option>
+              <option value="none">{t("editor.bubbleInspector.bubbleStyleNoneWithArt")}</option>
+              <option value="speech">{t("managers.presets.bubbleStyleSpeech")}</option>
+              <option value="thought">{t("managers.presets.bubbleStyleThought")}</option>
+              <option value="shout">{t("managers.presets.bubbleStyleShout")}</option>
+              <option value="svg">{t("managers.presets.bubbleStyleSvg")}</option>
             </select>
           </label>
 
@@ -344,9 +346,11 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
             <>
               <SvgBubblePicker onPick={(svgFileName) => setFormField({ svgFileName })} />
               {form.svgFileName ? (
-                <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>Gewählt: {form.svgFileName}</p>
+                <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>
+                  {t("editor.bubbleInspector.svgChosen", { name: form.svgFileName })}
+                </p>
               ) : (
-                <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>Noch keine Kontur gewählt.</p>
+                <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>{t("editor.bubbleInspector.noSvgChosen")}</p>
               )}
             </>
           )}
@@ -355,7 +359,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
             <>
               <div className="field-row">
                 <label>
-                  Füllfarbe
+                  {t("managers.presets.fillColorLabel")}
                   <input
                     type="color"
                     value={form.fillColor}
@@ -364,7 +368,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
                   />
                 </label>
                 <label>
-                  Randfarbe
+                  {t("managers.presets.strokeColorLabel")}
                   <input
                     type="color"
                     value={form.strokeColor}
@@ -374,7 +378,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
                 </label>
               </div>
               <label>
-                Randbreite
+                {t("managers.presets.strokeWidthLabel")}
                 <input
                   type="number"
                   min={0}
@@ -386,42 +390,42 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
               {(form.bubbleStyle === "speech" || form.bubbleStyle === "shout" || form.bubbleStyle === "thought" || form.bubbleStyle === "svg") && (
                 <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <input type="checkbox" checked={!!form.tail} onChange={(e) => toggleTail(e.target.checked)} />
-                  Zeiger anzeigen
+                  {t("editor.bubbleInspector.showTail")}
                 </label>
               )}
               {form.tail && (
                 <>
                   <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>
-                    Position an der Blase (grün), Breite (orange), Krümmung (lila) und Spitze (blau) im Canvas per Greifer anpassen.
+                    {t("editor.bubbleInspector.tailDragHint")}
                   </p>
                   <label>
-                    Zeigerart
+                    {t("managers.presets.tailStyleLabel")}
                     <select
                       value={effectiveTailStyle}
                       onChange={(e) => setFormField({ tailStyle: e.target.value as TailStyle })}
                       disabled={backgroundPresetGoverns("tailStyle")}
                     >
-                      <option value="point">Verbunden (nahtlos)</option>
-                      <option value="point-detached">Freistehend</option>
-                      <option value="chain">Kette</option>
+                      <option value="point">{t("managers.presets.tailStylePoint")}</option>
+                      <option value="point-detached">{t("managers.presets.tailStylePointDetached")}</option>
+                      <option value="chain">{t("managers.presets.tailStyleChain")}</option>
                     </select>
                   </label>
                   {effectiveTailStyle === "chain" && (
                     <>
                       <label>
-                        Segmentform
+                        {t("managers.presets.segmentShapeLabel")}
                         <select
                           value={form.tailChainSegmentShape}
                           onChange={(e) => setFormField({ tailChainSegmentShape: e.target.value as TailChainSegmentShape })}
                           disabled={backgroundPresetGoverns("tailChainSegmentShape")}
                         >
-                          <option value="circle">Kreis</option>
-                          <option value="rect">Rechteck</option>
-                          <option value="diamond">Raute</option>
+                          <option value="circle">{t("managers.presets.segmentShapeCircle")}</option>
+                          <option value="rect">{t("managers.presets.segmentShapeRect")}</option>
+                          <option value="diamond">{t("managers.presets.segmentShapeDiamond")}</option>
                         </select>
                       </label>
                       <label>
-                        Anzahl Segmente
+                        {t("managers.presets.segmentsCountLabel")}
                         <input
                           type="number"
                           min={1}
@@ -432,7 +436,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
                         />
                       </label>
                       <label>
-                        Abstand der Segmente
+                        {t("managers.presets.segmentSpacingLabel")}
                         <input
                           type="number"
                           step={0.1}
@@ -465,14 +469,14 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
       />
       {textPresetGoverns("fontFamily", fontFamilyOverride !== undefined) && (
         <p className="hint" style={{ margin: "-4px 0 8px" }}>
-          Von Preset „{preset?.name}" vorgegeben.
+          {t("editor.bubbleInspector.presetGovernsHint", { name: preset?.name })}
         </p>
       )}
 
       <div className="field-row">
         <label>
           <span className="field-label-row">
-            Schriftgröße
+            {t("managers.presets.fontSizeLabel")}
             <ScopeSwitch
               activeLanguage={activeLanguage}
               scope={fontSizeOverride !== undefined ? "language" : "all"}
@@ -493,7 +497,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
         </label>
         <label>
           <span className="field-label-row">
-            Zeilenhöhe
+            {t("managers.presets.lineHeightLabel")}
             <ScopeSwitch
               activeLanguage={activeLanguage}
               scope={lineHeightOverride !== undefined ? "language" : "all"}
@@ -517,7 +521,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
 
       <label>
         <span className="field-label-row">
-          Ausrichtung
+          {t("managers.presets.alignLabel")}
           <ScopeSwitch
             activeLanguage={activeLanguage}
             scope={alignOverride !== undefined ? "language" : "all"}
@@ -533,15 +537,15 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
             else onChange({ align: v });
           }}
         >
-          <option value="left">Links</option>
-          <option value="center">Zentriert</option>
-          <option value="right">Rechts</option>
+          <option value="left">{t("managers.presets.alignLeft")}</option>
+          <option value="center">{t("managers.presets.alignCenter")}</option>
+          <option value="right">{t("managers.presets.alignRight")}</option>
         </select>
       </label>
 
       <label>
         <span className="field-label-row">
-          Leserichtung
+          {t("managers.presets.directionLabel")}
           <ScopeSwitch
             activeLanguage={activeLanguage}
             scope={directionOverride !== undefined ? "language" : "all"}
@@ -557,9 +561,9 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
             else onChange({ direction: v });
           }}
         >
-          <option value="ltr">Horizontal, links → rechts</option>
-          <option value="rtl">Horizontal, rechts → links</option>
-          <option value="vertical-rl">Vertikal, Spalten rechts → links (JP)</option>
+          <option value="ltr">{t("managers.presets.directionLtr")}</option>
+          <option value="rtl">{t("managers.presets.directionRtl")}</option>
+          <option value="vertical-rl">{t("editor.bubbleInspector.directionVerticalRtl")}</option>
         </select>
       </label>
 
@@ -580,7 +584,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
       />
 
       <button onClick={onDelete} style={{ color: "#ff8a95" }}>
-        Bubble löschen
+        {t("editor.bubbleInspector.deleteBubble")}
       </button>
     </div>
   );

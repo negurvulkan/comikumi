@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, type ImageEntry } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import { ImageToolIcon } from "./Icons";
 
 interface Props {
@@ -11,6 +13,7 @@ interface Props {
 
 /** Toolbar popover: pick an already-uploaded image to place, or upload a new one. */
 export function ImagePicker({ onInsert, iconOnly }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [images, setImages] = useState<ImageEntry[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -21,7 +24,7 @@ export function ImagePicker({ onInsert, iconOnly }: Props) {
     try {
       setImages(await api.listImages());
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     }
   }
 
@@ -40,7 +43,7 @@ export function ImagePicker({ onInsert, iconOnly }: Props) {
       onInsert(result.fileName, result.width, result.height);
       setOpen(false);
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
@@ -57,9 +60,9 @@ export function ImagePicker({ onInsert, iconOnly }: Props) {
       <button
         onClick={() => setOpen((o) => !o)}
         className={iconOnly ? `tool-btn${open ? " active" : ""}` : open ? "active" : ""}
-        title="Bild einfügen"
+        title={t("editor.imagePicker.insertImage")}
       >
-        {iconOnly ? <ImageToolIcon /> : "+ Bild"}
+        {iconOnly ? <ImageToolIcon /> : t("editor.imagePicker.addShort")}
       </button>
       {open && (
         <div className="language-manager-panel image-picker-panel">
@@ -69,7 +72,7 @@ export function ImagePicker({ onInsert, iconOnly }: Props) {
             return (
               <div key={scope}>
                 <p className="report-heading" style={{ margin: "4px 0" }}>
-                  {scope === "project" ? "Projekt" : "Gemeinsam"}
+                  {scope === "project" ? t("common.scopeProject") : t("common.scopeShared")}
                 </p>
                 <div className="image-picker-grid">
                   {scoped.map((img) => (
@@ -81,9 +84,9 @@ export function ImagePicker({ onInsert, iconOnly }: Props) {
               </div>
             );
           })}
-          {images.length === 0 && <p className="hint">Noch keine Bilder hochgeladen.</p>}
+          {images.length === 0 && <p className="hint">{t("editor.imagePicker.empty")}</p>}
           <label className="image-picker-upload">
-            {uploading ? "Lädt hoch…" : "Neues Bild hochladen"}
+            {uploading ? t("editor.imagePicker.uploading") : t("editor.imagePicker.uploadNew")}
             <input
               ref={fileInput}
               type="file"

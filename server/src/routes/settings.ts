@@ -33,7 +33,7 @@ settingsRouter.put(
   asyncHandler(async (req, res) => {
     const parsed = ProjectSettingsSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid settings", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_settings", details: parsed.error.flatten() });
       return;
     }
     await writeSettings(parsed.data);

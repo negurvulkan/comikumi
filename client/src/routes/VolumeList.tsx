@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import type { LanguageDef } from "../../../shared/src/languages";
 import { api, type VolumeSummary } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import { useProject } from "../state/ProjectContext";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuGroup } from "../editor/MenuBar";
@@ -15,6 +17,7 @@ import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 
 export function VolumeList() {
+  const { t } = useTranslation();
   const { project } = useProject();
   const navigate = useNavigate();
   const [volumes, setVolumes] = useState<VolumeSummary[] | null>(null);
@@ -31,12 +34,12 @@ export function VolumeList() {
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
 
   useEffect(() => {
-    api.listVolumes().then(setVolumes).catch((e) => setError(e.message));
+    api.listVolumes().then(setVolumes).catch((e) => setError(translateApiError(e, t)));
     api.getSettings().then((s) => {
       setEmptySuffix(s.emptySuffix);
       setScanRoot(s.scanRoot);
     });
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     api.listCharacters().then(setCharacters);
@@ -57,19 +60,19 @@ export function VolumeList() {
   const menuGroups: MenuGroup[] = [
     {
       key: "projekt",
-      label: "Projekt",
+      label: t("menu.project"),
       entries: [
-        { type: "action", label: "Wechseln", onClick: () => navigate("/project") },
-        { type: "action", label: "Charaktere", onClick: () => setShowCharacters(true) },
-        { type: "action", label: "Glossar", onClick: () => setShowGlossary(true) },
-        { type: "action", label: "Presets", onClick: () => setShowPresets(true) },
-        { type: "action", label: "Einstellungen", onClick: () => setShowSettings(true) },
+        { type: "action", label: t("menu.switch"), onClick: () => navigate("/project") },
+        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
+        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
+        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
+        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
       ],
     },
     {
       key: "hilfe",
-      label: "Hilfe",
-      entries: [{ type: "action", label: "Noch keine Einträge", onClick: () => {}, disabled: true }],
+      label: t("menu.help"),
+      entries: [{ type: "action", label: t("menu.noEntriesYet"), onClick: () => {}, disabled: true }],
     },
   ];
 
@@ -101,12 +104,9 @@ export function VolumeList() {
           {error}
         </div>
       ) : !volumes ? (
-        <p style={{ margin: 12 }}>Lade Bände…</p>
+        <p style={{ margin: 12 }}>{t("volumeList.loading")}</p>
       ) : volumes.length === 0 ? (
-        <p style={{ margin: 12 }}>
-          Keine "*{emptySuffix}"-Ordner unter {scanRoot || "…"} gefunden. Über das "Projekt"-Menü lässt sich der
-          Ordner anpassen oder ein anderes Projekt öffnen.
-        </p>
+        <p style={{ margin: 12 }}>{t("volumeList.emptyState", { emptySuffix, scanRoot: scanRoot || "…" })}</p>
       ) : (
         <div className="page-scroll" style={{ padding: 16 }}>
           <div className="card-grid">
@@ -117,7 +117,9 @@ export function VolumeList() {
                 </div>
                 <div className="label">{project ? `${project.name}/${v.id}` : v.id}</div>
                 <div className="label">
-                  Sprachen: {v.existingLanguageFolders.length > 0 ? v.existingLanguageFolders.join(", ") : "keine"}
+                  {t("volumeList.languagesLine", {
+                    languages: v.existingLanguageFolders.length > 0 ? v.existingLanguageFolders.join(", ") : t("volumeList.noLanguages"),
+                  })}
                 </div>
               </Link>
             ))}

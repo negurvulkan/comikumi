@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Stage, Layer, Image as KonvaImage, Rect, Ellipse } from "react-konva";
 import Konva from "konva";
 import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, Panel, Point } from "../../../shared/src/layoutSchema";
@@ -98,6 +99,7 @@ export function PageCanvas({
   onDuplicateSelected,
   onDeleteSelected,
 }: Props) {
+  const { t } = useTranslation();
   const image = useHtmlImage(imageUrl);
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; kind: "bubble" | "panel"; id: string } | null>(null);
@@ -254,10 +256,10 @@ export function PageCanvas({
       return [
         {
           type: "submenu",
-          label: "Panel zuweisen",
+          label: t("editor.contextMenu.assignPanel"),
           options: [
             {
-              label: "– kein Panel –",
+              label: t("editor.contextMenu.noPanel"),
               selected: !bubble.panelId,
               onClick: () => onChange(bubble.id, { panelId: null, readingOrderOverride: undefined }),
             },
@@ -270,9 +272,9 @@ export function PageCanvas({
         },
         {
           type: "submenu",
-          label: "Charakter zuweisen",
+          label: t("editor.contextMenu.assignCharacter"),
           options: [
-            { label: "– kein Charakter –", selected: !bubble.characterId, onClick: () => onChange(bubble.id, { characterId: null }) },
+            { label: t("editor.contextMenu.noCharacter"), selected: !bubble.characterId, onClick: () => onChange(bubble.id, { characterId: null }) },
             ...characters.map((c) => ({
               label: c.name,
               selected: bubble.characterId === c.id,
@@ -282,9 +284,9 @@ export function PageCanvas({
         },
         {
           type: "submenu",
-          label: "Preset zuweisen",
+          label: t("editor.contextMenu.assignPreset"),
           options: [
-            { label: "– kein Preset –", selected: !bubble.presetId, onClick: () => onChange(bubble.id, { presetId: null }) },
+            { label: t("editor.contextMenu.noPreset"), selected: !bubble.presetId, onClick: () => onChange(bubble.id, { presetId: null }) },
             ...presets.map((p) => ({
               label: p.name,
               selected: bubble.presetId === p.id,
@@ -293,13 +295,13 @@ export function PageCanvas({
           ],
         },
         { type: "separator" },
-        { type: "action", label: "Duplizieren", onClick: onDuplicateSelected },
-        { type: "action", label: "Löschen", danger: true, onClick: onDeleteSelected },
+        { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected },
+        { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected },
       ];
     }
     return [
-      { type: "action", label: "Duplizieren", onClick: onDuplicateSelected },
-      { type: "action", label: "Löschen", danger: true, onClick: onDeleteSelected },
+      { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected },
+      { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected },
     ];
   }
 
@@ -313,7 +315,7 @@ export function PageCanvas({
     return [
       {
         type: "action",
-        label: "Punkt entfernen",
+        label: t("editor.contextMenu.removePoint"),
         disabled: panel.points.length <= 3,
         onClick: () => onChangePanel(panel.id, { points: panel.points.filter((_, i) => i !== vertexMenu.vertexIndex) }),
       },
@@ -422,17 +424,17 @@ export function PageCanvas({
         <ContextMenu x={vertexMenu.x} y={vertexMenu.y} entries={vertexMenuEntries()} onClose={() => setVertexMenu(null)} />
       )}
       <div className="canvas-statusbar">
-        <button onClick={() => zoomButton(1 / ZOOM_STEP)} title="Verkleinern">
+        <button onClick={() => zoomButton(1 / ZOOM_STEP)} title={t("editor.canvas.zoomOut")}>
           −
         </button>
         <span>{Math.round(zoom * 100)}%</span>
-        <button onClick={() => zoomButton(ZOOM_STEP)} title="Vergrößern">
+        <button onClick={() => zoomButton(ZOOM_STEP)} title={t("editor.canvas.zoomIn")}>
           +
         </button>
-        <button onClick={resetView} title="Ansicht zurücksetzen">
+        <button onClick={resetView} title={t("editor.canvas.resetView")}>
           Reset
         </button>
-        <span className="hint">Scrollen = zoomen · Ziehen auf leerer Fläche = verschieben</span>
+        <span className="hint">{t("editor.canvas.scrollPanHint")}</span>
       </div>
     </div>
   );

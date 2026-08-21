@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { PageSummary } from "../api/client";
-import { parseCustomSelection, selectPages } from "./pageSelection";
+import { parseCustomSelection, selectPages, PageSelectionError } from "./pageSelection";
 
 function page(page: string): PageSummary {
   return { page, fileName: `${page}.png`, width: 100, height: 100 };
@@ -25,11 +25,21 @@ describe("parseCustomSelection", () => {
   });
 
   it("throws on a range with 'from' greater than 'to'", () => {
-    expect(() => parseCustomSelection("10-5")).toThrow(/Ungültiger Bereich/);
+    expect(() => parseCustomSelection("10-5")).toThrow(PageSelectionError);
+    try {
+      parseCustomSelection("10-5");
+    } catch (e) {
+      expect((e as PageSelectionError).code).toBe("invalid_range");
+    }
   });
 
   it("throws on a non-numeric expression", () => {
-    expect(() => parseCustomSelection("abc")).toThrow(/Ungültiger Ausdruck/);
+    expect(() => parseCustomSelection("abc")).toThrow(PageSelectionError);
+    try {
+      parseCustomSelection("abc");
+    } catch (e) {
+      expect((e as PageSelectionError).code).toBe("invalid_expression");
+    }
   });
 });
 

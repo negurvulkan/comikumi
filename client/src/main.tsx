@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createHashRouter, RouterProvider } from "react-router-dom";
+import "./i18n";
 import App from "./App";
 import { VolumeList } from "./routes/VolumeList";
 import { PageGrid } from "./routes/PageGrid";

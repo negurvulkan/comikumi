@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { Bubble, CurvedTextElement } from "../../../shared/src/layoutSchema";
 import { resolveBubbleForm } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
@@ -40,6 +41,7 @@ export function TextListPanel({
   onSelectCurvedText,
   onClose,
 }: Props) {
+  const { t } = useTranslation();
   const entries = useMemo(() => {
     const bubbleEntries: TextEntry[] = bubbles.map((b) => ({
       type: "bubble",
@@ -59,8 +61,8 @@ export function TextListPanel({
   return (
     <div className={`text-sidebar${open ? " open" : ""}`}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
-        <p style={{ margin: 0, fontWeight: 600 }}>Texte auf dieser Seite</p>
-        <button onClick={onClose}>Schließen</button>
+        <p style={{ margin: 0, fontWeight: 600 }}>{t("editor.textListPanel.title")}</p>
+        <button onClick={onClose}>{t("common.close")}</button>
       </div>
       <div className="langstrip langstrip-horizontal">
         {languages.map((l) => (
@@ -75,10 +77,10 @@ export function TextListPanel({
         ))}
       </div>
       <p className="hint" style={{ margin: 0 }}>
-        Sprache hier ist unabhängig von der oben aktiven Sprache — Klick auf einen Eintrag wählt nur die Blase aus.
+        {t("editor.textListPanel.independentLanguageHint")}
       </p>
       {entries.length === 0 ? (
-        <p style={{ color: "var(--text-muted)", margin: 0 }}>Noch keine Bubbles oder Kurventexte auf dieser Seite.</p>
+        <p style={{ color: "var(--text-muted)", margin: 0 }}>{t("editor.textListPanel.empty")}</p>
       ) : (
         <div className="text-list">
           {entries.map((entry) => {
@@ -89,8 +91,10 @@ export function TextListPanel({
                 className="text-list-row"
                 onClick={() => (entry.type === "bubble" ? onSelectBubble(entry.id) : onSelectCurvedText(entry.id))}
               >
-                <span className="text-list-type">{entry.type === "bubble" ? "Bubble" : "Kurventext"}</span>
-                {line ? <span className="text-list-content">{line}</span> : <span className="text-list-empty">(kein Text)</span>}
+                <span className="text-list-type">
+                  {entry.type === "bubble" ? t("editor.textListPanel.typeBubble") : t("editor.textListPanel.typeCurvedText")}
+                </span>
+                {line ? <span className="text-list-content">{line}</span> : <span className="text-list-empty">{t("volumeReport.noText")}</span>}
               </button>
             );
           })}

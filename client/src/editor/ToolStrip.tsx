@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { BubbleShapeKind } from "../../../shared/src/layoutSchema";
 import { ImagePicker } from "./ImagePicker";
 import { BubbleToolIcon, RectToolIcon, QuadToolIcon, CurvedTextToolIcon, PanelToolIcon, GlobeToolIcon, ContextToolIcon } from "./Icons";
@@ -33,37 +34,38 @@ export function ToolStrip({
   contextPanelOpen,
   onToggleContextPanel,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="toolstrip">
       <button
         className={`tool-btn${drawTool === "oval" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "oval" ? null : "oval")}
-        title="Blase (oval)"
+        title={t("editor.toolStrip.bubbleOval")}
       >
         <BubbleToolIcon />
       </button>
       <button
         className={`tool-btn${drawTool === "rect" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "rect" ? null : "rect")}
-        title="Rechteck"
+        title={t("editor.toolStrip.rect")}
       >
         <RectToolIcon />
       </button>
       <button
         className={`tool-btn${drawTool === "quad" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "quad" ? null : "quad")}
-        title="Raute (Perspektive)"
+        title={t("editor.toolStrip.quadPerspective")}
       >
         <QuadToolIcon />
       </button>
       <ImagePicker onInsert={onInsertImage} iconOnly />
-      <button className="tool-btn" onClick={onAddCurvedText} title="Kurventext">
+      <button className="tool-btn" onClick={onAddCurvedText} title={t("editor.textListPanel.typeCurvedText")}>
         <CurvedTextToolIcon />
       </button>
       <button
         className={`tool-btn${drawTool === "panel" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "panel" ? null : "panel")}
-        title="Panel (Referenzbereich)"
+        title={t("editor.toolStrip.panelRefRegion")}
       >
         <PanelToolIcon />
       </button>
@@ -72,14 +74,14 @@ export function ToolStrip({
         className={`tool-btn${textPanelOpen ? " active" : ""}`}
         onClick={onToggleTextPanel}
         disabled={textPanelDisabled}
-        title="Texte dieser Seite"
+        title={t("editor.toolStrip.textsThisPage")}
       >
         <GlobeToolIcon />
       </button>
       <button
         className={`tool-btn${contextPanelOpen ? " active" : ""}`}
         onClick={onToggleContextPanel}
-        title="Kontext für Übersetzung"
+        title={t("editor.translatorContextPanel.title")}
       >
         <ContextToolIcon />
       </button>

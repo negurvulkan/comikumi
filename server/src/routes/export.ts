@@ -16,12 +16,12 @@ exportRouter.post(
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);
     if (!volume) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     const { folderSuffix, page } = req.body as { folderSuffix?: string; page?: string };
     if (!folderSuffix || !page || !req.file) {
-      res.status(400).json({ error: "folderSuffix, page and png file are required" });
+      res.status(400).json({ error: "export_fields_required" });
       return;
     }
     const settings = await readSettings();
