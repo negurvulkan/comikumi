@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Bubble } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import { api } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import { characterName, sortBubblesByPosition } from "./reportUtils";
 
 interface Props {
@@ -19,6 +21,7 @@ function toSingleLine(text: string): string {
  * open one — "welche Charaktere kommen im Band vor" only makes sense at this
  * scope, so it's a separate view rather than the page report reused verbatim. */
 export function VolumeReportModal({ volumeId, characters, onClose }: Props) {
+  const { t } = useTranslation();
   const [pages, setPages] = useState<{ page: string; bubbles: Bubble[] }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("de");
@@ -27,8 +30,8 @@ export function VolumeReportModal({ volumeId, characters, onClose }: Props) {
     api
       .getVolumeReport(volumeId)
       .then((rows) => setPages(rows.map((r) => ({ page: r.page, bubbles: r.layout.bubbles }))))
-      .catch((e) => setError((e as Error).message));
-  }, [volumeId]);
+      .catch((e) => setError(translateApiError(e, t)));
+  }, [volumeId, t]);
 
   const languageCodes = pages
     ? [...new Set(pages.flatMap((p) => p.bubbles.flatMap((b) => Object.keys(b.text))))].sort()
@@ -49,24 +52,24 @@ export function VolumeReportModal({ volumeId, characters, onClose }: Props) {
 
   return (
     <div className="inspector" style={{ width: 520, maxWidth: "85vw", maxHeight: "80vh" }}>
-      <p style={{ margin: 0, fontWeight: 600 }}>Bericht für den ganzen Band</p>
+      <p style={{ margin: 0, fontWeight: 600 }}>{t("volumeReport.title")}</p>
       {error && <div className="error-banner">{error}</div>}
       {!pages ? (
         <p className="hint" style={{ margin: 0 }}>
-          Lädt…
+          {t("common.loading")}
         </p>
       ) : pages.length === 0 ? (
         <p className="hint" style={{ margin: 0 }}>
-          Noch keine gespeicherten Seiten in diesem Band.
+          {t("volumeReport.noSavedPages")}
         </p>
       ) : (
         <>
           <p className="report-heading" style={{ margin: 0 }}>
-            Welche Charaktere kommen im Band vor?
+            {t("volumeReport.charactersHeading")}
           </p>
           {characterRows.length === 0 ? (
             <p className="hint" style={{ margin: 0 }}>
-              Keine Charaktere zugeordnet.
+              {t("volumeReport.noCharacters")}
             </p>
           ) : (
             characterRows.map(([name, pageSet]) => (
@@ -78,7 +81,7 @@ export function VolumeReportModal({ volumeId, characters, onClose }: Props) {
 
           <div className="field-label-row">
             <p className="report-heading" style={{ margin: 0 }}>
-              Wer sagt was — je Seite
+              {t("volumeReport.whoSaysWhatHeading")}
             </p>
             <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ width: 90 }}>
               {(languageCodes.length > 0 ? languageCodes : ["de"]).map((code) => (
@@ -98,7 +101,7 @@ export function VolumeReportModal({ volumeId, characters, onClose }: Props) {
                   {ordered.map((b) => (
                     <div key={b.id} className="text-list-row" style={{ cursor: "default" }}>
                       <span className="text-list-type">{characterName(characters, b.characterId)}</span>
-                      <span className="text-list-content">{toSingleLine(b.text[language] ?? "") || "(kein Text)"}</span>
+                      <span className="text-list-content">{toSingleLine(b.text[language] ?? "") || t("volumeReport.noText")}</span>
                     </div>
                   ))}
                 </div>
@@ -107,7 +110,7 @@ export function VolumeReportModal({ volumeId, characters, onClose }: Props) {
           </div>
         </>
       )}
-      <button onClick={onClose}>Schließen</button>
+      <button onClick={onClose}>{t("common.close")}</button>
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { PageLayout } from "../../../shared/src/layoutSchema";
 import { api } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import { ensureFontsLoaded } from "../editor/fontLoader";
 import { renderPageToPng } from "./renderPageToPng";
 import { selectPages, type PageSelection } from "./pageSelection";
@@ -35,6 +37,7 @@ function loadHtmlImage(url: string): Promise<HTMLImageElement> {
  * skip a redundant getLayout() round-trip for a page it already has in memory.
  */
 export function useExportRun(volumeId: string, languages: LanguageDef[]) {
+  const { t } = useTranslation();
   const [exporting, setExporting] = useState(false);
   const [exportMsg, setExportMsg] = useState<string | null>(null);
 
@@ -68,12 +71,12 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
           const blob = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets);
           await api.exportPage(volumeId, p.page, lang.folderSuffix, blob);
           exportCount++;
-          setExportMsg(`${exportCount} exportiert…`);
+          setExportMsg(t("useExportRun.progress", { count: exportCount }));
         }
       }
-      setExportMsg(exportCount === 0 ? "Keine passenden Seiten gefunden." : `${exportCount} Seiten-Sprach-Exporte abgeschlossen.`);
+      setExportMsg(exportCount === 0 ? t("useExportRun.noneFound") : t("useExportRun.done", { count: exportCount }));
     } catch (e) {
-      setExportMsg(`Fehler: ${(e as Error).message}`);
+      setExportMsg(t("pageGrid.importErrorPrefix", { message: translateApiError(e, t) }));
     } finally {
       setExporting(false);
     }

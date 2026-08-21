@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { PageSelection, PageSelectionMode } from "../export/pageSelection";
-import { parseCustomSelection } from "../export/pageSelection";
+import { parseCustomSelection, PageSelectionError } from "../export/pageSelection";
 
 interface Props {
   languages: LanguageDef[];
@@ -12,16 +13,22 @@ interface Props {
   onClose: () => void;
 }
 
-const MODE_LABELS: Record<PageSelectionMode, string> = {
-  current: "Aktuelle Seite",
-  all: "Alle Seiten",
-  even: "Gerade Seiten",
-  odd: "Ungerade Seiten",
-  range: "Bereich",
-  custom: "Eigene Auswahl",
+const MODE_LABEL_KEYS: Record<PageSelectionMode, string> = {
+  current: "exportPanel.modeCurrent",
+  all: "exportPanel.modeAll",
+  even: "exportPanel.modeEven",
+  odd: "exportPanel.modeOdd",
+  range: "exportPanel.modeRange",
+  custom: "exportPanel.modeCustom",
 };
 
+function translateSelectionError(err: unknown, t: (key: string, params?: Record<string, string>) => string): string {
+  if (err instanceof PageSelectionError) return t(`exportPanel.errors.${err.code}`, err.params);
+  return err instanceof Error ? err.message : String(err);
+}
+
 export function ExportPanel({ languages, currentPage, exporting, onExport, onClose }: Props) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<PageSelectionMode>(currentPage ? "current" : "all");
   const [rangeFrom, setRangeFrom] = useState(1);
   const [rangeTo, setRangeTo] = useState(1);
@@ -34,7 +41,7 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
     try {
       parseCustomSelection(custom);
     } catch (e) {
-      customError = (e as Error).message;
+      customError = translateSelectionError(e, t);
     }
   }
   const canSubmit = !exporting && (mode !== "custom" || customError === null);
@@ -52,31 +59,33 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
 
   return (
     <div className="inspector" style={{ maxWidth: 340 }}>
-      <p style={{ margin: 0, fontWeight: 600 }}>Export</p>
+      <p style={{ margin: 0, fontWeight: 600 }}>{t("exportPanel.title")}</p>
 
-      <label>Seiten</label>
+      <label>{t("exportPanel.pagesLabel")}</label>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {(Object.keys(MODE_LABELS) as PageSelectionMode[])
+        {(Object.keys(MODE_LABEL_KEYS) as PageSelectionMode[])
           .filter((m) => m !== "current" || !!currentPage)
           .map((m) => (
             <button key={m} className={mode === m ? "active" : ""} onClick={() => setMode(m)}>
-              {MODE_LABELS[m]}
+              {t(MODE_LABEL_KEYS[m])}
             </button>
           ))}
       </div>
 
       {mode === "current" && currentPage && (
-        <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>Nur „{currentPage}".</p>
+        <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>
+          {t("exportPanel.onlyPage", { page: currentPage })}
+        </p>
       )}
 
       {mode === "range" && (
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <label style={{ flex: 1 }}>
-            von Seite
+            {t("exportPanel.fromPage")}
             <input type="number" min={1} value={rangeFrom} onChange={(e) => setRangeFrom(Number(e.target.value))} />
           </label>
           <label style={{ flex: 1 }}>
-            bis Seite
+            {t("exportPanel.toPage")}
             <input type="number" min={1} value={rangeTo} onChange={(e) => setRangeTo(Number(e.target.value))} />
           </label>
         </div>
@@ -84,7 +93,7 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
 
       {mode === "custom" && (
         <label>
-          Seitenzahlen (z. B. 1,3,5,10-14)
+          {t("exportPanel.customLabel")}
           <input type="text" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="1,3,5,10-14" />
         </label>
       )}
@@ -94,13 +103,13 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
 
       <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <input type="checkbox" checked={onlyTranslated} onChange={(e) => setOnlyTranslated(e.target.checked)} />
-        Nur Seiten mit Übersetzung
+        {t("exportPanel.onlyTranslated")}
       </label>
 
       <label>
-        Sprache
+        {t("exportPanel.languageLabel")}
         <select value={languageFilter} onChange={(e) => setLanguageFilter(e.target.value)}>
-          <option value="all">Alle Sprachen</option>
+          <option value="all">{t("exportPanel.allLanguages")}</option>
           {languages.map((l) => (
             <option key={l.code} value={l.code}>
               {l.label}
@@ -111,10 +120,10 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
 
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button className="primary" onClick={handleSubmit} disabled={!canSubmit}>
-          {exporting ? "Exportiert…" : "Exportieren"}
+          {exporting ? t("exportPanel.exporting") : t("exportPanel.exportButton")}
         </button>
         <button onClick={onClose} disabled={exporting}>
-          Schließen
+          {t("common.close")}
         </button>
       </div>
     </div>

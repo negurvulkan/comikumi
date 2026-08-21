@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import type { Character } from "../../../shared/src/characters";
 
 interface Props {
@@ -16,6 +18,7 @@ interface Props {
  * speech patterns, for translators) and inline editing — added alongside Voice Notes
  * since that's a field you revise over time, not just set once at creation. */
 export function CharacterManager({ characters, onChange, onClose }: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [color, setColor] = useState("#6c8cff");
   const [voiceNotes, setVoiceNotes] = useState("");
@@ -47,14 +50,14 @@ export function CharacterManager({ characters, onChange, onClose }: Props) {
       onChange(next);
       resetForm();
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Charakter entfernen? Blasen, die ihm zugeordnet sind, verlieren die Zuordnung.")) return;
+    if (!confirm(t("managers.characters.confirmDelete"))) return;
     setError(null);
     setBusy(true);
     try {
@@ -62,7 +65,7 @@ export function CharacterManager({ characters, onChange, onClose }: Props) {
       onChange(next);
       if (editingId === id) resetForm();
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
@@ -70,7 +73,7 @@ export function CharacterManager({ characters, onChange, onClose }: Props) {
 
   return (
     <div className="inspector" style={{ maxWidth: 380 }}>
-      <p style={{ margin: 0, fontWeight: 600 }}>Charaktere</p>
+      <p style={{ margin: 0, fontWeight: 600 }}>{t("managers.characters.title")}</p>
 
       <div className="language-manager-list">
         {characters.map((c) => (
@@ -79,34 +82,34 @@ export function CharacterManager({ characters, onChange, onClose }: Props) {
               type="button"
               onClick={() => startEdit(c)}
               style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
-              title="Bearbeiten"
+              title={t("common.edit")}
             >
               <span
                 style={{ width: 12, height: 12, borderRadius: "50%", background: c.color, display: "inline-block", flexShrink: 0 }}
               />
               {c.name}
             </button>
-            <button onClick={() => handleDelete(c.id)} disabled={busy} title="Charakter entfernen">
+            <button onClick={() => handleDelete(c.id)} disabled={busy} title={t("managers.characters.remove")}>
               ×
             </button>
           </div>
         ))}
-        {characters.length === 0 && <p className="hint">Noch keine Charaktere angelegt.</p>}
+        {characters.length === 0 && <p className="hint">{t("managers.characters.empty")}</p>}
       </div>
 
       <form onSubmit={handleSubmit} className="language-manager-form">
         <label>
-          Name
-          <input placeholder="z. B. Aiko" value={name} onChange={(e) => setName(e.target.value)} required />
+          {t("managers.characters.nameLabel")}
+          <input placeholder={t("managers.characters.namePlaceholder")} value={name} onChange={(e) => setName(e.target.value)} required />
         </label>
         <label>
-          Farbe
+          {t("managers.characters.colorLabel")}
           <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
         </label>
         <label>
-          Voice Notes
+          {t("managers.characters.voiceNotesLabel")}
           <textarea
-            placeholder="Sprechweise, Persönlichkeit, Floskeln, Förmlichkeit …"
+            placeholder={t("managers.characters.voiceNotesPlaceholder")}
             value={voiceNotes}
             onChange={(e) => setVoiceNotes(e.target.value)}
             style={{ minHeight: 60 }}
@@ -114,11 +117,11 @@ export function CharacterManager({ characters, onChange, onClose }: Props) {
         </label>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="submit" className="primary" disabled={busy}>
-            {busy ? "…" : editingId ? "Speichern" : "Hinzufügen"}
+            {busy ? "…" : editingId ? t("common.save") : t("common.add")}
           </button>
           {editingId && (
             <button type="button" onClick={resetForm} disabled={busy}>
-              Abbrechen
+              {t("common.cancel")}
             </button>
           )}
         </div>
@@ -127,7 +130,7 @@ export function CharacterManager({ characters, onChange, onClose }: Props) {
 
       {onClose && (
         <button type="button" onClick={onClose}>
-          Schließen
+          {t("common.close")}
         </button>
       )}
     </div>

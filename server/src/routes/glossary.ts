@@ -24,7 +24,7 @@ glossaryRouter.post(
   asyncHandler(async (req, res) => {
     const parsed = GlossaryInputSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid glossary entry", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_glossary_entry", details: parsed.error.flatten() });
       return;
     }
     const entries = await readGlossary();
@@ -39,13 +39,13 @@ glossaryRouter.put(
   asyncHandler(async (req, res) => {
     const parsed = GlossaryInputSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid glossary entry", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_glossary_entry", details: parsed.error.flatten() });
       return;
     }
     const entries = await readGlossary();
     const idx = entries.findIndex((e) => e.id === req.params.id);
     if (idx === -1) {
-      res.status(404).json({ error: "Glossareintrag nicht gefunden" });
+      res.status(404).json({ error: "glossary_entry_not_found" });
       return;
     }
     const next = [...entries];
@@ -61,7 +61,7 @@ glossaryRouter.delete(
     const entries = await readGlossary();
     const next = entries.filter((e) => e.id !== req.params.id);
     if (next.length === entries.length) {
-      res.status(404).json({ error: "Glossareintrag nicht gefunden" });
+      res.status(404).json({ error: "glossary_entry_not_found" });
       return;
     }
     await writeGlossary(next);

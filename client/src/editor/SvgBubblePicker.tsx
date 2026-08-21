@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, type BubbleSvgEntry } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 
 interface Props {
   onPick: (fileName: string) => void;
@@ -7,6 +9,7 @@ interface Props {
 
 /** Popover: pick an already-uploaded SVG bubble contour, or upload a new one — same UI pattern as ImagePicker.tsx. */
 export function SvgBubblePicker({ onPick }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [svgs, setSvgs] = useState<BubbleSvgEntry[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -17,7 +20,7 @@ export function SvgBubblePicker({ onPick }: Props) {
     try {
       setSvgs(await api.listBubbleSvgs());
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     }
   }
 
@@ -36,7 +39,7 @@ export function SvgBubblePicker({ onPick }: Props) {
       onPick(result.fileName);
       setOpen(false);
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
@@ -50,8 +53,8 @@ export function SvgBubblePicker({ onPick }: Props) {
 
   return (
     <div className="language-manager">
-      <button onClick={() => setOpen((o) => !o)} className={open ? "active" : ""} title="SVG-Kontur wählen">
-        SVG wählen…
+      <button onClick={() => setOpen((o) => !o)} className={open ? "active" : ""} title={t("editor.svgPicker.chooseSvg")}>
+        {t("editor.svgPicker.chooseSvgShort")}
       </button>
       {open && (
         <div className="language-manager-panel image-picker-panel">
@@ -61,7 +64,7 @@ export function SvgBubblePicker({ onPick }: Props) {
             return (
               <div key={scope}>
                 <p className="report-heading" style={{ margin: "4px 0" }}>
-                  {scope === "project" ? "Projekt" : "Gemeinsam"}
+                  {scope === "project" ? t("common.scopeProject") : t("common.scopeShared")}
                 </p>
                 <div className="image-picker-grid">
                   {scoped.map((svg) => (
@@ -73,9 +76,9 @@ export function SvgBubblePicker({ onPick }: Props) {
               </div>
             );
           })}
-          {svgs.length === 0 && <p className="hint">Noch keine SVG-Konturen hochgeladen.</p>}
+          {svgs.length === 0 && <p className="hint">{t("editor.svgPicker.empty")}</p>}
           <label className="image-picker-upload">
-            {uploading ? "Lädt hoch…" : "Neue SVG-Kontur hochladen"}
+            {uploading ? t("editor.imagePicker.uploading") : t("editor.svgPicker.uploadNew")}
             <input
               ref={fileInput}
               type="file"

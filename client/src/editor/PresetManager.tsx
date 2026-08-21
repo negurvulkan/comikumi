@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "../../../shared/src/presets";
 import type { BubbleVisualStyle, TailChainSegmentShape, TailStyle, TextAlign, TextDirection } from "../../../shared/src/layoutSchema";
 import { FontPicker } from "./FontPicker";
@@ -71,6 +73,7 @@ function FieldToggle<T>({
  * of the saved preset and live-drive every Bubble/CurvedTextElement linked to it via
  * presetId (see resolveBubbleStyle/resolveBubbleForm/resolveCurvedTextStyle). */
 export function PresetManager({ presets, onChange, onClose }: Props) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,14 +107,14 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
       onChange(next);
       resetForm();
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Preset entfernen? Verknüpfte Blasen/Kurventexte behalten ihre zuletzt sichtbaren Werte, verlieren aber die Verknüpfung.")) return;
+    if (!confirm(t("managers.presets.confirmDelete"))) return;
     setError(null);
     setBusy(true);
     try {
@@ -119,7 +122,7 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
       onChange(next);
       if (editingId === id) resetForm();
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
@@ -131,7 +134,7 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
 
   return (
     <div className="inspector" style={{ maxWidth: 460, maxHeight: "80vh", overflowY: "auto" }}>
-      <p style={{ margin: 0, fontWeight: 600 }}>Presets</p>
+      <p style={{ margin: 0, fontWeight: 600 }}>{t("managers.presets.title")}</p>
 
       <div className="language-manager-list">
         {presets.map((p) => (
@@ -140,23 +143,23 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
               type="button"
               onClick={() => startEdit(p)}
               style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit", textAlign: "left" }}
-              title="Bearbeiten"
+              title={t("common.edit")}
             >
               {p.name}
             </button>
-            <button onClick={() => handleDelete(p.id)} disabled={busy} title="Preset entfernen">
+            <button onClick={() => handleDelete(p.id)} disabled={busy} title={t("managers.presets.remove")}>
               ×
             </button>
           </div>
         ))}
-        {presets.length === 0 && <p className="hint">Noch keine Presets angelegt.</p>}
+        {presets.length === 0 && <p className="hint">{t("managers.presets.empty")}</p>}
       </div>
 
       <form onSubmit={handleSubmit} className="language-manager-form">
         <label>
-          Name
+          {t("managers.characters.nameLabel")}
           <input
-            placeholder="z. B. SFX Style"
+            placeholder={t("managers.presets.namePlaceholder")}
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             required
@@ -164,51 +167,51 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
         </label>
 
         <p className="report-heading" style={{ margin: "8px 0 0" }}>
-          Textstil
+          {t("managers.presets.textStyleHeading")}
         </p>
 
-        <FieldToggle label="Schriftart" value={text.fontFamily} defaultValue={DEFAULT_TEXT.fontFamily} onChange={(v) => setText("fontFamily", v)}>
+        <FieldToggle label={t("managers.presets.fontFamilyLabel")} value={text.fontFamily} defaultValue={DEFAULT_TEXT.fontFamily} onChange={(v) => setText("fontFamily", v)}>
           {(v, set) => <FontPicker value={v} onChange={set} />}
         </FieldToggle>
 
-        <FieldToggle label="Schriftgröße" value={text.fontSize} defaultValue={DEFAULT_TEXT.fontSize} onChange={(v) => setText("fontSize", v)}>
+        <FieldToggle label={t("managers.presets.fontSizeLabel")} value={text.fontSize} defaultValue={DEFAULT_TEXT.fontSize} onChange={(v) => setText("fontSize", v)}>
           {(v, set) => <input type="number" min={4} value={v} onChange={(e) => set(Number(e.target.value))} />}
         </FieldToggle>
 
-        <FieldToggle label="Zeilenhöhe" value={text.lineHeight} defaultValue={DEFAULT_TEXT.lineHeight} onChange={(v) => setText("lineHeight", v)}>
+        <FieldToggle label={t("managers.presets.lineHeightLabel")} value={text.lineHeight} defaultValue={DEFAULT_TEXT.lineHeight} onChange={(v) => setText("lineHeight", v)}>
           {(v, set) => <input type="number" step={0.1} min={0.8} value={v} onChange={(e) => set(Number(e.target.value))} />}
         </FieldToggle>
 
-        <FieldToggle label="Ausrichtung" value={text.align} defaultValue={DEFAULT_TEXT.align} onChange={(v) => setText("align", v)}>
+        <FieldToggle label={t("managers.presets.alignLabel")} value={text.align} defaultValue={DEFAULT_TEXT.align} onChange={(v) => setText("align", v)}>
           {(v, set) => (
             <select value={v} onChange={(e) => set(e.target.value as TextAlign)}>
-              <option value="left">Links</option>
-              <option value="center">Zentriert</option>
-              <option value="right">Rechts</option>
+              <option value="left">{t("managers.presets.alignLeft")}</option>
+              <option value="center">{t("managers.presets.alignCenter")}</option>
+              <option value="right">{t("managers.presets.alignRight")}</option>
             </select>
           )}
         </FieldToggle>
 
-        <FieldToggle label="Leserichtung" value={text.direction} defaultValue={DEFAULT_TEXT.direction} onChange={(v) => setText("direction", v)}>
+        <FieldToggle label={t("managers.presets.directionLabel")} value={text.direction} defaultValue={DEFAULT_TEXT.direction} onChange={(v) => setText("direction", v)}>
           {(v, set) => (
             <select value={v} onChange={(e) => set(e.target.value as TextDirection)}>
-              <option value="ltr">Horizontal, links → rechts</option>
-              <option value="rtl">Horizontal, rechts → links</option>
-              <option value="vertical-rl">Vertikal (JP)</option>
+              <option value="ltr">{t("managers.presets.directionLtr")}</option>
+              <option value="rtl">{t("managers.presets.directionRtl")}</option>
+              <option value="vertical-rl">{t("managers.presets.directionVertical")}</option>
             </select>
           )}
         </FieldToggle>
 
-        <FieldToggle label="Farbe" value={text.color} defaultValue={DEFAULT_TEXT.color} onChange={(v) => setText("color", v)}>
+        <FieldToggle label={t("managers.presets.colorLabel")} value={text.color} defaultValue={DEFAULT_TEXT.color} onChange={(v) => setText("color", v)}>
           {(v, set) => <input type="color" value={v} onChange={(e) => set(e.target.value)} />}
         </FieldToggle>
 
-        <FieldToggle label="Textumrandung" value={text.textOutline} defaultValue={DEFAULT_TEXT.textOutline} onChange={(v) => setText("textOutline", v)}>
+        <FieldToggle label={t("managers.presets.textOutlineLabel")} value={text.textOutline} defaultValue={DEFAULT_TEXT.textOutline} onChange={(v) => setText("textOutline", v)}>
           {(v, set) => (
             <div style={{ display: "flex", gap: 8, flex: 1 }}>
               <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                an
+                {t("managers.presets.onLabel")}
               </label>
               <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
               <input type="number" min={1} value={v.widthPx} onChange={(e) => set({ ...v, widthPx: Number(e.target.value) })} />
@@ -216,12 +219,12 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
           )}
         </FieldToggle>
 
-        <FieldToggle label="Farbverlauf" value={text.textGradient} defaultValue={DEFAULT_TEXT.textGradient} onChange={(v) => setText("textGradient", v)}>
+        <FieldToggle label={t("managers.presets.textGradientLabel")} value={text.textGradient} defaultValue={DEFAULT_TEXT.textGradient} onChange={(v) => setText("textGradient", v)}>
           {(v, set) => (
             <div style={{ display: "flex", gap: 8, flex: 1 }}>
               <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                an
+                {t("managers.presets.onLabel")}
               </label>
               <input type="color" value={v.colorStart} onChange={(e) => set({ ...v, colorStart: e.target.value })} />
               <input type="color" value={v.colorEnd} onChange={(e) => set({ ...v, colorEnd: e.target.value })} />
@@ -230,36 +233,36 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
         </FieldToggle>
 
         <p className="report-heading" style={{ margin: "8px 0 0" }}>
-          Blasenhintergrund (nur für Blasen, nicht für Kurventext)
+          {t("managers.presets.backgroundHeading")}
         </p>
 
         <FieldToggle
-          label="Blasenstil"
+          label={t("managers.presets.bubbleStyleLabel")}
           value={background.bubbleStyle}
           defaultValue={DEFAULT_BACKGROUND.bubbleStyle}
           onChange={(v) => setBackground("bubbleStyle", v)}
         >
           {(v, set) => (
             <select value={v} onChange={(e) => set(e.target.value as BubbleVisualStyle)}>
-              <option value="none">Keine</option>
-              <option value="speech">Sprechblase</option>
-              <option value="thought">Gedankenblase</option>
-              <option value="shout">Effekt (gezackt)</option>
-              <option value="svg">SVG-Sprechblase</option>
+              <option value="none">{t("managers.presets.bubbleStyleNone")}</option>
+              <option value="speech">{t("managers.presets.bubbleStyleSpeech")}</option>
+              <option value="thought">{t("managers.presets.bubbleStyleThought")}</option>
+              <option value="shout">{t("managers.presets.bubbleStyleShout")}</option>
+              <option value="svg">{t("managers.presets.bubbleStyleSvg")}</option>
             </select>
           )}
         </FieldToggle>
 
-        <FieldToggle label="Füllfarbe" value={background.fillColor} defaultValue={DEFAULT_BACKGROUND.fillColor} onChange={(v) => setBackground("fillColor", v)}>
+        <FieldToggle label={t("managers.presets.fillColorLabel")} value={background.fillColor} defaultValue={DEFAULT_BACKGROUND.fillColor} onChange={(v) => setBackground("fillColor", v)}>
           {(v, set) => <input type="color" value={v} onChange={(e) => set(e.target.value)} />}
         </FieldToggle>
 
-        <FieldToggle label="Randfarbe" value={background.strokeColor} defaultValue={DEFAULT_BACKGROUND.strokeColor} onChange={(v) => setBackground("strokeColor", v)}>
+        <FieldToggle label={t("managers.presets.strokeColorLabel")} value={background.strokeColor} defaultValue={DEFAULT_BACKGROUND.strokeColor} onChange={(v) => setBackground("strokeColor", v)}>
           {(v, set) => <input type="color" value={v} onChange={(e) => set(e.target.value)} />}
         </FieldToggle>
 
         <FieldToggle
-          label="Randbreite"
+          label={t("managers.presets.strokeWidthLabel")}
           value={background.strokeWidthPx}
           defaultValue={DEFAULT_BACKGROUND.strokeWidthPx}
           onChange={(v) => setBackground("strokeWidthPx", v)}
@@ -267,12 +270,12 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
           {(v, set) => <input type="number" min={0} value={v} onChange={(e) => set(Number(e.target.value))} />}
         </FieldToggle>
 
-        <FieldToggle label="Zeigerart" value={background.tailStyle} defaultValue={DEFAULT_BACKGROUND.tailStyle} onChange={(v) => setBackground("tailStyle", v)}>
+        <FieldToggle label={t("managers.presets.tailStyleLabel")} value={background.tailStyle} defaultValue={DEFAULT_BACKGROUND.tailStyle} onChange={(v) => setBackground("tailStyle", v)}>
           {(v, set) => (
             <select value={v} onChange={(e) => set(e.target.value as TailStyle)}>
-              <option value="point">Verbunden (nahtlos)</option>
-              <option value="point-detached">Freistehend</option>
-              <option value="chain">Kette</option>
+              <option value="point">{t("managers.presets.tailStylePoint")}</option>
+              <option value="point-detached">{t("managers.presets.tailStylePointDetached")}</option>
+              <option value="chain">{t("managers.presets.tailStyleChain")}</option>
             </select>
           )}
         </FieldToggle>
@@ -280,21 +283,21 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
         {showTailChain && (
           <>
             <FieldToggle
-              label="Segmentform"
+              label={t("managers.presets.segmentShapeLabel")}
               value={background.tailChainSegmentShape}
               defaultValue={DEFAULT_BACKGROUND.tailChainSegmentShape}
               onChange={(v) => setBackground("tailChainSegmentShape", v)}
             >
               {(v, set) => (
                 <select value={v} onChange={(e) => set(e.target.value as TailChainSegmentShape)}>
-                  <option value="circle">Kreis</option>
-                  <option value="rect">Rechteck</option>
-                  <option value="diamond">Raute</option>
+                  <option value="circle">{t("managers.presets.segmentShapeCircle")}</option>
+                  <option value="rect">{t("managers.presets.segmentShapeRect")}</option>
+                  <option value="diamond">{t("managers.presets.segmentShapeDiamond")}</option>
                 </select>
               )}
             </FieldToggle>
             <FieldToggle
-              label="Anzahl Segmente"
+              label={t("managers.presets.segmentsCountLabel")}
               value={background.tailChainSegments}
               defaultValue={DEFAULT_BACKGROUND.tailChainSegments}
               onChange={(v) => setBackground("tailChainSegments", v)}
@@ -302,7 +305,7 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
               {(v, set) => <input type="number" min={1} max={8} value={v} onChange={(e) => set(Number(e.target.value))} />}
             </FieldToggle>
             <FieldToggle
-              label="Abstand der Segmente"
+              label={t("managers.presets.segmentSpacingLabel")}
               value={background.tailChainSpacing}
               defaultValue={DEFAULT_BACKGROUND.tailChainSpacing}
               onChange={(v) => setBackground("tailChainSpacing", v)}
@@ -314,11 +317,11 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
 
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <button type="submit" className="primary" disabled={busy}>
-            {busy ? "…" : editingId ? "Speichern" : "Hinzufügen"}
+            {busy ? "…" : editingId ? t("common.save") : t("common.add")}
           </button>
           {editingId && (
             <button type="button" onClick={resetForm} disabled={busy}>
-              Abbrechen
+              {t("common.cancel")}
             </button>
           )}
         </div>
@@ -327,7 +330,7 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
 
       {onClose && (
         <button type="button" onClick={onClose}>
-          Schließen
+          {t("common.close")}
         </button>
       )}
     </div>

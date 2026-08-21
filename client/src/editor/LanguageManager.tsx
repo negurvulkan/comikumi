@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import type { LanguageDef } from "../../../shared/src/languages";
 
 interface Props {
@@ -19,6 +21,7 @@ function slugify(value: string): string {
 }
 
 export function LanguageManager({ languages, onChange, compact }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [label, setLabel] = useState("");
@@ -52,21 +55,21 @@ export function LanguageManager({ languages, onChange, compact }: Props) {
       onChange(next);
       resetForm();
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(langCode: string) {
-    if (!confirm(`Sprache "${langCode}" aus der Liste entfernen? Bereits übersetzte Texte bleiben in den JSON-Dateien erhalten.`)) return;
+    if (!confirm(t("managers.languages.confirmDelete", { code: langCode }))) return;
     setError(null);
     setBusy(true);
     try {
       const next = await api.deleteLanguage(langCode);
       onChange(next);
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
@@ -77,9 +80,9 @@ export function LanguageManager({ languages, onChange, compact }: Props) {
       <button
         onClick={() => setOpen((o) => !o)}
         className={compact ? `lang-chip add${open ? " active" : ""}` : open ? "active" : ""}
-        title="Sprachen verwalten"
+        title={t("managers.languages.manage")}
       >
-        {compact ? "+" : "+ Sprache"}
+        {compact ? "+" : t("managers.languages.addShort")}
       </button>
       {open && (
         <div className="language-manager-panel">
@@ -87,33 +90,33 @@ export function LanguageManager({ languages, onChange, compact }: Props) {
             {languages.map((l) => (
               <div key={l.code} className="language-manager-row">
                 <span>
-                  {l.label} <em>({l.code})</em> — Ordner-Suffix: <code>{l.folderSuffix}</code>
+                  {l.label} <em>({l.code})</em> — {t("managers.languages.folderSuffixInline")}: <code>{l.folderSuffix}</code>
                 </span>
-                <button onClick={() => handleDelete(l.code)} disabled={busy} title="Sprache entfernen">
+                <button onClick={() => handleDelete(l.code)} disabled={busy} title={t("managers.languages.remove")}>
                   ×
                 </button>
               </div>
             ))}
-            {languages.length === 0 && <p className="hint">Noch keine Sprachen angelegt.</p>}
+            {languages.length === 0 && <p className="hint">{t("managers.languages.empty")}</p>}
           </div>
           <form onSubmit={handleAdd} className="language-manager-form">
             <label>
-              Name
+              {t("managers.characters.nameLabel")}
               <input
-                placeholder="z. B. Français"
+                placeholder={t("managers.languages.namePlaceholder")}
                 value={label}
                 onChange={(e) => handleLabelChange(e.target.value)}
                 required
               />
             </label>
             <label>
-              Code
-              <input placeholder="z. B. fr" value={code} onChange={(e) => setCode(e.target.value)} required />
+              {t("managers.languages.codeLabel")}
+              <input placeholder={t("managers.languages.codePlaceholder")} value={code} onChange={(e) => setCode(e.target.value)} required />
             </label>
             <label>
-              Ordner-Suffix
+              {t("managers.languages.folderSuffixLabel")}
               <input
-                placeholder="z. B. french"
+                placeholder={t("managers.languages.folderSuffixPlaceholder")}
                 value={folderSuffix}
                 onChange={(e) => {
                   setFolderSuffixTouched(true);
@@ -123,7 +126,7 @@ export function LanguageManager({ languages, onChange, compact }: Props) {
               />
             </label>
             <button type="submit" className="primary" disabled={busy}>
-              {busy ? "…" : "Hinzufügen"}
+              {busy ? "…" : t("common.add")}
             </button>
           </form>
           {error && <div className="language-manager-error">{error}</div>}

@@ -24,7 +24,7 @@ describe("characters CRUD", () => {
   it("rejects an invalid character (empty name)", async () => {
     const res = await request(app).post("/api/characters").send({ name: "" });
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe("invalid character");
+    expect(res.body.error).toBe("invalid_character");
   });
 
   it("creates a character with defaults filled in and an id assigned", async () => {

@@ -41,7 +41,7 @@ pagesRouter.get(
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);
     if (!volume) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     const pages = await listPages(volume);
@@ -60,13 +60,13 @@ pagesRouter.get(
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);
     if (!volume) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     const pages = await listPages(volume);
     const page = pages.find((p) => p.page === req.params.page);
     if (!page) {
-      res.status(404).json({ error: "page not found" });
+      res.status(404).json({ error: "page_not_found" });
       return;
     }
     res.sendFile(page.absolutePath);
@@ -80,13 +80,13 @@ pagesRouter.get(
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);
     if (!volume) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     const pages = await listPages(volume);
     const page = pages.find((p) => p.page === req.params.page);
     if (!page) {
-      res.status(404).json({ error: "page not found" });
+      res.status(404).json({ error: "page_not_found" });
       return;
     }
     try {
@@ -94,7 +94,7 @@ pagesRouter.get(
       res.type("image/jpeg");
       res.sendFile(thumbPath);
     } catch (err) {
-      res.status(500).json({ error: "thumbnail generation failed", details: String(err) });
+      res.status(500).json({ error: "thumbnail_generation_failed", details: String(err) });
     }
   })
 );

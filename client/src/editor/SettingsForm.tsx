@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import type { ProjectSettings } from "../../../shared/src/settings";
 import { useProject } from "../state/ProjectContext";
 import { FileBrowserModal } from "./FileBrowserModal";
@@ -13,6 +15,7 @@ interface Props {
  * "Einstellungen" entry in the Bearbeiten menu, which opens this inside a Modal —
  * same fields, same save logic, just a different frame around it. */
 export function SettingsForm({ onClose }: Props) {
+  const { t } = useTranslation();
   const { project } = useProject();
   const [settings, setSettings] = useState<
     (ProjectSettings & { scanRootExists: boolean; assetsDirExists: boolean; thumbnailsDirExists: boolean }) | null
@@ -25,8 +28,8 @@ export function SettingsForm({ onClose }: Props) {
   const [browsingThumbnailsDir, setBrowsingThumbnailsDir] = useState(false);
 
   useEffect(() => {
-    api.getSettings().then(setSettings).catch((e) => setError(e.message));
-  }, []);
+    api.getSettings().then(setSettings).catch((e) => setError(translateApiError(e, t)));
+  }, [t]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -46,107 +49,95 @@ export function SettingsForm({ onClose }: Props) {
         description,
       });
       setSettings(next);
-      setSavedMsg("Gespeichert.");
+      setSavedMsg(t("settings.savedMsg"));
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setSaving(false);
     }
   }
 
   if (error && !settings) return <div className="error-banner">{error}</div>;
-  if (!settings) return <p>Lade Einstellungen…</p>;
+  if (!settings) return <p>{t("settings.loading")}</p>;
 
   return (
     <>
     <form onSubmit={handleSave} className="inspector" style={{ maxWidth: 420 }}>
-      <p style={{ margin: 0, fontWeight: 600 }}>{project ? `Einstellungen — ${project.name}` : "Einstellungen"}</p>
+      <p style={{ margin: 0, fontWeight: 600 }}>
+        {project ? t("settings.headingWithProject", { name: project.name }) : t("settings.heading")}
+      </p>
 
       <label>
-        Beschreibung
+        {t("settings.descriptionLabel")}
         <textarea
           value={settings.description}
           onChange={(e) => setSettings({ ...settings, description: e.target.value })}
-          placeholder="Kurze Notiz zu diesem Projekt…"
+          placeholder={t("settings.descriptionPlaceholder")}
         />
       </label>
 
       <label>
-        Projekt-Ordner
+        {t("settings.scanRootLabel")}
         <div style={{ display: "flex", gap: 6 }}>
           <input
             style={{ flex: 1 }}
             value={settings.scanRoot}
             onChange={(e) => setSettings({ ...settings, scanRoot: e.target.value })}
-            placeholder="z. B. C:\Projekte\MeinComic\Produktion"
+            placeholder={t("settings.scanRootPlaceholder")}
             required
           />
           <button type="button" onClick={() => setBrowsing(true)}>
-            Durchsuchen…
+            {t("common.browse")}
           </button>
         </div>
       </label>
       {!settings.scanRootExists && (
-        <p style={{ color: "#ff8a95", margin: "-4px 0 8px", fontSize: 12 }}>
-          Dieser Ordner existiert (aus Sicht des Servers) nicht — bitte Pfad prüfen.
-        </p>
+        <p style={{ color: "#ff8a95", margin: "-4px 0 8px", fontSize: 12 }}>{t("settings.folderNotFound")}</p>
       )}
       <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
-        Ordner, der nach „&lt;Band&gt;{settings.emptySuffix}"-Unterordnern durchsucht wird.
+        {t("settings.scanRootHint", { emptySuffix: settings.emptySuffix })}
       </p>
 
       <label>
-        Projekt-Assets-Ordner
+        {t("settings.assetsDirLabel")}
         <div style={{ display: "flex", gap: 6 }}>
           <input
             style={{ flex: 1 }}
             value={settings.assetsDir}
             onChange={(e) => setSettings({ ...settings, assetsDir: e.target.value })}
-            placeholder="optional, z. B. C:\Projekte\MeinComic\Assets"
+            placeholder={t("settings.assetsDirPlaceholder")}
           />
           <button type="button" onClick={() => setBrowsingAssetsDir(true)}>
-            Durchsuchen…
+            {t("common.browse")}
           </button>
         </div>
       </label>
       {settings.assetsDir && !settings.assetsDirExists && (
-        <p style={{ color: "#ff8a95", margin: "-4px 0 8px", fontSize: 12 }}>
-          Dieser Ordner existiert (aus Sicht des Servers) nicht — bitte Pfad prüfen.
-        </p>
+        <p style={{ color: "#ff8a95", margin: "-4px 0 8px", fontSize: 12 }}>{t("settings.folderNotFound")}</p>
       )}
-      <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
-        Optional. Eigene Schriften/SVG-Blasenkonturen/Bilder nur für dieses Projekt —
-        ergänzt die gemeinsame Bibliothek, überschreibt sie bei Namensgleichheit. Leer
-        lassen, um weiterhin nur die gemeinsame Bibliothek zu nutzen.
-      </p>
+      <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>{t("settings.assetsDirHint")}</p>
 
       <label>
-        Thumbnail-Ordner
+        {t("settings.thumbnailsDirLabel")}
         <div style={{ display: "flex", gap: 6 }}>
           <input
             style={{ flex: 1 }}
             value={settings.thumbnailsDir}
             onChange={(e) => setSettings({ ...settings, thumbnailsDir: e.target.value })}
-            placeholder="optional, z. B. C:\Projekte\MeinComic\Thumbnails"
+            placeholder={t("settings.thumbnailsDirPlaceholder")}
           />
           <button type="button" onClick={() => setBrowsingThumbnailsDir(true)}>
-            Durchsuchen…
+            {t("common.browse")}
           </button>
         </div>
       </label>
       {settings.thumbnailsDir && !settings.thumbnailsDirExists && (
-        <p style={{ color: "#ff8a95", margin: "-4px 0 8px", fontSize: 12 }}>
-          Dieser Ordner existiert (aus Sicht des Servers) nicht — bitte Pfad prüfen.
-        </p>
+        <p style={{ color: "#ff8a95", margin: "-4px 0 8px", fontSize: 12 }}>{t("settings.folderNotFound")}</p>
       )}
-      <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
-        Optional, unabhängig vom Assets-Ordner. Cache für die Seiten-Vorschaubilder. Leer
-        lassen, um automatisch einen „thumbnails"-Ordner direkt neben der Projektdatei zu
-        verwenden.
-      </p>
+      <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>{t("settings.thumbnailsDirHint")}</p>
 
       <label>
-        Suffix für leere Seiten
+        {t("settings.emptySuffixLabel")}
         <input
           value={settings.emptySuffix}
           onChange={(e) => setSettings({ ...settings, emptySuffix: e.target.value })}
@@ -156,7 +147,7 @@ export function SettingsForm({ onClose }: Props) {
       </label>
 
       <label>
-        Suffix für Lettering-JSON
+        {t("settings.letteringSuffixLabel")}
         <input
           value={settings.letteringSuffix}
           onChange={(e) => setSettings({ ...settings, letteringSuffix: e.target.value })}
@@ -166,7 +157,7 @@ export function SettingsForm({ onClose }: Props) {
       </label>
 
       <label>
-        Export-Ordner-Vorlage
+        {t("settings.exportTemplateLabel")}
         <input
           value={settings.exportFolderTemplate}
           onChange={(e) => setSettings({ ...settings, exportFolderTemplate: e.target.value })}
@@ -175,17 +166,17 @@ export function SettingsForm({ onClose }: Props) {
         />
       </label>
       <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
-        Platzhalter: <code>{"{book}"}</code> (Bandordner-Name), <code>{"{folderSuffix}"}</code> (aus der
-        Spracheinstellung).
+        {t("settings.exportTemplateHintPrefix")} <code>{"{book}"}</code> {t("settings.exportTemplateHintMiddle")}{" "}
+        <code>{"{folderSuffix}"}</code> {t("settings.exportTemplateHintSuffix")}
       </p>
 
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button type="submit" className="primary" disabled={saving}>
-          {saving ? "Speichert…" : "Speichern"}
+          {saving ? t("settings.saving") : t("common.save")}
         </button>
         {onClose && (
           <button type="button" onClick={onClose}>
-            Schließen
+            {t("common.close")}
           </button>
         )}
       </div>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 interface Props {
   activeLanguage: string;
   scope: "all" | "language";
@@ -10,21 +12,22 @@ interface Props {
  * source this switch decides; the toggleXOverride(checked) handlers underneath are
  * unchanged, only the control calling them changed shape. */
 export function ScopeSwitch({ activeLanguage, scope, onChange }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="scope-switch">
       <button
         type="button"
         className={scope === "all" ? "active" : ""}
         onClick={() => onChange("all")}
-        title="Gilt für alle Sprachen"
+        title={t("editor.scopeSwitch.allLanguagesTitle")}
       >
-        Alle
+        {t("editor.scopeSwitch.all")}
       </button>
       <button
         type="button"
         className={scope === "language" ? "active" : ""}
         onClick={() => onChange("language")}
-        title={`Gilt nur für „${activeLanguage}"`}
+        title={t("editor.scopeSwitch.onlyLanguageTitle", { language: activeLanguage })}
       >
         {activeLanguage.toUpperCase()}
       </button>

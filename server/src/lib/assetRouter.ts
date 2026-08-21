@@ -81,12 +81,12 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
     asyncHandler(async (req, res) => {
       const fileName = req.params.fileName;
       if (!isSafeFileName(fileName)) {
-        res.status(400).json({ error: "invalid file name" });
+        res.status(400).json({ error: "invalid_file_name" });
         return;
       }
       const ext = path.extname(fileName).toLowerCase();
       if (!allowedExt.has(ext)) {
-        res.status(400).json({ error: `unsupported ${kind} file type` });
+        res.status(400).json({ error: "unsupported_file_type", params: { kind } });
         return;
       }
       if (mimeByExt?.[ext]) res.type(mimeByExt[ext]);
@@ -113,12 +113,12 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
     upload.single(uploadFieldName),
     asyncHandler(async (req, res) => {
       if (!req.file) {
-        res.status(400).json({ error: `${uploadFieldName} file is required` });
+        res.status(400).json({ error: "file_required", params: { field: uploadFieldName } });
         return;
       }
       const ext = path.extname(req.file.originalname).toLowerCase();
       if (!allowedExt.has(ext)) {
-        res.status(400).json({ error: `unsupported ${kind} file type` });
+        res.status(400).json({ error: "unsupported_file_type", params: { kind } });
         return;
       }
       const projectDir = await getActiveProjectAssetDir(kind);

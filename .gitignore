@@ -5,6 +5,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# electron-builder packaging output
+release/
+
 # Local runtime data — global font/image/SVG library, thumbnail cache, and the
 # "last opened project" pointer (app-state.json holds an absolute, machine-specific
 # path). All of it is recreated on demand; see docs/FEATURES.md.

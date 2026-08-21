@@ -10,6 +10,20 @@ export interface PageSelection {
   custom?: string;
 }
 
+/** Thrown by parseCustomSelection on invalid syntax — code is a stable key translatable
+ * via the client's `pageSelectionErrors.*` i18n namespace (see ExportPanel.tsx), params
+ * carries any interpolation value (the offending fragment). */
+export class PageSelectionError extends Error {
+  code: string;
+  params?: Record<string, string>;
+
+  constructor(code: string, params?: Record<string, string>) {
+    super(code);
+    this.code = code;
+    this.params = params;
+  }
+}
+
 /** Extracts the last run of digits in a page id (e.g. "page_03" -> 3) — the number the user sees on the page thumbnail/filename, not its position in the list. */
 function pageNumber(page: string): number | null {
   const matches = page.match(/\d+/g);
@@ -24,16 +38,16 @@ function pageNumber(page: string): number | null {
  */
 export function parseCustomSelection(input: string): Set<number> {
   const trimmed = input.trim();
-  if (!trimmed) throw new Error("Bitte Seitenzahlen angeben, z. B. „1,3,5,10-14“.");
+  if (!trimmed) throw new PageSelectionError("empty_selection");
   const result = new Set<number>();
   const parts = trimmed.split(",").map((p) => p.trim()).filter((p) => p.length > 0);
-  if (parts.length === 0) throw new Error("Bitte Seitenzahlen angeben, z. B. „1,3,5,10-14“.");
+  if (parts.length === 0) throw new PageSelectionError("empty_selection");
   for (const part of parts) {
     const rangeMatch = part.match(/^(\d+)\s*-\s*(\d+)$/);
     if (rangeMatch) {
       const from = parseInt(rangeMatch[1], 10);
       const to = parseInt(rangeMatch[2], 10);
-      if (from > to) throw new Error(`Ungültiger Bereich „${part}" — erste Zahl muss kleiner/gleich der zweiten sein.`);
+      if (from > to) throw new PageSelectionError("invalid_range", { part });
       for (let n = from; n <= to; n++) result.add(n);
       continue;
     }
@@ -41,7 +55,7 @@ export function parseCustomSelection(input: string): Set<number> {
       result.add(parseInt(part, 10));
       continue;
     }
-    throw new Error(`Ungültiger Ausdruck „${part}" — erwartet wird eine Zahl (z. B. „5") oder ein Bereich (z. B. „10-14").`);
+    throw new PageSelectionError("invalid_expression", { part });
   }
   return result;
 }

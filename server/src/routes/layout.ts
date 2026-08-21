@@ -27,7 +27,7 @@ layoutRouter.get(
   asyncHandler(async (req, res) => {
     const resolved = await layoutPathFor(req.params.id, req.params.page);
     if (!resolved) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     const { volume, file } = resolved;
@@ -40,7 +40,7 @@ layoutRouter.get(
       const pages = await listPages(volume);
       const pageInfo = pages.find((p) => p.page === req.params.page);
       if (!pageInfo) {
-        res.status(404).json({ error: "page not found" });
+        res.status(404).json({ error: "page_not_found" });
         return;
       }
       const dims = await imageSizeFromFile(pageInfo.absolutePath).catch(() => ({ width: 0, height: 0 }));
@@ -54,12 +54,12 @@ layoutRouter.put(
   asyncHandler(async (req, res) => {
     const resolved = await layoutPathFor(req.params.id, req.params.page);
     if (!resolved) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     const parsed = PageLayoutSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid layout", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_layout", details: parsed.error.flatten() });
       return;
     }
     const { dir, file } = resolved;
@@ -75,7 +75,7 @@ layoutRouter.get(
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);
     if (!volume) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     const settings = await readSettings();
@@ -87,7 +87,7 @@ layoutRouter.get(
       files = [];
     }
     if (files.length === 0) {
-      res.status(404).json({ error: "keine gespeicherten Layouts für diesen Band gefunden" });
+      res.status(404).json({ error: "no_saved_layouts_for_volume" });
       return;
     }
 
@@ -113,7 +113,7 @@ layoutRouter.get(
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);
     if (!volume) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     const settings = await readSettings();
@@ -147,11 +147,11 @@ layoutRouter.post(
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);
     if (!volume) {
-      res.status(404).json({ error: "volume not found" });
+      res.status(404).json({ error: "volume_not_found" });
       return;
     }
     if (!req.file) {
-      res.status(400).json({ error: "zip file is required" });
+      res.status(400).json({ error: "zip_file_required" });
       return;
     }
 
@@ -159,7 +159,7 @@ layoutRouter.post(
     try {
       zip = new AdmZip(req.file.buffer);
     } catch {
-      res.status(400).json({ error: "Datei ist kein gültiges ZIP-Archiv" });
+      res.status(400).json({ error: "invalid_zip_file" });
       return;
     }
 
@@ -176,12 +176,12 @@ layoutRouter.post(
       try {
         parsed = JSON.parse(entry.getData().toString("utf-8"));
       } catch {
-        skipped.push({ file: baseName, reason: "ungültiges JSON" });
+        skipped.push({ file: baseName, reason: "invalid_json" });
         continue;
       }
       const result = PageLayoutSchema.safeParse(parsed);
       if (!result.success) {
-        skipped.push({ file: baseName, reason: "entspricht nicht dem Layout-Schema" });
+        skipped.push({ file: baseName, reason: "schema_mismatch" });
         continue;
       }
       const safeName = baseName.replace(/[^\w.\-]/g, "_");

@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LanguageDef } from "../../../shared/src/languages";
 
@@ -19,6 +21,7 @@ function emptyTranslations(languages: LanguageDef[]): Record<string, string> {
  * translation per language (like Bubble.text) instead of a single name. The approved
  * translations feed BubbleInspector's/CurvedTextInspector's glossary highlighting. */
 export function GlossaryManager({ glossary, languages, onChange, onClose }: Props) {
+  const { t } = useTranslation();
   const [term, setTerm] = useState("");
   const [translations, setTranslations] = useState<Record<string, string>>(emptyTranslations(languages));
   const [note, setNote] = useState("");
@@ -50,14 +53,14 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
       onChange(next);
       resetForm();
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Glossareintrag entfernen?")) return;
+    if (!confirm(t("managers.glossary.confirmDelete"))) return;
     setError(null);
     setBusy(true);
     try {
@@ -65,7 +68,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
       onChange(next);
       if (editingId === id) resetForm();
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
@@ -73,7 +76,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
 
   return (
     <div className="inspector" style={{ maxWidth: 420 }}>
-      <p style={{ margin: 0, fontWeight: 600 }}>Glossar</p>
+      <p style={{ margin: 0, fontWeight: 600 }}>{t("managers.glossary.title")}</p>
 
       <div className="language-manager-list">
         {glossary.map((entry) => (
@@ -82,29 +85,29 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
               type="button"
               onClick={() => startEdit(entry)}
               style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit", textAlign: "left" }}
-              title="Bearbeiten"
+              title={t("common.edit")}
             >
               {entry.term}
               {languages.length > 0 && entry.translations[languages[0].code] && (
                 <span className="hint"> — {entry.translations[languages[0].code]}</span>
               )}
             </button>
-            <button onClick={() => handleDelete(entry.id)} disabled={busy} title="Eintrag entfernen">
+            <button onClick={() => handleDelete(entry.id)} disabled={busy} title={t("managers.glossary.remove")}>
               ×
             </button>
           </div>
         ))}
-        {glossary.length === 0 && <p className="hint">Noch keine Glossar-Einträge angelegt.</p>}
+        {glossary.length === 0 && <p className="hint">{t("managers.glossary.empty")}</p>}
       </div>
 
       <form onSubmit={handleSubmit} className="language-manager-form">
         <label>
-          Begriff
-          <input placeholder="z. B. Klingenmeister" value={term} onChange={(e) => setTerm(e.target.value)} required />
+          {t("managers.glossary.termLabel")}
+          <input placeholder={t("managers.glossary.termPlaceholder")} value={term} onChange={(e) => setTerm(e.target.value)} required />
         </label>
         {languages.map((l) => (
           <label key={l.code}>
-            Übersetzung ({l.label})
+            {t("managers.glossary.translationLabel", { language: l.label })}
             <input
               value={translations[l.code] ?? ""}
               onChange={(e) => setTranslations((t) => ({ ...t, [l.code]: e.target.value }))}
@@ -112,16 +115,16 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
           </label>
         ))}
         <label>
-          Notiz
+          {t("managers.glossary.noteLabel")}
           <textarea value={note} onChange={(e) => setNote(e.target.value)} style={{ minHeight: 50 }} />
         </label>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="submit" className="primary" disabled={busy}>
-            {busy ? "…" : editingId ? "Speichern" : "Hinzufügen"}
+            {busy ? "…" : editingId ? t("common.save") : t("common.add")}
           </button>
           {editingId && (
             <button type="button" onClick={resetForm} disabled={busy}>
-              Abbrechen
+              {t("common.cancel")}
             </button>
           )}
         </div>
@@ -130,7 +133,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
 
       {onClose && (
         <button type="button" onClick={onClose}>
-          Schließen
+          {t("common.close")}
         </button>
       )}
     </div>

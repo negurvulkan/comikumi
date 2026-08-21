@@ -26,14 +26,14 @@ projectRouter.post(
   asyncHandler(async (req, res) => {
     const parsed = OpenProjectSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid request", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
       return;
     }
     try {
       const data = await openProject(parsed.data.filePath);
       res.json({ filePath: parsed.data.filePath, ...data });
     } catch (err) {
-      res.status(400).json({ error: `Projektdatei konnte nicht geöffnet werden: ${(err as Error).message}` });
+      res.status(400).json({ error: "project_open_failed", params: { reason: (err as Error).message } });
     }
   })
 );
@@ -49,14 +49,14 @@ projectRouter.post(
   asyncHandler(async (req, res) => {
     const parsed = NewProjectSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid request", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
       return;
     }
     try {
       const data = await createProject(parsed.data.filePath, { name: parsed.data.name, scanRoot: parsed.data.scanRoot });
       res.status(201).json({ filePath: parsed.data.filePath, ...data });
     } catch (err) {
-      res.status(400).json({ error: `Projekt konnte nicht angelegt werden: ${(err as Error).message}` });
+      res.status(400).json({ error: "project_create_failed", params: { reason: (err as Error).message } });
     }
   })
 );

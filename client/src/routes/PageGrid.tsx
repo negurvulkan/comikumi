@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { api, downloadBlob, type PageSummary } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import { useExportRun } from "../export/useExportRun";
 import { ExportPanel } from "../editor/ExportPanel";
 import { Modal } from "../editor/Modal";
@@ -18,6 +20,7 @@ import { VolumeReportModal } from "../editor/VolumeReportModal";
 import { useProject } from "../state/ProjectContext";
 
 export function PageGrid() {
+  const { t } = useTranslation();
   const { volumeId = "" } = useParams();
   const navigate = useNavigate();
   const { project } = useProject();
@@ -40,8 +43,8 @@ export function PageGrid() {
 
   useEffect(() => {
     setPages(null);
-    api.listPages(volumeId).then(setPages).catch((e) => setError(e.message));
-  }, [volumeId]);
+    api.listPages(volumeId).then(setPages).catch((e) => setError(translateApiError(e, t)));
+  }, [volumeId, t]);
 
   useEffect(() => {
     api.listLanguages().then(setLanguages);
@@ -66,7 +69,7 @@ export function PageGrid() {
       const blob = await api.exportLayoutsZip(volumeId);
       downloadBlob(blob, `${volumeId.split("/").pop()}_lettering.zip`);
     } catch (e) {
-      setMessage(`Fehler: ${(e as Error).message}`);
+      setMessage(t("pageGrid.importErrorPrefix", { message: translateApiError(e, t) }));
     } finally {
       setBusy(false);
     }
@@ -82,51 +85,53 @@ export function PageGrid() {
       const result = await api.importLayoutsZip(volumeId, file);
       const skippedText =
         result.skipped.length > 0
-          ? ` – übersprungen: ${result.skipped.map((s) => `${s.file} (${s.reason})`).join(", ")}`
+          ? t("pageGrid.skippedPrefix", {
+              list: result.skipped.map((s) => `${s.file} (${t(`errors.${s.reason}`)})`).join(", "),
+            })
           : "";
-      setMessage(`${result.imported.length} Layout(s) importiert${skippedText}`);
+      setMessage(t("pageGrid.importedMsg", { count: result.imported.length, skippedText }));
     } catch (e) {
-      setMessage(`Fehler: ${(e as Error).message}`);
+      setMessage(t("pageGrid.importErrorPrefix", { message: translateApiError(e, t) }));
     } finally {
       setBusy(false);
     }
   }
 
   if (error) return <div className="error-banner">{error}</div>;
-  if (!pages) return <p>Lade Seiten…</p>;
+  if (!pages) return <p>{t("pageGrid.loading")}</p>;
 
   const menuGroups: MenuGroup[] = [
     {
       key: "seite",
-      label: "Seite",
+      label: t("pageGrid.menuPageLabel"),
       entries: [
-        { type: "sublabel", label: "Import" },
-        { type: "action", label: "JSONs (ZIP)", onClick: () => importInputRef.current?.click(), disabled: busy },
+        { type: "sublabel", label: t("pageGrid.menuImportLabel") },
+        { type: "action", label: t("pageGrid.menuImportZip"), onClick: () => importInputRef.current?.click(), disabled: busy },
         { type: "separator" },
-        { type: "sublabel", label: "Export" },
-        { type: "action", label: "Bild…", onClick: () => setShowExportPanel(true), disabled: languages.length === 0 },
-        { type: "action", label: "Alle JSONs (ZIP)", onClick: handleExportZip, disabled: busy },
+        { type: "sublabel", label: t("pageGrid.menuExportLabel") },
+        { type: "action", label: t("pageGrid.menuExportImage"), onClick: () => setShowExportPanel(true), disabled: languages.length === 0 },
+        { type: "action", label: t("pageGrid.menuExportAllZip"), onClick: handleExportZip, disabled: busy },
         { type: "separator" },
-        { type: "action", label: "Bericht für den Band", onClick: () => setShowVolumeReport(true) },
+        { type: "action", label: t("pageGrid.menuVolumeReport"), onClick: () => setShowVolumeReport(true) },
         { type: "separator" },
-        { type: "action", label: "Zurück zu Bänden", onClick: () => navigate("/") },
+        { type: "action", label: t("pageGrid.menuBackToVolumes"), onClick: () => navigate("/") },
       ],
     },
     {
       key: "projekt",
-      label: "Projekt",
+      label: t("menu.project"),
       entries: [
-        { type: "action", label: "Wechseln", onClick: () => navigate("/project") },
-        { type: "action", label: "Charaktere", onClick: () => setShowCharacters(true) },
-        { type: "action", label: "Glossar", onClick: () => setShowGlossary(true) },
-        { type: "action", label: "Presets", onClick: () => setShowPresets(true) },
-        { type: "action", label: "Einstellungen", onClick: () => setShowSettings(true) },
+        { type: "action", label: t("menu.switch"), onClick: () => navigate("/project") },
+        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
+        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
+        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
+        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
       ],
     },
     {
       key: "hilfe",
-      label: "Hilfe",
-      entries: [{ type: "action", label: "Noch keine Einträge", onClick: () => {}, disabled: true }],
+      label: t("menu.help"),
+      entries: [{ type: "action", label: t("menu.noEntriesYet"), onClick: () => {}, disabled: true }],
     },
   ];
 
@@ -135,7 +140,7 @@ export function PageGrid() {
       <MenuBar groups={menuGroups} />
       <input ref={importInputRef} type="file" accept=".zip,application/zip" onChange={handleImportZipFile} style={{ display: "none" }} />
       <div className="canvas-titlebar">
-        <span className="canvas-titlebar-name">Seiten</span>
+        <span className="canvas-titlebar-name">{t("pageGrid.titlebarPages")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
       </div>
       {(message || exportMsg) && (
@@ -196,7 +201,7 @@ export function PageGrid() {
         </div>
       </div>
       <div className="canvas-statusbar">
-        <span>{pages.length} Seite{pages.length === 1 ? "" : "n"}</span>
+        <span>{t("pageGrid.pagesCount", { count: pages.length })}</span>
       </div>
     </div>
   );
