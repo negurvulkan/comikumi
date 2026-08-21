@@ -1,0 +1,466 @@
+import { z } from "zod";
+import type { LetteringPreset } from "./presets.js";
+
+export const BubbleShapeSchema = z.enum(["rect", "oval", "quad"]);
+export type BubbleShapeKind = z.infer<typeof BubbleShapeSchema>;
+
+export const TextAlignSchema = z.enum(["left", "center", "right"]);
+export type TextAlign = z.infer<typeof TextAlignSchema>;
+
+export const TextDirectionSchema = z.enum(["ltr", "rtl", "vertical-rl"]);
+export type TextDirection = z.infer<typeof TextDirectionSchema>;
+
+export const PointSchema = z.object({ x: z.number(), y: z.number() });
+export type Point = z.infer<typeof PointSchema>;
+
+export const BubbleVisualStyleSchema = z.enum(["none", "speech", "thought", "shout", "svg"]);
+export type BubbleVisualStyle = z.infer<typeof BubbleVisualStyleSchema>;
+
+/**
+ * How a bubble's tail connects to its body — independent of `bubbleStyle`
+ * (any style with a tail can use any of these). "point" is the original
+ * speech/shout behavior (seamlessly spliced into the outline); "chain" is
+ * the original thought-bubble behavior generalized to configurable segment
+ * shapes. See resolveEffectiveTailStyle() for the backward-compatible
+ * fallback used when a saved Bubble predates this field.
+ */
+export const TailStyleSchema = z.enum(["point", "point-detached", "chain"]);
+export type TailStyle = z.infer<typeof TailStyleSchema>;
+
+export const TailChainSegmentShapeSchema = z.enum(["circle", "rect", "diamond"]);
+export type TailChainSegmentShape = z.infer<typeof TailChainSegmentShapeSchema>;
+
+/** tailStyle is optional on saved data — resolves the implicit pre-existing default (chain for thought bubbles, point for everything else) so old layouts render unchanged. */
+export function resolveEffectiveTailStyle(bubbleStyle: BubbleVisualStyle, tailStyle: TailStyle | undefined): TailStyle {
+  return tailStyle ?? (bubbleStyle === "thought" ? "chain" : "point");
+}
+
+/** Optional stroked border drawn around each glyph, behind the fill — same idea as strokeText/fillText layering. Per-language override available (e.g. a Latin translation wanting a heavier/lighter outline than the Japanese original) via textOutlineOverride on Bubble/CurvedTextElement. */
+export const TextOutlineSchema = z.object({
+  enabled: z.boolean().default(false),
+  color: z.string().default("#000000"),
+  widthPx: z.number().positive().default(4),
+});
+export type TextOutline = z.infer<typeof TextOutlineSchema>;
+
+/** Optional linear gradient fill for the text, replacing the solid `color` when enabled. Per-language override available via textGradientOverride on Bubble/CurvedTextElement. */
+export const TextGradientSchema = z.object({
+  enabled: z.boolean().default(false),
+  colorStart: z.string().default("#ffffff"),
+  colorEnd: z.string().default("#6c8cff"),
+  /** 0 = left-to-right, 90 = top-to-bottom. */
+  angleDeg: z.number().default(0),
+});
+export type TextGradient = z.infer<typeof TextGradientSchema>;
+
+/**
+ * Everything that defines a bubble's visible geometry + drawn background:
+ * position/size/rotation plus (optionally) a real speech/thought/shout
+ * bubble background the tool paints itself — for pages where the artist
+ * forgot a bubble, or where the translated text needs more room than the
+ * hand-drawn bubble has. Bundled into one type (rather than one Override map
+ * per field) because these all change together — resizing a bubble for a
+ * language usually means repositioning/restyling it too.
+ */
+export const BubbleFormSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  rotation: z.number().default(0),
+  bubbleStyle: BubbleVisualStyleSchema.default("none"),
+  fillColor: z.string().default("#ffffff"),
+  strokeColor: z.string().default("#000000"),
+  strokeWidthPx: z.number().positive().default(6),
+  /**
+   * Speech/shout tail tip, or the thought-trail's target point — in LOCAL,
+   * unrotated form coordinates (0,0 = this form's own top-left), so it moves
+   * automatically with the bubble when it's dragged/resized/rotated instead
+   * of needing separate rotation math (see BubbleShape.tsx's offsetX/offsetY
+   * center-pivot comment for why local coords sidestep this).
+   */
+  tail: PointSchema.nullable().default(null),
+  /**
+   * Where on the bubble outline the tail attaches — LOCAL form coordinates,
+   * same convention as `tail`. Null means "derive it automatically" (the
+   * boundary point nearest to `tail`, the original/only behavior before this
+   * field existed) — set once the user drags the anchor handle in
+   * BubbleShape.tsx. Keeping this optional-via-null (rather than always
+   * populating it) is what makes old saved bubbles render unchanged.
+   */
+  tailAnchor: PointSchema.nullable().default(null),
+  /** Width (image px) of the tail's base where it meets the bubble outline — only relevant for tailStyle "point"/"point-detached", adjustable via two small handles either side of the tail tip. */
+  tailWidth: z.number().positive().default(40),
+  /** File name of an uploaded SVG contour under server/data/bubble-svgs — only used when bubbleStyle is "svg". */
+  svgFileName: z.string().nullable().default(null),
+  /** See resolveEffectiveTailStyle() for the fallback applied when unset. */
+  tailStyle: TailStyleSchema.optional(),
+  tailChainSegmentShape: TailChainSegmentShapeSchema.default("circle"),
+  tailChainSegments: z.number().int().min(1).max(8).default(3),
+  /** Multiplier on the gap between chain segments — 1 = original evenly-spread-to-the-tip spacing, <1 bunches segments closer to the bubble edge, >1 spreads them past that (possibly overshooting the tail tip). */
+  tailChainSpacing: z.number().positive().default(1),
+  /** Perpendicular bow amount (image px, same units as tailWidth) applied to the tail's edges — 0 = straight (default, unchanged behavior), positive/negative bows to either side. See bubbleBackground.ts's perpendicularOffset(). */
+  tailCurve: z.number().default(0),
+});
+export type BubbleForm = z.infer<typeof BubbleFormSchema>;
+
+export const BubbleSchema = z.object({
+  id: z.string(),
+  shape: BubbleShapeSchema,
+  x: z.number(),
+  y: z.number(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  rotation: z.number().default(0),
+  /**
+   * Only for shape "quad": the four corners (image-space px, order
+   * top-left/top-right/bottom-right/bottom-left) that define a free-form
+   * perspective quadrilateral — e.g. a door sign seen at an angle. Text is
+   * warped via a projective transform (homography) to fit this quad, not
+   * just rotated/skewed. x/y/width/height/rotation above still hold the
+   * quad's bounding box for consistency but aren't used to render it.
+   */
+  corners: z.array(PointSchema).length(4).optional(),
+  bubbleStyle: BubbleVisualStyleSchema.default("none"),
+  fillColor: z.string().default("#ffffff"),
+  strokeColor: z.string().default("#000000"),
+  strokeWidthPx: z.number().positive().default(6),
+  tail: PointSchema.nullable().default(null),
+  tailAnchor: PointSchema.nullable().default(null),
+  tailWidth: z.number().positive().default(40),
+  svgFileName: z.string().nullable().default(null),
+  tailStyle: TailStyleSchema.optional(),
+  tailChainSegmentShape: TailChainSegmentShapeSchema.default("circle"),
+  tailChainSegments: z.number().int().min(1).max(8).default(3),
+  tailChainSpacing: z.number().positive().default(1),
+  tailCurve: z.number().default(0),
+  /**
+   * Per-language replacement of this bubble's entire form (position, size,
+   * rotation, visible background style) — e.g. a German translation needing
+   * a bigger box than the Japanese original. Rect/oval only (not "quad",
+   * whose corner-array geometry doesn't map onto x/y/width/height); missing
+   * for a language simply falls back to the base fields above via
+   * resolveBubbleForm().
+   */
+  formOverride: z.record(z.string(), BubbleFormSchema).optional(),
+  fontFamily: z.string().default("Anime Ace"),
+  fontSize: z.number().positive().default(24),
+  lineHeight: z.number().positive().default(1.2),
+  align: TextAlignSchema.default("center"),
+  direction: TextDirectionSchema.default("ltr"),
+  color: z.string().default("#000000"),
+  textOutline: TextOutlineSchema.default({ enabled: false, color: "#000000", widthPx: 4 }),
+  textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
+  text: z.record(z.string(), z.string()).default({}),
+  /**
+   * Per-language overrides — every field here falls back to the bubble's own
+   * base value (fontSize/fontFamily/lineHeight/align/direction above) when a
+   * language has no override set. Needed because scripts differ: Japanese
+   * commonly wants a different font, tighter/looser line height, and
+   * vertical-rl direction, while German/English stay horizontal ltr.
+   */
+  fontSizeOverride: z.record(z.string(), z.number().positive()).optional(),
+  fontFamilyOverride: z.record(z.string(), z.string()).optional(),
+  lineHeightOverride: z.record(z.string(), z.number().positive()).optional(),
+  alignOverride: z.record(z.string(), TextAlignSchema).optional(),
+  directionOverride: z.record(z.string(), TextDirectionSchema).optional(),
+  textOutlineOverride: z.record(z.string(), TextOutlineSchema).optional(),
+  textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
+  /** Manual assignment, not derived from geometry — which Panel (this page's
+   * panels array) and which Character (project-wide) this bubble belongs to.
+   * Null means unassigned; a stale id (panel/character deleted after being
+   * assigned) is treated as unassigned by the report/inspector lookups. */
+  panelId: z.string().nullable().default(null),
+  characterId: z.string().nullable().default(null),
+  /** Manual correction of this bubble's position within its reading-order group (its
+   * panel, or the page's "unassigned" bucket if it has no panel) — absent means "use
+   * the automatic Y-position sort". Only meaningful relative to sibling bubbles in the
+   * same group at the moment it was set; see reportUtils.ts's moveBubbleInReadingOrder,
+   * which renumbers the whole group on every manual reorder to keep values unambiguous. */
+  readingOrderOverride: z.number().optional(),
+  /** Live link to a projectwide LetteringPreset (shared/src/presets.ts) — for whichever
+   * fields the preset defines, its value is resolved instead of this bubble's own base
+   * field (see resolveBubbleStyle/resolveBubbleForm below), and updates immediately when
+   * the preset changes. Null/stale (deleted preset) means unassigned, same convention as
+   * panelId/characterId. */
+  presetId: z.string().nullable().default(null),
+});
+export type Bubble = z.infer<typeof BubbleSchema>;
+
+/**
+ * Resolves the effective font size/family/line-height/align/direction/color for a given
+ * language — the per-language override if set, otherwise a field the bubble's linked
+ * preset defines (see shared/src/presets.ts), otherwise the bubble's own base value.
+ * Single source of truth used by the live preview, the PNG export, and the inspector so
+ * they can never disagree on which value applies. `presets` defaults to `[]` so callers
+ * that don't care about preset resolution (e.g. reportUtils.ts's position-only sort)
+ * don't need to pass anything.
+ */
+export function resolveBubbleStyle(bubble: Bubble, languageCode: string, presets: LetteringPreset[] = []) {
+  const preset = presets.find((p) => p.id === bubble.presetId);
+  return {
+    fontSize: bubble.fontSizeOverride?.[languageCode] ?? preset?.text.fontSize ?? bubble.fontSize,
+    fontFamily: bubble.fontFamilyOverride?.[languageCode] ?? preset?.text.fontFamily ?? bubble.fontFamily,
+    lineHeight: bubble.lineHeightOverride?.[languageCode] ?? preset?.text.lineHeight ?? bubble.lineHeight,
+    align: bubble.alignOverride?.[languageCode] ?? preset?.text.align ?? bubble.align,
+    direction: bubble.directionOverride?.[languageCode] ?? preset?.text.direction ?? bubble.direction,
+    color: preset?.text.color ?? bubble.color,
+    textOutline: bubble.textOutlineOverride?.[languageCode] ?? preset?.text.textOutline ?? bubble.textOutline,
+    textGradient: bubble.textGradientOverride?.[languageCode] ?? preset?.text.textGradient ?? bubble.textGradient,
+  };
+}
+
+/**
+ * Resolves the effective position/size/rotation/visible-background for a given
+ * language — a per-language form override always wins if set (it's a deliberate,
+ * complete replacement of the whole bundle); otherwise geometry/tail-position comes
+ * straight from the bubble itself (never preset-driven — that's per-instance, not
+ * "style"), while the background-style fields fall back through the bubble's linked
+ * preset before the bubble's own base value. Single source of truth used by the live
+ * preview, the PNG export, and the inspector.
+ */
+export function resolveBubbleForm(bubble: Bubble, languageCode: string, presets: LetteringPreset[] = []): BubbleForm {
+  const override = bubble.formOverride?.[languageCode];
+  if (override) return override;
+  const preset = presets.find((p) => p.id === bubble.presetId);
+  return {
+    x: bubble.x,
+    y: bubble.y,
+    width: bubble.width,
+    height: bubble.height,
+    rotation: bubble.rotation,
+    bubbleStyle: preset?.background.bubbleStyle ?? bubble.bubbleStyle,
+    fillColor: preset?.background.fillColor ?? bubble.fillColor,
+    strokeColor: preset?.background.strokeColor ?? bubble.strokeColor,
+    strokeWidthPx: preset?.background.strokeWidthPx ?? bubble.strokeWidthPx,
+    tail: bubble.tail,
+    tailAnchor: bubble.tailAnchor,
+    tailWidth: bubble.tailWidth,
+    svgFileName: preset?.background.svgFileName ?? bubble.svgFileName,
+    tailStyle: preset?.background.tailStyle ?? bubble.tailStyle,
+    tailChainSegmentShape: preset?.background.tailChainSegmentShape ?? bubble.tailChainSegmentShape,
+    tailChainSegments: preset?.background.tailChainSegments ?? bubble.tailChainSegments,
+    tailChainSpacing: preset?.background.tailChainSpacing ?? bubble.tailChainSpacing,
+    tailCurve: bubble.tailCurve,
+  };
+}
+
+/**
+ * A placed raster image (e.g. a redrawn/translated poster or sign patch) —
+ * for cases the text tool can't cover. Same free-form quad + perspective
+ * warp as a "quad" bubble, just warping an uploaded image instead of text.
+ * Position/opacity are shared across languages, but — same idea as
+ * Bubble.text — the actual picture can differ per language (e.g. a poster
+ * redrawn with German vs. Japanese lettering), keyed by language code.
+ */
+export const ImageElementSchema = z.object({
+  id: z.string(),
+  corners: z.array(PointSchema).length(4),
+  opacity: z.number().min(0).max(1).default(1),
+  /** language code -> file name of an uploaded image under server/data/images. */
+  files: z.record(z.string(), z.string()).default({}),
+});
+export type ImageElement = z.infer<typeof ImageElementSchema>;
+
+/** The file to show for a language, falling back to any other assigned file so a translated-poster element never just goes blank. */
+export function imageFileForLanguage(element: ImageElement, languageCode: string): string | undefined {
+  return element.files[languageCode] ?? Object.values(element.files)[0];
+}
+
+/**
+ * A freestanding title/effect text element that follows a cubic Bézier curve
+ * instead of wrapping inside a bubble box — e.g. a logo-style title or an
+ * onomatopoeia ("BOOM!") arcing across a splash page. Architecturally a
+ * sibling of `ImageElement` (own array in `PageLayout`, own 4 control
+ * points in absolute image-space px, no enclosing box/rotation needed since
+ * the points themselves define the shape) rather than a mode bolted onto
+ * `Bubble` — curved text usually belongs to no speech bubble at all.
+ * Deliberately single-line only (no direction/vertical, no quad-perspective
+ * combination) to keep this a focused "title/effect" tool, not a second full
+ * text-layout system.
+ */
+export const CurvedTextElementSchema = z.object({
+  id: z.string(),
+  /** 4 cubic-bezier control points, absolute image-space px (same convention as ImageElement.corners/Bubble quad corners). */
+  points: z.array(PointSchema).length(4),
+  fontFamily: z.string().default("Anime Ace"),
+  fontSize: z.number().positive().default(48),
+  align: TextAlignSchema.default("center"),
+  color: z.string().default("#000000"),
+  textOutline: TextOutlineSchema.default({ enabled: false, color: "#000000", widthPx: 4 }),
+  textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
+  text: z.record(z.string(), z.string()).default({}),
+  /** Same per-language override pattern as Bubble's fontSizeOverride etc. */
+  fontSizeOverride: z.record(z.string(), z.number().positive()).optional(),
+  fontFamilyOverride: z.record(z.string(), z.string()).optional(),
+  alignOverride: z.record(z.string(), TextAlignSchema).optional(),
+  textOutlineOverride: z.record(z.string(), TextOutlineSchema).optional(),
+  textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
+  /** Same live-preset-link idea as Bubble.presetId — only the text-style subset of a
+   * preset applies (curved text has no bubble background). */
+  presetId: z.string().nullable().default(null),
+});
+export type CurvedTextElement = z.infer<typeof CurvedTextElementSchema>;
+
+/** Resolves the effective font/size/align/color/outline/gradient for a given language —
+ * same precedence idea as resolveBubbleStyle (language override > linked preset > own
+ * base value). `presets` defaults to `[]` for callers that don't care. */
+export function resolveCurvedTextStyle(el: CurvedTextElement, languageCode: string, presets: LetteringPreset[] = []) {
+  const preset = presets.find((p) => p.id === el.presetId);
+  return {
+    fontFamily: el.fontFamilyOverride?.[languageCode] ?? preset?.text.fontFamily ?? el.fontFamily,
+    fontSize: el.fontSizeOverride?.[languageCode] ?? preset?.text.fontSize ?? el.fontSize,
+    align: el.alignOverride?.[languageCode] ?? preset?.text.align ?? el.align,
+    color: preset?.text.color ?? el.color,
+    textOutline: el.textOutlineOverride?.[languageCode] ?? preset?.text.textOutline ?? el.textOutline,
+    textGradient: el.textGradientOverride?.[languageCode] ?? preset?.text.textGradient ?? el.textGradient,
+  };
+}
+
+export function createCurvedTextElement(partial: {
+  id: string;
+  points: Point[];
+  fontFamily?: string;
+  fontSize?: number;
+}): CurvedTextElement {
+  return CurvedTextElementSchema.parse({
+    fontFamily: "Anime Ace",
+    fontSize: 48,
+    align: "center",
+    color: "#000000",
+    textOutline: { enabled: false, color: "#000000", widthPx: 4 },
+    textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+    text: {},
+    ...partial,
+  });
+}
+
+/**
+ * Rotates the axis-aligned corners of a box by `rotationDeg` around the box's own
+ * center — same convention as the old center-anchored Konva Group rotation this
+ * replaces. Used only to migrate legacy box-shaped panels (see PanelSchema below)
+ * into their equivalent 4-corner polygon.
+ */
+function rotatedBoxCorners(x: number, y: number, width: number, height: number, rotationDeg: number): Point[] {
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+  const rad = (rotationDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return boxCorners(x, y, width, height).map((p) => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+  });
+}
+
+/**
+ * A drawn reference region marking one comic panel on the page — purely an editing-time
+ * annotation (dashed outline + label in the canvas preview) that bubbles can be manually
+ * assigned to via Bubble.panelId, used to group the "wer sagt was in welchem Panel"-style
+ * reports. Never drawn into the exported PNG. A freeform polygon (not just a rectangle)
+ * since real manga panels are often diagonally cut or stepped, not strictly rectangular —
+ * the shape is reformed by dragging/adding/removing individual vertices instead of via
+ * rotate/scale handles.
+ */
+export const PanelPointsSchema = z.object({
+  id: z.string(),
+  points: z.array(PointSchema).min(3),
+  /** Empty means "show the auto-numbered label" (Panel {index+1} by array position). */
+  label: z.string().default(""),
+  color: z.string().default("#6c8cff"),
+});
+
+/**
+ * Migrates a pre-polygon panel (`x/y/width/height/rotation`) into its equivalent 4-corner
+ * polygon before validation, so old saved layouts keep rendering unchanged but become
+ * freely reshapeable immediately. Zod strips the now-unknown legacy fields from the
+ * parsed output automatically. Panels already saved as `points` pass through untouched.
+ */
+export const PanelSchema = z.preprocess((raw) => {
+  if (raw && typeof raw === "object" && !("points" in raw) && "width" in raw && "height" in raw) {
+    const legacy = raw as { x: number; y: number; width: number; height: number; rotation?: number };
+    return { ...legacy, points: rotatedBoxCorners(legacy.x, legacy.y, legacy.width, legacy.height, legacy.rotation ?? 0) };
+  }
+  return raw;
+}, PanelPointsSchema);
+export type Panel = z.infer<typeof PanelPointsSchema>;
+
+export function createPanel(partial: Partial<Panel> & Pick<Panel, "id" | "points">): Panel {
+  return PanelPointsSchema.parse(partial);
+}
+
+/** The label to display for a panel — its custom label if set, otherwise "Panel N"
+ * derived from its position in the page's panels array (1-based, reading/creation order). */
+export function panelDisplayLabel(panel: Panel, index: number): string {
+  return panel.label.trim() || `Panel ${index + 1}`;
+}
+
+/** Axis-aligned bounding box of a polygon — used for panel label placement and
+ * top-to-bottom sort order in the reports (reportUtils.ts). */
+export function polygonBounds(points: Point[]): { minX: number; minY: number; maxX: number; maxY: number } {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
+}
+
+export const PageLayoutSchema = z.object({
+  page: z.string(),
+  sourceImage: z.string(),
+  imageWidth: z.number().positive(),
+  imageHeight: z.number().positive(),
+  bubbles: z.array(BubbleSchema),
+  images: z.array(ImageElementSchema).default([]),
+  curvedTexts: z.array(CurvedTextElementSchema).default([]),
+  panels: z.array(PanelSchema).default([]),
+});
+export type PageLayout = z.infer<typeof PageLayoutSchema>;
+
+export function createEmptyLayout(page: string, sourceImage: string, imageWidth: number, imageHeight: number): PageLayout {
+  return { page, sourceImage, imageWidth, imageHeight, bubbles: [], images: [], curvedTexts: [], panels: [] };
+}
+
+export function createImageElement(partial: {
+  id: string;
+  corners: Point[];
+  opacity?: number;
+  files: Record<string, string>;
+}): ImageElement {
+  return ImageElementSchema.parse(partial);
+}
+
+/** Axis-aligned corners (TL, TR, BR, BL) for a box — the default quad shape before dragging. */
+export function boxCorners(x: number, y: number, width: number, height: number): Point[] {
+  return [
+    { x, y },
+    { x: x + width, y },
+    { x: x + width, y: y + height },
+    { x, y: y + height },
+  ];
+}
+
+export function createBubble(partial: Partial<Bubble> & Pick<Bubble, "id" | "x" | "y" | "width" | "height">): Bubble {
+  const shape = partial.shape ?? "rect";
+  return BubbleSchema.parse({
+    shape,
+    rotation: 0,
+    bubbleStyle: "none",
+    fillColor: "#ffffff",
+    strokeColor: "#000000",
+    strokeWidthPx: 6,
+    tail: null,
+    tailWidth: 40,
+    svgFileName: null,
+    fontFamily: "Anime Ace",
+    fontSize: 24,
+    lineHeight: 1.2,
+    align: "center",
+    direction: "ltr",
+    color: "#000000",
+    textOutline: { enabled: false, color: "#000000", widthPx: 4 },
+    textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+    text: {},
+    corners: shape === "quad" ? boxCorners(partial.x, partial.y, partial.width, partial.height) : undefined,
+    ...partial,
+  });
+}

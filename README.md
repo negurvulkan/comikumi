@@ -1,0 +1,105 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/comikumi_logo_col_dark_h_tr.png">
+    <img alt="ComiKumi" src="docs/comikumi_logo_col_light_h_tr.png" height="64">
+  </picture>
+</p>
+
+<p align="center">A local-first lettering &amp; typesetting tool for manga/comic translation projects.</p>
+
+---
+
+ComiKumi is a desktop-style web app for placing and translating speech bubbles, curved
+titles/SFX, and image patches directly on top of scanned comic pages, and exporting the
+result as ready-to-publish PNGs. It runs entirely on your own machine — a small Express
+server reads/writes files on disk (no cloud, no accounts, no telemetry), paired with a
+React + Konva canvas editor.
+
+## Highlights
+
+- **Multi-language lettering** — every text/style field on a bubble can be overridden
+  per language, or left to fall back to a shared base value; a page can carry as many
+  languages as you configure.
+- **Full vertical Japanese typesetting** (tategaki) — forced line breaks, furigana
+  (`{漢字|かんじ}`), automatic tate-chū-yoko for digit/Latin runs, and kinsoku shori
+  line-breaking rules. See [`docs/Japanese-Typesetting.md`](docs/Japanese-Typesetting.md).
+- **Four element types**: speech bubbles (rect/oval/free perspective quad, with
+  speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
+  (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
+  panel-reference polygons for reporting.
+- **Lettering presets** — define a reusable style ("SFX Style", "Narration", …) that
+  live-updates every bubble/curved text linked to it, field by field, without
+  overwriting values a preset doesn't define.
+- **Translator tooling** — a reading-order-aware context sidebar (previous/current/next
+  bubble, speaker + voice notes, panel crop), a project glossary with live
+  highlighting in the text field, and "who says what" reports per page/volume.
+- **Project-specific asset folders** — fonts, SVG bubble contours, and the image
+  library can live in a shared global library, a per-project folder, or both (project
+  wins on a filename collision).
+- **PNG + JSON export**, with page-range/language filtering and ZIP import/export of a
+  whole volume's layouts.
+
+Full feature list: [`docs/FEATURES.md`](docs/FEATURES.md) (German). Layout JSON schema:
+[`docs/JSON-Format.md`](docs/JSON-Format.md) (German).
+
+## Architecture
+
+```
+client/   React 19 + Konva 10 (react-konva) editor, Vite + Vitest
+server/   Express 5 API — reads/writes project files, images, and layout JSON on disk
+shared/   Zod schemas shared by both (layout, project, presets, characters, …)
+docs/     Feature docs, JSON format reference, brand assets
+```
+
+No database — a project is a single `projekt.json` file (name, languages, characters,
+glossary, presets, settings) plus your existing folder of scanned pages. The server
+never needs its own persistent store beyond a small `server/data/` cache (fonts/images/
+SVG library, page thumbnails, and a pointer to the last-opened project — all
+regenerated on demand, safe to delete).
+
+## Getting started
+
+Requires Node.js 18+.
+
+```bash
+npm install
+npm run dev
+```
+
+This installs both `client/` and `server/` (via `postinstall`) and starts them together
+(server on `:3001`, client on `:5173`, proxied through Vite). Open the printed client URL,
+then use **Project → Switch/create** to point the app at a folder of scanned pages — see
+[`docs/FEATURES.md`](docs/FEATURES.md#projektverwaltung) for the expected folder
+convention (a `<book>_empty` source-page folder per volume, `<book>_<language>` folders
+for translated exports).
+
+### Scripts
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start server + client together (hot reload) |
+| `npm run build` | Type-check and build both packages for production |
+| `npm run test` | Run the full test suite (server + client) |
+
+Each package also has its own scripts (`npm --prefix client run <script>`, same for
+`server`) — see their respective `package.json`.
+
+### Tests
+
+```bash
+npm run test
+```
+
+Server tests include route-level integration tests (via `supertest`) that run against
+temporary, isolated project/data directories — they never touch your real project data
+or the repo's own `server/data/`. Client tests cover the pure geometry/typesetting/text
+logic shared by the live canvas preview and the PNG export.
+
+## Tech stack
+
+React 19 · Konva 10 / react-konva · React Router 7 · Zustand · Zod 4 · Vite 8 · Vitest 4
+— Express 5 · Sharp · Multer · Archiver · Zod 4
+
+## License
+
+Private project, not currently licensed for reuse.

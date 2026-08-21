@@ -1,0 +1,239 @@
+import type { CurvedTextElement, TextAlign, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import { resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
+import type { GlossaryEntry } from "../../../shared/src/glossary";
+import type { LetteringPreset } from "../../../shared/src/presets";
+import { FontPicker } from "./FontPicker";
+import { TextEffectsFields } from "./TextEffectsFields";
+import { ScopeSwitch } from "./ScopeSwitch";
+import { GlossaryHighlightedTextarea } from "./GlossaryHighlightedTextarea";
+
+interface Props {
+  element: CurvedTextElement;
+  activeLanguage: string;
+  glossary: GlossaryEntry[];
+  presets: LetteringPreset[];
+  onChange: (patch: Partial<CurvedTextElement>) => void;
+  onDelete: () => void;
+}
+
+export function CurvedTextInspector({ element, activeLanguage, glossary, presets, onChange, onDelete }: Props) {
+  // Resolved via the shared resolver (language override > linked preset > own base
+  // value) — same single source of truth used by the canvas preview and PNG export,
+  // instead of the field-by-field override chains this component used to duplicate.
+  const style = resolveCurvedTextStyle(element, activeLanguage, presets);
+  const preset = presets.find((p) => p.id === element.presetId);
+
+  const fontSizeOverride = element.fontSizeOverride?.[activeLanguage];
+  const fontFamilyOverride = element.fontFamilyOverride?.[activeLanguage];
+  const alignOverride = element.alignOverride?.[activeLanguage];
+  const hasEffectsOverride =
+    element.textOutlineOverride?.[activeLanguage] !== undefined || element.textGradientOverride?.[activeLanguage] !== undefined;
+  const effectiveOutline = style.textOutline;
+  const effectiveGradient = style.textGradient;
+
+  /** Same idea as BubbleInspector.tsx's textPresetGoverns. */
+  function textPresetGoverns(field: keyof LetteringPreset["text"], overrideActive: boolean): boolean {
+    return !overrideActive && preset?.text[field] !== undefined;
+  }
+
+  function detachFromPreset() {
+    if (!preset) return;
+    const patch: Partial<CurvedTextElement> = {};
+    if (preset.text.fontFamily !== undefined) patch.fontFamily = style.fontFamily;
+    if (preset.text.fontSize !== undefined) patch.fontSize = style.fontSize;
+    if (preset.text.align !== undefined) patch.align = style.align;
+    if (preset.text.color !== undefined) patch.color = style.color;
+    if (preset.text.textOutline !== undefined) patch.textOutline = style.textOutline;
+    if (preset.text.textGradient !== undefined) patch.textGradient = style.textGradient;
+    onChange({ ...patch, presetId: null });
+  }
+
+  function setText(value: string) {
+    onChange({ text: { ...element.text, [activeLanguage]: value } });
+  }
+
+  function toggleFontSizeOverride(checked: boolean) {
+    const next = { ...(element.fontSizeOverride ?? {}) };
+    if (checked) next[activeLanguage] = element.fontSize;
+    else delete next[activeLanguage];
+    onChange({ fontSizeOverride: next });
+  }
+
+  function setFontSizeOverride(value: number) {
+    onChange({ fontSizeOverride: { ...(element.fontSizeOverride ?? {}), [activeLanguage]: value } });
+  }
+
+  function toggleFontFamilyOverride(checked: boolean) {
+    const next = { ...(element.fontFamilyOverride ?? {}) };
+    if (checked) next[activeLanguage] = element.fontFamily;
+    else delete next[activeLanguage];
+    onChange({ fontFamilyOverride: next });
+  }
+
+  function setFontFamilyOverride(value: string) {
+    onChange({ fontFamilyOverride: { ...(element.fontFamilyOverride ?? {}), [activeLanguage]: value } });
+  }
+
+  function toggleAlignOverride(checked: boolean) {
+    const next = { ...(element.alignOverride ?? {}) };
+    if (checked) next[activeLanguage] = element.align;
+    else delete next[activeLanguage];
+    onChange({ alignOverride: next });
+  }
+
+  function setAlignOverride(value: TextAlign) {
+    onChange({ alignOverride: { ...(element.alignOverride ?? {}), [activeLanguage]: value } });
+  }
+
+  function toggleEffectsOverride(checked: boolean) {
+    if (checked) {
+      onChange({
+        textOutlineOverride: { ...(element.textOutlineOverride ?? {}), [activeLanguage]: element.textOutline },
+        textGradientOverride: { ...(element.textGradientOverride ?? {}), [activeLanguage]: element.textGradient },
+      });
+    } else {
+      const nextOutline = { ...(element.textOutlineOverride ?? {}) };
+      delete nextOutline[activeLanguage];
+      const nextGradient = { ...(element.textGradientOverride ?? {}) };
+      delete nextGradient[activeLanguage];
+      onChange({ textOutlineOverride: nextOutline, textGradientOverride: nextGradient });
+    }
+  }
+
+  function setTextOutline(patch: Partial<TextOutline>) {
+    if (hasEffectsOverride) {
+      onChange({ textOutlineOverride: { ...(element.textOutlineOverride ?? {}), [activeLanguage]: { ...effectiveOutline, ...patch } } });
+    } else {
+      onChange({ textOutline: { ...element.textOutline, ...patch } });
+    }
+  }
+
+  function setTextGradient(patch: Partial<TextGradient>) {
+    if (hasEffectsOverride) {
+      onChange({ textGradientOverride: { ...(element.textGradientOverride ?? {}), [activeLanguage]: { ...effectiveGradient, ...patch } } });
+    } else {
+      onChange({ textGradient: { ...element.textGradient, ...patch } });
+    }
+  }
+
+  return (
+    <div className="inspector">
+      <p className="hint" style={{ margin: 0 }}>
+        Kurventext — Linie im Canvas ziehen zum Verschieben, die 4 Eck-Greifer zum Verformen der Kurve.
+      </p>
+
+      <label>
+        Text ({activeLanguage})
+        <GlossaryHighlightedTextarea
+          value={element.text[activeLanguage] ?? ""}
+          onChange={setText}
+          glossary={glossary}
+          activeLanguage={activeLanguage}
+          style={{ fontFamily: style.fontFamily }}
+        />
+      </label>
+
+      <label>
+        Preset
+        <select value={element.presetId ?? ""} onChange={(e) => onChange({ presetId: e.target.value || null })}>
+          <option value="">– kein Preset –</option>
+          {presets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {preset && (
+        <p className="hint" style={{ margin: "-4px 0 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span>Verknüpft mit „{preset.name}" — legt fest, was unten deaktiviert ist.</span>
+          <button type="button" onClick={detachFromPreset}>
+            Vom Preset lösen
+          </button>
+        </p>
+      )}
+
+      <FontPicker
+        value={style.fontFamily}
+        onChange={(v) => (fontFamilyOverride !== undefined ? setFontFamilyOverride(v) : onChange({ fontFamily: v }))}
+        disabled={textPresetGoverns("fontFamily", fontFamilyOverride !== undefined)}
+        labelExtra={
+          <ScopeSwitch
+            activeLanguage={activeLanguage}
+            scope={fontFamilyOverride !== undefined ? "language" : "all"}
+            onChange={(s) => toggleFontFamilyOverride(s === "language")}
+          />
+        }
+      />
+
+      <label>
+        <span className="field-label-row">
+          Schriftgröße (Basis)
+          <ScopeSwitch
+            activeLanguage={activeLanguage}
+            scope={fontSizeOverride !== undefined ? "language" : "all"}
+            onChange={(s) => toggleFontSizeOverride(s === "language")}
+          />
+        </span>
+        <input
+          type="number"
+          min={4}
+          value={style.fontSize}
+          disabled={textPresetGoverns("fontSize", fontSizeOverride !== undefined)}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            if (fontSizeOverride !== undefined) setFontSizeOverride(v);
+            else onChange({ fontSize: v });
+          }}
+        />
+      </label>
+      <p className="hint" style={{ margin: "-4px 0 8px" }}>
+        Schrumpft automatisch weiter, falls der Text nicht auf die Kurve passt.
+      </p>
+
+      <label>
+        <span className="field-label-row">
+          Ausrichtung auf der Kurve
+          <ScopeSwitch
+            activeLanguage={activeLanguage}
+            scope={alignOverride !== undefined ? "language" : "all"}
+            onChange={(s) => toggleAlignOverride(s === "language")}
+          />
+        </span>
+        <select
+          value={style.align}
+          disabled={textPresetGoverns("align", alignOverride !== undefined)}
+          onChange={(e) => {
+            const v = e.target.value as TextAlign;
+            if (alignOverride !== undefined) setAlignOverride(v);
+            else onChange({ align: v });
+          }}
+        >
+          <option value="left">Kurvenanfang</option>
+          <option value="center">Zentriert</option>
+          <option value="right">Kurvenende</option>
+        </select>
+      </label>
+
+      <TextEffectsFields
+        color={style.color}
+        onColorChange={(color) => onChange({ color })}
+        outline={effectiveOutline}
+        onOutlineChange={setTextOutline}
+        gradient={effectiveGradient}
+        onGradientChange={setTextGradient}
+        activeLanguage={activeLanguage}
+        hasLanguageOverride={hasEffectsOverride}
+        onToggleLanguageOverride={toggleEffectsOverride}
+        disabled={
+          preset?.text.color !== undefined ||
+          (!hasEffectsOverride && (preset?.text.textOutline !== undefined || preset?.text.textGradient !== undefined))
+        }
+      />
+
+      <button onClick={onDelete} style={{ color: "#ff8a95" }}>
+        Kurventext löschen
+      </button>
+    </div>
+  );
+}

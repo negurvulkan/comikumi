@@ -1,0 +1,29 @@
+import { z } from "zod";
+
+/**
+ * Project-level configuration: where to scan for volumes and which folder-
+ * naming convention to use. Lets the tool point at any project's folder
+ * layout instead of the "Keito no Sei"-specific convention being hardcoded —
+ * live-editable via the Settings UI, no server restart or env var needed.
+ */
+export const ProjectSettingsSchema = z.object({
+  /** Absolute path to the folder to scan for "<book><emptySuffix>" volumes. */
+  scanRoot: z.string().min(1),
+  /** Optional project-specific folder for fonts/bubble-svgs/images, additive on top of
+   * the shared server/data library (project-scoped files win on filename collision).
+   * Empty string = not configured, i.e. today's global-only behavior. */
+  assetsDir: z.string().default(""),
+  /** Optional, separately configurable folder for the page-thumbnail cache. Empty
+   * string = not configured — falls back to a "thumbnails" folder next to the project
+   * file itself (not nested under assetsDir, since it's pure cache, not a shared/
+   * curated asset library, and every project needs one whether or not it also has an
+   * assetsDir). */
+  thumbnailsDir: z.string().default(""),
+  emptySuffix: z.string().min(1).default("_empty"),
+  letteringSuffix: z.string().min(1).default("_lettering"),
+  /** Export folder name template; {book} and {folderSuffix} get interpolated. */
+  exportFolderTemplate: z.string().min(1).default("{book}_{folderSuffix}"),
+  /** Free-text notes about the project, editable in the Settings dialog. */
+  description: z.string().default(""),
+});
+export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
