@@ -253,6 +253,53 @@
       "labelPlaceholder": "Viñeta {{index}}",
       "dragHint": "Arrastra el área para mover, los puntos individuales para deformar. Doble clic en el borde añade un punto, clic derecho en un punto lo elimina (quedan al menos 3 puntos). Solo una marca del editor — no aparece en la exportación PNG.",
       "deletePanel": "Eliminar viñeta"
+    },
+    "multiSelect": {
+      "bubbleCount_one": "{{count}} bocadillo",
+      "bubbleCount_other": "{{count}} bocadillos",
+      "imageCount_one": "{{count}} imagen",
+      "imageCount_other": "{{count}} imágenes",
+      "curvedTextCount_one": "{{count}} texto curvo",
+      "curvedTextCount_other": "{{count}} textos curvos",
+      "panelCount_one": "{{count}} viñeta",
+      "panelCount_other": "{{count}} viñetas",
+      "selectedTotal_one": "{{count}} objeto seleccionado",
+      "selectedTotal_other": "{{count}} objetos seleccionados",
+      "keyboardHint": "Flechas para mover (Mayús = pasos más grandes) · Ctrl+D duplicar · Supr eliminar · Mayús-clic para añadir/quitar",
+      "duplicateButton": "Duplicar",
+      "deleteSelection": "Eliminar selección"
+    },
+    "textListPanel": {
+      "title": "Textos de esta página",
+      "independentLanguageHint": "El idioma aquí es independiente del activo arriba — hacer clic en una entrada solo selecciona el bocadillo.",
+      "empty": "Aún no hay bocadillos ni textos curvos en esta página.",
+      "typeBubble": "Bocadillo",
+      "typeCurvedText": "Texto curvo"
+    },
+    "reportModal": {
+      "title": "Informe — esta página ({{language}})",
+      "whoSaysWhat": "¿Quién dice qué?",
+      "noBubbles": "No hay bocadillos en esta página.",
+      "whoSaysWhatByPanel": "¿Quién dice qué, por viñeta?",
+      "noPanels": "No hay viñetas en esta página.",
+      "noBubblesShort": "(sin bocadillos)",
+      "charactersOnPage": "¿Qué personajes aparecen en esta página?",
+      "charactersByPanel": "¿Qué personajes aparecen en qué viñetas?",
+      "noPanelsWithCharacters": "No hay viñetas con personajes asignados."
+    },
+    "translatorContextPanel": {
+      "title": "Contexto de traducción",
+      "selectBubbleHint": "Selecciona un bocadillo para ver el contexto.",
+      "speakerLabel": "Hablante:",
+      "panelLabel": "Viñeta:",
+      "previousLabel": "Anterior",
+      "currentLabel": "Actual",
+      "nextLabel": "Siguiente",
+      "pageStart": "— Inicio de la página —",
+      "pageEnd": "— Fin de la página —",
+      "moveUpTitle": "Subir en el orden de lectura",
+      "moveDownTitle": "Bajar en el orden de lectura",
+      "noPanelCrop": "Ninguna viñeta asignada — no hay recorte de imagen disponible."
     }
   },
   "exportPanel": {

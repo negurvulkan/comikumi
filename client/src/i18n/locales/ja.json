@@ -252,6 +252,48 @@
       "labelPlaceholder": "パネル {{index}}",
       "dragHint": "領域をドラッグして移動、個々の点をドラッグして変形します。辺をダブルクリックすると点を追加、点を右クリックすると削除します（最低3点は残ります）。エディタ上の目印のみで、PNG書き出しには表示されません。",
       "deletePanel": "パネルを削除"
+    },
+    "multiSelect": {
+      "bubbleCount_other": "{{count}} 個の吹き出し",
+      "imageCount_other": "{{count}} 個の画像",
+      "curvedTextCount_other": "{{count}} 個の曲線テキスト",
+      "panelCount_other": "{{count}} 個のパネル",
+      "selectedTotal_other": "{{count}} 個のオブジェクトを選択中",
+      "keyboardHint": "矢印キーで移動（Shiftで大きく移動）・Ctrl+Dで複製・Deleteで削除・Shiftクリックで追加/解除",
+      "duplicateButton": "複製",
+      "deleteSelection": "選択を削除"
+    },
+    "textListPanel": {
+      "title": "このページのテキスト",
+      "independentLanguageHint": "ここの言語は上部で選択中の言語とは独立しています — 項目をクリックすると吹き出しが選択されるだけです。",
+      "empty": "このページにはまだ吹き出しや曲線テキストがありません。",
+      "typeBubble": "吹き出し",
+      "typeCurvedText": "曲線テキスト"
+    },
+    "reportModal": {
+      "title": "レポート — このページ ({{language}})",
+      "whoSaysWhat": "誰が何を言う?",
+      "noBubbles": "このページには吹き出しがありません。",
+      "whoSaysWhatByPanel": "どのパネルで誰が何を言う?",
+      "noPanels": "このページにはパネルがありません。",
+      "noBubblesShort": "(吹き出しなし)",
+      "charactersOnPage": "このページに登場するキャラクターは?",
+      "charactersByPanel": "どのパネルにどのキャラクターが登場する?",
+      "noPanelsWithCharacters": "キャラクターが割り当てられたパネルはありません。"
+    },
+    "translatorContextPanel": {
+      "title": "翻訳のためのコンテキスト",
+      "selectBubbleHint": "吹き出しを選択するとコンテキストが表示されます。",
+      "speakerLabel": "話者:",
+      "panelLabel": "パネル:",
+      "previousLabel": "前へ",
+      "currentLabel": "現在",
+      "nextLabel": "次へ",
+      "pageStart": "— ページの先頭 —",
+      "pageEnd": "— ページの末尾 —",
+      "moveUpTitle": "読み順で上に移動",
+      "moveDownTitle": "読み順で下に移動",
+      "noPanelCrop": "パネルが割り当てられていません — 画像の切り抜きは利用できません。"
     }
   },
   "exportPanel": {

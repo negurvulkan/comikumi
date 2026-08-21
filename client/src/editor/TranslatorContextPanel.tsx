@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { Bubble, PageLayout } from "../../../shared/src/layoutSchema";
 import { panelDisplayLabel } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
@@ -51,6 +52,7 @@ export function TranslatorContextPanel({
   onMove,
   onClose,
 }: Props) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [panelLanguage, setPanelLanguage] = useState(languages[0]?.code ?? "de");
   const [pages, setPages] = useState<PageSummary[] | null>(null);
@@ -123,8 +125,8 @@ export function TranslatorContextPanel({
   return (
     <div className={`text-sidebar${open ? " open" : ""}`}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
-        <p style={{ margin: 0, fontWeight: 600 }}>Kontext für Übersetzung</p>
-        <button onClick={onClose}>Schließen</button>
+        <p style={{ margin: 0, fontWeight: 600 }}>{t("editor.translatorContextPanel.title")}</p>
+        <button onClick={onClose}>{t("common.close")}</button>
       </div>
       <div className="langstrip langstrip-horizontal">
         {languages.map((l) => (
@@ -141,57 +143,64 @@ export function TranslatorContextPanel({
 
       {!current ? (
         <p className="hint" style={{ margin: 0 }}>
-          Blase auswählen, um Kontext zu sehen.
+          {t("editor.translatorContextPanel.selectBubbleHint")}
         </p>
       ) : (
         <>
           <p className="hint" style={{ margin: 0 }}>
-            Speaker: <strong style={{ color: "var(--text)" }}>{characterName(characters, current.characterId)}</strong>
+            {t("editor.translatorContextPanel.speakerLabel")}{" "}
+            <strong style={{ color: "var(--text)" }}>{characterName(characters, current.characterId)}</strong>
             {" · "}
-            Panel: {currentPanel ? panelDisplayLabel(currentPanel, currentPanelIndex) : "–"}
+            {t("editor.translatorContextPanel.panelLabel")} {currentPanel ? panelDisplayLabel(currentPanel, currentPanelIndex) : "–"}
           </p>
           {speaker?.voiceNotes.trim() && (
             <p className="hint" style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-              <strong style={{ color: "var(--text)" }}>Voice Notes:</strong> {speaker.voiceNotes}
+              <strong style={{ color: "var(--text)" }}>{t("managers.characters.voiceNotesLabel")}:</strong> {speaker.voiceNotes}
             </p>
           )}
 
           <div className="text-list">
-            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>Vorherige</p>
+            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>
+              {t("editor.translatorContextPanel.previousLabel")}
+            </p>
             {prev ? (
               <button className="text-list-row" onClick={() => goToNeighbor(prev)}>
                 <span className="text-list-type">{characterName(characters, prev.bubble.characterId)}</span>
-                <span className="text-list-content">{toSingleLine(prev.bubble.text[panelLanguage] ?? "") || "(kein Text)"}</span>
+                <span className="text-list-content">{toSingleLine(prev.bubble.text[panelLanguage] ?? "") || t("volumeReport.noText")}</span>
               </button>
             ) : (
               <p className="hint" style={{ margin: "0 0 0 4px" }}>
-                {needsPrevPage ? "Lädt…" : "— Seitenanfang —"}
+                {needsPrevPage ? t("common.loading") : t("editor.translatorContextPanel.pageStart")}
               </p>
             )}
 
-            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>Aktuell</p>
+            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>
+              {t("editor.translatorContextPanel.currentLabel")}
+            </p>
             <div className="text-list-row" style={{ cursor: "default" }}>
               <span className="text-list-type">{characterName(characters, current.characterId)}</span>
-              <span className="text-list-content">{toSingleLine(current.text[panelLanguage] ?? "") || "(kein Text)"}</span>
+              <span className="text-list-content">{toSingleLine(current.text[panelLanguage] ?? "") || t("volumeReport.noText")}</span>
             </div>
             <div style={{ display: "flex", gap: 8, marginLeft: 4 }}>
-              <button onClick={() => onMove("up")} disabled={!canMoveUp} title="In Lesereihenfolge nach oben">
+              <button onClick={() => onMove("up")} disabled={!canMoveUp} title={t("editor.translatorContextPanel.moveUpTitle")}>
                 ↑
               </button>
-              <button onClick={() => onMove("down")} disabled={!canMoveDown} title="In Lesereihenfolge nach unten">
+              <button onClick={() => onMove("down")} disabled={!canMoveDown} title={t("editor.translatorContextPanel.moveDownTitle")}>
                 ↓
               </button>
             </div>
 
-            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>Nächste</p>
+            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>
+              {t("editor.translatorContextPanel.nextLabel")}
+            </p>
             {next ? (
               <button className="text-list-row" onClick={() => goToNeighbor(next)}>
                 <span className="text-list-type">{characterName(characters, next.bubble.characterId)}</span>
-                <span className="text-list-content">{toSingleLine(next.bubble.text[panelLanguage] ?? "") || "(kein Text)"}</span>
+                <span className="text-list-content">{toSingleLine(next.bubble.text[panelLanguage] ?? "") || t("volumeReport.noText")}</span>
               </button>
             ) : (
               <p className="hint" style={{ margin: "0 0 0 4px" }}>
-                {needsNextPage ? "Lädt…" : "— Seitenende —"}
+                {needsNextPage ? t("common.loading") : t("editor.translatorContextPanel.pageEnd")}
               </p>
             )}
           </div>
@@ -200,7 +209,7 @@ export function TranslatorContextPanel({
             <PanelCropPreview imageUrl={api.pageImageUrl(volumeId, page)} panel={currentPanel} />
           ) : (
             <p className="hint" style={{ margin: 0 }}>
-              Kein Panel zugeordnet — kein Bildausschnitt verfügbar.
+              {t("editor.translatorContextPanel.noPanelCrop")}
             </p>
           )}
         </>

@@ -253,6 +253,53 @@
       "labelPlaceholder": "Case {{index}}",
       "dragHint": "Faites glisser la zone pour déplacer, les points individuels pour déformer. Double-cliquez sur le bord pour ajouter un point, clic droit sur un point pour le supprimer (au moins 3 points restent). Repère d'édition uniquement — n'apparaît pas dans l'export PNG.",
       "deletePanel": "Supprimer la case"
+    },
+    "multiSelect": {
+      "bubbleCount_one": "{{count}} bulle",
+      "bubbleCount_other": "{{count}} bulles",
+      "imageCount_one": "{{count}} image",
+      "imageCount_other": "{{count}} images",
+      "curvedTextCount_one": "{{count}} texte courbe",
+      "curvedTextCount_other": "{{count}} textes courbes",
+      "panelCount_one": "{{count}} case",
+      "panelCount_other": "{{count}} cases",
+      "selectedTotal_one": "{{count}} objet sélectionné",
+      "selectedTotal_other": "{{count}} objets sélectionnés",
+      "keyboardHint": "Flèches pour déplacer (Maj = pas plus grands) · Ctrl+D dupliquer · Suppr supprimer · Maj-clic pour ajouter/retirer",
+      "duplicateButton": "Dupliquer",
+      "deleteSelection": "Supprimer la sélection"
+    },
+    "textListPanel": {
+      "title": "Textes de cette page",
+      "independentLanguageHint": "La langue ici est indépendante de celle active plus haut — cliquer sur une entrée sélectionne seulement la bulle.",
+      "empty": "Aucune bulle ni texte courbe sur cette page pour l'instant.",
+      "typeBubble": "Bulle",
+      "typeCurvedText": "Texte courbe"
+    },
+    "reportModal": {
+      "title": "Rapport — cette page ({{language}})",
+      "whoSaysWhat": "Qui dit quoi ?",
+      "noBubbles": "Aucune bulle sur cette page.",
+      "whoSaysWhatByPanel": "Qui dit quoi, par case ?",
+      "noPanels": "Aucune case sur cette page.",
+      "noBubblesShort": "(pas de bulles)",
+      "charactersOnPage": "Quels personnages apparaissent sur cette page ?",
+      "charactersByPanel": "Quels personnages apparaissent dans quelles cases ?",
+      "noPanelsWithCharacters": "Aucune case avec des personnages assignés."
+    },
+    "translatorContextPanel": {
+      "title": "Contexte de traduction",
+      "selectBubbleHint": "Sélectionnez une bulle pour voir le contexte.",
+      "speakerLabel": "Locuteur :",
+      "panelLabel": "Case :",
+      "previousLabel": "Précédente",
+      "currentLabel": "Actuelle",
+      "nextLabel": "Suivante",
+      "pageStart": "— Début de la page —",
+      "pageEnd": "— Fin de la page —",
+      "moveUpTitle": "Monter dans l'ordre de lecture",
+      "moveDownTitle": "Descendre dans l'ordre de lecture",
+      "noPanelCrop": "Aucune case assignée — aucun extrait d'image disponible."
     }
   },
   "exportPanel": {

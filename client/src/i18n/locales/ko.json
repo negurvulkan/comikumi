@@ -252,6 +252,48 @@
       "labelPlaceholder": "패널 {{index}}",
       "dragHint": "영역을 드래그하면 이동, 개별 점을 드래그하면 모양을 변형합니다. 가장자리를 더블클릭하면 점이 추가되고, 점을 우클릭하면 제거됩니다 (최소 3개 점 유지). 편집기 표시일 뿐 — PNG 내보내기에는 나타나지 않습니다.",
       "deletePanel": "패널 삭제"
+    },
+    "multiSelect": {
+      "bubbleCount_other": "말풍선 {{count}}개",
+      "imageCount_other": "이미지 {{count}}개",
+      "curvedTextCount_other": "곡선 텍스트 {{count}}개",
+      "panelCount_other": "패널 {{count}}개",
+      "selectedTotal_other": "{{count}}개 선택됨",
+      "keyboardHint": "화살표 키로 이동 (Shift = 더 크게 이동) · Ctrl+D 복제 · Delete 삭제 · Shift 클릭으로 추가/제거",
+      "duplicateButton": "복제",
+      "deleteSelection": "선택 항목 삭제"
+    },
+    "textListPanel": {
+      "title": "이 페이지의 텍스트",
+      "independentLanguageHint": "여기의 언어는 위에서 활성화된 언어와 무관합니다 — 항목을 클릭하면 말풍선만 선택됩니다.",
+      "empty": "이 페이지에는 아직 말풍선이나 곡선 텍스트가 없습니다.",
+      "typeBubble": "말풍선",
+      "typeCurvedText": "곡선 텍스트"
+    },
+    "reportModal": {
+      "title": "리포트 — 이 페이지 ({{language}})",
+      "whoSaysWhat": "누가 무엇을 말하는가?",
+      "noBubbles": "이 페이지에는 말풍선이 없습니다.",
+      "whoSaysWhatByPanel": "패널별로 누가 무엇을 말하는가?",
+      "noPanels": "이 페이지에는 패널이 없습니다.",
+      "noBubblesShort": "(말풍선 없음)",
+      "charactersOnPage": "이 페이지에 등장하는 캐릭터는?",
+      "charactersByPanel": "어느 패널에 어떤 캐릭터가 등장하는가?",
+      "noPanelsWithCharacters": "캐릭터가 할당된 패널이 없습니다."
+    },
+    "translatorContextPanel": {
+      "title": "번역용 맥락",
+      "selectBubbleHint": "말풍선을 선택하면 맥락이 표시됩니다.",
+      "speakerLabel": "화자:",
+      "panelLabel": "패널:",
+      "previousLabel": "이전",
+      "currentLabel": "현재",
+      "nextLabel": "다음",
+      "pageStart": "— 페이지 시작 —",
+      "pageEnd": "— 페이지 끝 —",
+      "moveUpTitle": "읽기 순서에서 위로 이동",
+      "moveDownTitle": "읽기 순서에서 아래로 이동",
+      "noPanelCrop": "할당된 패널이 없습니다 — 이미지 잘라내기를 사용할 수 없습니다."
     }
   },
   "exportPanel": {

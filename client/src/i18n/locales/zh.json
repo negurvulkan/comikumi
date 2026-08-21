@@ -252,6 +252,48 @@
       "labelPlaceholder": "分格 {{index}}",
       "dragHint": "拖动区域可移动，拖动单个点可变形。双击边缘可添加点，右键点击某点可删除它（至少保留3个点）。仅为编辑器标记——不会出现在PNG导出中。",
       "deletePanel": "删除分格"
+    },
+    "multiSelect": {
+      "bubbleCount_other": "{{count}} 个气泡",
+      "imageCount_other": "{{count}} 张图片",
+      "curvedTextCount_other": "{{count}} 个曲线文字",
+      "panelCount_other": "{{count}} 个分格",
+      "selectedTotal_other": "已选择 {{count}} 个对象",
+      "keyboardHint": "方向键移动（Shift 加大步幅）· Ctrl+D 复制 · Delete 删除 · Shift 点击可添加/移除",
+      "duplicateButton": "复制",
+      "deleteSelection": "删除所选"
+    },
+    "textListPanel": {
+      "title": "本页文字",
+      "independentLanguageHint": "此处的语言与上方选中的语言无关——点击条目只会选中气泡。",
+      "empty": "本页尚无气泡或曲线文字。",
+      "typeBubble": "气泡",
+      "typeCurvedText": "曲线文字"
+    },
+    "reportModal": {
+      "title": "报告——本页（{{language}}）",
+      "whoSaysWhat": "谁说了什么？",
+      "noBubbles": "本页没有气泡。",
+      "whoSaysWhatByPanel": "各分格中谁说了什么？",
+      "noPanels": "本页没有分格。",
+      "noBubblesShort": "（无气泡）",
+      "charactersOnPage": "本页出现了哪些角色？",
+      "charactersByPanel": "各分格中出现了哪些角色？",
+      "noPanelsWithCharacters": "没有分配角色的分格。"
+    },
+    "translatorContextPanel": {
+      "title": "翻译上下文",
+      "selectBubbleHint": "选择一个气泡以查看上下文。",
+      "speakerLabel": "说话者：",
+      "panelLabel": "分格：",
+      "previousLabel": "上一个",
+      "currentLabel": "当前",
+      "nextLabel": "下一个",
+      "pageStart": "— 页面开始 —",
+      "pageEnd": "— 页面结束 —",
+      "moveUpTitle": "在阅读顺序中上移",
+      "moveDownTitle": "在阅读顺序中下移",
+      "noPanelCrop": "未分配分格——没有可用的图片裁剪。"
     }
   },
   "exportPanel": {

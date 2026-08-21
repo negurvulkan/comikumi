@@ -253,6 +253,53 @@
       "labelPlaceholder": "Panel {{index}}",
       "dragHint": "Drag the area to move, individual points to reshape. Double-click the edge to add a point, right-click a point to remove it (at least 3 points remain). Editor marker only — does not appear in the PNG export.",
       "deletePanel": "Delete panel"
+    },
+    "multiSelect": {
+      "bubbleCount_one": "{{count}} bubble",
+      "bubbleCount_other": "{{count}} bubbles",
+      "imageCount_one": "{{count}} image",
+      "imageCount_other": "{{count}} images",
+      "curvedTextCount_one": "{{count}} curved text",
+      "curvedTextCount_other": "{{count}} curved texts",
+      "panelCount_one": "{{count}} panel",
+      "panelCount_other": "{{count}} panels",
+      "selectedTotal_one": "{{count}} object selected",
+      "selectedTotal_other": "{{count}} objects selected",
+      "keyboardHint": "Arrow keys to move (Shift = larger steps) · Ctrl+D to duplicate · Del to delete · Shift-click to add/remove",
+      "duplicateButton": "Duplicate",
+      "deleteSelection": "Delete selection"
+    },
+    "textListPanel": {
+      "title": "Texts on this page",
+      "independentLanguageHint": "The language here is independent of the one active above — clicking an entry only selects the bubble.",
+      "empty": "No bubbles or curved texts on this page yet.",
+      "typeBubble": "Bubble",
+      "typeCurvedText": "Curved text"
+    },
+    "reportModal": {
+      "title": "Report — this page ({{language}})",
+      "whoSaysWhat": "Who says what?",
+      "noBubbles": "No bubbles on this page.",
+      "whoSaysWhatByPanel": "Who says what, by panel?",
+      "noPanels": "No panels on this page.",
+      "noBubblesShort": "(no bubbles)",
+      "charactersOnPage": "Which characters appear on this page?",
+      "charactersByPanel": "Which characters appear in which panels?",
+      "noPanelsWithCharacters": "No panels with assigned characters."
+    },
+    "translatorContextPanel": {
+      "title": "Context for translation",
+      "selectBubbleHint": "Select a bubble to see context.",
+      "speakerLabel": "Speaker:",
+      "panelLabel": "Panel:",
+      "previousLabel": "Previous",
+      "currentLabel": "Current",
+      "nextLabel": "Next",
+      "pageStart": "— Start of page —",
+      "pageEnd": "— End of page —",
+      "moveUpTitle": "Move up in reading order",
+      "moveDownTitle": "Move down in reading order",
+      "noPanelCrop": "No panel assigned — no image crop available."
     }
   },
   "exportPanel": {

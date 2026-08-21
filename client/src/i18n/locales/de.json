@@ -253,6 +253,53 @@
       "labelPlaceholder": "Panel {{index}}",
       "dragHint": "Fläche ziehen zum Verschieben, einzelne Punkte zum Verformen. Doppelklick auf den Rand fügt einen Punkt hinzu, Rechtsklick auf einen Punkt entfernt ihn (mind. 3 Punkte bleiben). Nur eine Editor-Markierung — erscheint nicht im PNG-Export.",
       "deletePanel": "Panel löschen"
+    },
+    "multiSelect": {
+      "bubbleCount_one": "{{count}} Bubble",
+      "bubbleCount_other": "{{count}} Bubbles",
+      "imageCount_one": "{{count}} Bild",
+      "imageCount_other": "{{count}} Bilder",
+      "curvedTextCount_one": "{{count}} Kurventext",
+      "curvedTextCount_other": "{{count}} Kurventexte",
+      "panelCount_one": "{{count}} Panel",
+      "panelCount_other": "{{count}} Panels",
+      "selectedTotal_one": "{{count}} Objekt ausgewählt",
+      "selectedTotal_other": "{{count}} Objekte ausgewählt",
+      "keyboardHint": "Pfeiltasten zum Verschieben (Shift = größere Schritte) · Strg+D duplizieren · Entf löschen · Shift-Klick zum Hinzufügen/Entfernen",
+      "duplicateButton": "Duplizieren",
+      "deleteSelection": "Auswahl löschen"
+    },
+    "textListPanel": {
+      "title": "Texte auf dieser Seite",
+      "independentLanguageHint": "Sprache hier ist unabhängig von der oben aktiven Sprache — Klick auf einen Eintrag wählt nur die Blase aus.",
+      "empty": "Noch keine Bubbles oder Kurventexte auf dieser Seite.",
+      "typeBubble": "Bubble",
+      "typeCurvedText": "Kurventext"
+    },
+    "reportModal": {
+      "title": "Bericht — diese Seite ({{language}})",
+      "whoSaysWhat": "Wer sagt was?",
+      "noBubbles": "Keine Blasen auf dieser Seite.",
+      "whoSaysWhatByPanel": "Wer sagt was in welchem Panel?",
+      "noPanels": "Keine Panels auf dieser Seite.",
+      "noBubblesShort": "(keine Blasen)",
+      "charactersOnPage": "Welche Charaktere kommen auf der Seite vor?",
+      "charactersByPanel": "Welche Charaktere kommen in welchen Panels vor?",
+      "noPanelsWithCharacters": "Keine Panels mit zugeordneten Charakteren."
+    },
+    "translatorContextPanel": {
+      "title": "Kontext für Übersetzung",
+      "selectBubbleHint": "Blase auswählen, um Kontext zu sehen.",
+      "speakerLabel": "Speaker:",
+      "panelLabel": "Panel:",
+      "previousLabel": "Vorherige",
+      "currentLabel": "Aktuell",
+      "nextLabel": "Nächste",
+      "pageStart": "— Seitenanfang —",
+      "pageEnd": "— Seitenende —",
+      "moveUpTitle": "In Lesereihenfolge nach oben",
+      "moveDownTitle": "In Lesereihenfolge nach unten",
+      "noPanelCrop": "Kein Panel zugeordnet — kein Bildausschnitt verfügbar."
     }
   },
   "exportPanel": {
