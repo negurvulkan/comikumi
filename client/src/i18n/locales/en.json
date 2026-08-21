@@ -300,6 +300,63 @@
       "moveUpTitle": "Move up in reading order",
       "moveDownTitle": "Move down in reading order",
       "noPanelCrop": "No panel assigned — no image crop available."
+    },
+    "toolStrip": {
+      "bubbleOval": "Bubble (oval)",
+      "rect": "Rectangle",
+      "quadPerspective": "Quad (perspective)",
+      "panelRefRegion": "Panel (reference region)",
+      "textsThisPage": "Texts on this page"
+    },
+    "contextMenu": {
+      "assignPanel": "Assign panel",
+      "noPanel": "– no panel –",
+      "assignCharacter": "Assign character",
+      "noCharacter": "– no character –",
+      "assignPreset": "Assign preset",
+      "noPreset": "– no preset –",
+      "duplicate": "Duplicate",
+      "removePoint": "Remove point"
+    },
+    "canvas": {
+      "zoomOut": "Zoom out",
+      "zoomIn": "Zoom in",
+      "resetView": "Reset view",
+      "scrollPanHint": "Scroll = zoom · Drag on empty area = pan"
+    },
+    "editorRoute": {
+      "invalidJsonFormat": "Error: file does not match the expected layout format.",
+      "jsonImported": "JSON imported: {{count}} bubble(s). Don't forget to save.",
+      "importErrorPrefix": "Import error: {{message}}",
+      "loadingPage": "Loading page…",
+      "showReport": "Show report",
+      "editMenu": "Edit",
+      "undo": "Undo",
+      "unsavedPill": "Unsaved",
+      "savedPill": "Saved",
+      "selectOrCreateHint": "Select a bubble, image, or curved text, or create one with a tool on the left."
+    },
+    "bubbleInspector": {
+      "textLabel": "Text ({{language}})",
+      "furiganaHintPrefix": "Furigana:",
+      "furiganaHintSuffix": "· Number/Latin pairs (e.g. \"21\") are automatically set sideways.",
+      "characterLabel": "Character",
+      "voiceNotesFor": "Voice Notes ({{name}}):",
+      "presetLinkedHint": "Linked to \"{{name}}\" — determines what's disabled below.",
+      "detachFromPreset": "Detach from preset",
+      "shapeLabel": "Shape",
+      "shapeOval": "Oval",
+      "shapeQuad": "Perspective (quad)",
+      "formAndStyleLabel": "Shape & style",
+      "formOverrideHint": "Adjust position/size/rotation in the canvas — applies only to \"{{language}}\".",
+      "bubbleStyleNoneWithArt": "None (invisible, existing artwork)",
+      "svgChosen": "Chosen: {{name}}",
+      "noSvgChosen": "No contour chosen yet.",
+      "showTail": "Show tail",
+      "tailDragHint": "Adjust the tail's position on the bubble (green), width (orange), curve (purple), and tip (blue) in the canvas via the handles.",
+      "presetGovernsHint": "Set by preset \"{{name}}\".",
+      "directionVerticalRtl": "Vertical, columns right → left (JP)",
+      "deleteBubble": "Delete bubble"
     }
   },
   "exportPanel": {

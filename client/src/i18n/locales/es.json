@@ -300,6 +300,63 @@
       "moveUpTitle": "Subir en el orden de lectura",
       "moveDownTitle": "Bajar en el orden de lectura",
       "noPanelCrop": "Ninguna viñeta asignada — no hay recorte de imagen disponible."
+    },
+    "toolStrip": {
+      "bubbleOval": "Bocadillo (ovalado)",
+      "rect": "Rectángulo",
+      "quadPerspective": "Cuadrilátero (perspectiva)",
+      "panelRefRegion": "Viñeta (zona de referencia)",
+      "textsThisPage": "Textos de esta página"
+    },
+    "contextMenu": {
+      "assignPanel": "Asignar viñeta",
+      "noPanel": "– sin viñeta –",
+      "assignCharacter": "Asignar personaje",
+      "noCharacter": "– sin personaje –",
+      "assignPreset": "Asignar preajuste",
+      "noPreset": "– sin preajuste –",
+      "duplicate": "Duplicar",
+      "removePoint": "Eliminar punto"
+    },
+    "canvas": {
+      "zoomOut": "Alejar",
+      "zoomIn": "Acercar",
+      "resetView": "Restablecer vista",
+      "scrollPanHint": "Desplazar = zoom · Arrastrar en área vacía = desplazar vista"
+    },
+    "editorRoute": {
+      "invalidJsonFormat": "Error: el archivo no coincide con el formato de maquetación esperado.",
+      "jsonImported": "JSON importado: {{count}} bocadillo(s). No olvides guardar.",
+      "importErrorPrefix": "Error al importar: {{message}}",
+      "loadingPage": "Cargando página…",
+      "showReport": "Mostrar informe",
+      "editMenu": "Editar",
+      "undo": "Deshacer",
+      "unsavedPill": "Sin guardar",
+      "savedPill": "Guardado",
+      "selectOrCreateHint": "Selecciona un bocadillo, una imagen o un texto curvo, o crea uno con una herramienta de la izquierda."
+    },
+    "bubbleInspector": {
+      "textLabel": "Texto ({{language}})",
+      "furiganaHintPrefix": "Furigana:",
+      "furiganaHintSuffix": "· Los pares de números/latín (p. ej. «21») se colocan automáticamente en horizontal.",
+      "characterLabel": "Personaje",
+      "voiceNotesFor": "Notas de voz ({{name}}):",
+      "presetLinkedHint": "Vinculado a «{{name}}» — determina qué está desactivado abajo.",
+      "detachFromPreset": "Desvincular del preajuste",
+      "shapeLabel": "Forma",
+      "shapeOval": "Óvalo",
+      "shapeQuad": "Perspectiva (cuadrilátero)",
+      "formAndStyleLabel": "Forma y estilo",
+      "formOverrideHint": "Ajusta posición/tamaño/rotación en el lienzo — se aplica solo a «{{language}}».",
+      "bubbleStyleNoneWithArt": "Ninguno (invisible, ilustración existente)",
+      "svgChosen": "Elegido: {{name}}",
+      "noSvgChosen": "Aún no se ha elegido ningún contorno.",
+      "showTail": "Mostrar cola",
+      "tailDragHint": "Ajusta la posición sobre el bocadillo (verde), el ancho (naranja), la curvatura (morado) y la punta (azul) en el lienzo mediante los controladores.",
+      "presetGovernsHint": "Definido por el preajuste «{{name}}».",
+      "directionVerticalRtl": "Vertical, columnas derecha → izquierda (JP)",
+      "deleteBubble": "Eliminar bocadillo"
     }
   },
   "exportPanel": {

@@ -300,6 +300,63 @@
       "moveUpTitle": "Monter dans l'ordre de lecture",
       "moveDownTitle": "Descendre dans l'ordre de lecture",
       "noPanelCrop": "Aucune case assignée — aucun extrait d'image disponible."
+    },
+    "toolStrip": {
+      "bubbleOval": "Bulle (ovale)",
+      "rect": "Rectangle",
+      "quadPerspective": "Quadrilatère (perspective)",
+      "panelRefRegion": "Case (zone de référence)",
+      "textsThisPage": "Textes de cette page"
+    },
+    "contextMenu": {
+      "assignPanel": "Assigner une case",
+      "noPanel": "– aucune case –",
+      "assignCharacter": "Assigner un personnage",
+      "noCharacter": "– aucun personnage –",
+      "assignPreset": "Assigner un préréglage",
+      "noPreset": "– aucun préréglage –",
+      "duplicate": "Dupliquer",
+      "removePoint": "Supprimer le point"
+    },
+    "canvas": {
+      "zoomOut": "Zoom arrière",
+      "zoomIn": "Zoom avant",
+      "resetView": "Réinitialiser la vue",
+      "scrollPanHint": "Défiler = zoomer · Glisser sur une zone vide = déplacer"
+    },
+    "editorRoute": {
+      "invalidJsonFormat": "Erreur : le fichier ne correspond pas au format de mise en page attendu.",
+      "jsonImported": "JSON importé : {{count}} bulle(s). N'oubliez pas d'enregistrer.",
+      "importErrorPrefix": "Erreur d'import : {{message}}",
+      "loadingPage": "Chargement de la page…",
+      "showReport": "Afficher le rapport",
+      "editMenu": "Édition",
+      "undo": "Annuler",
+      "unsavedPill": "Non enregistré",
+      "savedPill": "Enregistré",
+      "selectOrCreateHint": "Sélectionnez une bulle, une image ou un texte courbe, ou créez-en un avec un outil à gauche."
+    },
+    "bubbleInspector": {
+      "textLabel": "Texte ({{language}})",
+      "furiganaHintPrefix": "Furigana :",
+      "furiganaHintSuffix": "· Les paires chiffres/latin (p. ex. « 21 ») sont automatiquement mises en travers.",
+      "characterLabel": "Personnage",
+      "voiceNotesFor": "Notes de voix ({{name}}) :",
+      "presetLinkedHint": "Lié à « {{name}} » — détermine ce qui est désactivé ci-dessous.",
+      "detachFromPreset": "Détacher du préréglage",
+      "shapeLabel": "Forme",
+      "shapeOval": "Ovale",
+      "shapeQuad": "Perspective (quadrilatère)",
+      "formAndStyleLabel": "Forme & style",
+      "formOverrideHint": "Ajustez la position/taille/rotation dans le canevas — s'applique uniquement à « {{language}} ».",
+      "bubbleStyleNoneWithArt": "Aucun (invisible, illustration existante)",
+      "svgChosen": "Choisi : {{name}}",
+      "noSvgChosen": "Aucun contour choisi pour l'instant.",
+      "showTail": "Afficher la queue",
+      "tailDragHint": "Ajustez la position sur la bulle (vert), la largeur (orange), la courbure (violet) et la pointe (bleu) dans le canevas via les poignées.",
+      "presetGovernsHint": "Défini par le préréglage « {{name}} ».",
+      "directionVerticalRtl": "Vertical, colonnes droite → gauche (JP)",
+      "deleteBubble": "Supprimer la bulle"
     }
   },
   "exportPanel": {

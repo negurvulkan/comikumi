@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { PageLayoutSchema } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
@@ -33,6 +34,7 @@ import { ensureSvgBubbleBoundaryLoaded, isSvgBubbleBoundaryCached } from "../exp
 import { useProject } from "../state/ProjectContext";
 
 export function Editor() {
+  const { t } = useTranslation();
   const { volumeId = "", page = "" } = useParams();
   const navigate = useNavigate();
   const { project } = useProject();
@@ -210,63 +212,63 @@ export function Editor() {
       const text = await file.text();
       const parsed = PageLayoutSchema.safeParse(JSON.parse(text));
       if (!parsed.success) {
-        setExportMsg("Fehler: Datei entspricht nicht dem erwarteten Layout-Format.");
+        setExportMsg(t("editor.editorRoute.invalidJsonFormat"));
         return;
       }
       store.importBubbles(parsed.data.bubbles);
-      setExportMsg(`JSON importiert: ${parsed.data.bubbles.length} Bubble(s). Nicht vergessen zu speichern.`);
+      setExportMsg(t("editor.editorRoute.jsonImported", { count: parsed.data.bubbles.length }));
     } catch (err) {
-      setExportMsg(`Fehler beim Import: ${(err as Error).message}`);
+      setExportMsg(t("editor.editorRoute.importErrorPrefix", { message: (err as Error).message }));
     }
   }
 
-  if (loading) return <p>Lade Seite…</p>;
+  if (loading) return <p>{t("editor.editorRoute.loadingPage")}</p>;
   if (error) return <div className="error-banner">{error}</div>;
   if (!layout) return null;
 
   const menuGroups: MenuGroup[] = [
     {
       key: "seite",
-      label: "Seite",
+      label: t("pageGrid.menuPageLabel"),
       entries: [
-        { type: "action", label: saving ? "Speichert…" : "Speichern", onClick: () => store.save(), disabled: saving || !dirty },
+        { type: "action", label: saving ? t("settings.saving") : t("common.save"), onClick: () => store.save(), disabled: saving || !dirty },
         { type: "separator" },
-        { type: "sublabel", label: "Import" },
+        { type: "sublabel", label: t("pageGrid.menuImportLabel") },
         { type: "action", label: "JSON", onClick: () => importInputRef.current?.click() },
         { type: "separator" },
-        { type: "sublabel", label: "Export" },
-        { type: "action", label: "Bild…", onClick: () => setShowExportPanel(true), disabled: languages.length === 0 },
+        { type: "sublabel", label: t("pageGrid.menuExportLabel") },
+        { type: "action", label: t("pageGrid.menuExportImage"), onClick: () => setShowExportPanel(true), disabled: languages.length === 0 },
         { type: "action", label: "JSON", onClick: handleDownloadJson },
         { type: "separator" },
-        { type: "action", label: "Bericht anzeigen", onClick: () => setShowReport(true) },
+        { type: "action", label: t("editor.editorRoute.showReport"), onClick: () => setShowReport(true) },
         { type: "separator" },
-        { type: "action", label: "Schließen", onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}`) },
+        { type: "action", label: t("common.close"), onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}`) },
       ],
     },
     {
       key: "bearbeiten",
-      label: "Bearbeiten",
+      label: t("editor.editorRoute.editMenu"),
       entries: [
-        { type: "action", label: "Rückgängig", onClick: () => store.undo(), disabled: past.length === 0 },
-        { type: "action", label: "Löschen", onClick: () => store.removeSelected(), disabled: selectedCount === 0 },
-        { type: "action", label: "Duplizieren", onClick: () => store.duplicateSelected(), disabled: selectedCount === 0 },
+        { type: "action", label: t("editor.editorRoute.undo"), onClick: () => store.undo(), disabled: past.length === 0 },
+        { type: "action", label: t("common.delete"), onClick: () => store.removeSelected(), disabled: selectedCount === 0 },
+        { type: "action", label: t("editor.contextMenu.duplicate"), onClick: () => store.duplicateSelected(), disabled: selectedCount === 0 },
       ],
     },
     {
       key: "projekt",
-      label: "Projekt",
+      label: t("menu.project"),
       entries: [
-        { type: "action", label: "Wechseln", onClick: () => navigate("/project") },
-        { type: "action", label: "Charaktere", onClick: () => setShowCharacters(true) },
-        { type: "action", label: "Glossar", onClick: () => setShowGlossary(true) },
-        { type: "action", label: "Presets", onClick: () => setShowPresets(true) },
-        { type: "action", label: "Einstellungen", onClick: () => setShowSettings(true) },
+        { type: "action", label: t("menu.switch"), onClick: () => navigate("/project") },
+        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
+        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
+        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
+        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
       ],
     },
     {
       key: "hilfe",
-      label: "Hilfe",
-      entries: [{ type: "action", label: "Noch keine Einträge", onClick: () => {}, disabled: true }],
+      label: t("menu.help"),
+      entries: [{ type: "action", label: t("menu.noEntriesYet"), onClick: () => {}, disabled: true }],
     },
   ];
 
@@ -274,7 +276,11 @@ export function Editor() {
     <div className="page">
       <MenuBar
         groups={menuGroups}
-        trailing={<span className="pill">{saving ? "Speichert…" : dirty ? "Ungespeichert" : "Gespeichert"}</span>}
+        trailing={
+          <span className="pill">
+            {saving ? t("settings.saving") : dirty ? t("editor.editorRoute.unsavedPill") : t("editor.editorRoute.savedPill")}
+          </span>
+        }
       />
       <input
         ref={importInputRef}
@@ -463,7 +469,7 @@ export function Editor() {
           ) : (
             <div className="inspector">
               <p style={{ color: "var(--text-muted)", margin: 0 }}>
-                Bubble, Bild oder Kurventext auswählen, oder mit einem der Werkzeuge links neu anlegen.
+                {t("editor.editorRoute.selectOrCreateHint")}
               </p>
             </div>
           )}

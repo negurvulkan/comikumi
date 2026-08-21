@@ -294,6 +294,63 @@
       "moveUpTitle": "在阅读顺序中上移",
       "moveDownTitle": "在阅读顺序中下移",
       "noPanelCrop": "未分配分格——没有可用的图片裁剪。"
+    },
+    "toolStrip": {
+      "bubbleOval": "气泡（椭圆）",
+      "rect": "矩形",
+      "quadPerspective": "四边形（透视）",
+      "panelRefRegion": "分格（参考区域）",
+      "textsThisPage": "本页文字"
+    },
+    "contextMenu": {
+      "assignPanel": "分配分格",
+      "noPanel": "– 无分格 –",
+      "assignCharacter": "分配角色",
+      "noCharacter": "– 无角色 –",
+      "assignPreset": "分配预设",
+      "noPreset": "– 无预设 –",
+      "duplicate": "复制",
+      "removePoint": "删除点"
+    },
+    "canvas": {
+      "zoomOut": "缩小",
+      "zoomIn": "放大",
+      "resetView": "重置视图",
+      "scrollPanHint": "滚动 = 缩放 · 在空白处拖动 = 平移"
+    },
+    "editorRoute": {
+      "invalidJsonFormat": "错误：文件与预期的版式格式不匹配。",
+      "jsonImported": "已导入JSON：{{count}} 个气泡。别忘了保存。",
+      "importErrorPrefix": "导入错误：{{message}}",
+      "loadingPage": "正在加载页面…",
+      "showReport": "显示报告",
+      "editMenu": "编辑",
+      "undo": "撤销",
+      "unsavedPill": "未保存",
+      "savedPill": "已保存",
+      "selectOrCreateHint": "选择一个气泡、图片或曲线文字，或使用左侧工具新建一个。"
+    },
+    "bubbleInspector": {
+      "textLabel": "文字（{{language}}）",
+      "furiganaHintPrefix": "注音：",
+      "furiganaHintSuffix": "· 数字/拉丁字母组合（例如“21”）会自动横排显示。",
+      "characterLabel": "角色",
+      "voiceNotesFor": "语音备注（{{name}}）：",
+      "presetLinkedHint": "已关联到“{{name}}” — 决定下方哪些项被禁用。",
+      "detachFromPreset": "取消关联预设",
+      "shapeLabel": "形状",
+      "shapeOval": "椭圆",
+      "shapeQuad": "透视（四边形）",
+      "formAndStyleLabel": "形状与样式",
+      "formOverrideHint": "在画布中调整位置/大小/旋转 — 仅适用于“{{language}}”。",
+      "bubbleStyleNoneWithArt": "无（不可见，使用现有图像）",
+      "svgChosen": "已选择：{{name}}",
+      "noSvgChosen": "尚未选择轮廓。",
+      "showTail": "显示尾巴",
+      "tailDragHint": "在画布中通过控制点调整气泡上的尾巴位置（绿色）、宽度（橙色）、弯曲度（紫色）和尖端（蓝色）。",
+      "presetGovernsHint": "由预设“{{name}}”指定。",
+      "directionVerticalRtl": "竖排，从右到左分栏（日文）",
+      "deleteBubble": "删除气泡"
     }
   },
   "exportPanel": {

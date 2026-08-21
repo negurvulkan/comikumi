@@ -294,6 +294,63 @@
       "moveUpTitle": "読み順で上に移動",
       "moveDownTitle": "読み順で下に移動",
       "noPanelCrop": "パネルが割り当てられていません — 画像の切り抜きは利用できません。"
+    },
+    "toolStrip": {
+      "bubbleOval": "吹き出し（楕円）",
+      "rect": "四角形",
+      "quadPerspective": "四辺形（遠近）",
+      "panelRefRegion": "パネル（参照領域）",
+      "textsThisPage": "このページのテキスト"
+    },
+    "contextMenu": {
+      "assignPanel": "パネルを割り当て",
+      "noPanel": "– パネルなし –",
+      "assignCharacter": "キャラクターを割り当て",
+      "noCharacter": "– キャラクターなし –",
+      "assignPreset": "プリセットを割り当て",
+      "noPreset": "– プリセットなし –",
+      "duplicate": "複製",
+      "removePoint": "点を削除"
+    },
+    "canvas": {
+      "zoomOut": "縮小",
+      "zoomIn": "拡大",
+      "resetView": "表示をリセット",
+      "scrollPanHint": "スクロール = ズーム・空白部分をドラッグ = 移動"
+    },
+    "editorRoute": {
+      "invalidJsonFormat": "エラー: ファイルが想定されるレイアウト形式と一致しません。",
+      "jsonImported": "JSONをインポートしました: {{count}} 個の吹き出し。保存を忘れずに。",
+      "importErrorPrefix": "インポートエラー: {{message}}",
+      "loadingPage": "ページを読み込み中…",
+      "showReport": "レポートを表示",
+      "editMenu": "編集",
+      "undo": "元に戻す",
+      "unsavedPill": "未保存",
+      "savedPill": "保存済み",
+      "selectOrCreateHint": "吹き出し・画像・曲線テキストを選択するか、左側のツールで新規作成してください。"
+    },
+    "bubbleInspector": {
+      "textLabel": "テキスト ({{language}})",
+      "furiganaHintPrefix": "ふりがな:",
+      "furiganaHintSuffix": "・数字/ラテン文字のペア（例:「21」）は自動的に横並びになります。",
+      "characterLabel": "キャラクター",
+      "voiceNotesFor": "ボイスノート ({{name}}):",
+      "presetLinkedHint": "「{{name}}」に関連付けられています — 下記で無効になっている項目を決定します。",
+      "detachFromPreset": "プリセットから切り離す",
+      "shapeLabel": "形状",
+      "shapeOval": "楕円",
+      "shapeQuad": "遠近（四辺形）",
+      "formAndStyleLabel": "形状とスタイル",
+      "formOverrideHint": "キャンバスで位置・サイズ・回転を調整 — 「{{language}}」にのみ適用されます。",
+      "bubbleStyleNoneWithArt": "なし（非表示、既存のアートワーク）",
+      "svgChosen": "選択中: {{name}}",
+      "noSvgChosen": "まだ輪郭が選択されていません。",
+      "showTail": "しっぽを表示",
+      "tailDragHint": "キャンバス上のハンドルで、しっぽの位置（緑）、太さ（オレンジ）、湾曲（紫）、先端（青）を調整します。",
+      "presetGovernsHint": "プリセット「{{name}}」で指定されています。",
+      "directionVerticalRtl": "縦書き、列は右→左（日本語）",
+      "deleteBubble": "吹き出しを削除"
     }
   },
   "exportPanel": {

@@ -300,6 +300,63 @@
       "moveUpTitle": "In Lesereihenfolge nach oben",
       "moveDownTitle": "In Lesereihenfolge nach unten",
       "noPanelCrop": "Kein Panel zugeordnet — kein Bildausschnitt verfügbar."
+    },
+    "toolStrip": {
+      "bubbleOval": "Blase (oval)",
+      "rect": "Rechteck",
+      "quadPerspective": "Raute (Perspektive)",
+      "panelRefRegion": "Panel (Referenzbereich)",
+      "textsThisPage": "Texte dieser Seite"
+    },
+    "contextMenu": {
+      "assignPanel": "Panel zuweisen",
+      "noPanel": "– kein Panel –",
+      "assignCharacter": "Charakter zuweisen",
+      "noCharacter": "– kein Charakter –",
+      "assignPreset": "Preset zuweisen",
+      "noPreset": "– kein Preset –",
+      "duplicate": "Duplizieren",
+      "removePoint": "Punkt entfernen"
+    },
+    "canvas": {
+      "zoomOut": "Verkleinern",
+      "zoomIn": "Vergrößern",
+      "resetView": "Ansicht zurücksetzen",
+      "scrollPanHint": "Scrollen = zoomen · Ziehen auf leerer Fläche = verschieben"
+    },
+    "editorRoute": {
+      "invalidJsonFormat": "Fehler: Datei entspricht nicht dem erwarteten Layout-Format.",
+      "jsonImported": "JSON importiert: {{count}} Bubble(s). Nicht vergessen zu speichern.",
+      "importErrorPrefix": "Fehler beim Import: {{message}}",
+      "loadingPage": "Lade Seite…",
+      "showReport": "Bericht anzeigen",
+      "editMenu": "Bearbeiten",
+      "undo": "Rückgängig",
+      "unsavedPill": "Ungespeichert",
+      "savedPill": "Gespeichert",
+      "selectOrCreateHint": "Bubble, Bild oder Kurventext auswählen, oder mit einem der Werkzeuge links neu anlegen."
+    },
+    "bubbleInspector": {
+      "textLabel": "Text ({{language}})",
+      "furiganaHintPrefix": "Furigana:",
+      "furiganaHintSuffix": "· Zahlen-/Lateinpaare (z. B. „21“) werden automatisch quer gesetzt.",
+      "characterLabel": "Charakter",
+      "voiceNotesFor": "Voice Notes ({{name}}):",
+      "presetLinkedHint": "Verknüpft mit „{{name}}“ — legt fest, was unten deaktiviert ist.",
+      "detachFromPreset": "Vom Preset lösen",
+      "shapeLabel": "Form",
+      "shapeOval": "Oval",
+      "shapeQuad": "Perspektive (Viereck)",
+      "formAndStyleLabel": "Form & Stil",
+      "formOverrideHint": "Position/Größe/Rotation im Canvas anpassen — wirkt nur für „{{language}}“.",
+      "bubbleStyleNoneWithArt": "Keine (unsichtbar, vorhandene Grafik)",
+      "svgChosen": "Gewählt: {{name}}",
+      "noSvgChosen": "Noch keine Kontur gewählt.",
+      "showTail": "Zeiger anzeigen",
+      "tailDragHint": "Position an der Blase (grün), Breite (orange), Krümmung (lila) und Spitze (blau) im Canvas per Greifer anpassen.",
+      "presetGovernsHint": "Von Preset „{{name}}“ vorgegeben.",
+      "directionVerticalRtl": "Vertikal, Spalten rechts → links (JP)",
+      "deleteBubble": "Bubble löschen"
     }
   },
   "exportPanel": {
