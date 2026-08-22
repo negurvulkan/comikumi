@@ -6,19 +6,32 @@ import { translateApiError } from "../i18n/translateApiError";
 import { invalidateFontsCache } from "../editor/fontLoader";
 import { FileBrowserModal } from "../editor/FileBrowserModal";
 
-/** Mirrors shared/src/languages.ts's DEFAULT_LANGUAGES — kept as a local literal
- * rather than importing the value across the client/shared boundary, since every
- * other client file only ever imports *types* from shared/src/languages. */
-const INITIAL_LANGUAGES: WizardLanguage[] = [
-  { code: "de", label: "Deutsch", folderSuffix: "german" },
-  { code: "en", label: "English", folderSuffix: "english" },
-  { code: "jp", label: "日本語", folderSuffix: "japanese" },
-];
-
 interface WizardLanguage {
   code: string;
   label: string;
   folderSuffix: string;
+}
+
+/** One content-language guess per supported UI locale (client/src/i18n/locales/*.json) —
+ * ComiKumi is a general-purpose tool, not just for Keito no Sei's DE/EN/JP project, so
+ * defaulting to three languages would hand every new user two they likely don't need.
+ * Multi-language support stays fully available (this step's list is freely editable),
+ * it's just opt-in via "+ Sprache hinzufügen" instead of pre-populated. Japanese keeps
+ * the "jp" content-language code (not "ja") to match the existing folder/character
+ * convention used elsewhere in the app (e.g. shared/src/languages.ts's DEFAULT_LANGUAGES). */
+const CONTENT_LANGUAGE_BY_UI_LOCALE: Record<string, WizardLanguage> = {
+  en: { code: "en", label: "English", folderSuffix: "english" },
+  de: { code: "de", label: "Deutsch", folderSuffix: "german" },
+  ja: { code: "jp", label: "日本語", folderSuffix: "japanese" },
+  fr: { code: "fr", label: "Français", folderSuffix: "french" },
+  es: { code: "es", label: "Español", folderSuffix: "spanish" },
+  zh: { code: "zh", label: "中文", folderSuffix: "chinese" },
+  ko: { code: "ko", label: "한국어", folderSuffix: "korean" },
+};
+
+function guessInitialLanguage(uiLanguage: string): WizardLanguage {
+  const base = uiLanguage.split("-")[0].toLowerCase();
+  return CONTENT_LANGUAGE_BY_UI_LOCALE[base] ?? CONTENT_LANGUAGE_BY_UI_LOCALE.en;
 }
 
 interface WizardVolume {
@@ -43,7 +56,7 @@ const STEP_COUNT = 5;
  * first volume folders (created immediately on disk, not deferred to the final
  * submit), then a review step that actually calls api.createProject(). */
 export function ProjectWizard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -63,8 +76,9 @@ export function ProjectWizard() {
   const [scriptSuffix, setScriptSuffix] = useState("_script");
   const [exportFolderTemplate, setExportFolderTemplate] = useState("{book}_{folderSuffix}");
 
-  // Step 3 — languages
-  const [languages, setLanguages] = useState<WizardLanguage[]>(INITIAL_LANGUAGES);
+  // Step 3 — languages, defaulting to just one guessed from the current UI language
+  // rather than a fixed multi-language set — see guessInitialLanguage() above.
+  const [languages, setLanguages] = useState<WizardLanguage[]>(() => [guessInitialLanguage(i18n.language)]);
   const [newLangLabel, setNewLangLabel] = useState("");
   const [newLangCode, setNewLangCode] = useState("");
   const [newLangFolderSuffix, setNewLangFolderSuffix] = useState("");
@@ -73,7 +87,7 @@ export function ProjectWizard() {
   // Step 4 — first volumes
   const [volumes, setVolumes] = useState<WizardVolume[]>([]);
   const [newVolumeName, setNewVolumeName] = useState("");
-  const [newVolumeLangs, setNewVolumeLangs] = useState<Set<string>>(new Set(INITIAL_LANGUAGES.map((l) => l.folderSuffix)));
+  const [newVolumeLangs, setNewVolumeLangs] = useState<Set<string>>(() => new Set(languages.map((l) => l.folderSuffix)));
   const [creatingVolume, setCreatingVolume] = useState(false);
 
   async function checkScanRoot() {

@@ -38,8 +38,10 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - **Projekt-Wizard**: fünf geführte Schritte statt eines einzelnen Formulars —
   Grundlagen (Name, Speicherort der Projektdatei, Scan-Ordner), Ordner-
   Namenskonvention (Suffixe, Export-Vorlage, vorbelegt mit den Standardwerten),
-  initiale Sprachen (frei bearbeitbare Liste, vorbelegt mit Deutsch/Englisch/
-  Japanisch) und optional erste Bände. Der Wizard hilft dabei aktiv beim Anlegen der
+  initiale Sprachen (frei bearbeitbare Liste, standardmäßig nur mit der aus der
+  aktuellen UI-Sprache vermuteten einen Content-Sprache vorbelegt — Mehrsprachigkeit
+  bleibt jederzeit über "Hinzufügen" möglich, wird aber niemandem aufgezwungen, der nur
+  einsprachig arbeitet) und optional erste Bände. Der Wizard hilft dabei aktiv beim Anlegen der
   nötigen Ordner: fehlt der Scan-Ordner, kann er direkt angelegt werden (inkl. Live-
   Prüfung, ob dort schon Bände gefunden werden); für jeden im letzten Schritt
   angelegten Band entstehen sofort der `<Name><emptySuffix>`-Ordner sowie ein
