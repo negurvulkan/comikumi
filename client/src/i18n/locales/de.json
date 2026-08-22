@@ -184,7 +184,16 @@
     "loading": "Lade Bände…",
     "emptyState": "Keine \"*{{emptySuffix}}\"-Ordner unter {{scanRoot}} gefunden. Über das \"Projekt\"-Menü lässt sich der Ordner anpassen oder ein anderes Projekt öffnen.",
     "languagesLine": "Sprachen: {{languages}}",
-    "noLanguages": "keine"
+    "noLanguages": "keine",
+    "statVolumes": "Bände",
+    "statVolumesTooltip": "Anzahl der Bände in diesem Projekt",
+    "statPages": "Seiten",
+    "statPagesTooltip": "Gescannte Seiten insgesamt über alle Bände",
+    "statPanels": "Panels",
+    "statPanelsTooltip": "Panel-Markierungen insgesamt über alle gespeicherten Letterings",
+    "statBubbles": "Sprechblasen",
+    "statBubblesTooltip": "Sprechblasen insgesamt über alle gespeicherten Letterings",
+    "statBubblesByLanguageTooltip": "Blasen mit Text in {{language}}"
   },
   "pageGrid": {
     "menuPageLabel": "Seite",

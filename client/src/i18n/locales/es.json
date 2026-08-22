@@ -184,7 +184,16 @@
     "loading": "Cargando volúmenes…",
     "emptyState": "No se encontraron carpetas «*{{emptySuffix}}» en {{scanRoot}}. Usa el menú «Proyecto» para cambiar la carpeta o abrir otro proyecto.",
     "languagesLine": "Idiomas: {{languages}}",
-    "noLanguages": "ninguno"
+    "noLanguages": "ninguno",
+    "statVolumes": "Tomos",
+    "statVolumesTooltip": "Número de tomos en este proyecto",
+    "statPages": "Páginas",
+    "statPagesTooltip": "Total de páginas escaneadas en todos los tomos",
+    "statPanels": "Viñetas",
+    "statPanelsTooltip": "Total de viñetas anotadas en todo el lettering guardado",
+    "statBubbles": "Globos de diálogo",
+    "statBubblesTooltip": "Total de globos de diálogo anotados en todo el lettering guardado",
+    "statBubblesByLanguageTooltip": "Globos con texto en {{language}}"
   },
   "pageGrid": {
     "menuPageLabel": "Página",

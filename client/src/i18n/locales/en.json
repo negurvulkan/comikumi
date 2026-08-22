@@ -184,7 +184,16 @@
     "loading": "Loading volumes…",
     "emptyState": "No \"*{{emptySuffix}}\" folders found under {{scanRoot}}. Use the \"Project\" menu to change the folder or open a different project.",
     "languagesLine": "Languages: {{languages}}",
-    "noLanguages": "none"
+    "noLanguages": "none",
+    "statVolumes": "Volumes",
+    "statVolumesTooltip": "Number of volumes in this project",
+    "statPages": "Pages",
+    "statPagesTooltip": "Total scanned pages across all volumes",
+    "statPanels": "Panels",
+    "statPanelsTooltip": "Total panel annotations across all saved lettering",
+    "statBubbles": "Speech bubbles",
+    "statBubblesTooltip": "Total speech-bubble annotations across all saved lettering",
+    "statBubblesByLanguageTooltip": "Bubbles with text in {{language}}"
   },
   "pageGrid": {
     "menuPageLabel": "Page",

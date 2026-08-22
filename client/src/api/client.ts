@@ -68,6 +68,19 @@ export interface VolumeSummary {
   bookFolderName: string;
   existingLanguageFolders: string[];
   languages: LanguageDef[];
+  /** Total scanned source pages (the "<book>_empty" folder). */
+  pageCount: number;
+  /** Sum of panel annotations across every saved lettering JSON in this volume. */
+  panelCount: number;
+  /** Sum of speech-bubble annotations across every saved lettering JSON, regardless of
+   * language/translation state. */
+  bubbleCount: number;
+  /** Per project-language code: how many bubbles have non-empty text in that language,
+   * across every saved lettering JSON — a rough translation-progress count. */
+  bubbleCountByLanguage: Record<string, number>;
+  /** First scanned page's name (for a card preview thumbnail), or null if the volume
+   * has no scanned pages yet. */
+  firstPage: string | null;
 }
 
 export interface PageSummary {

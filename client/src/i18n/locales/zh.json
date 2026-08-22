@@ -184,7 +184,16 @@
     "loading": "正在加载卷…",
     "emptyState": "在 {{scanRoot}} 下未找到任何“*{{emptySuffix}}”文件夹。可通过“项目”菜单更改文件夹或打开其他项目。",
     "languagesLine": "语言：{{languages}}",
-    "noLanguages": "无"
+    "noLanguages": "无",
+    "statVolumes": "卷数",
+    "statVolumesTooltip": "此项目中的卷数",
+    "statPages": "页数",
+    "statPagesTooltip": "所有卷的扫描页面总数",
+    "statPanels": "分格",
+    "statPanelsTooltip": "所有已保存嵌字中的分格标注总数",
+    "statBubbles": "对话框",
+    "statBubblesTooltip": "所有已保存嵌字中的对话框标注总数",
+    "statBubblesByLanguageTooltip": "含有{{language}}文本的对话框"
   },
   "pageGrid": {
     "menuPageLabel": "页面",

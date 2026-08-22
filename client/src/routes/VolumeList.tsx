@@ -15,6 +15,8 @@ import { SettingsForm } from "../editor/SettingsForm";
 import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
+import { ProjectInfoSidebar } from "../editor/ProjectInfoSidebar";
+import { PageIcon, PanelToolIcon, BubbleToolIcon } from "../editor/Icons";
 
 export function VolumeList() {
   const { t } = useTranslation();
@@ -24,6 +26,8 @@ export function VolumeList() {
   const [error, setError] = useState<string | null>(null);
   const [emptySuffix, setEmptySuffix] = useState("_empty");
   const [scanRoot, setScanRoot] = useState("");
+  const [description, setDescription] = useState("");
+  const [coverImagePath, setCoverImagePath] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
@@ -38,6 +42,8 @@ export function VolumeList() {
     api.getSettings().then((s) => {
       setEmptySuffix(s.emptySuffix);
       setScanRoot(s.scanRoot);
+      setDescription(s.description);
+      setCoverImagePath(s.coverImagePath);
     });
   }, [t]);
 
@@ -99,33 +105,63 @@ export function VolumeList() {
           <PresetManager presets={presets} onChange={setPresets} onClose={() => setShowPresets(false)} />
         </Modal>
       )}
-      {error ? (
-        <div className="error-banner" style={{ margin: 12 }}>
-          {error}
-        </div>
-      ) : !volumes ? (
-        <p style={{ margin: 12 }}>{t("volumeList.loading")}</p>
-      ) : volumes.length === 0 ? (
-        <p style={{ margin: 12 }}>{t("volumeList.emptyState", { emptySuffix, scanRoot: scanRoot || "…" })}</p>
-      ) : (
-        <div className="page-scroll" style={{ padding: 16 }}>
-          <div className="card-grid">
-            {volumes.map((v) => (
-              <Link key={v.id} to={`/volumes/${encodeURIComponent(v.id)}`} className="card">
-                <div className="label" style={{ fontSize: 16, color: "var(--text)" }}>
-                  {v.bookFolderName}
-                </div>
-                <div className="label">{project ? `${project.name}/${v.id}` : v.id}</div>
-                <div className="label">
-                  {t("volumeList.languagesLine", {
-                    languages: v.existingLanguageFolders.length > 0 ? v.existingLanguageFolders.join(", ") : t("volumeList.noLanguages"),
-                  })}
-                </div>
-              </Link>
-            ))}
+      <div style={{ display: "flex", flex: "1 1 auto", minHeight: 0 }}>
+        {error ? (
+          <div className="error-banner" style={{ margin: 12 }}>
+            {error}
           </div>
-        </div>
-      )}
+        ) : !volumes ? (
+          <p style={{ margin: 12 }}>{t("volumeList.loading")}</p>
+        ) : volumes.length === 0 ? (
+          <p style={{ margin: 12 }}>{t("volumeList.emptyState", { emptySuffix, scanRoot: scanRoot || "…" })}</p>
+        ) : (
+          <div className="page-scroll" style={{ padding: 16, flex: "1 1 auto" }}>
+            <div className="card-grid">
+              {volumes.map((v) => (
+                <Link key={v.id} to={`/volumes/${encodeURIComponent(v.id)}`} className="card">
+                  {v.firstPage ? (
+                    <img src={api.pageThumbnailUrl(v.id, v.firstPage)} alt="" className="volume-card-preview" loading="lazy" />
+                  ) : (
+                    <div className="volume-card-preview volume-card-preview-placeholder">
+                      <PageIcon />
+                    </div>
+                  )}
+                  <div className="label" style={{ fontSize: 16, color: "var(--text)" }}>
+                    {v.bookFolderName}
+                  </div>
+                  <div className="label">{project ? `${project.name}/${v.id}` : v.id}</div>
+                  <div className="label">
+                    {t("volumeList.languagesLine", {
+                      languages: v.existingLanguageFolders.length > 0 ? v.existingLanguageFolders.join(", ") : t("volumeList.noLanguages"),
+                    })}
+                  </div>
+                  <div className="volume-card-stats">
+                    <span title={t("volumeList.statPagesTooltip")}>
+                      <PageIcon />
+                      {v.pageCount}
+                    </span>
+                    <span title={t("volumeList.statPanelsTooltip")}>
+                      <PanelToolIcon />
+                      {v.panelCount}
+                    </span>
+                    <span title={t("volumeList.statBubblesTooltip")}>
+                      <BubbleToolIcon />
+                      {v.bubbleCount}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+        <ProjectInfoSidebar
+          name={project?.name ?? ""}
+          description={description}
+          coverImagePath={coverImagePath}
+          volumes={volumes ?? []}
+          languages={languages}
+        />
+      </div>
     </div>
   );
 }

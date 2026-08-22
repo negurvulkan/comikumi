@@ -184,7 +184,16 @@
     "loading": "巻を読み込み中…",
     "emptyState": "{{scanRoot}} の下に「*{{emptySuffix}}」フォルダが見つかりません。「プロジェクト」メニューからフォルダを変更するか、別のプロジェクトを開いてください。",
     "languagesLine": "言語: {{languages}}",
-    "noLanguages": "なし"
+    "noLanguages": "なし",
+    "statVolumes": "巻数",
+    "statVolumesTooltip": "このプロジェクトの巻数",
+    "statPages": "ページ",
+    "statPagesTooltip": "全ての巻のスキャン済みページ数",
+    "statPanels": "パネル",
+    "statPanelsTooltip": "保存済みレタリング全体のパネル数",
+    "statBubbles": "吹き出し",
+    "statBubblesTooltip": "保存済みレタリング全体の吹き出し数",
+    "statBubblesByLanguageTooltip": "{{language}}のテキストがある吹き出し"
   },
   "pageGrid": {
     "menuPageLabel": "ページ",

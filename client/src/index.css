@@ -124,6 +124,130 @@ body {
   color: var(--text-muted);
 }
 
+/* Volume overview cards (VolumeList.tsx) — first-page preview + compact per-volume
+   stats row. */
+.volume-card-preview {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #111;
+  display: block;
+}
+
+.volume-card-preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.volume-card-stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.volume-card-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.volume-card-stats svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+/* Always-visible project-info + stats panel on the volume overview — see
+   ProjectInfoSidebar.tsx. Docks on the right of the card grid, same visual language
+   as .text-sidebar (elevated background, left border) but never slides/toggles. */
+.project-info-sidebar {
+  flex: 0 0 260px;
+  width: 260px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.project-info-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #111;
+  display: block;
+}
+
+.project-info-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.project-info-description {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.project-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.project-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: default;
+}
+
+.project-stat-row svg {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.project-stat-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.project-stat-lang-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 28px;
+}
+
+.project-stat-lang-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.project-stat-lang-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  min-width: 24px;
+}
+
 /* Project-switcher recent/archived cards — unlike the plain .card button/link
    elsewhere, these need a nested action-buttons row (Archivieren/Löschen), so the
    card itself is a plain div and only its "open" area is the actual button. See

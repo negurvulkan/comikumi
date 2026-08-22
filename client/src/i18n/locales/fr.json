@@ -184,7 +184,16 @@
     "loading": "Chargement des volumes…",
     "emptyState": "Aucun dossier « *{{emptySuffix}} » trouvé sous {{scanRoot}}. Utilisez le menu « Projet » pour modifier le dossier ou ouvrir un autre projet.",
     "languagesLine": "Langues : {{languages}}",
-    "noLanguages": "aucune"
+    "noLanguages": "aucune",
+    "statVolumes": "Tomes",
+    "statVolumesTooltip": "Nombre de tomes dans ce projet",
+    "statPages": "Pages",
+    "statPagesTooltip": "Pages scannées au total, tous tomes confondus",
+    "statPanels": "Cases",
+    "statPanelsTooltip": "Total des cases annotées dans tous les lettrages enregistrés",
+    "statBubbles": "Bulles",
+    "statBubblesTooltip": "Total des bulles annotées dans tous les lettrages enregistrés",
+    "statBubblesByLanguageTooltip": "Bulles avec du texte en {{language}}"
   },
   "pageGrid": {
     "menuPageLabel": "Page",

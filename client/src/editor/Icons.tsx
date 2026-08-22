@@ -100,6 +100,27 @@ export function ScriptToolIcon() {
   );
 }
 
+/** A single closed book, spine to the left — used for "number of volumes" stats. */
+export function BookIcon() {
+  return (
+    <svg {...common}>
+      <path d="M3.5 3.5 C 6 2.5, 8.5 2.5, 10 3.5 C 11.5 2.5, 14 2.5, 16.5 3.5 V 15.5 C 14 14.5, 11.5 14.5, 10 15.5 C 8.5 14.5, 6 14.5, 3.5 15.5 Z" />
+      <path d="M10 3.5 V 15.5" />
+    </svg>
+  );
+}
+
+/** A single dog-eared page with text lines — used for "number of pages" stats. */
+export function PageIcon() {
+  return (
+    <svg {...common}>
+      <path d="M5 2.5 H12 L15.5 6 V17.5 H5 Z" />
+      <path d="M12 2.5 V6 H15.5" />
+      <path d="M7 9.5 H13 M7 12.5 H13 M7 15.5 H10.5" />
+    </svg>
+  );
+}
+
 export function ChevronDownIcon() {
   return (
     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
