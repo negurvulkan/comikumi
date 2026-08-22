@@ -255,7 +255,7 @@ body {
    16px body default everywhere — clearly oversized next to the 12-13px UI text
    around it. Halved to 8px. */
 .hint {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .canvas-statusbar .hint {
