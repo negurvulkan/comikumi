@@ -11,6 +11,8 @@ import { translateApiError } from "../i18n/translateApiError";
 import { ScriptPanelCard } from "./ScriptPanelCard";
 import { addPanel, deletePanel, movePanel, scriptPageFromLayout, updatePanel } from "./scriptEditing";
 import type { ReadingDirection } from "./reportUtils";
+import { useResizableSidebarWidth } from "./useResizableSidebarWidth";
+import { SidebarResizeHandle } from "./SidebarResizeHandle";
 
 interface Props {
   /** Always mounted (needed for the slide transition to animate) — same convention
@@ -42,6 +44,7 @@ export function ScriptSidebar({ open, volumeId, page, layout, readingDirection, 
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [linkChoice, setLinkChoice] = useState("");
+  const resize = useResizableSidebarWidth();
 
   useEffect(() => {
     api.getScript(volumeId).then(setDoc).catch((e) => setError(translateApiError(e, t)));
@@ -70,7 +73,13 @@ export function ScriptSidebar({ open, volumeId, page, layout, readingDirection, 
 
   if (!doc) {
     return (
-      <div className={`text-sidebar${open ? " open" : ""}`}>
+      <div className={`text-sidebar${open ? " open" : ""}`} style={{ width: open ? resize.width : undefined }}>
+        <SidebarResizeHandle
+          dragging={resize.dragging}
+          onPointerDown={resize.handlePointerDown}
+          onPointerMove={resize.handlePointerMove}
+          onPointerUp={resize.handlePointerUp}
+        />
         <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
           <p style={{ margin: 0, fontWeight: 600 }}>{t("script.title")}</p>
           <button onClick={onClose}>{t("common.close")}</button>
@@ -123,12 +132,19 @@ export function ScriptSidebar({ open, volumeId, page, layout, readingDirection, 
   }
 
   return (
-    <div className={`text-sidebar${open ? " open" : ""}`}>
+    <div className={`text-sidebar${open ? " open" : ""}`} style={{ width: open ? resize.width : undefined }}>
+      <SidebarResizeHandle
+        dragging={resize.dragging}
+        onPointerDown={resize.handlePointerDown}
+        onPointerMove={resize.handlePointerMove}
+        onPointerUp={resize.handlePointerUp}
+      />
       <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
         <p style={{ margin: 0, fontWeight: 600 }}>{t("script.title")}</p>
         <button onClick={onClose}>{t("common.close")}</button>
       </div>
 
+      <div className="sidebar-scroll-body">
       {!linkedPage ? (
         <>
           <p className="hint" style={{ margin: 0 }}>
@@ -198,6 +214,7 @@ export function ScriptSidebar({ open, volumeId, page, layout, readingDirection, 
           </button>
         </>
       )}
+      </div>
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
         <button type="button" className="primary" onClick={handleSave} disabled={saving}>
           {saving ? t("settings.saving") : t("common.save")}

@@ -8,6 +8,8 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import { api, type PageSummary } from "../api/client";
 import { characterName, getPageReadingOrder, groupBubblesByPanel, type BubbleGroup, type ReadingDirection } from "./reportUtils";
 import { PanelCropPreview } from "./PanelCropPreview";
+import { useResizableSidebarWidth } from "./useResizableSidebarWidth";
+import { SidebarResizeHandle } from "./SidebarResizeHandle";
 
 interface Props {
   /** Always mounted (needed for the slide transition to animate) — same convention as
@@ -85,6 +87,7 @@ export function TranslatorContextPanel({
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const resize = useResizableSidebarWidth();
   const [panelLanguage, setPanelLanguage] = useState(languages[0]?.code ?? "de");
   const [pages, setPages] = useState<PageSummary[] | null>(null);
   const [neighborCache, setNeighborCache] = useState<Record<string, PageLayout>>({});
@@ -180,7 +183,13 @@ export function TranslatorContextPanel({
   }
 
   return (
-    <div className={`text-sidebar${open ? " open" : ""}`}>
+    <div className={`text-sidebar${open ? " open" : ""}`} style={{ width: open ? resize.width : undefined }}>
+      <SidebarResizeHandle
+        dragging={resize.dragging}
+        onPointerDown={resize.handlePointerDown}
+        onPointerMove={resize.handlePointerMove}
+        onPointerUp={resize.handlePointerUp}
+      />
       <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
         <p style={{ margin: 0, fontWeight: 600 }}>{t("editor.translatorContextPanel.title")}</p>
         <button onClick={onClose}>{t("common.close")}</button>

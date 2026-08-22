@@ -147,6 +147,7 @@ body {
    radius, only a right border), matching the docked-panel look of the tool strip
    and language strip instead of floating as a separate rounded card. */
 .text-sidebar {
+  position: relative; /* anchors the absolutely-positioned .sidebar-resize-handle */
   flex: 0 0 0;
   width: 0;
   background: var(--bg-elevated);
@@ -161,11 +162,46 @@ body {
 }
 
 .text-sidebar.open {
-  flex: 0 0 260px;
+  /* flex-basis intentionally "auto", not a fixed px — actual width comes from the
+     `width` property alone (default below, overridden inline once the user drags the
+     resize handle, see useResizableSidebarWidth.ts), so resizing doesn't fight the
+     shorthand's own basis. */
+  flex: 0 0 auto;
   width: 260px;
   padding: 14px;
   opacity: 1;
   border-right-width: 1px;
+}
+
+/* Narrow drag strip along a resizable sidebar's right edge (the sidebar itself docks
+   on the left, bordering the canvas/content on its right) — see
+   useResizableSidebarWidth.ts/SidebarResizeHandle.tsx. Sits half outside/half inside
+   the sidebar's own right border so it's easy to grab without overlapping content. */
+.sidebar-resize-handle {
+  position: absolute;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+.sidebar-resize-handle-grip {
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.15s ease;
+}
+
+.sidebar-resize-handle:hover .sidebar-resize-handle-grip,
+.sidebar-resize-handle.active .sidebar-resize-handle-grip {
+  background: var(--accent);
 }
 
 .canvas-panel {
@@ -301,7 +337,23 @@ button.active {
   overflow-y: auto;
 }
 
-.inspector label {
+/* Same visual treatment as .inspector, but for ONE card among MANY in a list (see
+   ScriptPanelCard.tsx) — deliberately without .inspector's own overflow-y/min-height,
+   which previously forced every single card to squeeze into leftover flex space and
+   scroll independently instead of the whole list sharing one scroll region
+   (.sidebar-scroll-body below). */
+.script-panel-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inspector label,
+.script-panel-card label {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -311,7 +363,10 @@ button.active {
 
 .inspector input,
 .inspector select,
-.inspector textarea {
+.inspector textarea,
+.script-panel-card input,
+.script-panel-card select,
+.script-panel-card textarea {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
@@ -320,9 +375,23 @@ button.active {
   font-size: 13px;
 }
 
-.inspector textarea {
+.inspector textarea,
+.script-panel-card textarea {
   min-height: 80px;
   resize: vertical;
+}
+
+/* The single shared scroll region for a sidebar's main content, sitting between a
+   fixed header and an optional fixed footer — same flex/overflow idea as .text-list,
+   just under a name that doesn't imply .text-list-row children (see
+   ScriptSidebar.tsx, whose panel-card list isn't a row-list). */
+.sidebar-scroll-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* Field label row: property name + its ScopeSwitch (see ScopeSwitch.tsx), sitting

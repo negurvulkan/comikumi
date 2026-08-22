@@ -122,7 +122,7 @@ export function ScriptPanelCard({
   }
 
   return (
-    <div className="inspector" style={{ margin: "0 0 8px" }}>
+    <div className="script-panel-card" style={{ margin: "0 0 8px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <p style={{ margin: 0, fontWeight: 600 }}>{t("script.panelLabel", { index: index + 1 })}</p>
         <div style={{ display: "flex", gap: 4 }}>

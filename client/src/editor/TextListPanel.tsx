@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { Bubble, CurvedTextElement } from "../../../shared/src/layoutSchema";
 import { resolveBubbleForm } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
+import { useResizableSidebarWidth } from "./useResizableSidebarWidth";
+import { SidebarResizeHandle } from "./SidebarResizeHandle";
 
 interface Props {
   /** Always mounted (needed for the slide transition to animate) — this controls whether it's slid into view or off-screen to the left, see index.css's .text-sidebar/.text-sidebar.open. */
@@ -42,6 +44,7 @@ export function TextListPanel({
   onClose,
 }: Props) {
   const { t } = useTranslation();
+  const resize = useResizableSidebarWidth();
   const entries = useMemo(() => {
     const bubbleEntries: TextEntry[] = bubbles.map((b) => ({
       type: "bubble",
@@ -59,7 +62,13 @@ export function TextListPanel({
   }, [bubbles, curvedTexts, panelLanguage]);
 
   return (
-    <div className={`text-sidebar${open ? " open" : ""}`}>
+    <div className={`text-sidebar${open ? " open" : ""}`} style={{ width: open ? resize.width : undefined }}>
+      <SidebarResizeHandle
+        dragging={resize.dragging}
+        onPointerDown={resize.handlePointerDown}
+        onPointerMove={resize.handlePointerMove}
+        onPointerUp={resize.handlePointerUp}
+      />
       <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
         <p style={{ margin: 0, fontWeight: 600 }}>{t("editor.textListPanel.title")}</p>
         <button onClick={onClose}>{t("common.close")}</button>
