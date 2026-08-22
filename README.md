@@ -108,4 +108,9 @@ React 19 · Konva 10 / react-konva · React Router 7 · Zustand · Zod 4 · Vite
 
 ## License
 
-Private project, not currently licensed for reuse.
+Free for Open Source, Indies, and Hobbyists.
+
+ComiKumi is licensed under the [GNU Affero General Public License v3.0](LICENSE)
+(AGPL-3.0-or-later). You're free to use, study, modify, and share it — including
+running a modified version as a network service — as long as you make your source
+changes available under the same license to anyone who interacts with it.

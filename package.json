@@ -2,6 +2,7 @@
   "name": "comikumi",
   "private": true,
   "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "postinstall": "npm --prefix server install && npm --prefix client install",
