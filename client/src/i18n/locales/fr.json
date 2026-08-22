@@ -432,6 +432,13 @@
     "dialogueNotePlaceholder": "Note de mise en scène (p. ex. hors-champ, marmonné)",
     "copyLine": "Copier",
     "copied": "Copié !",
-    "copyFailed": "Échec de la copie"
+    "copyFailed": "Échec de la copie",
+    "noLinkForPage": "Aucun script associé à cette page pour l'instant.",
+    "chooseScriptPage": "Choisir une page de script…",
+    "link": "Associer",
+    "createLinkedPage": "+ Nouvelle page de script associée",
+    "unlink": "Dissocier",
+    "linkedWithPage": "Associée à la page {{page}}",
+    "insertIntoBubble": "Insérer dans la bulle"
   }
 }

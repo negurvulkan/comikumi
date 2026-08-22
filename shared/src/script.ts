@@ -44,6 +44,12 @@ export const ScriptPageSchema = z.object({
   label: z.string().default(""),
   notes: z.string().default(""),
   panels: z.array(ScriptPanelSchema).default([]),
+  /** Manual, persisted link to a real scanned page (e.g. "page_03") — set once from
+   * the page editor's script sidebar. Null means "not linked to any real page yet",
+   * the default for every script page created in the standalone script editor.
+   * Enforced 1:1 by the sidebar's own UI (it only lets a real page link to a script
+   * page that isn't already linked elsewhere), not by this schema. */
+  linkedPage: z.string().nullable().default(null),
 });
 export type ScriptPage = z.infer<typeof ScriptPageSchema>;
 

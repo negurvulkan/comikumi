@@ -1,7 +1,16 @@
 import { useTranslation } from "react-i18next";
 import type { BubbleShapeKind } from "../../../shared/src/layoutSchema";
 import { ImagePicker } from "./ImagePicker";
-import { BubbleToolIcon, RectToolIcon, QuadToolIcon, CurvedTextToolIcon, PanelToolIcon, GlobeToolIcon, ContextToolIcon } from "./Icons";
+import {
+  BubbleToolIcon,
+  RectToolIcon,
+  QuadToolIcon,
+  CurvedTextToolIcon,
+  PanelToolIcon,
+  GlobeToolIcon,
+  ContextToolIcon,
+  ScriptToolIcon,
+} from "./Icons";
 
 /** What the canvas is currently armed to draw — bubble shapes, or a Panel
  * reference region (see PanelShape.tsx). Not a BubbleShapeKind itself since
@@ -18,6 +27,8 @@ interface Props {
   textPanelDisabled?: boolean;
   contextPanelOpen: boolean;
   onToggleContextPanel: () => void;
+  scriptPanelOpen: boolean;
+  onToggleScriptPanel: () => void;
 }
 
 /** Narrow, always-visible icon strip for the six insert tools plus the text-sidebar
@@ -33,6 +44,8 @@ export function ToolStrip({
   textPanelDisabled,
   contextPanelOpen,
   onToggleContextPanel,
+  scriptPanelOpen,
+  onToggleScriptPanel,
 }: Props) {
   const { t } = useTranslation();
   return (
@@ -84,6 +97,13 @@ export function ToolStrip({
         title={t("editor.translatorContextPanel.title")}
       >
         <ContextToolIcon />
+      </button>
+      <button
+        className={`tool-btn${scriptPanelOpen ? " active" : ""}`}
+        onClick={onToggleScriptPanel}
+        title={t("script.title")}
+      >
+        <ScriptToolIcon />
       </button>
     </div>
   );

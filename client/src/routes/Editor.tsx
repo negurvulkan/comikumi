@@ -16,6 +16,7 @@ import { MultiSelectInspector } from "../editor/MultiSelectInspector";
 import { ExportPanel } from "../editor/ExportPanel";
 import { TextListPanel } from "../editor/TextListPanel";
 import { TranslatorContextPanel } from "../editor/TranslatorContextPanel";
+import { ScriptSidebar } from "../editor/ScriptSidebar";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuGroup } from "../editor/MenuBar";
 import { ToolStrip, type DrawTool } from "../editor/ToolStrip";
@@ -43,6 +44,7 @@ export function Editor() {
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [showTextPanel, setShowTextPanel] = useState(false);
   const [showContextPanel, setShowContextPanel] = useState(false);
+  const [showScriptPanel, setShowScriptPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
@@ -366,12 +368,20 @@ export function Editor() {
           onToggleTextPanel={() => {
             setShowTextPanel((v) => !v);
             setShowContextPanel(false);
+            setShowScriptPanel(false);
           }}
           textPanelDisabled={languages.length === 0}
           contextPanelOpen={showContextPanel}
           onToggleContextPanel={() => {
             setShowContextPanel((v) => !v);
             setShowTextPanel(false);
+            setShowScriptPanel(false);
+          }}
+          scriptPanelOpen={showScriptPanel}
+          onToggleScriptPanel={() => {
+            setShowScriptPanel((v) => !v);
+            setShowTextPanel(false);
+            setShowContextPanel(false);
           }}
         />
         <TextListPanel
@@ -401,6 +411,17 @@ export function Editor() {
             patches.forEach(({ id, readingOrderOverride }) => store.updateBubble(id, { readingOrderOverride }));
           }}
           onClose={() => setShowContextPanel(false)}
+        />
+        <ScriptSidebar
+          open={showScriptPanel}
+          volumeId={volumeId}
+          page={page}
+          onInsertIntoBubble={
+            selectedBubble
+              ? (text) => store.updateBubble(selectedBubble.id, { text: { ...selectedBubble.text, [activeLanguage]: text } })
+              : undefined
+          }
+          onClose={() => setShowScriptPanel(false)}
         />
         <LanguageStrip languages={languages} active={activeLanguage} onChange={store.setActiveLanguage} onLanguagesChange={setLanguages} />
         <div className="editor-layout">

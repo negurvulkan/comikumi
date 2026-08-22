@@ -432,6 +432,13 @@
     "dialogueNotePlaceholder": "Regieanweisung (z. B. off-panel, genuschelt)",
     "copyLine": "Kopieren",
     "copied": "Kopiert!",
-    "copyFailed": "Kopieren fehlgeschlagen"
+    "copyFailed": "Kopieren fehlgeschlagen",
+    "noLinkForPage": "Dieser Seite ist noch kein Skript zugeordnet.",
+    "chooseScriptPage": "Skript-Seite wählen…",
+    "link": "Verknüpfen",
+    "createLinkedPage": "+ Neue verknüpfte Skript-Seite",
+    "unlink": "Verknüpfung aufheben",
+    "linkedWithPage": "Verknüpft mit Seite {{page}}",
+    "insertIntoBubble": "In Blase einfügen"
   }
 }

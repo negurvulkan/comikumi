@@ -426,6 +426,13 @@
     "dialogueNotePlaceholder": "演出メモ（例: 画面外、口ごもる）",
     "copyLine": "コピー",
     "copied": "コピーしました！",
-    "copyFailed": "コピーに失敗しました"
+    "copyFailed": "コピーに失敗しました",
+    "noLinkForPage": "このページにはまだスクリプトが関連付けられていません。",
+    "chooseScriptPage": "スクリプトページを選択…",
+    "link": "関連付け",
+    "createLinkedPage": "+ 新しい関連付けスクリプトページ",
+    "unlink": "関連付けを解除",
+    "linkedWithPage": "ページ {{page}} と関連付け済み",
+    "insertIntoBubble": "吹き出しに挿入"
   }
 }

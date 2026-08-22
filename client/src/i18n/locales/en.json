@@ -432,6 +432,13 @@
     "dialogueNotePlaceholder": "Direction note (e.g. off-panel, mumbled)",
     "copyLine": "Copy",
     "copied": "Copied!",
-    "copyFailed": "Copy failed"
+    "copyFailed": "Copy failed",
+    "noLinkForPage": "No script linked to this page yet.",
+    "chooseScriptPage": "Choose script page…",
+    "link": "Link",
+    "createLinkedPage": "+ New linked script page",
+    "unlink": "Unlink",
+    "linkedWithPage": "Linked with page {{page}}",
+    "insertIntoBubble": "Insert into bubble"
   }
 }

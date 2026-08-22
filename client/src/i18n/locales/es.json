@@ -432,6 +432,13 @@
     "dialogueNotePlaceholder": "Nota de dirección (p. ej. fuera de cuadro, murmurado)",
     "copyLine": "Copiar",
     "copied": "¡Copiado!",
-    "copyFailed": "Error al copiar"
+    "copyFailed": "Error al copiar",
+    "noLinkForPage": "Todavía no hay ningún guion vinculado a esta página.",
+    "chooseScriptPage": "Elegir página de guion…",
+    "link": "Vincular",
+    "createLinkedPage": "+ Nueva página de guion vinculada",
+    "unlink": "Desvincular",
+    "linkedWithPage": "Vinculada con la página {{page}}",
+    "insertIntoBubble": "Insertar en el bocadillo"
   }
 }

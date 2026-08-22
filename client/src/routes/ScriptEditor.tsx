@@ -1,172 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { v4 as uuid } from "uuid";
-import type { ScriptDocument, ScriptPage, ScriptPanel, ScriptPanelSize } from "../../../shared/src/script";
+import type { ScriptDocument, ScriptPage, ScriptPanel } from "../../../shared/src/script";
 import { scriptPageDisplayLabel } from "../../../shared/src/script";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
-import { GlossaryHighlightedTextarea } from "../editor/GlossaryHighlightedTextarea";
+import { ScriptPanelCard } from "../editor/ScriptPanelCard";
+import { addPanel, deletePanel, emptyPage, movePanel, updatePanel } from "../editor/scriptEditing";
 import { useProject } from "../state/ProjectContext";
-
-function emptyPanel(): ScriptPanel {
-  return { id: uuid(), sizeHint: "medium", composition: "", action: "", dialogue: [] };
-}
-
-function emptyPage(): ScriptPage {
-  return { id: uuid(), label: "", notes: "", panels: [] };
-}
-
-interface DialogueRowProps {
-  line: ScriptPanel["dialogue"][number];
-  language: string;
-  characters: Character[];
-  glossary: GlossaryEntry[];
-  onChange: (patch: Partial<ScriptPanel["dialogue"][number]>) => void;
-  onDelete: () => void;
-}
-
-function DialogueRow({ line, language, characters, glossary, onChange, onDelete }: DialogueRowProps) {
-  const { t } = useTranslation();
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-  const speaker = characters.find((c) => c.id === line.characterId);
-
-  function handleCopy() {
-    navigator.clipboard
-      .writeText(line.text[language] ?? "")
-      .then(() => setCopyState("copied"))
-      .catch(() => setCopyState("failed"))
-      .finally(() => setTimeout(() => setCopyState("idle"), 1500));
-  }
-
-  return (
-    <div className="field-row" style={{ flexDirection: "column", alignItems: "stretch", gap: 4 }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <select
-          value={line.characterId ?? ""}
-          onChange={(e) => onChange({ characterId: e.target.value || null })}
-          style={{ flex: "0 0 auto" }}
-        >
-          <option value="">{t("editor.contextMenu.noCharacter")}</option>
-          {characters.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <input
-          value={line.note}
-          onChange={(e) => onChange({ note: e.target.value })}
-          placeholder={t("script.dialogueNotePlaceholder")}
-          style={{ flex: 1 }}
-        />
-        <button type="button" onClick={handleCopy} title={t("script.copyLine")}>
-          {copyState === "copied" ? t("script.copied") : copyState === "failed" ? t("script.copyFailed") : t("script.copyLine")}
-        </button>
-        <button type="button" onClick={onDelete} style={{ color: "#ff8a95" }}>
-          ×
-        </button>
-      </div>
-      {speaker?.voiceNotes.trim() && (
-        <p className="hint" style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-          <strong style={{ color: "var(--text)" }}>{t("managers.characters.voiceNotesLabel")}:</strong> {speaker.voiceNotes}
-        </p>
-      )}
-      <GlossaryHighlightedTextarea
-        value={line.text[language] ?? ""}
-        onChange={(v) => onChange({ text: { ...line.text, [language]: v } })}
-        glossary={glossary}
-        activeLanguage={language}
-      />
-    </div>
-  );
-}
-
-interface PanelCardProps {
-  panel: ScriptPanel;
-  index: number;
-  language: string;
-  characters: Character[];
-  glossary: GlossaryEntry[];
-  onChange: (patch: Partial<ScriptPanel>) => void;
-  onDelete: () => void;
-  onMove: (direction: "up" | "down") => void;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
-}
-
-function PanelCard({ panel, index, language, characters, glossary, onChange, onDelete, onMove, canMoveUp, canMoveDown }: PanelCardProps) {
-  const { t } = useTranslation();
-
-  function addLine() {
-    onChange({ dialogue: [...panel.dialogue, { id: uuid(), characterId: null, text: {}, note: "" }] });
-  }
-
-  function updateLine(lineId: string, patch: Partial<ScriptPanel["dialogue"][number]>) {
-    onChange({ dialogue: panel.dialogue.map((d) => (d.id === lineId ? { ...d, ...patch } : d)) });
-  }
-
-  function deleteLine(lineId: string) {
-    onChange({ dialogue: panel.dialogue.filter((d) => d.id !== lineId) });
-  }
-
-  return (
-    <div className="inspector" style={{ margin: "0 0 8px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <p style={{ margin: 0, fontWeight: 600 }}>{t("script.panelLabel", { index: index + 1 })}</p>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button type="button" onClick={() => onMove("up")} disabled={!canMoveUp}>
-            ↑
-          </button>
-          <button type="button" onClick={() => onMove("down")} disabled={!canMoveDown}>
-            ↓
-          </button>
-          <button type="button" onClick={onDelete} style={{ color: "#ff8a95" }}>
-            {t("script.deletePanel")}
-          </button>
-        </div>
-      </div>
-
-      <label>
-        {t("script.sizeHintLabel")}
-        <select value={panel.sizeHint} onChange={(e) => onChange({ sizeHint: e.target.value as ScriptPanelSize })}>
-          <option value="small">{t("script.sizeSmall")}</option>
-          <option value="medium">{t("script.sizeMedium")}</option>
-          <option value="large">{t("script.sizeLarge")}</option>
-        </select>
-      </label>
-
-      <label>
-        {t("script.compositionLabel")}
-        <textarea value={panel.composition} onChange={(e) => onChange({ composition: e.target.value })} style={{ minHeight: 50 }} />
-      </label>
-
-      <label>
-        {t("script.actionLabel")}
-        <textarea value={panel.action} onChange={(e) => onChange({ action: e.target.value })} style={{ minHeight: 50 }} />
-      </label>
-
-      <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-muted)" }}>{t("script.dialogueHeading")}</p>
-      {panel.dialogue.map((line) => (
-        <DialogueRow
-          key={line.id}
-          line={line}
-          language={language}
-          characters={characters}
-          glossary={glossary}
-          onChange={(patch) => updateLine(line.id, patch)}
-          onDelete={() => deleteLine(line.id)}
-        />
-      ))}
-      <button type="button" onClick={addLine}>
-        {t("script.addDialogueLine")}
-      </button>
-    </div>
-  );
-}
 
 export function ScriptEditor() {
   const { t } = useTranslation();
@@ -206,14 +50,19 @@ export function ScriptEditor() {
     setSavedMsg(null);
   }
 
-  function addPage() {
-    if (!doc) return;
-    update({ pages: [...doc.pages, emptyPage()] });
-  }
-
   function updatePage(pageId: string, patch: Partial<ScriptPage>) {
     if (!doc) return;
     update({ pages: doc.pages.map((p) => (p.id === pageId ? { ...p, ...patch } : p)) });
+  }
+
+  function applyToPage(pageId: string, fn: (page: ScriptPage) => ScriptPage) {
+    if (!doc) return;
+    update({ pages: doc.pages.map((p) => (p.id === pageId ? fn(p) : p)) });
+  }
+
+  function addPage() {
+    if (!doc) return;
+    update({ pages: [...doc.pages, emptyPage()] });
   }
 
   function deletePage(pageId: string) {
@@ -229,39 +78,6 @@ export function ScriptEditor() {
     const pages = [...doc.pages];
     [pages[idx], pages[swapWith]] = [pages[swapWith], pages[idx]];
     update({ pages });
-  }
-
-  function addPanel(pageId: string) {
-    updatePage(pageId, { panels: [...(doc?.pages.find((p) => p.id === pageId)?.panels ?? []), emptyPanel()] });
-  }
-
-  function updatePanel(pageId: string, panelId: string, patch: Partial<ScriptPanel>) {
-    if (!doc) return;
-    update({
-      pages: doc.pages.map((p) =>
-        p.id !== pageId ? p : { ...p, panels: p.panels.map((pan) => (pan.id === panelId ? { ...pan, ...patch } : pan)) }
-      ),
-    });
-  }
-
-  function deletePanel(pageId: string, panelId: string) {
-    if (!doc) return;
-    update({ pages: doc.pages.map((p) => (p.id !== pageId ? p : { ...p, panels: p.panels.filter((pan) => pan.id !== panelId) })) });
-  }
-
-  function movePanel(pageId: string, panelId: string, direction: "up" | "down") {
-    if (!doc) return;
-    update({
-      pages: doc.pages.map((p) => {
-        if (p.id !== pageId) return p;
-        const idx = p.panels.findIndex((pan) => pan.id === panelId);
-        const swapWith = direction === "up" ? idx - 1 : idx + 1;
-        if (idx < 0 || swapWith < 0 || swapWith >= p.panels.length) return p;
-        const panels = [...p.panels];
-        [panels[idx], panels[swapWith]] = [panels[swapWith], panels[idx]];
-        return { ...p, panels };
-      }),
-    });
   }
 
   async function handleSave() {
@@ -322,6 +138,11 @@ export function ScriptEditor() {
                 </button>
               </div>
             </div>
+            {page.linkedPage && (
+              <p className="hint" style={{ margin: 0 }}>
+                {t("script.linkedWithPage", { page: page.linkedPage })}
+              </p>
+            )}
             <label>
               {t("script.pageLabel")}
               <input
@@ -335,22 +156,22 @@ export function ScriptEditor() {
               <textarea value={page.notes} onChange={(e) => updatePage(page.id, { notes: e.target.value })} style={{ minHeight: 40 }} />
             </label>
 
-            {page.panels.map((panel, panelIndex) => (
-              <PanelCard
+            {page.panels.map((panel: ScriptPanel, panelIndex) => (
+              <ScriptPanelCard
                 key={panel.id}
                 panel={panel}
                 index={panelIndex}
                 language={language}
                 characters={characters}
                 glossary={glossary}
-                onChange={(patch) => updatePanel(page.id, panel.id, patch)}
-                onDelete={() => deletePanel(page.id, panel.id)}
-                onMove={(direction) => movePanel(page.id, panel.id, direction)}
+                onChange={(patch) => applyToPage(page.id, (p) => updatePanel(p, panel.id, patch))}
+                onDelete={() => applyToPage(page.id, (p) => deletePanel(p, panel.id))}
+                onMove={(direction) => applyToPage(page.id, (p) => movePanel(p, panel.id, direction))}
                 canMoveUp={panelIndex > 0}
                 canMoveDown={panelIndex < page.panels.length - 1}
               />
             ))}
-            <button type="button" onClick={() => addPanel(page.id)}>
+            <button type="button" onClick={() => applyToPage(page.id, addPanel)}>
               {t("script.addPanel")}
             </button>
           </div>

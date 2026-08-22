@@ -426,6 +426,13 @@
     "dialogueNotePlaceholder": "演出备注（例如：画面外、含糊）",
     "copyLine": "复制",
     "copied": "已复制！",
-    "copyFailed": "复制失败"
+    "copyFailed": "复制失败",
+    "noLinkForPage": "此页面尚未关联任何剧本。",
+    "chooseScriptPage": "选择剧本页面…",
+    "link": "关联",
+    "createLinkedPage": "+ 新建关联剧本页面",
+    "unlink": "取消关联",
+    "linkedWithPage": "已与第 {{page}} 页关联",
+    "insertIntoBubble": "插入到气泡"
   }
 }

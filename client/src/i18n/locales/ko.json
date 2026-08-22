@@ -426,6 +426,13 @@
     "dialogueNotePlaceholder": "연출 메모 (예: 화면 밖, 웅얼거림)",
     "copyLine": "복사",
     "copied": "복사됨!",
-    "copyFailed": "복사 실패"
+    "copyFailed": "복사 실패",
+    "noLinkForPage": "이 페이지에는 아직 연결된 대본이 없습니다.",
+    "chooseScriptPage": "대본 페이지 선택…",
+    "link": "연결",
+    "createLinkedPage": "+ 새로 연결된 대본 페이지",
+    "unlink": "연결 해제",
+    "linkedWithPage": "페이지 {{page}}에 연결됨",
+    "insertIntoBubble": "말풍선에 삽입"
   }
 }
