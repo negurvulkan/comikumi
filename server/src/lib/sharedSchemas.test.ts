@@ -18,8 +18,11 @@ describe("ProjectSettingsSchema", () => {
       thumbnailsDir: "",
       emptySuffix: "_empty",
       letteringSuffix: "_lettering",
+      scriptSuffix: "_script",
       exportFolderTemplate: "{book}_{folderSuffix}",
       description: "",
+      autosaveEnabled: false,
+      autosaveIntervalSeconds: 30,
     });
   });
 });

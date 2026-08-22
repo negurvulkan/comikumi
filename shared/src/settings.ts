@@ -21,9 +21,17 @@ export const ProjectSettingsSchema = z.object({
   thumbnailsDir: z.string().default(""),
   emptySuffix: z.string().min(1).default("_empty"),
   letteringSuffix: z.string().min(1).default("_lettering"),
+  /** Suffix for the per-volume script-planning JSON file (see shared/src/script.ts),
+   * e.g. "volume_01" + "_script" -> "volume_01_script.json". */
+  scriptSuffix: z.string().min(1).default("_script"),
   /** Export folder name template; {book} and {folderSuffix} get interpolated. */
   exportFolderTemplate: z.string().min(1).default("{book}_{folderSuffix}"),
   /** Free-text notes about the project, editable in the Settings dialog. */
   description: z.string().default(""),
+  /** Whether the editor should automatically call save() on an interval while there
+   * are unsaved changes, instead of only on an explicit "Speichern" click. */
+  autosaveEnabled: z.boolean().default(false),
+  /** How often to autosave, in seconds, while autosaveEnabled is on. */
+  autosaveIntervalSeconds: z.number().int().min(5).max(3600).default(30),
 });
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;

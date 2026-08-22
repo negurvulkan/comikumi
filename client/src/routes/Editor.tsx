@@ -16,6 +16,7 @@ import { MultiSelectInspector } from "../editor/MultiSelectInspector";
 import { ExportPanel } from "../editor/ExportPanel";
 import { TextListPanel } from "../editor/TextListPanel";
 import { TranslatorContextPanel } from "../editor/TranslatorContextPanel";
+import { ScriptSidebar } from "../editor/ScriptSidebar";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuGroup } from "../editor/MenuBar";
 import { ToolStrip, type DrawTool } from "../editor/ToolStrip";
@@ -43,6 +44,7 @@ export function Editor() {
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [showTextPanel, setShowTextPanel] = useState(false);
   const [showContextPanel, setShowContextPanel] = useState(false);
+  const [showScriptPanel, setShowScriptPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
@@ -62,6 +64,7 @@ export function Editor() {
   // with the correct glyphs — otherwise the canvas just keeps the stale look.
   const [fontsVersion, setFontsVersion] = useState(0);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
+  const [autosave, setAutosave] = useState<{ enabled: boolean; intervalSeconds: number } | null>(null);
 
   useEffect(() => {
     store.loadPage(volumeId, page);
@@ -87,6 +90,26 @@ export function Editor() {
   useEffect(() => {
     api.listPresets().then(setPresets);
   }, []);
+
+  // Re-read whenever the Settings modal closes, so a just-changed autosave
+  // interval/toggle takes effect immediately without needing a page reload.
+  useEffect(() => {
+    if (showSettings) return;
+    api.getSettings().then((s) => setAutosave({ enabled: s.autosaveEnabled, intervalSeconds: s.autosaveIntervalSeconds }));
+  }, [showSettings]);
+
+  // Autosave: on the configured interval, save only if there are actually
+  // unsaved changes and no save is already in flight — reads fresh state via
+  // getState() (not the `store` snapshot) so this effect doesn't need to
+  // restart on every keystroke, only when the autosave config itself changes.
+  useEffect(() => {
+    if (!autosave?.enabled) return;
+    const id = setInterval(() => {
+      const s = useEditorStore.getState();
+      if (s.dirty && !s.saving) s.save();
+    }, autosave.intervalSeconds * 1000);
+    return () => clearInterval(id);
+  }, [autosave]);
 
   // Once languages are known, make sure the active tab actually exists — the
   // store defaults to "de" before we know whether that language still exists.
@@ -262,6 +285,7 @@ export function Editor() {
         { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
+        { type: "action", label: t("script.menuEntry"), onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/script`) },
         { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
       ],
     },
@@ -344,12 +368,20 @@ export function Editor() {
           onToggleTextPanel={() => {
             setShowTextPanel((v) => !v);
             setShowContextPanel(false);
+            setShowScriptPanel(false);
           }}
           textPanelDisabled={languages.length === 0}
           contextPanelOpen={showContextPanel}
           onToggleContextPanel={() => {
             setShowContextPanel((v) => !v);
             setShowTextPanel(false);
+            setShowScriptPanel(false);
+          }}
+          scriptPanelOpen={showScriptPanel}
+          onToggleScriptPanel={() => {
+            setShowScriptPanel((v) => !v);
+            setShowTextPanel(false);
+            setShowContextPanel(false);
           }}
         />
         <TextListPanel
@@ -379,6 +411,18 @@ export function Editor() {
             patches.forEach(({ id, readingOrderOverride }) => store.updateBubble(id, { readingOrderOverride }));
           }}
           onClose={() => setShowContextPanel(false)}
+        />
+        <ScriptSidebar
+          open={showScriptPanel}
+          volumeId={volumeId}
+          page={page}
+          layout={layout}
+          onInsertIntoBubble={
+            selectedBubble
+              ? (text) => store.updateBubble(selectedBubble.id, { text: { ...selectedBubble.text, [activeLanguage]: text } })
+              : undefined
+          }
+          onClose={() => setShowScriptPanel(false)}
         />
         <LanguageStrip languages={languages} active={activeLanguage} onChange={store.setActiveLanguage} onLanguagesChange={setLanguages} />
         <div className="editor-layout">

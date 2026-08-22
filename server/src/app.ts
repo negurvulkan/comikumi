@@ -11,6 +11,7 @@ import { languagesRouter } from "./routes/languages.js";
 import { charactersRouter } from "./routes/characters.js";
 import { glossaryRouter } from "./routes/glossary.js";
 import { presetsRouter } from "./routes/presets.js";
+import { scriptRouter } from "./routes/script.js";
 import { settingsRouter } from "./routes/settings.js";
 import { projectRouter } from "./routes/project.js";
 import { browseRouter } from "./routes/browse.js";
@@ -30,6 +31,7 @@ export function createApp(): Express {
   app.use("/api/volumes", pagesRouter);
   app.use("/api/volumes", layoutRouter);
   app.use("/api/volumes", exportRouter);
+  app.use("/api/volumes", scriptRouter);
   app.use("/api/fonts", fontsRouter);
   app.use("/api/images", imagesRouter);
   app.use("/api/bubble-svgs", bubbleSvgsRouter);

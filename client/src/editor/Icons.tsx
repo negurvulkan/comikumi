@@ -90,6 +90,16 @@ export function ContextToolIcon() {
   );
 }
 
+export function ScriptToolIcon() {
+  return (
+    <svg {...common}>
+      <path d="M5 2.5 H13 L15.5 5 V17.5 H5 Z" />
+      <path d="M13 2.5 V5 H15.5" />
+      <path d="M7 9 H13 M7 12 H13 M7 15 H10.5" />
+    </svg>
+  );
+}
+
 export function ChevronDownIcon() {
   return (
     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

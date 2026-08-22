@@ -38,15 +38,29 @@ export function SettingsForm({ onClose }: Props) {
     setError(null);
     setSavedMsg(null);
     try {
-      const { scanRoot, assetsDir, thumbnailsDir, emptySuffix, letteringSuffix, exportFolderTemplate, description } = settings;
+      const {
+        scanRoot,
+        assetsDir,
+        thumbnailsDir,
+        emptySuffix,
+        letteringSuffix,
+        scriptSuffix,
+        exportFolderTemplate,
+        description,
+        autosaveEnabled,
+        autosaveIntervalSeconds,
+      } = settings;
       const next = await api.updateSettings({
         scanRoot,
         assetsDir,
         thumbnailsDir,
         emptySuffix,
         letteringSuffix,
+        scriptSuffix,
         exportFolderTemplate,
         description,
+        autosaveEnabled,
+        autosaveIntervalSeconds,
       });
       setSettings(next);
       setSavedMsg(t("settings.savedMsg"));
@@ -157,6 +171,16 @@ export function SettingsForm({ onClose }: Props) {
       </label>
 
       <label>
+        {t("settings.scriptSuffixLabel")}
+        <input
+          value={settings.scriptSuffix}
+          onChange={(e) => setSettings({ ...settings, scriptSuffix: e.target.value })}
+          placeholder="_script"
+          required
+        />
+      </label>
+
+      <label>
         {t("settings.exportTemplateLabel")}
         <input
           value={settings.exportFolderTemplate}
@@ -169,6 +193,27 @@ export function SettingsForm({ onClose }: Props) {
         {t("settings.exportTemplateHintPrefix")} <code>{"{book}"}</code> {t("settings.exportTemplateHintMiddle")}{" "}
         <code>{"{folderSuffix}"}</code> {t("settings.exportTemplateHintSuffix")}
       </p>
+
+      <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <input
+          type="checkbox"
+          checked={settings.autosaveEnabled}
+          onChange={(e) => setSettings({ ...settings, autosaveEnabled: e.target.checked })}
+        />
+        {t("settings.autosaveEnabledLabel")}
+      </label>
+      {settings.autosaveEnabled && (
+        <label>
+          {t("settings.autosaveIntervalLabel")}
+          <input
+            type="number"
+            min={5}
+            max={3600}
+            value={settings.autosaveIntervalSeconds}
+            onChange={(e) => setSettings({ ...settings, autosaveIntervalSeconds: Number(e.target.value) })}
+          />
+        </label>
+      )}
 
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button type="submit" className="primary" disabled={saving}>
