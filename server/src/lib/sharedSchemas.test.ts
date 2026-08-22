@@ -21,6 +21,7 @@ describe("ProjectSettingsSchema", () => {
       scriptSuffix: "_script",
       exportFolderTemplate: "{book}_{folderSuffix}",
       description: "",
+      coverImagePath: "",
       autosaveEnabled: false,
       autosaveIntervalSeconds: 30,
       readingDirection: "rtl",

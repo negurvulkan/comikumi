@@ -149,6 +149,15 @@ body {
   letter-spacing: 0.03em;
 }
 
+.project-card-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #111;
+  display: block;
+}
+
 .project-card-open {
   display: block;
   width: 100%;

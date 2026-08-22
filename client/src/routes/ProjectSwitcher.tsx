@@ -249,11 +249,11 @@ export function ProjectSwitcher() {
                     disabled={busy}
                     title={isActive ? t("projectSwitcher.currentlyOpen") : undefined}
                   >
+                    {p.coverImagePath && <img src={api.projectCoverUrl(p.coverImagePath)} alt="" className="project-card-cover" />}
                     <div className="label" style={{ fontSize: 16, color: "var(--text)" }}>
                       {p.name ?? t("projectSwitcher.fileNotFound")}
                       {isActive && <span className="project-card-active-badge">{t("projectSwitcher.currentlyOpen")}</span>}
                     </div>
-                    <div className="label">{p.filePath}</div>
                   </button>
                   <div className="project-card-actions">
                     <button type="button" onClick={() => handleArchive(p.filePath)} disabled={busy || isActive} title={t("projectSwitcher.archiveButton")}>
@@ -277,10 +277,10 @@ export function ProjectSwitcher() {
             <div className="card-grid">
               {archived.map((p) => (
                 <div key={p.filePath} className="card project-card">
+                  {p.coverImagePath && <img src={api.projectCoverUrl(p.coverImagePath)} alt="" className="project-card-cover" />}
                   <div className="label" style={{ fontSize: 16, color: "var(--text)" }}>
                     {p.name ?? t("projectSwitcher.fileNotFound")}
                   </div>
-                  <div className="label">{p.filePath}</div>
                   <div className="project-card-actions">
                     <button type="button" onClick={() => handleUnarchive(p.filePath)} disabled={busy} title={t("projectSwitcher.unarchiveButton")}>
                       {t("projectSwitcher.unarchiveButton")}

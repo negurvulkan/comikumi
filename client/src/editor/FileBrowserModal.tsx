@@ -6,8 +6,11 @@ import { translateApiError } from "../i18n/translateApiError";
 
 interface Props {
   /** "directory": pick a folder (a "Diesen Ordner wählen" button confirms the
-   * current one). "file": clicking a .json file selects it immediately. */
+   * current one). "file": clicking a file matching `fileFilter` selects it immediately. */
   mode: "directory" | "file";
+  /** Only meaningful with mode="file" — which files show up as selectable. Defaults to
+   * "json" (the original, and still most common, use: picking a project file). */
+  fileFilter?: "json" | "image";
   startPath?: string;
   onSelect: (path: string) => void;
   onClose: () => void;
@@ -17,7 +20,7 @@ interface Props {
  * `<input type="file">` can't hand back an absolute path, but this tool already
  * runs locally and trusts arbitrary paths everywhere else, so browsing the
  * server's filesystem directly is the actually-working equivalent. */
-export function FileBrowserModal({ mode, startPath, onSelect, onClose }: Props) {
+export function FileBrowserModal({ mode, fileFilter = "json", startPath, onSelect, onClose }: Props) {
   const { t } = useTranslation();
   const [currentPath, setCurrentPath] = useState<string | null>(startPath ?? null);
   const [parent, setParent] = useState<string | null>(null);
@@ -30,7 +33,7 @@ export function FileBrowserModal({ mode, startPath, onSelect, onClose }: Props) 
     setLoading(true);
     setError(null);
     api
-      .browse(currentPath ?? undefined, mode === "file" ? "json" : "directories")
+      .browse(currentPath ?? undefined, mode === "file" ? fileFilter : "directories")
       .then((r) => {
         if (cancelled) return;
         setParent(r.parent);
@@ -45,7 +48,7 @@ export function FileBrowserModal({ mode, startPath, onSelect, onClose }: Props) 
     return () => {
       cancelled = true;
     };
-  }, [currentPath, mode, t]);
+  }, [currentPath, mode, fileFilter, t]);
 
   function handleEntryClick(entry: BrowseEntry) {
     if (entry.isDirectory) {

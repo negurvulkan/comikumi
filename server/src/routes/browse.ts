@@ -5,6 +5,8 @@ import { asyncHandler } from "../lib/asyncHandler.js";
 
 export const browseRouter = Router();
 
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".bmp"]);
+
 interface BrowseEntry {
   name: string;
   path: string;
@@ -35,7 +37,7 @@ browseRouter.get(
   "/",
   asyncHandler(async (req, res) => {
     const rawPath = typeof req.query.path === "string" ? req.query.path : "";
-    const filter = req.query.filter === "json" ? "json" : "directories";
+    const filter = req.query.filter === "json" ? "json" : req.query.filter === "image" ? "image" : "directories";
 
     if (!rawPath) {
       res.json({ path: null, parent: null, entries: await listRoots() });
@@ -51,7 +53,12 @@ browseRouter.get(
     }
 
     const entries: BrowseEntry[] = dirEntries
-      .filter((e) => e.isDirectory() || (filter === "json" && e.isFile() && e.name.toLowerCase().endsWith(".json")))
+      .filter(
+        (e) =>
+          e.isDirectory() ||
+          (filter === "json" && e.isFile() && e.name.toLowerCase().endsWith(".json")) ||
+          (filter === "image" && e.isFile() && IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
+      )
       .map((e) => ({ name: e.name, path: path.join(rawPath, e.name), isDirectory: e.isDirectory() }))
       .sort((a, b) => Number(b.isDirectory) - Number(a.isDirectory) || a.name.localeCompare(b.name));
 

@@ -41,4 +41,11 @@ describe("PUT /api/settings", () => {
     const res = await request(app).get("/api/settings");
     expect(res.body.description).toBe("Ein Testprojekt");
   });
+
+  it("persists coverImagePath", async () => {
+    const coverPath = path.join(env.scanRoot, "Volume_01", "volume_01_empty", "page_01.png");
+    await request(app).put("/api/settings").send({ scanRoot: env.scanRoot, coverImagePath: coverPath });
+    const res = await request(app).get("/api/settings");
+    expect(res.body.coverImagePath).toBe(coverPath);
+  });
 });

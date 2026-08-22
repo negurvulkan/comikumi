@@ -28,6 +28,10 @@ export const ProjectSettingsSchema = z.object({
   exportFolderTemplate: z.string().min(1).default("{book}_{folderSuffix}"),
   /** Free-text notes about the project, editable in the Settings dialog. */
   description: z.string().default(""),
+  /** Optional absolute path to a cover image/logo shown on this project's card in the
+   * project switcher (recent/archived lists). Empty string = no cover configured, i.e.
+   * today's plain text-only card. */
+  coverImagePath: z.string().default(""),
   /** Whether the editor should automatically call save() on an interval while there
    * are unsaved changes, instead of only on an explicit "Speichern" click. */
   autosaveEnabled: z.boolean().default(false),

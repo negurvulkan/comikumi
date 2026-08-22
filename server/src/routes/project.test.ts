@@ -206,6 +206,25 @@ describe("Recent-project list management (remove/archive/unarchive/delete-file)"
   });
 });
 
+describe("GET /api/project/cover", () => {
+  it("serves an existing image file by absolute path", async () => {
+    const imagePath = path.join(env.scanRoot, "Volume_01", "volume_01_empty", "page_01.png");
+    const res = await request(app).get("/api/project/cover").query({ path: imagePath });
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toBe("image/png");
+  });
+
+  it("404s for a path that doesn't exist", async () => {
+    const res = await request(app).get("/api/project/cover").query({ path: path.join(env.scanRoot, "no-such-cover.png") });
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects a non-image extension", async () => {
+    const res = await request(app).get("/api/project/cover").query({ path: env.projectFile });
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("POST /api/project/open", () => {
   it("opens a second, previously-created project file and switches the active project to it", async () => {
     const otherFile = path.join(path.dirname(env.projectFile), "other-projekt.json");

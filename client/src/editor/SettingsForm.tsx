@@ -26,6 +26,7 @@ export function SettingsForm({ onClose }: Props) {
   const [browsing, setBrowsing] = useState(false);
   const [browsingAssetsDir, setBrowsingAssetsDir] = useState(false);
   const [browsingThumbnailsDir, setBrowsingThumbnailsDir] = useState(false);
+  const [browsingCoverImage, setBrowsingCoverImage] = useState(false);
 
   useEffect(() => {
     api.getSettings().then(setSettings).catch((e) => setError(translateApiError(e, t)));
@@ -47,6 +48,7 @@ export function SettingsForm({ onClose }: Props) {
         scriptSuffix,
         exportFolderTemplate,
         description,
+        coverImagePath,
         autosaveEnabled,
         autosaveIntervalSeconds,
         readingDirection,
@@ -60,6 +62,7 @@ export function SettingsForm({ onClose }: Props) {
         scriptSuffix,
         exportFolderTemplate,
         description,
+        coverImagePath,
         autosaveEnabled,
         autosaveIntervalSeconds,
         readingDirection,
@@ -91,6 +94,34 @@ export function SettingsForm({ onClose }: Props) {
           placeholder={t("settings.descriptionPlaceholder")}
         />
       </label>
+
+      <label>
+        {t("settings.coverImagePathLabel")}
+        <div style={{ display: "flex", gap: 6 }}>
+          <input
+            style={{ flex: 1 }}
+            value={settings.coverImagePath}
+            onChange={(e) => setSettings({ ...settings, coverImagePath: e.target.value })}
+            placeholder={t("settings.coverImagePathPlaceholder")}
+          />
+          <button type="button" onClick={() => setBrowsingCoverImage(true)}>
+            {t("common.browse")}
+          </button>
+          {settings.coverImagePath && (
+            <button type="button" onClick={() => setSettings({ ...settings, coverImagePath: "" })}>
+              {t("settings.coverImagePathClear")}
+            </button>
+          )}
+        </div>
+      </label>
+      {settings.coverImagePath && (
+        <img
+          src={api.projectCoverUrl(settings.coverImagePath)}
+          alt=""
+          style={{ width: 96, height: 96, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }}
+        />
+      )}
+      <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>{t("settings.coverImagePathHint")}</p>
 
       <label>
         {t("settings.scanRootLabel")}
@@ -273,6 +304,18 @@ export function SettingsForm({ onClose }: Props) {
           setBrowsingThumbnailsDir(false);
         }}
         onClose={() => setBrowsingThumbnailsDir(false)}
+      />
+    )}
+    {browsingCoverImage && (
+      <FileBrowserModal
+        mode="file"
+        fileFilter="image"
+        startPath={settings.scanRoot}
+        onSelect={(path) => {
+          setSettings({ ...settings, coverImagePath: path });
+          setBrowsingCoverImage(false);
+        }}
+        onClose={() => setBrowsingCoverImage(false)}
       />
     )}
     </>

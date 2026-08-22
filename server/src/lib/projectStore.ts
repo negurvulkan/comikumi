@@ -131,9 +131,16 @@ async function getActiveProject(): Promise<ActiveProject> {
   return active;
 }
 
-export async function getCurrentProjectInfo(): Promise<{ filePath: string; name: string; readingDirection: "ltr" | "rtl" } | null> {
+export async function getCurrentProjectInfo(): Promise<{
+  filePath: string;
+  name: string;
+  readingDirection: "ltr" | "rtl";
+  coverImagePath: string;
+} | null> {
   await ensureInitialized();
-  return active ? { filePath: active.filePath, name: active.data.name, readingDirection: active.data.readingDirection } : null;
+  return active
+    ? { filePath: active.filePath, name: active.data.name, readingDirection: active.data.readingDirection, coverImagePath: active.data.coverImagePath }
+    : null;
 }
 
 /** Resolved project-specific asset subfolder for the given kind, or null if no project
@@ -158,22 +165,29 @@ export async function getThumbnailsDir(globalFallback: string): Promise<string> 
   return path.join(path.dirname(active.filePath), "thumbnails");
 }
 
-export async function listRecentProjects(): Promise<{ filePath: string; name?: string }[]> {
+export interface ListedProject {
+  filePath: string;
+  /** Missing when the file itself couldn't be read anymore (moved/deleted). */
+  name?: string;
+  coverImagePath?: string;
+}
+
+export async function listRecentProjects(): Promise<ListedProject[]> {
   const state = await readAppState();
   return resolveProjectNames(state.recentProjectFiles);
 }
 
-export async function listArchivedProjects(): Promise<{ filePath: string; name?: string }[]> {
+export async function listArchivedProjects(): Promise<ListedProject[]> {
   const state = await readAppState();
   return resolveProjectNames(state.archivedProjectFiles);
 }
 
-async function resolveProjectNames(filePaths: string[]): Promise<{ filePath: string; name?: string }[]> {
-  const results: { filePath: string; name?: string }[] = [];
+async function resolveProjectNames(filePaths: string[]): Promise<ListedProject[]> {
+  const results: ListedProject[] = [];
   for (const filePath of filePaths) {
     try {
       const data = await readProjectFile(filePath);
-      results.push({ filePath, name: data.name });
+      results.push({ filePath, name: data.name, coverImagePath: data.coverImagePath || undefined });
     } catch {
       results.push({ filePath });
     }
@@ -279,6 +293,7 @@ export async function readSettings(): Promise<ProjectSettings> {
     scriptSuffix,
     exportFolderTemplate,
     description,
+    coverImagePath,
     autosaveEnabled,
     autosaveIntervalSeconds,
     readingDirection,
@@ -292,6 +307,7 @@ export async function readSettings(): Promise<ProjectSettings> {
     scriptSuffix,
     exportFolderTemplate,
     description,
+    coverImagePath,
     autosaveEnabled,
     autosaveIntervalSeconds,
     readingDirection,

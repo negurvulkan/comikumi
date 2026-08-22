@@ -38,12 +38,16 @@ export interface CurrentProject {
   filePath: string;
   name: string;
   readingDirection: "ltr" | "rtl";
+  coverImagePath: string;
 }
 
 export interface RecentProject {
   filePath: string;
   /** Missing when the file itself couldn't be read anymore (moved/deleted). */
   name?: string;
+  /** Absolute path to an optional cover image/logo — pass to api.projectCoverUrl() to
+   * render it. Missing/empty when the project has none configured. */
+  coverImagePath?: string;
 }
 
 export interface BrowseEntry {
@@ -263,6 +267,11 @@ export const api = {
       body: JSON.stringify({ filePath }),
     }).then((r) => json<{ ok: true }>(r)),
 
+  /** URL for a project's cover image/logo (settings.coverImagePath) — an absolute local
+   * path, not a managed asset, so it's served through a dedicated route rather than the
+   * fonts/images/bubble-svgs asset routers. */
+  projectCoverUrl: (coverImagePath: string) => `/api/project/cover?${new URLSearchParams({ path: coverImagePath })}`,
+
   openProject: (filePath: string) =>
     fetch("/api/project/open", {
       method: "POST",
@@ -307,7 +316,7 @@ export const api = {
       body: JSON.stringify(data),
     }).then((r) => json<{ createdPaths: string[] }>(r)),
 
-  browse: (path?: string, filter?: "directories" | "json") => {
+  browse: (path?: string, filter?: "directories" | "json" | "image") => {
     const params = new URLSearchParams();
     if (path) params.set("path", path);
     if (filter) params.set("filter", filter);

@@ -40,6 +40,42 @@ projectRouter.get(
   })
 );
 
+const COVER_MIME_BY_EXT: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".bmp": "image/bmp",
+};
+
+/** Serves an arbitrary local image file by absolute path — the project-switcher cards'
+ * cover images live wherever the user picked them via FileBrowserModal (settings.
+ * coverImagePath), not in a managed asset folder, so there's no fixed base directory to
+ * serve from the way the fonts/images/bubble-svgs asset routers do. Same trust model as
+ * /api/browse (this tool already reads arbitrary local paths for a single local user) —
+ * restricted to known image extensions rather than any file. */
+projectRouter.get(
+  "/cover",
+  asyncHandler(async (req, res) => {
+    const rawPath = typeof req.query.path === "string" ? req.query.path : "";
+    const mime = COVER_MIME_BY_EXT[path.extname(rawPath).toLowerCase()];
+    if (!rawPath || !mime) {
+      res.status(400).json({ error: "invalid_request" });
+      return;
+    }
+    try {
+      await fs.access(rawPath);
+    } catch {
+      res.status(404).json({ error: "cover_not_found" });
+      return;
+    }
+    res.type(mime);
+    res.sendFile(path.resolve(rawPath));
+  })
+);
+
 const FilePathBodySchema = z.object({ filePath: z.string().min(1) });
 
 /** Shared guard for the three list-mutating/destructive routes below — none of them
