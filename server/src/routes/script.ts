@@ -6,6 +6,7 @@ import { findVolume } from "../lib/projectScanner.js";
 import { scriptFileName } from "../lib/paths.js";
 import { readSettings } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireProjectRole } from "../lib/auth.js";
 
 export const scriptRouter = Router();
 
@@ -37,6 +38,7 @@ scriptRouter.get(
 
 scriptRouter.put(
   "/:id/script",
+  requireProjectRole("letterer"),
   asyncHandler(async (req, res) => {
     const resolved = await scriptFileFor(req.params.id);
     if (!resolved) {

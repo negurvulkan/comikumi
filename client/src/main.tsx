@@ -10,6 +10,8 @@ import { ScriptEditor } from "./routes/ScriptEditor";
 import { Settings } from "./routes/Settings";
 import { ProjectSwitcher } from "./routes/ProjectSwitcher";
 import { ProjectWizard } from "./routes/ProjectWizard";
+import { Login } from "./routes/Login";
+import { Setup } from "./routes/Setup";
 import "./index.css";
 
 const router = createHashRouter([
@@ -18,6 +20,8 @@ const router = createHashRouter([
     element: <App />,
     children: [
       { index: true, element: <VolumeList /> },
+      { path: "login", element: <Login /> },
+      { path: "setup", element: <Setup /> },
       { path: "project", element: <ProjectSwitcher /> },
       { path: "project/new", element: <ProjectWizard /> },
       { path: "settings", element: <Settings /> },

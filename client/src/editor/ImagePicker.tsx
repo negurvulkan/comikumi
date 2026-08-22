@@ -9,10 +9,11 @@ interface Props {
   /** Renders the trigger as a bare icon (for the narrow ToolStrip) instead of the
    * text-labelled "+ Bild" button — popover behavior/state is unchanged. */
   iconOnly?: boolean;
+  disabled?: boolean;
 }
 
 /** Toolbar popover: pick an already-uploaded image to place, or upload a new one. */
-export function ImagePicker({ onInsert, iconOnly }: Props) {
+export function ImagePicker({ onInsert, iconOnly, disabled }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [images, setImages] = useState<ImageEntry[]>([]);
@@ -61,6 +62,7 @@ export function ImagePicker({ onInsert, iconOnly }: Props) {
         onClick={() => setOpen((o) => !o)}
         className={iconOnly ? `tool-btn${open ? " active" : ""}` : open ? "active" : ""}
         title={t("editor.imagePicker.insertImage")}
+        disabled={disabled}
       >
         {iconOnly ? <ImageToolIcon /> : t("editor.imagePicker.addShort")}
       </button>

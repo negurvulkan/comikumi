@@ -18,12 +18,14 @@ import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { VolumeReportModal } from "../editor/VolumeReportModal";
 import { useProject } from "../state/ProjectContext";
+import { useProjectRole } from "../state/useProjectRole";
 
 export function PageGrid() {
   const { t } = useTranslation();
   const { volumeId = "" } = useParams();
   const navigate = useNavigate();
   const { project } = useProject();
+  const { hasAtLeast } = useProjectRole();
   const [pages, setPages] = useState<PageSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -106,11 +108,16 @@ export function PageGrid() {
       label: t("pageGrid.menuPageLabel"),
       entries: [
         { type: "sublabel", label: t("pageGrid.menuImportLabel") },
-        { type: "action", label: t("pageGrid.menuImportZip"), onClick: () => importInputRef.current?.click(), disabled: busy },
+        { type: "action", label: t("pageGrid.menuImportZip"), onClick: () => importInputRef.current?.click(), disabled: busy || !hasAtLeast("letterer") },
         { type: "separator" },
         { type: "sublabel", label: t("pageGrid.menuExportLabel") },
-        { type: "action", label: t("pageGrid.menuExportImage"), onClick: () => setShowExportPanel(true), disabled: languages.length === 0 },
-        { type: "action", label: t("pageGrid.menuExportAllZip"), onClick: handleExportZip, disabled: busy },
+        {
+          type: "action",
+          label: t("pageGrid.menuExportImage"),
+          onClick: () => setShowExportPanel(true),
+          disabled: languages.length === 0 || !hasAtLeast("letterer"),
+        },
+        { type: "action", label: t("pageGrid.menuExportAllZip"), onClick: handleExportZip, disabled: busy || !hasAtLeast("letterer") },
         { type: "separator" },
         { type: "action", label: t("pageGrid.menuVolumeReport"), onClick: () => setShowVolumeReport(true) },
         { type: "separator" },
@@ -122,11 +129,16 @@ export function PageGrid() {
       label: t("menu.project"),
       entries: [
         { type: "action", label: t("menu.switch"), onClick: () => navigate("/project") },
-        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
-        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
-        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
-        { type: "action", label: t("script.menuEntry"), onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/script`) },
-        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
+        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true), disabled: !hasAtLeast("letterer") },
+        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
+        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
+        {
+          type: "action",
+          label: t("script.menuEntry"),
+          onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/script`),
+          disabled: !hasAtLeast("letterer"),
+        },
+        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },
       ],
     },
     {

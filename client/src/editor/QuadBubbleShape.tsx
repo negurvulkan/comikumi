@@ -18,6 +18,8 @@ interface Props {
   onChange: (patch: Partial<Bubble>) => void;
   /** Native screen coordinates (clientX/clientY) of a right-click on this bubble — used to position a ContextMenu (PageCanvas.tsx), independent of canvas zoom/pan. */
   onContextMenu?: (clientX: number, clientY: number) => void;
+  /** See BubbleShape.tsx's Props doc comment. */
+  readOnly?: boolean;
 }
 
 /**
@@ -25,7 +27,7 @@ interface Props {
  * independently draggable corners, text warped with a true projective
  * transform to fit — not just rotated/skewed. See export/perspective.ts.
  */
-export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, selected, onSelect, onChange, onContextMenu }: Props) {
+export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, selected, onSelect, onChange, onContextMenu, readOnly }: Props) {
   const handleScale = 1 / zoom;
   const corners = bubble.corners ?? [];
   const displayCorners = useMemo(() => corners.map((p) => ({ x: p.x * scale, y: p.y * scale })), [corners, scale]);
@@ -91,7 +93,7 @@ export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, 
         stroke={stroke}
         strokeWidth={2}
         fill={fill}
-        draggable
+        draggable={!readOnly}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         onContextMenu={(e) => {
@@ -103,6 +105,7 @@ export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, 
       />
       {warped && <KonvaImage image={warped.canvas} x={warped.x} y={warped.y} listening={false} />}
       {selected &&
+        !readOnly &&
         displayCorners.map((p, i) => (
           <Circle
             key={i}

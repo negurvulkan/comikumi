@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
+import request from "supertest";
+import type { Express } from "express";
 
 export interface TestEnv {
   /** Set as process.env.LETTERING_DATA_DIR by this function — the throwaway
@@ -11,6 +13,11 @@ export interface TestEnv {
   scanRoot: string;
   /** Not-yet-existing path for a fresh project's projekt.json. */
   projectFile: string;
+  /** Bearer token for a pre-created system-admin test account (see authedAgent()) —
+   * every route requires auth now, so most tests just want a working default identity
+   * rather than testing auth itself (that's routes/auth.test.ts's job). */
+  token: string;
+  userId: string;
 }
 
 /**
@@ -42,7 +49,29 @@ export async function setupTestEnv(): Promise<TestEnv> {
     .toFile(path.join(emptyDir, "page_01.png"));
 
   process.env.LETTERING_DATA_DIR = dataDir;
-  return { dataDir, scanRoot, projectFile };
+
+  // Dynamic import for the same reason as the doc comment above requires it for
+  // app.js/projectStore.js/paths.js — authStore.js's USERS_FILE/AUTH_SECRET_FILE
+  // constants are computed at module-evaluation time from LETTERING_DATA_DIR.
+  const { createUser, signToken } = await import("../lib/authStore.js");
+  const user = await createUser("test-admin", "test-password", true);
+  const token = await signToken(user);
+
+  return { dataDir, scanRoot, projectFile, token, userId: user.id };
+}
+
+/** Wraps supertest so every request from a test file is authenticated by default
+ * (Authorization: Bearer <token>, see setupTestEnv()'s system-admin test account) —
+ * use the raw `request(app)` directly only when a test deliberately wants to check
+ * unauthenticated/unauthorized/forbidden behavior itself. */
+export function authedAgent(app: Express, token: string) {
+  const withAuth = (test: request.Test) => test.set("Authorization", `Bearer ${token}`);
+  return {
+    get: (url: string) => withAuth(request(app).get(url)),
+    post: (url: string) => withAuth(request(app).post(url)),
+    put: (url: string) => withAuth(request(app).put(url)),
+    delete: (url: string) => withAuth(request(app).delete(url)),
+  };
 }
 
 /** Writes a minimal, schema-valid page-layout JSON into

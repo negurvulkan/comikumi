@@ -48,6 +48,10 @@ interface Props {
   activeLanguage: string;
   fontsVersion: number;
   drawTool: DrawTool | null;
+  /** Disables drag/resize/rotate/reshape handles on every existing element (but not
+   * selection) — see BubbleShape.tsx's Props doc comment for the "translator" role
+   * this exists for. */
+  readOnly?: boolean;
   onSelect: (id: string | null, additive?: boolean) => void;
   onChange: (id: string, patch: Partial<Bubble>) => void;
   onCreate: (shape: BubbleShapeKind, box: { x: number; y: number; width: number; height: number }) => void;
@@ -86,6 +90,7 @@ export function PageCanvas({
   activeLanguage,
   fontsVersion,
   drawTool,
+  readOnly,
   onSelect,
   onChange,
   onCreate,
@@ -368,6 +373,7 @@ export function PageCanvas({
               onVertexContextMenu={(clientX, clientY, vertexIndex) =>
                 setVertexMenu({ x: clientX, y: clientY, panelId: panel.id, vertexIndex })
               }
+              readOnly={readOnly}
             />
           ))}
           {images.map((img) => (
@@ -380,6 +386,7 @@ export function PageCanvas({
               selected={selectedImageIds.includes(img.id)}
               onSelect={(additive) => onSelectImage(img.id, additive)}
               onChange={(patch) => onChangeImage(img.id, patch)}
+              readOnly={readOnly}
             />
           ))}
           {bubbles.map((b) => (
@@ -394,6 +401,7 @@ export function PageCanvas({
               onSelect={(additive) => onSelect(b.id, additive)}
               onChange={(patch) => onChange(b.id, patch)}
               onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
+              readOnly={readOnly}
             />
           ))}
           {curvedTexts.map((el) => (
@@ -407,6 +415,7 @@ export function PageCanvas({
               selected={selectedCurvedTextIds.includes(el.id)}
               onSelect={(additive) => onSelectCurvedText(el.id, additive)}
               onChange={(patch) => onChangeCurvedText(el.id, patch)}
+              readOnly={readOnly}
             />
           ))}
           {draft &&

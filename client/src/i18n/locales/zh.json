@@ -17,7 +17,9 @@
   "appShell": {
     "switchProject": "切换项目",
     "settings": "设置",
-    "projectLabel": "项目：{{name}}"
+    "projectLabel": "项目：{{name}}",
+    "loggedInAs": "已登录：{{username}}",
+    "logout": "退出登录"
   },
   "settings": {
     "headingWithProject": "设置 — {{name}}",
@@ -92,7 +94,53 @@
     "project_open_failed": "无法打开项目文件：{{reason}}",
     "project_create_failed": "无法创建项目：{{reason}}",
     "project_delete_failed": "无法删除项目文件：{{reason}}",
-    "cannot_modify_active_project": "该项目当前已打开——请先切换到其他项目。"
+    "cannot_modify_active_project": "该项目当前已打开——请先切换到其他项目。",
+    "unauthorized": "请登录后继续。",
+    "forbidden": "你没有权限执行此操作。",
+    "invalid_credentials": "用户名或密码错误。",
+    "setup_already_completed": "初始设置已完成——请改为登录。",
+    "username_already_exists": "该用户名已被使用。",
+    "cannot_delete_own_account": "无法删除自己的账户。",
+    "user_not_found": "未找到该用户名对应的账户。"
+  },
+  "login": {
+    "heading": "登录",
+    "usernameLabel": "用户名",
+    "passwordLabel": "密码",
+    "submitButton": "登录"
+  },
+  "roles": {
+    "viewer": "查看者",
+    "translator": "译者",
+    "letterer": "嵌字员",
+    "admin": "管理员",
+    "systemAdmin": "系统管理员",
+    "none": "无访问权限"
+  },
+  "members": {
+    "title": "成员",
+    "usernameLabel": "用户名",
+    "roleLabel": "角色",
+    "addButton": "添加",
+    "removeButton": "移除",
+    "empty": "暂无成员——只有系统管理员可以打开此项目。",
+    "confirmRemove": "从项目中移除该成员？"
+  },
+  "users": {
+    "title": "账户",
+    "usernameLabel": "用户名",
+    "passwordLabel": "密码",
+    "systemAdminLabel": "系统管理员",
+    "addButton": "创建账户",
+    "removeButton": "删除",
+    "confirmRemove": "永久删除该账户？"
+  },
+  "setup": {
+    "heading": "创建第一个账户",
+    "hint": "该账户将成为系统管理员，拥有对所有项目的完全访问权限——此服务器上尚无其他账户。",
+    "confirmPasswordLabel": "确认密码",
+    "passwordMismatch": "两次输入的密码不一致。",
+    "submitButton": "创建账户"
   },
   "managers": {
     "characters": {
@@ -178,7 +226,9 @@
     "switch": "切换",
     "newProject": "新建项目",
     "help": "帮助",
-    "noEntriesYet": "暂无条目"
+    "noEntriesYet": "暂无条目",
+    "members": "成员",
+    "users": "账户"
   },
   "volumeList": {
     "loading": "正在加载卷…",

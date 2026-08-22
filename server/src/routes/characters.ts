@@ -3,8 +3,10 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { readCharacters, writeCharacters } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireProjectRole } from "../lib/auth.js";
 
 export const charactersRouter = Router();
+const requireLetterer = requireProjectRole("letterer");
 
 const CharacterInputSchema = z.object({
   name: z.string().trim().min(1).max(60),
@@ -21,6 +23,7 @@ charactersRouter.get(
 
 charactersRouter.post(
   "/",
+  requireLetterer,
   asyncHandler(async (req, res) => {
     const parsed = CharacterInputSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -36,6 +39,7 @@ charactersRouter.post(
 
 charactersRouter.put(
   "/:id",
+  requireLetterer,
   asyncHandler(async (req, res) => {
     const parsed = CharacterInputSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -57,6 +61,7 @@ charactersRouter.put(
 
 charactersRouter.delete(
   "/:id",
+  requireLetterer,
   asyncHandler(async (req, res) => {
     const characters = await readCharacters();
     const next = characters.filter((c) => c.id !== req.params.id);

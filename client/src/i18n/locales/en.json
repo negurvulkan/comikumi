@@ -17,7 +17,48 @@
   "appShell": {
     "switchProject": "Switch project",
     "settings": "Settings",
-    "projectLabel": "Project: {{name}}"
+    "projectLabel": "Project: {{name}}",
+    "loggedInAs": "Logged in as {{username}}",
+    "logout": "Log out"
+  },
+  "login": {
+    "heading": "Log in",
+    "usernameLabel": "Username",
+    "passwordLabel": "Password",
+    "submitButton": "Log in"
+  },
+  "roles": {
+    "viewer": "Viewer",
+    "translator": "Translator",
+    "letterer": "Letterer",
+    "admin": "Admin",
+    "systemAdmin": "System admin",
+    "none": "No access"
+  },
+  "members": {
+    "title": "Members",
+    "usernameLabel": "Username",
+    "roleLabel": "Role",
+    "addButton": "Add",
+    "removeButton": "Remove",
+    "empty": "No members yet — only system administrators can open this project.",
+    "confirmRemove": "Remove this member from the project?"
+  },
+  "users": {
+    "title": "Accounts",
+    "usernameLabel": "Username",
+    "passwordLabel": "Password",
+    "systemAdminLabel": "System administrator",
+    "addButton": "Create account",
+    "removeButton": "Delete",
+    "confirmRemove": "Permanently delete this account?"
+  },
+  "setup": {
+    "heading": "Create the first account",
+    "hint": "This account becomes a system administrator with full access to every project — no other accounts exist on this server yet.",
+    "confirmPasswordLabel": "Confirm password",
+    "passwordMismatch": "Passwords don't match.",
+    "submitButton": "Create account"
   },
   "settings": {
     "headingWithProject": "Settings — {{name}}",
@@ -92,7 +133,14 @@
     "project_open_failed": "Could not open the project file: {{reason}}",
     "project_create_failed": "Could not create the project: {{reason}}",
     "project_delete_failed": "Could not delete the project file: {{reason}}",
-    "cannot_modify_active_project": "This project is currently open — switch to a different one first."
+    "cannot_modify_active_project": "This project is currently open — switch to a different one first.",
+    "unauthorized": "Please log in to continue.",
+    "forbidden": "You don't have permission to do that.",
+    "invalid_credentials": "Wrong username or password.",
+    "setup_already_completed": "Setup has already been completed — please log in instead.",
+    "username_already_exists": "That username is already taken.",
+    "cannot_delete_own_account": "You can't delete your own account.",
+    "user_not_found": "No account with that username was found."
   },
   "managers": {
     "characters": {
@@ -178,7 +226,9 @@
     "switch": "Switch",
     "newProject": "New Project",
     "help": "Help",
-    "noEntriesYet": "No entries yet"
+    "noEntriesYet": "No entries yet",
+    "members": "Members",
+    "users": "Accounts"
   },
   "volumeList": {
     "loading": "Loading volumes…",

@@ -8,6 +8,7 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import { api, type VolumeSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useProject } from "../state/ProjectContext";
+import { useProjectRole } from "../state/useProjectRole";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuGroup } from "../editor/MenuBar";
 import { Modal } from "../editor/Modal";
@@ -15,12 +16,15 @@ import { SettingsForm } from "../editor/SettingsForm";
 import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
+import { MemberManager } from "../editor/MemberManager";
+import { UserManager } from "../editor/UserManager";
 import { ProjectInfoSidebar } from "../editor/ProjectInfoSidebar";
 import { PageIcon, PanelToolIcon, BubbleToolIcon } from "../editor/Icons";
 
 export function VolumeList() {
   const { t } = useTranslation();
   const { project } = useProject();
+  const { hasAtLeast, myRole } = useProjectRole();
   const navigate = useNavigate();
   const [volumes, setVolumes] = useState<VolumeSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +36,8 @@ export function VolumeList() {
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
+  const [showUsers, setShowUsers] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
@@ -69,10 +75,14 @@ export function VolumeList() {
       label: t("menu.project"),
       entries: [
         { type: "action", label: t("menu.switch"), onClick: () => navigate("/project") },
-        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
-        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
-        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
-        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
+        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true), disabled: !hasAtLeast("letterer") },
+        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
+        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
+        { type: "action", label: t("menu.members"), onClick: () => setShowMembers(true), disabled: !hasAtLeast("admin") },
+        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },
+        ...(myRole === "system-admin"
+          ? [{ type: "action" as const, label: t("menu.users"), onClick: () => setShowUsers(true) }]
+          : []),
       ],
     },
     {
@@ -103,6 +113,16 @@ export function VolumeList() {
       {showPresets && (
         <Modal onClose={() => setShowPresets(false)}>
           <PresetManager presets={presets} onChange={setPresets} onClose={() => setShowPresets(false)} />
+        </Modal>
+      )}
+      {showMembers && (
+        <Modal onClose={() => setShowMembers(false)}>
+          <MemberManager onClose={() => setShowMembers(false)} />
+        </Modal>
+      )}
+      {showUsers && (
+        <Modal onClose={() => setShowUsers(false)}>
+          <UserManager onClose={() => setShowUsers(false)} />
         </Modal>
       )}
       <div style={{ display: "flex", flex: "1 1 auto", minHeight: 0 }}>

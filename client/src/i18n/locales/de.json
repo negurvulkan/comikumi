@@ -17,7 +17,48 @@
   "appShell": {
     "switchProject": "Projekt wechseln",
     "settings": "Einstellungen",
-    "projectLabel": "Projekt: {{name}}"
+    "projectLabel": "Projekt: {{name}}",
+    "loggedInAs": "Angemeldet als {{username}}",
+    "logout": "Abmelden"
+  },
+  "login": {
+    "heading": "Anmelden",
+    "usernameLabel": "Benutzername",
+    "passwordLabel": "Passwort",
+    "submitButton": "Anmelden"
+  },
+  "roles": {
+    "viewer": "Betrachter",
+    "translator": "Übersetzer",
+    "letterer": "Letterer",
+    "admin": "Admin",
+    "systemAdmin": "Systemadministrator",
+    "none": "Kein Zugriff"
+  },
+  "members": {
+    "title": "Mitglieder",
+    "usernameLabel": "Benutzername",
+    "roleLabel": "Rolle",
+    "addButton": "Hinzufügen",
+    "removeButton": "Entfernen",
+    "empty": "Noch keine Mitglieder — nur Systemadministratoren können dieses Projekt öffnen.",
+    "confirmRemove": "Dieses Mitglied aus dem Projekt entfernen?"
+  },
+  "users": {
+    "title": "Konten",
+    "usernameLabel": "Benutzername",
+    "passwordLabel": "Passwort",
+    "systemAdminLabel": "Systemadministrator",
+    "addButton": "Konto anlegen",
+    "removeButton": "Löschen",
+    "confirmRemove": "Dieses Konto endgültig löschen?"
+  },
+  "setup": {
+    "heading": "Erstes Konto anlegen",
+    "hint": "Dieses Konto wird Systemadministrator mit vollem Zugriff auf jedes Projekt — es existieren noch keine anderen Konten auf diesem Server.",
+    "confirmPasswordLabel": "Passwort bestätigen",
+    "passwordMismatch": "Die Passwörter stimmen nicht überein.",
+    "submitButton": "Konto anlegen"
   },
   "settings": {
     "headingWithProject": "Einstellungen — {{name}}",
@@ -92,7 +133,14 @@
     "project_open_failed": "Projektdatei konnte nicht geöffnet werden: {{reason}}",
     "project_create_failed": "Projekt konnte nicht angelegt werden: {{reason}}",
     "project_delete_failed": "Projektdatei konnte nicht gelöscht werden: {{reason}}",
-    "cannot_modify_active_project": "Dieses Projekt ist gerade geöffnet — wechsle zuerst zu einem anderen."
+    "cannot_modify_active_project": "Dieses Projekt ist gerade geöffnet — wechsle zuerst zu einem anderen.",
+    "unauthorized": "Bitte melde dich an, um fortzufahren.",
+    "forbidden": "Du hast dafür keine Berechtigung.",
+    "invalid_credentials": "Benutzername oder Passwort falsch.",
+    "setup_already_completed": "Die Ersteinrichtung ist bereits abgeschlossen — bitte melde dich stattdessen an.",
+    "username_already_exists": "Dieser Benutzername ist bereits vergeben.",
+    "cannot_delete_own_account": "Du kannst dein eigenes Konto nicht löschen.",
+    "user_not_found": "Kein Konto mit diesem Benutzernamen gefunden."
   },
   "managers": {
     "characters": {
@@ -178,7 +226,9 @@
     "switch": "Wechseln",
     "newProject": "Neues Projekt",
     "help": "Hilfe",
-    "noEntriesYet": "Noch keine Einträge"
+    "noEntriesYet": "Noch keine Einträge",
+    "members": "Mitglieder",
+    "users": "Konten"
   },
   "volumeList": {
     "loading": "Lade Bände…",

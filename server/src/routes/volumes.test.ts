@@ -2,11 +2,11 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Express } from "express";
 import path from "node:path";
 import fs from "node:fs/promises";
-import request from "supertest";
-import { setupTestEnv, type TestEnv } from "../test-utils/fixtures.js";
+import { setupTestEnv, authedAgent, type TestEnv } from "../test-utils/fixtures.js";
 
 let app: Express;
 let env: TestEnv;
+let api: ReturnType<typeof authedAgent>;
 
 const VOLUME_ID = "Volume_01";
 
@@ -15,6 +15,7 @@ beforeAll(async () => {
   const { createApp } = await import("../app.js");
   const { createProject } = await import("../lib/projectStore.js");
   app = createApp();
+  api = authedAgent(app, env.token);
   await createProject(env.projectFile, {
     name: "Test Project",
     scanRoot: env.scanRoot,
@@ -27,7 +28,7 @@ beforeAll(async () => {
 
 describe("GET /api/volumes", () => {
   it("reports pageCount/firstPage for a volume with no saved lettering yet", async () => {
-    const res = await request(app).get("/api/volumes");
+    const res = await api.get("/api/volumes");
     expect(res.status).toBe(200);
     const volume = res.body.find((v: { id: string }) => v.id === VOLUME_ID);
     expect(volume).toMatchObject({
@@ -57,7 +58,7 @@ describe("GET /api/volumes", () => {
     };
     await fs.writeFile(path.join(dir, "page_01.json"), JSON.stringify(layout), "utf-8");
 
-    const res = await request(app).get("/api/volumes");
+    const res = await api.get("/api/volumes");
     expect(res.status).toBe(200);
     const volume = res.body.find((v: { id: string }) => v.id === VOLUME_ID);
     expect(volume).toMatchObject({

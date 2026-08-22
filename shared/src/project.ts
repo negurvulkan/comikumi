@@ -4,6 +4,7 @@ import { LanguageListSchema, DEFAULT_LANGUAGES } from "./languages.js";
 import { CharacterListSchema } from "./characters.js";
 import { GlossaryListSchema } from "./glossary.js";
 import { LetteringPresetListSchema } from "./presets.js";
+import { ProjectMemberListSchema } from "./users.js";
 
 /**
  * The full contents of a project file — everything a project needs to work
@@ -21,5 +22,9 @@ export const ProjectFileSchema = ProjectSettingsSchema.extend({
   glossary: GlossaryListSchema.default([]),
   /** Projectwide live-linked style presets — see presets.ts. */
   presets: LetteringPresetListSchema.default([]),
+  /** Who may see/edit this project, and with which role — see shared/src/users.ts.
+   * Portable: travels with the project file. A UserAccount with isSystemAdmin needs
+   * no entry here (bypass, see server/src/lib/auth.ts's requireProjectRole()). */
+  members: ProjectMemberListSchema.default([]),
 });
 export type ProjectFile = z.infer<typeof ProjectFileSchema>;

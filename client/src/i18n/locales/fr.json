@@ -17,7 +17,9 @@
   "appShell": {
     "switchProject": "Changer de projet",
     "settings": "Paramètres",
-    "projectLabel": "Projet : {{name}}"
+    "projectLabel": "Projet : {{name}}",
+    "loggedInAs": "Connecté en tant que {{username}}",
+    "logout": "Déconnexion"
   },
   "settings": {
     "headingWithProject": "Paramètres — {{name}}",
@@ -92,7 +94,53 @@
     "project_open_failed": "Impossible d'ouvrir le fichier projet : {{reason}}",
     "project_create_failed": "Impossible de créer le projet : {{reason}}",
     "project_delete_failed": "Impossible de supprimer le fichier projet : {{reason}}",
-    "cannot_modify_active_project": "Ce projet est actuellement ouvert — changez d'abord de projet."
+    "cannot_modify_active_project": "Ce projet est actuellement ouvert — changez d'abord de projet.",
+    "unauthorized": "Veuillez vous connecter pour continuer.",
+    "forbidden": "Vous n'avez pas la permission de faire cela.",
+    "invalid_credentials": "Nom d'utilisateur ou mot de passe incorrect.",
+    "setup_already_completed": "La configuration initiale est déjà terminée — veuillez vous connecter à la place.",
+    "username_already_exists": "Ce nom d'utilisateur est déjà pris.",
+    "cannot_delete_own_account": "Vous ne pouvez pas supprimer votre propre compte.",
+    "user_not_found": "Aucun compte avec ce nom d'utilisateur n'a été trouvé."
+  },
+  "login": {
+    "heading": "Connexion",
+    "usernameLabel": "Nom d'utilisateur",
+    "passwordLabel": "Mot de passe",
+    "submitButton": "Se connecter"
+  },
+  "roles": {
+    "viewer": "Lecteur",
+    "translator": "Traducteur",
+    "letterer": "Lettreur",
+    "admin": "Admin",
+    "systemAdmin": "Administrateur système",
+    "none": "Aucun accès"
+  },
+  "members": {
+    "title": "Membres",
+    "usernameLabel": "Nom d'utilisateur",
+    "roleLabel": "Rôle",
+    "addButton": "Ajouter",
+    "removeButton": "Retirer",
+    "empty": "Aucun membre pour l'instant — seuls les administrateurs système peuvent ouvrir ce projet.",
+    "confirmRemove": "Retirer ce membre du projet ?"
+  },
+  "users": {
+    "title": "Comptes",
+    "usernameLabel": "Nom d'utilisateur",
+    "passwordLabel": "Mot de passe",
+    "systemAdminLabel": "Administrateur système",
+    "addButton": "Créer un compte",
+    "removeButton": "Supprimer",
+    "confirmRemove": "Supprimer définitivement ce compte ?"
+  },
+  "setup": {
+    "heading": "Créer le premier compte",
+    "hint": "Ce compte devient administrateur système avec un accès complet à chaque projet — aucun autre compte n'existe encore sur ce serveur.",
+    "confirmPasswordLabel": "Confirmer le mot de passe",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "submitButton": "Créer le compte"
   },
   "managers": {
     "characters": {
@@ -178,7 +226,9 @@
     "switch": "Changer",
     "newProject": "Nouveau projet",
     "help": "Aide",
-    "noEntriesYet": "Aucune entrée pour l'instant"
+    "noEntriesYet": "Aucune entrée pour l'instant",
+    "members": "Membres",
+    "users": "Comptes"
   },
   "volumeList": {
     "loading": "Chargement des volumes…",

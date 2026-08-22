@@ -304,6 +304,21 @@ verknüpfte Bubble/jeder Kurventext behält dafür ihren/seinen eigenen Basiswer
 Bewusst **kein** `x/y/width/height/rotation`/`tail`/`tailAnchor`/`tailWidth`/`tailCurve` —
 das sind Instanz-Eigenschaften einer einzelnen Blase, kein Preset-Feld.
 
+## ProjectMember
+
+Wie `presets`/`characters`/`glossary` ist auch `members` ein Feld der Projektdatei
+selbst (nicht der Seiten-Layout-JSON) — siehe
+[Konten, Rollen & Zugriffsschutz](FEATURES.md#konten-rollen--zugriffsschutz). Zieht
+portabel mit der Projektdatei um.
+
+| Feld | Typ | Bedeutung |
+|---|---|---|
+| `userId` | string | ID eines serverweiten Accounts (siehe `users.json` im Server-Datenordner, nicht Teil der Projektdatei) |
+| `role` | `"viewer" \| "translator" \| "letterer" \| "admin"` | Rolle dieses Accounts in genau diesem Projekt |
+
+Ein Account mit `isSystemAdmin: true` (serverweites Konto-Flag) braucht hier keinen
+Eintrag — er hat unabhängig von dieser Liste vollen Admin-Zugriff auf jedes Projekt.
+
 ## Hilfstypen
 
 ```ts

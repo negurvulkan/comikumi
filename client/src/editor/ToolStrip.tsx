@@ -22,6 +22,12 @@ interface Props {
   onSetDrawTool: (tool: DrawTool | null) => void;
   onInsertImage: (fileName: string, width: number, height: number) => void;
   onAddCurvedText: () => void;
+  /** Disables every element-creation tool (bubble/rect/quad/image/curved-text/panel) —
+   * used for the "translator" project role, which may only edit existing bubble text,
+   * not introduce new geometry (see server/src/routes/layout.ts's diff guard, which
+   * would reject the save anyway). The sidebar toggles below stay enabled either way —
+   * those are read/reference tools, not geometry creation. */
+  creationDisabled?: boolean;
   textPanelOpen: boolean;
   onToggleTextPanel: () => void;
   textPanelDisabled?: boolean;
@@ -39,6 +45,7 @@ export function ToolStrip({
   onSetDrawTool,
   onInsertImage,
   onAddCurvedText,
+  creationDisabled,
   textPanelOpen,
   onToggleTextPanel,
   textPanelDisabled,
@@ -54,6 +61,7 @@ export function ToolStrip({
         className={`tool-btn${drawTool === "oval" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "oval" ? null : "oval")}
         title={t("editor.toolStrip.bubbleOval")}
+        disabled={creationDisabled}
       >
         <BubbleToolIcon />
       </button>
@@ -61,6 +69,7 @@ export function ToolStrip({
         className={`tool-btn${drawTool === "rect" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "rect" ? null : "rect")}
         title={t("editor.toolStrip.rect")}
+        disabled={creationDisabled}
       >
         <RectToolIcon />
       </button>
@@ -68,17 +77,19 @@ export function ToolStrip({
         className={`tool-btn${drawTool === "quad" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "quad" ? null : "quad")}
         title={t("editor.toolStrip.quadPerspective")}
+        disabled={creationDisabled}
       >
         <QuadToolIcon />
       </button>
-      <ImagePicker onInsert={onInsertImage} iconOnly />
-      <button className="tool-btn" onClick={onAddCurvedText} title={t("editor.textListPanel.typeCurvedText")}>
+      <ImagePicker onInsert={onInsertImage} iconOnly disabled={creationDisabled} />
+      <button className="tool-btn" onClick={onAddCurvedText} title={t("editor.textListPanel.typeCurvedText")} disabled={creationDisabled}>
         <CurvedTextToolIcon />
       </button>
       <button
         className={`tool-btn${drawTool === "panel" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "panel" ? null : "panel")}
         title={t("editor.toolStrip.panelRefRegion")}
+        disabled={creationDisabled}
       >
         <PanelToolIcon />
       </button>

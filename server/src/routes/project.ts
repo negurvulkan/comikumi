@@ -12,17 +12,35 @@ import {
   archiveProject,
   unarchiveProject,
   deleteProjectFile,
+  peekProjectMembers,
+  readMembers,
+  writeMembers,
 } from "../lib/projectStore.js";
 import { countVolumesUnder } from "../lib/projectScanner.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireSystemAdmin, requireProjectRole } from "../lib/auth.js";
+import { findUserByUsername, listUsers } from "../lib/authStore.js";
 import { LanguageListSchema } from "../../../shared/src/languages.js";
+import { ProjectRoleSchema } from "../../../shared/src/users.js";
 
 export const projectRouter = Router();
 
 projectRouter.get(
   "/current",
-  asyncHandler(async (_req, res) => {
-    res.json(await getCurrentProjectInfo());
+  asyncHandler(async (req, res) => {
+    const info = await getCurrentProjectInfo();
+    if (!info) {
+      res.json(null);
+      return;
+    }
+    let myRole: string = "none";
+    if (req.user?.isSystemAdmin) {
+      myRole = "system-admin";
+    } else {
+      const members = await readMembers();
+      myRole = members.find((m) => m.userId === req.user?.sub)?.role ?? "none";
+    }
+    res.json({ ...info, myRole });
   })
 );
 
@@ -90,6 +108,7 @@ async function rejectIfActiveProject(filePath: string): Promise<boolean> {
 
 projectRouter.post(
   "/recent/remove",
+  requireSystemAdmin,
   asyncHandler(async (req, res) => {
     const parsed = FilePathBodySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -107,6 +126,7 @@ projectRouter.post(
 
 projectRouter.post(
   "/archive",
+  requireSystemAdmin,
   asyncHandler(async (req, res) => {
     const parsed = FilePathBodySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -124,6 +144,7 @@ projectRouter.post(
 
 projectRouter.post(
   "/unarchive",
+  requireSystemAdmin,
   asyncHandler(async (req, res) => {
     const parsed = FilePathBodySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -137,6 +158,7 @@ projectRouter.post(
 
 projectRouter.post(
   "/delete-file",
+  requireSystemAdmin,
   asyncHandler(async (req, res) => {
     const parsed = FilePathBodySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -158,6 +180,11 @@ projectRouter.post(
 
 const OpenProjectSchema = z.object({ filePath: z.string().min(1) });
 
+/** Unlike the other project-switcher mutations, opening isn't system-admin-only: any
+ * authenticated user may open a project they're a member of (checked against the
+ * target file's OWN members list, via peekProjectMembers — read without activating
+ * it first, so a non-member never even briefly becomes "the active project"). System
+ * admins bypass the check, same as requireProjectRole() elsewhere. */
 projectRouter.post(
   "/open",
   asyncHandler(async (req, res) => {
@@ -165,6 +192,14 @@ projectRouter.post(
     if (!parsed.success) {
       res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
       return;
+    }
+    if (!req.user!.isSystemAdmin) {
+      const members = await peekProjectMembers(parsed.data.filePath);
+      const isMember = members?.some((m) => m.userId === req.user!.sub) ?? false;
+      if (!isMember) {
+        res.status(403).json({ error: "forbidden" });
+        return;
+      }
     }
     try {
       const data = await openProject(parsed.data.filePath);
@@ -190,6 +225,7 @@ const NewProjectSchema = z.object({
 
 projectRouter.post(
   "/new",
+  requireSystemAdmin,
   asyncHandler(async (req, res) => {
     const parsed = NewProjectSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -213,6 +249,7 @@ const ScanRootStatusQuerySchema = z.object({ scanRoot: z.string().min(1), emptyS
  * Not-found is a normal, expected state here (not an error). */
 projectRouter.get(
   "/scan-root-status",
+  requireSystemAdmin,
   asyncHandler(async (req, res) => {
     const parsed = ScanRootStatusQuerySchema.safeParse(req.query);
     if (!parsed.success) {
@@ -235,6 +272,7 @@ const CreateScanRootSchema = z.object({ scanRoot: z.string().min(1) });
 
 projectRouter.post(
   "/scan-root",
+  requireSystemAdmin,
   asyncHandler(async (req, res) => {
     const parsed = CreateScanRootSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -269,6 +307,7 @@ const CreateVolumeFoldersSchema = z.object({
  * stays correct across platform path-separator conventions. */
 projectRouter.post(
   "/volume-folders",
+  requireSystemAdmin,
   asyncHandler(async (req, res) => {
     const parsed = CreateVolumeFoldersSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -289,5 +328,52 @@ projectRouter.post(
     } catch (err) {
       res.status(400).json({ error: "folder_create_failed", params: { reason: (err as Error).message } });
     }
+  })
+);
+
+/** Members of the currently active project — resolved to username for display (the
+ * client never needs to know internal user ids). requireProjectRole("admin") also
+ * lets a system admin manage members even without their own entry in the list. */
+projectRouter.get(
+  "/members",
+  requireProjectRole("admin"),
+  asyncHandler(async (_req, res) => {
+    const [members, users] = await Promise.all([readMembers(), listUsers()]);
+    const usersById = new Map(users.map((u) => [u.id, u]));
+    res.json(members.map((m) => ({ userId: m.userId, role: m.role, username: usersById.get(m.userId)?.username ?? null })));
+  })
+);
+
+const AddMemberSchema = z.object({ username: z.string().trim().min(1), role: ProjectRoleSchema });
+
+projectRouter.post(
+  "/members",
+  requireProjectRole("admin"),
+  asyncHandler(async (req, res) => {
+    const parsed = AddMemberSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    const user = await findUserByUsername(parsed.data.username);
+    if (!user) {
+      res.status(404).json({ error: "user_not_found" });
+      return;
+    }
+    const members = await readMembers();
+    const next = [...members.filter((m) => m.userId !== user.id), { userId: user.id, role: parsed.data.role }];
+    await writeMembers(next);
+    res.status(201).json({ ok: true });
+  })
+);
+
+projectRouter.delete(
+  "/members/:userId",
+  requireProjectRole("admin"),
+  asyncHandler(async (req, res) => {
+    const members = await readMembers();
+    const next = members.filter((m) => m.userId !== req.params.userId);
+    await writeMembers(next);
+    res.json({ ok: true });
   })
 );

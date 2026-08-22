@@ -5,6 +5,7 @@ import multer from "multer";
 import { isSafeFileName } from "./paths.js";
 import { getActiveProjectAssetDir } from "./projectStore.js";
 import { asyncHandler } from "./asyncHandler.js";
+import { requireProjectRole } from "./auth.js";
 
 type AssetKind = "fonts" | "images" | "bubble-svgs";
 
@@ -110,6 +111,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
 
   router.post(
     "/",
+    requireProjectRole("letterer"),
     upload.single(uploadFieldName),
     asyncHandler(async (req, res) => {
       if (!req.file) {

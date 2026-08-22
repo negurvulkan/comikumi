@@ -4,8 +4,10 @@ import { z } from "zod";
 import { PresetTextFieldsSchema, PresetBackgroundFieldsSchema } from "../../../shared/src/presets.js";
 import { readPresets, writePresets } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireProjectRole } from "../lib/auth.js";
 
 export const presetsRouter = Router();
+const requireLetterer = requireProjectRole("letterer");
 
 const PresetInputSchema = z.object({
   name: z.string().trim().min(1).max(60),
@@ -22,6 +24,7 @@ presetsRouter.get(
 
 presetsRouter.post(
   "/",
+  requireLetterer,
   asyncHandler(async (req, res) => {
     const parsed = PresetInputSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -37,6 +40,7 @@ presetsRouter.post(
 
 presetsRouter.put(
   "/:id",
+  requireLetterer,
   asyncHandler(async (req, res) => {
     const parsed = PresetInputSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -58,6 +62,7 @@ presetsRouter.put(
 
 presetsRouter.delete(
   "/:id",
+  requireLetterer,
   asyncHandler(async (req, res) => {
     const presets = await readPresets();
     const next = presets.filter((p) => p.id !== req.params.id);

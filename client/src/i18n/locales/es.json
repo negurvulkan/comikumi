@@ -17,7 +17,9 @@
   "appShell": {
     "switchProject": "Cambiar de proyecto",
     "settings": "Ajustes",
-    "projectLabel": "Proyecto: {{name}}"
+    "projectLabel": "Proyecto: {{name}}",
+    "loggedInAs": "Sesión iniciada como {{username}}",
+    "logout": "Cerrar sesión"
   },
   "settings": {
     "headingWithProject": "Ajustes — {{name}}",
@@ -92,7 +94,53 @@
     "project_open_failed": "No se pudo abrir el archivo de proyecto: {{reason}}",
     "project_create_failed": "No se pudo crear el proyecto: {{reason}}",
     "project_delete_failed": "No se pudo eliminar el archivo de proyecto: {{reason}}",
-    "cannot_modify_active_project": "Este proyecto está abierto actualmente — cambia primero a otro."
+    "cannot_modify_active_project": "Este proyecto está abierto actualmente — cambia primero a otro.",
+    "unauthorized": "Inicia sesión para continuar.",
+    "forbidden": "No tienes permiso para hacer eso.",
+    "invalid_credentials": "Nombre de usuario o contraseña incorrectos.",
+    "setup_already_completed": "La configuración inicial ya se completó — inicia sesión en su lugar.",
+    "username_already_exists": "Ese nombre de usuario ya está en uso.",
+    "cannot_delete_own_account": "No puedes eliminar tu propia cuenta.",
+    "user_not_found": "No se encontró ninguna cuenta con ese nombre de usuario."
+  },
+  "login": {
+    "heading": "Iniciar sesión",
+    "usernameLabel": "Nombre de usuario",
+    "passwordLabel": "Contraseña",
+    "submitButton": "Iniciar sesión"
+  },
+  "roles": {
+    "viewer": "Espectador",
+    "translator": "Traductor",
+    "letterer": "Rotulista",
+    "admin": "Admin",
+    "systemAdmin": "Administrador del sistema",
+    "none": "Sin acceso"
+  },
+  "members": {
+    "title": "Miembros",
+    "usernameLabel": "Nombre de usuario",
+    "roleLabel": "Rol",
+    "addButton": "Añadir",
+    "removeButton": "Quitar",
+    "empty": "Aún no hay miembros — solo los administradores del sistema pueden abrir este proyecto.",
+    "confirmRemove": "¿Quitar a este miembro del proyecto?"
+  },
+  "users": {
+    "title": "Cuentas",
+    "usernameLabel": "Nombre de usuario",
+    "passwordLabel": "Contraseña",
+    "systemAdminLabel": "Administrador del sistema",
+    "addButton": "Crear cuenta",
+    "removeButton": "Eliminar",
+    "confirmRemove": "¿Eliminar esta cuenta de forma permanente?"
+  },
+  "setup": {
+    "heading": "Crear la primera cuenta",
+    "hint": "Esta cuenta se convierte en administrador del sistema con acceso completo a todos los proyectos — todavía no existen otras cuentas en este servidor.",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden.",
+    "submitButton": "Crear cuenta"
   },
   "managers": {
     "characters": {
@@ -178,7 +226,9 @@
     "switch": "Cambiar",
     "newProject": "Nuevo proyecto",
     "help": "Ayuda",
-    "noEntriesYet": "Aún no hay entradas"
+    "noEntriesYet": "Aún no hay entradas",
+    "members": "Miembros",
+    "users": "Cuentas"
   },
   "volumeList": {
     "loading": "Cargando volúmenes…",

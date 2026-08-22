@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import { ProjectSettingsSchema } from "../../../shared/src/settings.js";
 import { readSettings, writeSettings } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireProjectRole } from "../lib/auth.js";
 
 export const settingsRouter = Router();
 
@@ -30,6 +31,7 @@ settingsRouter.get(
 
 settingsRouter.put(
   "/",
+  requireProjectRole("admin"),
   asyncHandler(async (req, res) => {
     const parsed = ProjectSettingsSchema.safeParse(req.body);
     if (!parsed.success) {

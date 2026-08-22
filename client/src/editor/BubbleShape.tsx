@@ -25,6 +25,11 @@ interface Props {
   onChange: (patch: Partial<Bubble>) => void;
   /** Native screen coordinates (clientX/clientY) of a right-click on this bubble — used to position a ContextMenu (PageCanvas.tsx), independent of canvas zoom/pan. */
   onContextMenu?: (clientX: number, clientY: number) => void;
+  /** Disables every drag/resize/rotate/tail-reshape handle (but not selection) — used
+   * for the "translator" project role, which the server only lets change bubble .text
+   * (see routes/layout.ts's diff guard). Selecting a bubble still works so its text
+   * stays editable via BubbleInspector. */
+  readOnly?: boolean;
 }
 
 // Reused across all bubbles purely for canvas text-metric measurement (never drawn).
@@ -41,7 +46,7 @@ export function BubbleShape(props: Props) {
   return <RectOvalBubbleShape {...props} />;
 }
 
-function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, selected, onSelect, onChange, onContextMenu }: Props) {
+function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, selected, onSelect, onChange, onContextMenu, readOnly }: Props) {
   const handleScale = 1 / zoom;
   const groupRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -201,7 +206,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
         offsetX={w / 2}
         offsetY={h / 2}
         rotation={form.rotation}
-        draggable
+        draggable={!readOnly}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         onContextMenu={(e) => {
@@ -279,7 +284,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             fill="#6c8cff"
             stroke="#12131a"
             strokeWidth={handleScale}
-            draggable
+            draggable={!readOnly}
             // Without this, the mousedown/dragstart bubbles up to the
             // (also draggable) parent Group, which then "wins" and drags the
             // whole bubble instead of just this handle — the tail visually
@@ -308,7 +313,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             fill="#4ddd8f"
             stroke="#12131a"
             strokeWidth={handleScale}
-            draggable
+            draggable={!readOnly}
             onMouseDown={(e) => {
               e.cancelBubble = true;
             }}
@@ -332,7 +337,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             fill="#b06cff"
             stroke="#12131a"
             strokeWidth={handleScale}
-            draggable
+            draggable={!readOnly}
             onMouseDown={(e) => {
               e.cancelBubble = true;
             }}
@@ -360,7 +365,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
               fill="#ffb84d"
               stroke="#12131a"
               strokeWidth={handleScale}
-              draggable
+              draggable={!readOnly}
               onMouseDown={(e) => {
                 e.cancelBubble = true;
               }}
@@ -377,7 +382,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             />
           ))}
       </Group>
-      {selected && (
+      {selected && !readOnly && (
         <Transformer
           ref={trRef}
           rotateEnabled

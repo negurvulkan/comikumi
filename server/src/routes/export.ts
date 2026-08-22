@@ -7,9 +7,11 @@ import { findVolume } from "../lib/projectScanner.js";
 import { languageFolderName } from "../lib/paths.js";
 import { readSettings } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireProjectRole } from "../lib/auth.js";
 
 export const exportRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const requireLetterer = requireProjectRole("letterer");
 
 /** Fixed print resolution tag (metadata only — see export-print route doc comment for
  * why this never resamples pixels). 300dpi is the standard comic/manga print convention. */
@@ -17,6 +19,7 @@ const PRINT_DPI = 300;
 
 exportRouter.post(
   "/:id/export",
+  requireLetterer,
   upload.single("png"),
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);
@@ -47,6 +50,7 @@ exportRouter.post(
  * profile is wired in (see docs/Professional-Workflow-Gaps.md). */
 exportRouter.post(
   "/:id/export-print",
+  requireLetterer,
   upload.single("png"),
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);

@@ -2,18 +2,19 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Express } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
-import request from "supertest";
 import sharp from "sharp";
-import { setupTestEnv, type TestEnv } from "../test-utils/fixtures.js";
+import { setupTestEnv, authedAgent, type TestEnv } from "../test-utils/fixtures.js";
 
 let app: Express;
 let env: TestEnv;
+let api: ReturnType<typeof authedAgent>;
 
 beforeAll(async () => {
   env = await setupTestEnv();
   const { createApp } = await import("../app.js");
   const { createProject } = await import("../lib/projectStore.js");
   app = createApp();
+  api = authedAgent(app, env.token);
   await createProject(env.projectFile, { name: "Test Project", scanRoot: env.scanRoot });
 });
 
@@ -28,7 +29,7 @@ async function tinyPngBuffer(): Promise<Buffer> {
 describe("POST /:id/export", () => {
   it("writes the uploaded PNG into the expected language folder", async () => {
     const png = await tinyPngBuffer();
-    const res = await request(app)
+    const res = await api
       .post(`/api/volumes/${VOLUME_ID}/export`)
       .field("folderSuffix", "german")
       .field("page", "page_01")
@@ -42,14 +43,14 @@ describe("POST /:id/export", () => {
   });
 
   it("rejects a request missing the required fields", async () => {
-    const res = await request(app).post(`/api/volumes/${VOLUME_ID}/export`).field("page", "page_01");
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export`).field("page", "page_01");
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("export_fields_required");
   });
 
   it("404s for an unknown volume", async () => {
     const png = await tinyPngBuffer();
-    const res = await request(app)
+    const res = await api
       .post(`/api/volumes/does-not-exist/export`)
       .field("folderSuffix", "german")
       .field("page", "page_01")
@@ -61,7 +62,7 @@ describe("POST /:id/export", () => {
 describe("POST /:id/export-print", () => {
   it("converts the uploaded RGB PNG into a CMYK TIFF tagged at 300dpi", async () => {
     const png = await tinyPngBuffer();
-    const res = await request(app)
+    const res = await api
       .post(`/api/volumes/${VOLUME_ID}/export-print`)
       .field("folderSuffix", "french")
       .field("page", "page_02")
@@ -81,13 +82,13 @@ describe("POST /:id/export-print", () => {
   });
 
   it("rejects a request missing the required fields", async () => {
-    const res = await request(app).post(`/api/volumes/${VOLUME_ID}/export-print`).field("page", "page_02");
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-print`).field("page", "page_02");
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("export_fields_required");
   });
 
   it("reports print_export_failed for an undecodable upload", async () => {
-    const res = await request(app)
+    const res = await api
       .post(`/api/volumes/${VOLUME_ID}/export-print`)
       .field("folderSuffix", "german")
       .field("page", "page_03")
@@ -98,7 +99,7 @@ describe("POST /:id/export-print", () => {
 
   it("404s for an unknown volume", async () => {
     const png = await tinyPngBuffer();
-    const res = await request(app)
+    const res = await api
       .post(`/api/volumes/does-not-exist/export-print`)
       .field("folderSuffix", "german")
       .field("page", "page_02")

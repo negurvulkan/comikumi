@@ -33,6 +33,7 @@ import { useExportRun } from "../export/useExportRun";
 import { ensureFontsLoaded } from "../editor/fontLoader";
 import { ensureSvgBubbleBoundaryLoaded, isSvgBubbleBoundaryCached } from "../export/svgBubbleGeometry";
 import { useProject } from "../state/ProjectContext";
+import { useProjectRole } from "../state/useProjectRole";
 
 export function Editor() {
   const { t } = useTranslation();
@@ -40,6 +41,20 @@ export function Editor() {
   const navigate = useNavigate();
   const { project } = useProject();
   const readingDirection = project?.readingDirection ?? "rtl";
+  const { myRole, hasAtLeast } = useProjectRole();
+  // Translators may only edit existing bubble/curved-text .text (see the server-side
+  // diff guard in routes/layout.ts) — everyone at letterer or above keeps full access.
+  // Deliberately an exact-role check, not hasAtLeast("translator"), since letterer/
+  // admin/system-admin should NOT be geometry-restricted.
+  const isTranslatorOnly = myRole === "translator";
+  // The keydown handler below is registered once (empty dep array, matching this
+  // file's existing "read fresh state via a ref/getState() instead of resubscribing
+  // on every render" convention) — a ref keeps its closure seeing the current role
+  // instead of whatever it was on first mount.
+  const isTranslatorOnlyRef = useRef(isTranslatorOnly);
+  useEffect(() => {
+    isTranslatorOnlyRef.current = isTranslatorOnly;
+  }, [isTranslatorOnly]);
   const store = useEditorStore();
   const [drawTool, setDrawTool] = useState<DrawTool | null>(null);
   const [showExportPanel, setShowExportPanel] = useState(false);
@@ -154,13 +169,18 @@ export function Editor() {
         s.redo();
         return;
       }
+      if (e.key === "Escape") {
+        s.deselectAll();
+        return;
+      }
+      // Everything below changes geometry (duplicate/delete/nudge) — the server
+      // rejects these for the "translator" role anyway (see routes/layout.ts's diff
+      // guard), so skip them client-side too instead of letting the save silently fail.
+      if (isTranslatorOnlyRef.current) return;
+
       if (ctrlOrCmd && e.key.toLowerCase() === "d") {
         e.preventDefault();
         s.duplicateSelected();
-        return;
-      }
-      if (e.key === "Escape") {
-        s.deselectAll();
         return;
       }
       if (e.key === "Delete" || e.key === "Backspace") {
@@ -258,11 +278,16 @@ export function Editor() {
         { type: "action", label: saving ? t("settings.saving") : t("common.save"), onClick: () => store.save(), disabled: saving || !dirty },
         { type: "separator" },
         { type: "sublabel", label: t("pageGrid.menuImportLabel") },
-        { type: "action", label: "JSON", onClick: () => importInputRef.current?.click() },
+        { type: "action", label: "JSON", onClick: () => importInputRef.current?.click(), disabled: isTranslatorOnly },
         { type: "separator" },
         { type: "sublabel", label: t("pageGrid.menuExportLabel") },
-        { type: "action", label: t("pageGrid.menuExportImage"), onClick: () => setShowExportPanel(true), disabled: languages.length === 0 },
-        { type: "action", label: "JSON", onClick: handleDownloadJson },
+        {
+          type: "action",
+          label: t("pageGrid.menuExportImage"),
+          onClick: () => setShowExportPanel(true),
+          disabled: languages.length === 0 || !hasAtLeast("letterer"),
+        },
+        { type: "action", label: "JSON", onClick: handleDownloadJson, disabled: !hasAtLeast("letterer") },
         { type: "separator" },
         { type: "action", label: t("editor.editorRoute.showReport"), onClick: () => setShowReport(true) },
         { type: "separator" },
@@ -274,8 +299,13 @@ export function Editor() {
       label: t("editor.editorRoute.editMenu"),
       entries: [
         { type: "action", label: t("editor.editorRoute.undo"), onClick: () => store.undo(), disabled: past.length === 0 },
-        { type: "action", label: t("common.delete"), onClick: () => store.removeSelected(), disabled: selectedCount === 0 },
-        { type: "action", label: t("editor.contextMenu.duplicate"), onClick: () => store.duplicateSelected(), disabled: selectedCount === 0 },
+        { type: "action", label: t("common.delete"), onClick: () => store.removeSelected(), disabled: selectedCount === 0 || isTranslatorOnly },
+        {
+          type: "action",
+          label: t("editor.contextMenu.duplicate"),
+          onClick: () => store.duplicateSelected(),
+          disabled: selectedCount === 0 || isTranslatorOnly,
+        },
       ],
     },
     {
@@ -283,11 +313,16 @@ export function Editor() {
       label: t("menu.project"),
       entries: [
         { type: "action", label: t("menu.switch"), onClick: () => navigate("/project") },
-        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
-        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
-        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
-        { type: "action", label: t("script.menuEntry"), onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/script`) },
-        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
+        { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true), disabled: !hasAtLeast("letterer") },
+        { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
+        { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
+        {
+          type: "action",
+          label: t("script.menuEntry"),
+          onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/script`),
+          disabled: !hasAtLeast("letterer"),
+        },
+        { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },
       ],
     },
     {
@@ -366,6 +401,7 @@ export function Editor() {
           onSetDrawTool={setDrawTool}
           onInsertImage={(fileName, w, h) => store.addImage(fileName, w, h, languages.map((l) => l.code))}
           onAddCurvedText={() => store.addCurvedText()}
+          creationDisabled={isTranslatorOnly}
           textPanelOpen={showTextPanel}
           onToggleTextPanel={() => {
             setShowTextPanel((v) => !v);
@@ -451,6 +487,7 @@ export function Editor() {
             activeLanguage={activeLanguage}
             fontsVersion={fontsVersion}
             drawTool={drawTool}
+            readOnly={isTranslatorOnly}
             onSelect={store.selectBubble}
             onChange={store.updateBubble}
             onCreate={(shape, box) => {

@@ -17,7 +17,9 @@
   "appShell": {
     "switchProject": "プロジェクトを切り替え",
     "settings": "設定",
-    "projectLabel": "プロジェクト: {{name}}"
+    "projectLabel": "プロジェクト: {{name}}",
+    "loggedInAs": "{{username}} としてログイン中",
+    "logout": "ログアウト"
   },
   "settings": {
     "headingWithProject": "設定 — {{name}}",
@@ -92,7 +94,53 @@
     "project_open_failed": "プロジェクトファイルを開けませんでした: {{reason}}",
     "project_create_failed": "プロジェクトを作成できませんでした: {{reason}}",
     "project_delete_failed": "プロジェクトファイルを削除できませんでした: {{reason}}",
-    "cannot_modify_active_project": "このプロジェクトは現在開かれています。先に別のプロジェクトに切り替えてください。"
+    "cannot_modify_active_project": "このプロジェクトは現在開かれています。先に別のプロジェクトに切り替えてください。",
+    "unauthorized": "続行するにはログインしてください。",
+    "forbidden": "この操作を行う権限がありません。",
+    "invalid_credentials": "ユーザー名またはパスワードが正しくありません。",
+    "setup_already_completed": "セットアップは既に完了しています。代わりにログインしてください。",
+    "username_already_exists": "そのユーザー名は既に使用されています。",
+    "cannot_delete_own_account": "自分自身のアカウントは削除できません。",
+    "user_not_found": "そのユーザー名のアカウントが見つかりません。"
+  },
+  "login": {
+    "heading": "ログイン",
+    "usernameLabel": "ユーザー名",
+    "passwordLabel": "パスワード",
+    "submitButton": "ログイン"
+  },
+  "roles": {
+    "viewer": "閲覧者",
+    "translator": "翻訳者",
+    "letterer": "レタラー",
+    "admin": "管理者",
+    "systemAdmin": "システム管理者",
+    "none": "アクセス権なし"
+  },
+  "members": {
+    "title": "メンバー",
+    "usernameLabel": "ユーザー名",
+    "roleLabel": "役割",
+    "addButton": "追加",
+    "removeButton": "削除",
+    "empty": "まだメンバーがいません — システム管理者のみがこのプロジェクトを開けます。",
+    "confirmRemove": "このメンバーをプロジェクトから削除しますか?"
+  },
+  "users": {
+    "title": "アカウント",
+    "usernameLabel": "ユーザー名",
+    "passwordLabel": "パスワード",
+    "systemAdminLabel": "システム管理者",
+    "addButton": "アカウントを作成",
+    "removeButton": "削除",
+    "confirmRemove": "このアカウントを完全に削除しますか?"
+  },
+  "setup": {
+    "heading": "最初のアカウントを作成",
+    "hint": "このアカウントはシステム管理者となり、すべてのプロジェクトに完全にアクセスできます — このサーバーにはまだ他のアカウントがありません。",
+    "confirmPasswordLabel": "パスワードの確認",
+    "passwordMismatch": "パスワードが一致しません。",
+    "submitButton": "アカウントを作成"
   },
   "managers": {
     "characters": {
@@ -178,7 +226,9 @@
     "switch": "切り替え",
     "newProject": "新規プロジェクト",
     "help": "ヘルプ",
-    "noEntriesYet": "まだ項目がありません"
+    "noEntriesYet": "まだ項目がありません",
+    "members": "メンバー",
+    "users": "アカウント"
   },
   "volumeList": {
     "loading": "巻を読み込み中…",

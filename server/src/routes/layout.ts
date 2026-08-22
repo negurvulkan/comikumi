@@ -5,14 +5,35 @@ import multer from "multer";
 import { ZipArchive } from "archiver";
 import AdmZip from "adm-zip";
 import { imageSizeFromFile } from "image-size/fromFile";
-import { PageLayoutSchema, createEmptyLayout } from "../../../shared/src/layoutSchema.js";
+import { PageLayoutSchema, createEmptyLayout, type PageLayout } from "../../../shared/src/layoutSchema.js";
 import { findVolume, listPages } from "../lib/projectScanner.js";
 import { letteringFolderName } from "../lib/paths.js";
 import { readSettings } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireProjectRole, resolveCallerProjectRole } from "../lib/auth.js";
 
 export const layoutRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const requireTranslator = requireProjectRole("translator");
+const requireLetterer = requireProjectRole("letterer");
+
+/** True if `next` differs from `prev` only in bubbles[].text/curvedTexts[].text —
+ * server-side defense-in-depth for the "translator" role (see PUT .../layout below):
+ * there's no granular text-only endpoint today, so a translator gets the same full-
+ * layout PUT route as a letterer, but any geometry/style change outside `.text` is
+ * rejected. Compares by zeroing out the `.text` maps on both sides and comparing the
+ * rest via JSON.stringify — both objects passed through the exact same zod schema
+ * parse, so key ordering is consistent and this is safe (not a general-purpose deep-
+ * equal, just enough for this one check). */
+function isTextOnlyChange(prev: PageLayout, next: PageLayout): boolean {
+  if (prev.bubbles.length !== next.bubbles.length || prev.curvedTexts.length !== next.curvedTexts.length) return false;
+  const strip = (layout: PageLayout) => ({
+    ...layout,
+    bubbles: layout.bubbles.map((b) => ({ ...b, text: {} })),
+    curvedTexts: layout.curvedTexts.map((c) => ({ ...c, text: {} })),
+  });
+  return JSON.stringify(strip(prev)) === JSON.stringify(strip(next));
+}
 
 async function layoutPathFor(volumeId: string, page: string) {
   const volume = await findVolume(volumeId);
@@ -51,6 +72,7 @@ layoutRouter.get(
 
 layoutRouter.put(
   "/:id/pages/:page/layout",
+  requireTranslator,
   asyncHandler(async (req, res) => {
     const resolved = await layoutPathFor(req.params.id, req.params.page);
     if (!resolved) {
@@ -63,6 +85,25 @@ layoutRouter.put(
       return;
     }
     const { dir, file } = resolved;
+    // Translators get this same route (no granular text-only endpoint exists), but are
+    // restricted to bubble/curved-text .text changes — see isTextOnlyChange()'s doc
+    // comment. Letterer/admin/system-admin skip this check entirely.
+    const role = await resolveCallerProjectRole(req);
+    if (role === "translator") {
+      let previous: PageLayout | null = null;
+      try {
+        previous = PageLayoutSchema.parse(JSON.parse(await fs.readFile(file, "utf-8")));
+      } catch {
+        // No existing saved layout — nothing to diff against yet; only allow if the
+        // incoming layout has no non-text content that a translator shouldn't be
+        // able to introduce from scratch (an empty page has no bubbles to compare).
+        previous = { ...parsed.data, bubbles: [], curvedTexts: [] };
+      }
+      if (!isTextOnlyChange(previous, parsed.data)) {
+        res.status(403).json({ error: "forbidden" });
+        return;
+      }
+    }
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(file, JSON.stringify(parsed.data, null, 2), "utf-8");
     res.json({ ok: true });
@@ -143,6 +184,7 @@ layoutRouter.get(
 // volume's "<band>_lettering" folder (existing files are overwritten).
 layoutRouter.post(
   "/:id/layouts/import-zip",
+  requireLetterer,
   upload.single("zip"),
   asyncHandler(async (req, res) => {
     const volume = await findVolume(req.params.id);

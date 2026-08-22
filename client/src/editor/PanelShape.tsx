@@ -19,6 +19,9 @@ interface Props {
   /** Native screen coordinates of a right-click on one vertex handle, plus its index — PageCanvas.tsx
    * renders the "Punkt entfernen" ContextMenu (a plain HTML element, can't live inside the Konva tree). */
   onVertexContextMenu?: (clientX: number, clientY: number, vertexIndex: number) => void;
+  /** See BubbleShape.tsx's Props doc comment — a Panel has no translatable text field
+   * at all, so this is fully locked for the "translator" role. */
+  readOnly?: boolean;
 }
 
 /** A drawn reference region marking one comic panel — editor-only annotation (dashed
@@ -28,7 +31,7 @@ interface Props {
  * right-click on a vertex offers to remove it (down to a minimum of 3 points). Mirrors
  * QuadBubbleShape.tsx's transform-free Line+Circle-corners pattern, generalized from a
  * fixed 4 corners to any N ≥ 3. */
-export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onChange, onContextMenu, onVertexContextMenu }: Props) {
+export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onChange, onContextMenu, onVertexContextMenu, readOnly }: Props) {
   const handleScale = 1 / zoom;
   const displayPoints = panel.points.map((p) => ({ x: p.x * scale, y: p.y * scale }));
   const [livePoints, setLivePoints] = useState(displayPoints);
@@ -58,6 +61,7 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
 
   function handleLineDblClick(e: Konva.KonvaEventObject<MouseEvent>) {
     e.evt.preventDefault();
+    if (readOnly) return;
     const pos = e.target.getRelativePointerPosition();
     if (!pos) return;
     let bestEdge = 0;
@@ -87,7 +91,7 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
         hitStrokeWidth={12}
         dash={[8, 6]}
         fill={selected ? "rgba(108,140,255,0.08)" : undefined}
-        draggable
+        draggable={!readOnly}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         onDblClick={handleLineDblClick}
@@ -107,6 +111,7 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
         listening={false}
       />
       {selected &&
+        !readOnly &&
         livePoints.map((p, i) => (
           <Circle
             key={i}

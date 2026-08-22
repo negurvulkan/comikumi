@@ -7,6 +7,7 @@ import { LanguageListSchema, DEFAULT_LANGUAGES, type LanguageDef } from "../../.
 import type { Character } from "../../../shared/src/characters.js";
 import type { GlossaryEntry } from "../../../shared/src/glossary.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
+import type { ProjectMember } from "../../../shared/src/users.js";
 import { APP_STATE_FILE, LEGACY_SETTINGS_FILE, LEGACY_LANGUAGES_FILE, LEGACY_PROJECT_FILE } from "./paths.js";
 
 /** Thrown by readSettings/readLanguages/getActiveProject when no project file
@@ -362,4 +363,38 @@ export async function writePresets(presets: LetteringPreset[]): Promise<void> {
   const project = await getActiveProject();
   project.data = { ...project.data, presets };
   await writeProjectFile(project.filePath, project.data);
+}
+
+export async function readMembers(): Promise<ProjectMember[]> {
+  const { data } = await getActiveProject();
+  return data.members;
+}
+
+export async function writeMembers(members: ProjectMember[]): Promise<void> {
+  const project = await getActiveProject();
+  project.data = { ...project.data, members };
+  await writeProjectFile(project.filePath, project.data);
+}
+
+/** Non-throwing variant of readMembers() for server/src/lib/auth.ts's
+ * requireProjectRole() — a missing active project should 404/409 further down the
+ * request (e.g. an unknown volume id), not be swallowed here as "no members". */
+export async function getActiveProjectMembers(): Promise<ProjectMember[] | null> {
+  await ensureInitialized();
+  return active ? active.data.members : null;
+}
+
+/** Reads a project file's `members` list WITHOUT making it the active project — used by
+ * routes/project.ts's POST /open to check "is this caller allowed to open this
+ * specific project file" before actually switching the server's active project (a
+ * non-member should never even briefly activate a project they can't access). Returns
+ * null if the file can't be read/parsed (caller treats that as "not found", same
+ * openProject() would eventually surface anyway). */
+export async function peekProjectMembers(filePath: string): Promise<ProjectMember[] | null> {
+  try {
+    const data = await readProjectFile(filePath);
+    return data.members;
+  } catch {
+    return null;
+  }
 }

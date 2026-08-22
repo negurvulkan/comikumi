@@ -2,8 +2,13 @@ import { Router } from "express";
 import { LanguageDefSchema } from "../../../shared/src/languages.js";
 import { readLanguages, writeLanguages } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireProjectRole } from "../lib/auth.js";
 
 export const languagesRouter = Router();
+// Adding/removing/renaming a project's supported languages is structural (affects
+// folder conventions and exports for everyone), so it's gated like project settings
+// rather than routine content — requireAdmin, not requireLetterer.
+const requireAdmin = requireProjectRole("admin");
 
 languagesRouter.get(
   "/",
@@ -14,6 +19,7 @@ languagesRouter.get(
 
 languagesRouter.post(
   "/",
+  requireAdmin,
   asyncHandler(async (req, res) => {
     const parsed = LanguageDefSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -37,6 +43,7 @@ languagesRouter.post(
 
 languagesRouter.put(
   "/:code",
+  requireAdmin,
   asyncHandler(async (req, res) => {
     const parsed = LanguageDefSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -64,6 +71,7 @@ languagesRouter.put(
 
 languagesRouter.delete(
   "/:code",
+  requireAdmin,
   asyncHandler(async (req, res) => {
     const languages = await readLanguages();
     const next = languages.filter((l) => l.code !== req.params.code);

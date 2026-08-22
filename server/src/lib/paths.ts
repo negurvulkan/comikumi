@@ -43,6 +43,16 @@ export const LEGACY_PROJECT_FILE = path.join(DATA_DIR, "legacy-project.json");
  * a pointer, not project data itself (that lives in the project's own file). */
 export const APP_STATE_FILE = path.join(DATA_DIR, "app-state.json");
 
+/** Server-wide account list — see shared/src/users.ts, server/src/lib/authStore.ts.
+ * Machine-level, not per-project (an account exists independent of which projects it
+ * can see), so it lives here next to app-state.json rather than in any project file. */
+export const USERS_FILE = path.join(DATA_DIR, "users.json");
+
+/** HMAC secret for signing/verifying auth JWTs — auto-generated once (crypto.randomBytes)
+ * on first use if missing, see authStore.ts's getOrCreateAuthSecret(). Matches this app's
+ * "no required configuration" philosophy (e.g. PORT in index.ts is optional too). */
+export const AUTH_SECRET_FILE = path.join(DATA_DIR, "auth-secret.txt");
+
 /** e.g. "volume_01" + "_empty" -> "volume_01_empty" */
 export function emptyFolderName(bookFolderName: string, emptySuffix: string): string {
   return `${bookFolderName}${emptySuffix}`;

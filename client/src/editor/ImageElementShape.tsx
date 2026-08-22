@@ -16,6 +16,10 @@ interface Props {
   selected: boolean;
   onSelect: (additive: boolean) => void;
   onChange: (patch: Partial<ImageElement>) => void;
+  /** See BubbleShape.tsx's Props doc comment — an ImageElement has no translatable
+   * .text field at all, so for the "translator" role this disables it as completely
+   * as the ToolStrip's creationDisabled already prevents placing a new one. */
+  readOnly?: boolean;
 }
 
 /**
@@ -26,7 +30,7 @@ interface Props {
  * translated poster), falling back to whichever file is set for any
  * language so the element is never just blank.
  */
-export function ImageElementShape({ element, activeLanguage, scale, zoom, selected, onSelect, onChange }: Props) {
+export function ImageElementShape({ element, activeLanguage, scale, zoom, selected, onSelect, onChange, readOnly }: Props) {
   const handleScale = 1 / zoom;
   const fileName = imageFileForLanguage(element, activeLanguage);
   const imageUrl = fileName ? api.imagesFileUrl(fileName) : undefined;
@@ -81,12 +85,13 @@ export function ImageElementShape({ element, activeLanguage, scale, zoom, select
         stroke={stroke}
         strokeWidth={2}
         fill={selected ? "rgba(255,255,255,0.08)" : undefined}
-        draggable
+        draggable={!readOnly}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         onDragEnd={handleLineDragEnd}
       />
       {selected &&
+        !readOnly &&
         displayCorners.map((p, i) => (
           <Circle
             key={i}

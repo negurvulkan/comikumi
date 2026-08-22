@@ -6,7 +6,9 @@ import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "
 import type { ProjectSettings } from "../../../shared/src/settings";
 import type { ProjectFile } from "../../../shared/src/project";
 import type { ScriptDocument } from "../../../shared/src/script";
+import type { ProjectRole, PublicUser } from "../../../shared/src/users";
 import { apiUrl } from "./apiBase";
+import { authFetch, authUrl } from "./authFetch";
 
 /** Thrown for any non-ok API response whose body is the `{ error, params? }` shape
  * every server route now returns (see server/src/routes/*.ts) — `code` is a stable
@@ -40,6 +42,9 @@ export interface CurrentProject {
   name: string;
   readingDirection: "ltr" | "rtl";
   coverImagePath: string;
+  /** The caller's own resolved role in this project — "system-admin" for the bypass
+   * case, "none" if authenticated but not a member, otherwise their ProjectRole. */
+  myRole: ProjectRole | "system-admin" | "none";
 }
 
 export interface RecentProject {
@@ -84,6 +89,13 @@ export interface VolumeSummary {
   firstPage: string | null;
 }
 
+export interface ProjectMemberView {
+  userId: string;
+  role: ProjectRole;
+  /** null if the account was deleted after being added as a member. */
+  username: string | null;
+}
+
 export interface PageSummary {
   page: string;
   fileName: string;
@@ -125,49 +137,49 @@ async function json<T>(res: Response): Promise<T> {
  * them must rewrite them before handing them to a consumer, same as every other
  * "/api/..." path in this file. */
 function withApiUrls<T extends { url: string }>(entries: T[]): T[] {
-  return entries.map((e) => ({ ...e, url: apiUrl(e.url) }));
+  return entries.map((e) => ({ ...e, url: authUrl(apiUrl(e.url)) }));
 }
 
 export const api = {
-  listVolumes: () => fetch(apiUrl("/api/volumes")).then((r) => json<VolumeSummary[]>(r)),
+  listVolumes: () => authFetch(apiUrl("/api/volumes")).then((r) => json<VolumeSummary[]>(r)),
 
   listPages: (volumeId: string) =>
-    fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages`)).then((r) => json<PageSummary[]>(r)),
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages`)).then((r) => json<PageSummary[]>(r)),
 
   pageImageUrl: (volumeId: string, page: string) =>
-    apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/image`),
+    authUrl(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/image`)),
 
   pageThumbnailUrl: (volumeId: string, page: string) =>
-    apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/thumbnail`),
+    authUrl(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/thumbnail`)),
 
   getLayout: (volumeId: string, page: string) =>
-    fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`)).then((r) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`)).then((r) =>
       json<PageLayout>(r)
     ),
 
   saveLayout: (volumeId: string, page: string, layout: PageLayout) =>
-    fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`), {
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(layout),
     }).then((r) => json<{ ok: true }>(r)),
 
   getScript: (volumeId: string) =>
-    fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/script`)).then((r) => json<ScriptDocument>(r)),
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/script`)).then((r) => json<ScriptDocument>(r)),
 
   saveScript: (volumeId: string, doc: ScriptDocument) =>
-    fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/script`), {
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/script`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(doc),
     }).then((r) => json<{ ok: true }>(r)),
 
-  listFonts: () => fetch(apiUrl("/api/fonts")).then((r) => json<FontEntry[]>(r)).then(withApiUrls),
+  listFonts: () => authFetch(apiUrl("/api/fonts")).then((r) => json<FontEntry[]>(r)).then(withApiUrls),
 
   uploadFont: (file: File) => {
     const form = new FormData();
     form.append("font", file);
-    return fetch(apiUrl("/api/fonts"), { method: "POST", body: form }).then((r) => json<{ ok: true; fileName: string; scope: AssetScope }>(r));
+    return authFetch(apiUrl("/api/fonts"), { method: "POST", body: form }).then((r) => json<{ ok: true; fileName: string; scope: AssetScope }>(r));
   },
 
   exportPage: (volumeId: string, page: string, folderSuffix: string, blob: Blob) => {
@@ -175,7 +187,7 @@ export const api = {
     form.append("png", blob, `${page}.png`);
     form.append("folderSuffix", folderSuffix);
     form.append("page", page);
-    return fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/export`), { method: "POST", body: form }).then((r) =>
+    return authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/export`), { method: "POST", body: form }).then((r) =>
       json<{ ok: true; path: string }>(r)
     );
   },
@@ -185,13 +197,13 @@ export const api = {
     form.append("png", blob, `${page}.png`);
     form.append("folderSuffix", folderSuffix);
     form.append("page", page);
-    return fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/export-print`), { method: "POST", body: form }).then((r) =>
+    return authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/export-print`), { method: "POST", body: form }).then((r) =>
       json<{ ok: true; path: string }>(r)
     );
   },
 
   exportLayoutsZip: async (volumeId: string) => {
-    const res = await fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/layouts/export-zip`));
+    const res = await authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/layouts/export-zip`));
     if (!res.ok) await throwApiError(res);
     return res.blob();
   },
@@ -199,93 +211,93 @@ export const api = {
   importLayoutsZip: (volumeId: string, file: File) => {
     const form = new FormData();
     form.append("zip", file);
-    return fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/layouts/import-zip`), { method: "POST", body: form }).then(
+    return authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/layouts/import-zip`), { method: "POST", body: form }).then(
       (r) => json<{ ok: true; imported: string[]; skipped: { file: string; reason: string }[] }>(r)
     );
   },
 
-  listImages: () => fetch(apiUrl("/api/images")).then((r) => json<ImageEntry[]>(r)).then(withApiUrls),
+  listImages: () => authFetch(apiUrl("/api/images")).then((r) => json<ImageEntry[]>(r)).then(withApiUrls),
 
-  imagesFileUrl: (fileName: string) => apiUrl(`/api/images/file/${encodeURIComponent(fileName)}`),
+  imagesFileUrl: (fileName: string) => authUrl(apiUrl(`/api/images/file/${encodeURIComponent(fileName)}`)),
 
   uploadImage: (file: File) => {
     const form = new FormData();
     form.append("image", file);
-    return fetch(apiUrl("/api/images"), { method: "POST", body: form }).then((r) =>
+    return authFetch(apiUrl("/api/images"), { method: "POST", body: form }).then((r) =>
       json<{ ok: true; fileName: string; width: number; height: number; scope: AssetScope }>(r)
     );
   },
 
-  listBubbleSvgs: () => fetch(apiUrl("/api/bubble-svgs")).then((r) => json<BubbleSvgEntry[]>(r)).then(withApiUrls),
+  listBubbleSvgs: () => authFetch(apiUrl("/api/bubble-svgs")).then((r) => json<BubbleSvgEntry[]>(r)).then(withApiUrls),
 
-  bubbleSvgFileUrl: (fileName: string) => apiUrl(`/api/bubble-svgs/file/${encodeURIComponent(fileName)}`),
+  bubbleSvgFileUrl: (fileName: string) => authUrl(apiUrl(`/api/bubble-svgs/file/${encodeURIComponent(fileName)}`)),
 
   uploadBubbleSvg: (file: File) => {
     const form = new FormData();
     form.append("svg", file);
-    return fetch(apiUrl("/api/bubble-svgs"), { method: "POST", body: form }).then((r) =>
+    return authFetch(apiUrl("/api/bubble-svgs"), { method: "POST", body: form }).then((r) =>
       json<{ ok: true; fileName: string; scope: AssetScope }>(r)
     );
   },
 
-  listLanguages: () => fetch(apiUrl("/api/languages")).then((r) => json<LanguageDef[]>(r)),
+  listLanguages: () => authFetch(apiUrl("/api/languages")).then((r) => json<LanguageDef[]>(r)),
 
   addLanguage: (language: LanguageDef) =>
-    fetch(apiUrl("/api/languages"), {
+    authFetch(apiUrl("/api/languages"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(language),
     }).then((r) => json<LanguageDef[]>(r)),
 
   updateLanguage: (code: string, language: LanguageDef) =>
-    fetch(apiUrl(`/api/languages/${encodeURIComponent(code)}`), {
+    authFetch(apiUrl(`/api/languages/${encodeURIComponent(code)}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(language),
     }).then((r) => json<LanguageDef[]>(r)),
 
   deleteLanguage: (code: string) =>
-    fetch(apiUrl(`/api/languages/${encodeURIComponent(code)}`), { method: "DELETE" }).then((r) => json<LanguageDef[]>(r)),
+    authFetch(apiUrl(`/api/languages/${encodeURIComponent(code)}`), { method: "DELETE" }).then((r) => json<LanguageDef[]>(r)),
 
   getSettings: () =>
-    fetch(apiUrl("/api/settings")).then((r) => json<ProjectSettings & { scanRootExists: boolean; assetsDirExists: boolean; thumbnailsDirExists: boolean }>(r)),
+    authFetch(apiUrl("/api/settings")).then((r) => json<ProjectSettings & { scanRootExists: boolean; assetsDirExists: boolean; thumbnailsDirExists: boolean }>(r)),
 
   updateSettings: (settings: ProjectSettings) =>
-    fetch(apiUrl("/api/settings"), {
+    authFetch(apiUrl("/api/settings"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(settings),
     }).then((r) => json<ProjectSettings & { scanRootExists: boolean; assetsDirExists: boolean; thumbnailsDirExists: boolean }>(r)),
 
-  getCurrentProject: () => fetch(apiUrl("/api/project/current")).then((r) => json<CurrentProject | null>(r)),
+  getCurrentProject: () => authFetch(apiUrl("/api/project/current")).then((r) => json<CurrentProject | null>(r)),
 
-  listRecentProjects: () => fetch(apiUrl("/api/project/recent")).then((r) => json<RecentProject[]>(r)),
+  listRecentProjects: () => authFetch(apiUrl("/api/project/recent")).then((r) => json<RecentProject[]>(r)),
 
-  listArchivedProjects: () => fetch(apiUrl("/api/project/archived")).then((r) => json<RecentProject[]>(r)),
+  listArchivedProjects: () => authFetch(apiUrl("/api/project/archived")).then((r) => json<RecentProject[]>(r)),
 
   removeRecentProject: (filePath: string) =>
-    fetch(apiUrl("/api/project/recent/remove"), {
+    authFetch(apiUrl("/api/project/recent/remove"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filePath }),
     }).then((r) => json<{ ok: true }>(r)),
 
   archiveProject: (filePath: string) =>
-    fetch(apiUrl("/api/project/archive"), {
+    authFetch(apiUrl("/api/project/archive"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filePath }),
     }).then((r) => json<{ ok: true }>(r)),
 
   unarchiveProject: (filePath: string) =>
-    fetch(apiUrl("/api/project/unarchive"), {
+    authFetch(apiUrl("/api/project/unarchive"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filePath }),
     }).then((r) => json<{ ok: true }>(r)),
 
   deleteProjectFile: (filePath: string) =>
-    fetch(apiUrl("/api/project/delete-file"), {
+    authFetch(apiUrl("/api/project/delete-file"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filePath }),
@@ -294,10 +306,10 @@ export const api = {
   /** URL for a project's cover image/logo (settings.coverImagePath) — an absolute local
    * path, not a managed asset, so it's served through a dedicated route rather than the
    * fonts/images/bubble-svgs asset routers. */
-  projectCoverUrl: (coverImagePath: string) => apiUrl(`/api/project/cover?${new URLSearchParams({ path: coverImagePath })}`),
+  projectCoverUrl: (coverImagePath: string) => authUrl(apiUrl(`/api/project/cover?${new URLSearchParams({ path: coverImagePath })}`)),
 
   openProject: (filePath: string) =>
-    fetch(apiUrl("/api/project/open"), {
+    authFetch(apiUrl("/api/project/open"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filePath }),
@@ -315,26 +327,26 @@ export const api = {
     languages?: LanguageDef[];
     readingDirection?: "ltr" | "rtl";
   }) =>
-    fetch(apiUrl("/api/project/new"), {
+    authFetch(apiUrl("/api/project/new"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then((r) => json<{ filePath: string } & ProjectFile>(r)),
 
   getScanRootStatus: (scanRoot: string, emptySuffix: string) =>
-    fetch(apiUrl(`/api/project/scan-root-status?${new URLSearchParams({ scanRoot, emptySuffix })}`)).then((r) =>
+    authFetch(apiUrl(`/api/project/scan-root-status?${new URLSearchParams({ scanRoot, emptySuffix })}`)).then((r) =>
       json<{ exists: boolean; volumeCount: number }>(r)
     ),
 
   createScanRootFolder: (scanRoot: string) =>
-    fetch(apiUrl("/api/project/scan-root"), {
+    authFetch(apiUrl("/api/project/scan-root"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ scanRoot }),
     }).then((r) => json<{ created: true }>(r)),
 
   createVolumeFolders: (data: { scanRoot: string; emptySuffix: string; bookName: string; languageFolderSuffixes: string[] }) =>
-    fetch(apiUrl("/api/project/volume-folders"), {
+    authFetch(apiUrl("/api/project/volume-folders"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -345,68 +357,111 @@ export const api = {
     if (path) params.set("path", path);
     if (filter) params.set("filter", filter);
     const query = params.toString();
-    return fetch(apiUrl(`/api/browse${query ? `?${query}` : ""}`)).then((r) => json<BrowseResult>(r));
+    return authFetch(apiUrl(`/api/browse${query ? `?${query}` : ""}`)).then((r) => json<BrowseResult>(r));
   },
 
-  listCharacters: () => fetch(apiUrl("/api/characters")).then((r) => json<Character[]>(r)),
+  listCharacters: () => authFetch(apiUrl("/api/characters")).then((r) => json<Character[]>(r)),
 
   addCharacter: (character: { name: string; color: string; voiceNotes?: string }) =>
-    fetch(apiUrl("/api/characters"), {
+    authFetch(apiUrl("/api/characters"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(character),
     }).then((r) => json<Character[]>(r)),
 
   updateCharacter: (id: string, character: { name: string; color: string; voiceNotes?: string }) =>
-    fetch(apiUrl(`/api/characters/${encodeURIComponent(id)}`), {
+    authFetch(apiUrl(`/api/characters/${encodeURIComponent(id)}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(character),
     }).then((r) => json<Character[]>(r)),
 
   deleteCharacter: (id: string) =>
-    fetch(apiUrl(`/api/characters/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<Character[]>(r)),
+    authFetch(apiUrl(`/api/characters/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<Character[]>(r)),
 
-  listGlossary: () => fetch(apiUrl("/api/glossary")).then((r) => json<GlossaryEntry[]>(r)),
+  listGlossary: () => authFetch(apiUrl("/api/glossary")).then((r) => json<GlossaryEntry[]>(r)),
 
   addGlossaryEntry: (entry: { term: string; translations: Record<string, string>; note?: string }) =>
-    fetch(apiUrl("/api/glossary"), {
+    authFetch(apiUrl("/api/glossary"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entry),
     }).then((r) => json<GlossaryEntry[]>(r)),
 
   updateGlossaryEntry: (id: string, entry: { term: string; translations: Record<string, string>; note?: string }) =>
-    fetch(apiUrl(`/api/glossary/${encodeURIComponent(id)}`), {
+    authFetch(apiUrl(`/api/glossary/${encodeURIComponent(id)}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entry),
     }).then((r) => json<GlossaryEntry[]>(r)),
 
   deleteGlossaryEntry: (id: string) =>
-    fetch(apiUrl(`/api/glossary/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<GlossaryEntry[]>(r)),
+    authFetch(apiUrl(`/api/glossary/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<GlossaryEntry[]>(r)),
 
-  listPresets: () => fetch(apiUrl("/api/presets")).then((r) => json<LetteringPreset[]>(r)),
+  listPresets: () => authFetch(apiUrl("/api/presets")).then((r) => json<LetteringPreset[]>(r)),
 
   addPreset: (preset: { name: string; text: PresetTextFields; background: PresetBackgroundFields }) =>
-    fetch(apiUrl("/api/presets"), {
+    authFetch(apiUrl("/api/presets"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(preset),
     }).then((r) => json<LetteringPreset[]>(r)),
 
   updatePreset: (id: string, preset: { name: string; text: PresetTextFields; background: PresetBackgroundFields }) =>
-    fetch(apiUrl(`/api/presets/${encodeURIComponent(id)}`), {
+    authFetch(apiUrl(`/api/presets/${encodeURIComponent(id)}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(preset),
     }).then((r) => json<LetteringPreset[]>(r)),
 
   deletePreset: (id: string) =>
-    fetch(apiUrl(`/api/presets/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<LetteringPreset[]>(r)),
+    authFetch(apiUrl(`/api/presets/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<LetteringPreset[]>(r)),
 
   getVolumeReport: (volumeId: string) =>
-    fetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/reports`)).then((r) => json<{ page: string; layout: PageLayout }[]>(r)),
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/reports`)).then((r) => json<{ page: string; layout: PageLayout }[]>(r)),
+
+  // --- Auth / roles ---
+
+  getSetupStatus: () => authFetch(apiUrl("/api/auth/setup-status")).then((r) => json<{ hasAnyUsers: boolean }>(r)),
+
+  setupAccount: (username: string, password: string) =>
+    authFetch(apiUrl("/api/auth/setup"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    }).then((r) => json<{ token: string; user: PublicUser }>(r)),
+
+  login: (username: string, password: string) =>
+    authFetch(apiUrl("/api/auth/login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    }).then((r) => json<{ token: string; user: PublicUser }>(r)),
+
+  getMe: () => authFetch(apiUrl("/api/auth/me")).then((r) => json<PublicUser>(r)),
+
+  listUsers: () => authFetch(apiUrl("/api/auth/users")).then((r) => json<PublicUser[]>(r)),
+
+  createUser: (data: { username: string; password: string; isSystemAdmin?: boolean }) =>
+    authFetch(apiUrl("/api/auth/users"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((r) => json<PublicUser>(r)),
+
+  deleteUser: (id: string) => authFetch(apiUrl(`/api/auth/users/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<PublicUser[]>(r)),
+
+  listMembers: () => authFetch(apiUrl("/api/project/members")).then((r) => json<ProjectMemberView[]>(r)),
+
+  addMember: (username: string, role: ProjectRole) =>
+    authFetch(apiUrl("/api/project/members"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, role }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  removeMember: (userId: string) =>
+    authFetch(apiUrl(`/api/project/members/${encodeURIComponent(userId)}`), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
 };
 
 /** Triggers a browser download for arbitrary text/blob content — used for single-page JSON export. */

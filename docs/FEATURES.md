@@ -6,6 +6,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 ## Inhalt
 
 - [Projektverwaltung](#projektverwaltung)
+- [Konten, Rollen & Zugriffsschutz](#konten-rollen--zugriffsschutz)
 - [UI-Sprache](#ui-sprache)
 - [Bände & Seiten](#bände--seiten)
 - [Sprachverwaltung](#sprachverwaltung)
@@ -75,6 +76,37 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - **Migration alter Projekte**: Einmalig und automatisch werden alte
   Einzelprojekt-Dateien (`settings.json`/`languages.json` aus Vorgängerversionen) beim
   ersten Start in eine echte Projektdatei überführt, ohne die Originale anzufassen.
+
+## Konten, Rollen & Zugriffsschutz
+
+- **Server-weite Konten**: Benutzername + Passwort (Passwörter serverseitig per
+  `scrypt` gehasht, kein Klartext, keine native Abhängigkeit). Beim allerersten Start
+  (noch keine Konten vorhanden) zeigt die App statt eines Logins einen
+  Ersteinrichtungs-Bildschirm — das dort angelegte Konto wird automatisch
+  Systemadministrator.
+- **Anmeldung**: JWT-Bearer-Token (`Authorization`-Header), im Browser in
+  `localStorage` gespeichert, 30 Tage gültig. Funktioniert unverändert, wenn Client
+  und Server auf getrennten Origins laufen (siehe die konfigurierbare API-Basis-URL).
+- **Projektbezogene Rollen**: Betrachter (nur lesen) < Übersetzer (Blasentext +
+  Glossar) < Letterer (volle Bearbeitung: Layout, Panels, Presets, Export,
+  Schriften-/Bild-/SVG-Upload) < Admin (zusätzlich Projekteinstellungen und
+  Mitgliederverwaltung dieses Projekts). Die Mitgliederliste eines Projekts lebt
+  portabel in dessen eigener Projektdatei (wie Charaktere/Glossar/Presets) — zieht
+  also mit um, wenn die Datei kopiert/verschoben wird.
+- **Systemadministrator** (serverweites Konto-Flag, unabhängig von einzelnen
+  Projekten): voller Bypass-Zugriff auf jedes Projekt unabhängig von dessen
+  Mitgliederliste, plus alleiniger Zugriff auf Projekt-Umschalter-Aktionen (Projekt
+  anlegen/löschen/archivieren, Dateisystem durchsuchen) und die serverweite
+  Kontenverwaltung.
+- **Übersetzer-Einschränkung**: Da es (noch) keinen eigenen "nur Text"-Endpunkt gibt,
+  teilen sich Übersetzer und Letterer denselben Speichern-Endpunkt für das
+  Seiten-Layout — der Server vergleicht bei der Rolle "Übersetzer" das eingehende
+  Layout gegen die zuletzt gespeicherte Version und lehnt jede Änderung außerhalb der
+  Blasentext-Felder ab. Im Editor selbst bleiben für Übersetzer nur die Textfelder
+  aktiv, keine Geometrie-Werkzeuge.
+- **Mitglieder-/Kontenverwaltung**: über das "Projekt"-Menü — "Mitglieder" (Rolle
+  dieses Projekts, ab Admin sichtbar) und "Konten" (serverweite Konten, nur für
+  Systemadministratoren sichtbar).
 
 ## UI-Sprache
 

@@ -16,6 +16,11 @@ interface Props {
   selected: boolean;
   onSelect: (additive: boolean) => void;
   onChange: (patch: Partial<CurvedTextElement>) => void;
+  /** See BubbleShape.tsx's Props doc comment — unlike ImageElement, a CurvedTextElement
+   * DOES have a translatable .text field (the server's translator diff guard allows
+   * changing it), so selection stays enabled either way; only the path/corner drag
+   * handles that reshape .points are disabled. */
+  readOnly?: boolean;
 }
 
 // Reused purely for canvas text-metric measurement (never drawn) — same private pattern as BubbleShape.tsx.
@@ -34,7 +39,7 @@ function getMeasureCtx(): CanvasRenderingContext2D {
  * reshaping, all working directly in absolute image-space points (no
  * enclosing box/rotation the way Bubble has).
  */
-export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, presets, selected, onSelect, onChange }: Props) {
+export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, presets, selected, onSelect, onChange, readOnly }: Props) {
   const handleScale = 1 / zoom;
   const points = element.points;
   const displayPoints = useMemo(() => points.map((p) => ({ x: p.x * scale, y: p.y * scale })), [points, scale]);
@@ -108,7 +113,7 @@ export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, p
         strokeWidth={2}
         dash={[4, 4]}
         hitStrokeWidth={16}
-        draggable
+        draggable={!readOnly}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         // Without cancelBubble, the mousedown/dragstart bubbles all the way
@@ -130,6 +135,7 @@ export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, p
         }}
       />
       {selected &&
+        !readOnly &&
         displayPoints.map((p, i) => (
           <Circle
             key={i}

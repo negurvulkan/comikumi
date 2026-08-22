@@ -3,8 +3,10 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { readGlossary, writeGlossary } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireProjectRole } from "../lib/auth.js";
 
 export const glossaryRouter = Router();
+const requireTranslator = requireProjectRole("translator");
 
 const GlossaryInputSchema = z.object({
   term: z.string().trim().min(1).max(60),
@@ -21,6 +23,7 @@ glossaryRouter.get(
 
 glossaryRouter.post(
   "/",
+  requireTranslator,
   asyncHandler(async (req, res) => {
     const parsed = GlossaryInputSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -36,6 +39,7 @@ glossaryRouter.post(
 
 glossaryRouter.put(
   "/:id",
+  requireTranslator,
   asyncHandler(async (req, res) => {
     const parsed = GlossaryInputSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -57,6 +61,7 @@ glossaryRouter.put(
 
 glossaryRouter.delete(
   "/:id",
+  requireTranslator,
   asyncHandler(async (req, res) => {
     const entries = await readGlossary();
     const next = entries.filter((e) => e.id !== req.params.id);
