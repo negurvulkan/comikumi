@@ -123,10 +123,16 @@ const CreateVolumeFoldersSchema = z.object({
   languageFolderSuffixes: z.array(z.string().min(1)).default([]),
 });
 
-/** Creates "<scanRoot>/<bookName><emptySuffix>" plus one "<scanRoot>/<bookName>_<suffix>"
- * per requested language — paths are built server-side (path.join) rather than trusting
- * client-assembled paths, so this can't be pointed at an arbitrary location and stays
- * correct across platform path-separator conventions. */
+/** Creates "<scanRoot>/<bookName>/<bookName><emptySuffix>" plus one
+ * "<scanRoot>/<bookName>/<bookName>_<suffix>" per requested language — nested one level
+ * under a "<bookName>" folder rather than directly in scanRoot, because
+ * projectScanner.ts derives a volume's id from its *parent* folder's path relative to
+ * scanRoot (see VolumeInfo.id/relId in scanVolumes()): a volume folder placed directly
+ * in scanRoot would get an empty id (parentDir === scanRoot), which 404s the moment
+ * anyone opens it. This mirrors the nesting every real project already uses (e.g.
+ * "Volume_01/volume_01_empty"). Paths are built server-side (path.join) rather than
+ * trusting client-assembled paths, so this can't be pointed at an arbitrary location and
+ * stays correct across platform path-separator conventions. */
 projectRouter.post(
   "/volume-folders",
   asyncHandler(async (req, res) => {
@@ -137,9 +143,10 @@ projectRouter.post(
     }
     const { scanRoot, emptySuffix, bookName, languageFolderSuffixes } = parsed.data;
     try {
+      const bookDir = path.join(scanRoot, bookName);
       const targets = [
-        path.join(scanRoot, `${bookName}${emptySuffix}`),
-        ...languageFolderSuffixes.map((suffix) => path.join(scanRoot, `${bookName}_${suffix}`)),
+        path.join(bookDir, `${bookName}${emptySuffix}`),
+        ...languageFolderSuffixes.map((suffix) => path.join(bookDir, `${bookName}_${suffix}`)),
       ];
       for (const dir of targets) {
         await fs.mkdir(dir, { recursive: true });

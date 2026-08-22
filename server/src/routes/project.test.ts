@@ -110,6 +110,14 @@ describe("POST /api/project/volume-folders", () => {
       });
     expect(res.status).toBe(201);
     expect(res.body.createdPaths).toHaveLength(3);
+    // Regression check: the empty-page folder must NOT sit directly in scanRoot — its
+    // parent folder's path-relative-to-scanRoot becomes the volume's id
+    // (projectScanner.ts's scanVolumes()), and an id of "" 404s the moment the volume
+    // is opened. Nesting one level under a "<bookName>" folder (matching real projects'
+    // existing "Volume_01/volume_01_empty" convention) keeps that id non-empty.
+    const emptyDirPath = res.body.createdPaths.find((p: string) => p.endsWith("_empty"));
+    expect(path.dirname(emptyDirPath)).not.toBe(env.scanRoot);
+    expect(path.dirname(emptyDirPath)).toBe(path.join(env.scanRoot, "Volume_99"));
 
     const status = await request(app).get("/api/project/scan-root-status").query({ scanRoot: env.scanRoot, emptySuffix: "_empty" });
     // The pre-existing Volume_01 fixture plus the freshly created Volume_99 folder.
