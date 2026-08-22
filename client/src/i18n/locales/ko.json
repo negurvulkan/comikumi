@@ -320,7 +320,8 @@
     },
     "translatorContextPanel": {
       "title": "맥락 보기",
-      "selectBubbleHint": "말풍선을 선택하면 맥락이 표시됩니다.",
+      "selectHint": "말풍선이나 패널을 선택하면 맥락이 표시됩니다.",
+      "noTextsInPanel": "이 패널에는 텍스트가 없습니다.",
       "speakerLabel": "화자:",
       "panelLabel": "패널:",
       "previousLabel": "이전",

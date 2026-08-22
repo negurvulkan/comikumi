@@ -92,6 +92,10 @@ function isAssignedTo(bubble: Bubble, panelId: string, panels: Panel[]): boolean
 export interface BubbleGroup {
   label: string;
   bubbles: Bubble[];
+  /** The real Panel this group belongs to, or null for the trailing "Ohne Panel"
+   * bucket — lets a caller (e.g. TranslatorContextPanel.tsx's panel-selected mode)
+   * find a specific panel's group directly, even one with zero bubbles in it. */
+  panelId: string | null;
 }
 
 /** "Wer sagt was in welchem Panel?" grouping — panels in reading order, then an
@@ -104,6 +108,7 @@ export function groupBubblesByPanel(
 ): BubbleGroup[] {
   const groups: BubbleGroup[] = sortPanelsByPosition(panels, readingDirection).map(({ panel, index }) => ({
     label: panelDisplayLabel(panel, index),
+    panelId: panel.id,
     bubbles: sortBubblesByPosition(
       bubbles.filter((b) => isAssignedTo(b, panel.id, panels)),
       language,
@@ -116,7 +121,7 @@ export function groupBubblesByPanel(
     language,
     readingDirection
   );
-  if (unassigned.length > 0) groups.push({ label: NO_PANEL_LABEL, bubbles: unassigned });
+  if (unassigned.length > 0) groups.push({ label: NO_PANEL_LABEL, panelId: null, bubbles: unassigned });
   return groups;
 }
 

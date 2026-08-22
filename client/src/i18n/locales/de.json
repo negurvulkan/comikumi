@@ -328,7 +328,8 @@
     },
     "translatorContextPanel": {
       "title": "Kontextansicht",
-      "selectBubbleHint": "Blase auswählen, um Kontext zu sehen.",
+      "selectHint": "Blase oder Panel auswählen, um Kontext zu sehen.",
+      "noTextsInPanel": "Keine Texte in diesem Panel.",
       "speakerLabel": "Speaker:",
       "panelLabel": "Panel:",
       "previousLabel": "Vorherige",

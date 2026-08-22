@@ -328,7 +328,8 @@
     },
     "translatorContextPanel": {
       "title": "Vue contextuelle",
-      "selectBubbleHint": "Sélectionnez une bulle pour voir le contexte.",
+      "selectHint": "Sélectionnez une bulle ou une case pour voir le contexte.",
+      "noTextsInPanel": "Aucun texte dans cette case.",
       "speakerLabel": "Locuteur :",
       "panelLabel": "Case :",
       "previousLabel": "Précédente",

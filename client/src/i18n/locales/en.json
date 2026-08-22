@@ -328,7 +328,8 @@
     },
     "translatorContextPanel": {
       "title": "Context view",
-      "selectBubbleHint": "Select a bubble to see context.",
+      "selectHint": "Select a bubble or a panel to see context.",
+      "noTextsInPanel": "No texts in this panel.",
       "speakerLabel": "Speaker:",
       "panelLabel": "Panel:",
       "previousLabel": "Previous",

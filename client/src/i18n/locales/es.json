@@ -328,7 +328,8 @@
     },
     "translatorContextPanel": {
       "title": "Vista de contexto",
-      "selectBubbleHint": "Selecciona un bocadillo para ver el contexto.",
+      "selectHint": "Selecciona un bocadillo o una viñeta para ver el contexto.",
+      "noTextsInPanel": "No hay textos en esta viñeta.",
       "speakerLabel": "Hablante:",
       "panelLabel": "Viñeta:",
       "previousLabel": "Anterior",

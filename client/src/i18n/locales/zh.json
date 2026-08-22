@@ -320,7 +320,8 @@
     },
     "translatorContextPanel": {
       "title": "上下文视图",
-      "selectBubbleHint": "选择一个气泡以查看上下文。",
+      "selectHint": "选择一个气泡或一个分格以查看上下文。",
+      "noTextsInPanel": "此分格中没有文字。",
       "speakerLabel": "说话者：",
       "panelLabel": "分格：",
       "previousLabel": "上一个",

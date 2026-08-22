@@ -406,6 +406,7 @@ export function Editor() {
           languages={languages}
           readingDirection={readingDirection}
           selectedBubbleId={selectedBubbleIds[0] ?? null}
+          selectedPanelId={selectedPanelIds[0] ?? null}
           onSelectBubble={(id) => store.selectBubble(id)}
           onMove={(direction) => {
             const bubbleId = selectedBubbleIds[0];

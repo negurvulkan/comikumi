@@ -87,6 +87,17 @@ describe("groupBubblesByPanel", () => {
     expect(groups[0].bubbles.map((b) => b.id)).toEqual(["b-p1"]);
     expect(groups[1].bubbles.map((b) => b.id)).toEqual(["b-p2"]);
     expect(groups[2].bubbles.map((b) => b.id)).toEqual(["b-unassigned"]);
+    expect(groups.map((g) => g.panelId)).toEqual(["p1", "p2", null]);
+  });
+
+  it("still creates a group (with panelId set) for a panel with zero assigned bubbles", () => {
+    const p1 = panel("p1", 0);
+    const p2 = panel("p2", 200);
+    const groups = groupBubblesByPanel([bubble("b-p2", 250, { panelId: "p2" })], [p1, p2], "de");
+    expect(groups.map((g) => ({ panelId: g.panelId, count: g.bubbles.length }))).toEqual([
+      { panelId: "p1", count: 0 },
+      { panelId: "p2", count: 1 },
+    ]);
   });
 
   it("treats a stale panelId (panel deleted) as unassigned", () => {

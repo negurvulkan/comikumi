@@ -320,7 +320,8 @@
     },
     "translatorContextPanel": {
       "title": "コンテキストビュー",
-      "selectBubbleHint": "吹き出しを選択するとコンテキストが表示されます。",
+      "selectHint": "吹き出しまたはパネルを選択するとコンテキストが表示されます。",
+      "noTextsInPanel": "このパネルにはテキストがありません。",
       "speakerLabel": "話者:",
       "panelLabel": "パネル:",
       "previousLabel": "前へ",
