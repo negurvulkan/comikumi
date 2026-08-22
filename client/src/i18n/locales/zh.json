@@ -330,7 +330,8 @@
       "pageEnd": "— 页面结束 —",
       "moveUpTitle": "在阅读顺序中上移",
       "moveDownTitle": "在阅读顺序中下移",
-      "noPanelCrop": "未分配分格——没有可用的图片裁剪。"
+      "noPanelCrop": "未分配分格——没有可用的图片裁剪。",
+      "panelCropHint": "滚动缩放 · 拖动平移"
     },
     "toolStrip": {
       "bubbleOval": "气泡（椭圆）",

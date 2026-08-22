@@ -338,7 +338,8 @@
       "pageEnd": "— End of page —",
       "moveUpTitle": "Move up in reading order",
       "moveDownTitle": "Move down in reading order",
-      "noPanelCrop": "No panel assigned — no image crop available."
+      "noPanelCrop": "No panel assigned — no image crop available.",
+      "panelCropHint": "Scroll to zoom · drag to pan"
     },
     "toolStrip": {
       "bubbleOval": "Bubble (oval)",

@@ -338,7 +338,8 @@
       "pageEnd": "— Fin de la page —",
       "moveUpTitle": "Monter dans l'ordre de lecture",
       "moveDownTitle": "Descendre dans l'ordre de lecture",
-      "noPanelCrop": "Aucune case assignée — aucun extrait d'image disponible."
+      "noPanelCrop": "Aucune case assignée — aucun extrait d'image disponible.",
+      "panelCropHint": "Molette pour zoomer · glisser pour déplacer"
     },
     "toolStrip": {
       "bubbleOval": "Bulle (ovale)",

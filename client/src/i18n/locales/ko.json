@@ -330,7 +330,8 @@
       "pageEnd": "— 페이지 끝 —",
       "moveUpTitle": "읽기 순서에서 위로 이동",
       "moveDownTitle": "읽기 순서에서 아래로 이동",
-      "noPanelCrop": "할당된 패널이 없습니다 — 이미지 잘라내기를 사용할 수 없습니다."
+      "noPanelCrop": "할당된 패널이 없습니다 — 이미지 잘라내기를 사용할 수 없습니다.",
+      "panelCropHint": "스크롤로 확대/축소 · 드래그로 이동"
     },
     "toolStrip": {
       "bubbleOval": "말풍선 (타원)",

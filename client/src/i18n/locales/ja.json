@@ -330,7 +330,8 @@
       "pageEnd": "— ページの末尾 —",
       "moveUpTitle": "読み順で上に移動",
       "moveDownTitle": "読み順で下に移動",
-      "noPanelCrop": "パネルが割り当てられていません — 画像の切り抜きは利用できません。"
+      "noPanelCrop": "パネルが割り当てられていません — 画像の切り抜きは利用できません。",
+      "panelCropHint": "スクロールで拡大縮小 · ドラッグで移動"
     },
     "toolStrip": {
       "bubbleOval": "吹き出し（楕円）",

@@ -338,7 +338,8 @@
       "pageEnd": "— Seitenende —",
       "moveUpTitle": "In Lesereihenfolge nach oben",
       "moveDownTitle": "In Lesereihenfolge nach unten",
-      "noPanelCrop": "Kein Panel zugeordnet — kein Bildausschnitt verfügbar."
+      "noPanelCrop": "Kein Panel zugeordnet — kein Bildausschnitt verfügbar.",
+      "panelCropHint": "Scrollen = zoomen · Ziehen = verschieben"
     },
     "toolStrip": {
       "bubbleOval": "Blase (oval)",

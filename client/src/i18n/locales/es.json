@@ -338,7 +338,8 @@
       "pageEnd": "— Fin de la página —",
       "moveUpTitle": "Subir en el orden de lectura",
       "moveDownTitle": "Bajar en el orden de lectura",
-      "noPanelCrop": "Ninguna viñeta asignada — no hay recorte de imagen disponible."
+      "noPanelCrop": "Ninguna viñeta asignada — no hay recorte de imagen disponible.",
+      "panelCropHint": "Desplázate para hacer zoom · arrastra para mover"
     },
     "toolStrip": {
       "bubbleOval": "Bocadillo (ovalado)",
