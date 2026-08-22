@@ -18,6 +18,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Reading-Order](#reading-order)
 - [Glossar](#glossar)
 - [Kontextansicht für Übersetzer](#kontextansicht-für-übersetzer)
+- [Skript-Editor & Skript-Sidebar](#skript-editor--skript-sidebar)
 - [Berichte](#berichte)
 - [Export & Import](#export--import)
 - [Schriftarten](#schriftarten)
@@ -319,6 +320,59 @@ ausgewählten Blase anzeigt:
 - Ein **Bildausschnitt** des aktuellen Panels (aus dem Quellbild der aktuellen Seite
   zugeschnitten, keine Nachbarseiten-Bilder) — oder ein Hinweis, falls die Blase keinem
   Panel zugeordnet ist.
+
+## Skript-Editor & Skript-Sidebar
+
+Zwei bewusst getrennte, aber datenmäßig verbundene Werkzeuge für die Planungsphase vor
+dem eigentlichen Lettern — Plot, grobe Panel-Aufteilung, Bildkomposition und
+mehrsprachiger Dialogtext, unabhängig vom später gescannten Seitenbild und dessen
+Blasen/Panels.
+
+### Skript-Editor (eigenständiger Bildschirm)
+
+- Genau ein Skript-Dokument pro Band (`<Band><scriptSuffix>.json`, Suffix in den
+  Einstellungen konfigurierbar, Standard `_script`), erreichbar über den Eintrag
+  "Skript" im "Projekt"-Menü der Seiten-Übersicht/des Editors.
+- Seiten-Liste (frei benennbares Label, Notizfeld, verschiebbar/löschbar), darin Panels
+  (Größen-Hinweis klein/mittel/groß, Bildkomposition- und Handlungs-Freitext), darin
+  Dialogzeilen (Charakter-Dropdown inkl. Voice-Notes-Anzeige, Regieanweisung, ein
+  Textfeld pro Projekt-Sprache mit Glossar-Hervorhebung).
+- "Kopieren"-Button pro Dialogzeile legt den Text der gerade gewählten Skript-Sprache in
+  die Zwischenablage — die einzige Brücke zum späteren Seiten-Editor, bewusst ohne
+  engere Kopplung.
+- Rein manuelles Speichern (kein Autosave), wie der Rest der Skript-Funktionalität.
+
+### Skript-Sidebar (im Seiten-Editor)
+
+- Einklappbare Seitenleiste, die eine echte Seite mit genau einer Skript-Seite
+  verknüpft (`linkedPage`, einmalig gesetzt, dauerhaft im Skript-Dokument gespeichert —
+  eine strukturell erzwungene 1:1-Zuordnung).
+- Volle Bearbeitung wie im Skript-Editor (Panels/Dialogzeilen hinzufügen, verschieben,
+  löschen) direkt neben dem Canvas, plus ein zusätzlicher "In Blase einfügen"-Button pro
+  Dialogzeile: bei ausgewählter Blase schreibt ein Klick den Text direkt in
+  `bubble.text[aktive Sprache]`, ganz ohne Zwischenablage-Umweg. Ohne Auswahl bleibt nur
+  der Kopieren-Button aktiv.
+- "Verknüpfung aufheben" trennt Seite und Skript-Seite wieder, ohne deren Panels zu
+  löschen — im Skript-Editor bleibt die Skript-Seite unverändert erhalten, nur ohne
+  Verknüpfung.
+
+### Skript aus fertig geletterten Seiten generieren
+
+Statt eine Skript-Seite von Hand zu befüllen, lässt sie sich direkt aus einer bereits
+geletterten Seite erzeugen — ein Panel pro echtem Panel (in Leserichtung) plus ein
+Sammel-Panel für Blasen ohne Zuordnung, je mit einer Dialogzeile pro Blase (Charakter
+und Text pro Sprache 1:1 übernommen). Bildkomposition, Handlung und Größen-Hinweis
+lassen sich aus Blasendaten nicht ableiten und bleiben leer, zum Nachtragen von Hand.
+
+- **Pro Seite**: Der "+ Aus dieser Seite erzeugen"-Button in der Skript-Sidebar befüllt
+  die neue verknüpfte Skript-Seite direkt aus den Blasen der gerade offenen Seite.
+- **Für den ganzen Band**: Der Button "Aus geletterten Seiten generieren" im
+  Skript-Editor generiert in einem Schritt für **jede** Seite mit einer gespeicherten
+  Lettering-Datei, die noch nicht mit einer Skript-Seite verknüpft ist — bereits
+  verknüpfte Seiten werden übersprungen, um von Hand ergänzte Inhalte (Bildkomposition,
+  Handlung, Notizen) nicht zu überschreiben.
+- Beide Wege ändern nur den Arbeitsspeicher-Zustand — wie überall im Skript-Bereich muss
+  anschließend bewusst "Speichern" geklickt werden, damit es auf der Platte landet.
 
 ## Berichte
 

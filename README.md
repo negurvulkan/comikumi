@@ -33,6 +33,11 @@ React + Konva canvas editor.
 - **Translator tooling** — a reading-order-aware context sidebar (previous/current/next
   bubble, speaker + voice notes, panel crop), a project glossary with live
   highlighting in the text field, and "who says what" reports per page/volume.
+- **Script planning** — a standalone, volume-wide script editor (plot, panel layout,
+  image composition, and per-language dialogue, independent of the scanned page) plus
+  an in-editor sidebar that links a script page to a real page and inserts dialogue
+  straight into the selected bubble. Either can be generated with one click from
+  already-lettered pages instead of typed up from scratch.
 - **Project-specific asset folders** — fonts, SVG bubble contours, and the image
   library can live in a shared global library, a per-project folder, or both (project
   wins on a filename collision).
