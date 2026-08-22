@@ -9,6 +9,7 @@ import { Editor } from "./routes/Editor";
 import { ScriptEditor } from "./routes/ScriptEditor";
 import { Settings } from "./routes/Settings";
 import { ProjectSwitcher } from "./routes/ProjectSwitcher";
+import { ProjectWizard } from "./routes/ProjectWizard";
 import "./index.css";
 
 const router = createHashRouter([
@@ -18,6 +19,7 @@ const router = createHashRouter([
     children: [
       { index: true, element: <VolumeList /> },
       { path: "project", element: <ProjectSwitcher /> },
+      { path: "project/new", element: <ProjectWizard /> },
       { path: "settings", element: <Settings /> },
       { path: "volumes/:volumeId", element: <PageGrid /> },
       { path: "volumes/:volumeId/script", element: <ScriptEditor /> },

@@ -45,6 +45,78 @@ describe("POST /api/project/new", () => {
   });
 });
 
+describe("POST /api/project/new (full field set)", () => {
+  it("stores custom suffixes and languages instead of the schema defaults", async () => {
+    const filePath = path.join(path.dirname(env.projectFile), "full-projekt.json");
+    const res = await request(app)
+      .post("/api/project/new")
+      .send({
+        filePath,
+        name: "Voll konfiguriert",
+        scanRoot: env.scanRoot,
+        emptySuffix: "_leer",
+        letteringSuffix: "_gelettert",
+        scriptSuffix: "_drehbuch",
+        exportFolderTemplate: "{book}-{folderSuffix}",
+        languages: [{ code: "fr", label: "Français", folderSuffix: "french" }],
+      });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      emptySuffix: "_leer",
+      letteringSuffix: "_gelettert",
+      scriptSuffix: "_drehbuch",
+      exportFolderTemplate: "{book}-{folderSuffix}",
+      languages: [{ code: "fr", label: "Français", folderSuffix: "french" }],
+    });
+  });
+});
+
+describe("GET /api/project/scan-root-status", () => {
+  it("reports a nonexistent scan root as not existing, with 0 volumes", async () => {
+    const res = await request(app)
+      .get("/api/project/scan-root-status")
+      .query({ scanRoot: path.join(env.scanRoot, "does-not-exist"), emptySuffix: "_empty" });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ exists: false, volumeCount: 0 });
+  });
+
+  it("reports the existing fixture volume for the real scan root", async () => {
+    const res = await request(app).get("/api/project/scan-root-status").query({ scanRoot: env.scanRoot, emptySuffix: "_empty" });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ exists: true, volumeCount: 1 });
+  });
+});
+
+describe("POST /api/project/scan-root", () => {
+  it("creates a not-yet-existing folder", async () => {
+    const target = path.join(env.scanRoot, "brand-new-scan-root");
+    const res = await request(app).post("/api/project/scan-root").send({ scanRoot: target });
+    expect(res.status).toBe(201);
+
+    const status = await request(app).get("/api/project/scan-root-status").query({ scanRoot: target, emptySuffix: "_empty" });
+    expect(status.body).toEqual({ exists: true, volumeCount: 0 });
+  });
+});
+
+describe("POST /api/project/volume-folders", () => {
+  it("creates the volume folder plus one folder per requested language", async () => {
+    const res = await request(app)
+      .post("/api/project/volume-folders")
+      .send({
+        scanRoot: env.scanRoot,
+        emptySuffix: "_empty",
+        bookName: "Volume_99",
+        languageFolderSuffixes: ["german", "french"],
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.createdPaths).toHaveLength(3);
+
+    const status = await request(app).get("/api/project/scan-root-status").query({ scanRoot: env.scanRoot, emptySuffix: "_empty" });
+    // The pre-existing Volume_01 fixture plus the freshly created Volume_99 folder.
+    expect(status.body.volumeCount).toBe(2);
+  });
+});
+
 describe("POST /api/project/open", () => {
   it("opens a second, previously-created project file and switches the active project to it", async () => {
     const otherFile = path.join(path.dirname(env.projectFile), "other-projekt.json");

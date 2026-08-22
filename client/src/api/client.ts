@@ -229,12 +229,41 @@ export const api = {
       body: JSON.stringify({ filePath }),
     }).then((r) => json<{ filePath: string } & ProjectFile>(r)),
 
-  createProject: (data: { filePath: string; name: string; scanRoot: string }) =>
+  createProject: (data: {
+    filePath: string;
+    name: string;
+    scanRoot: string;
+    createScanRootIfMissing?: boolean;
+    emptySuffix?: string;
+    letteringSuffix?: string;
+    scriptSuffix?: string;
+    exportFolderTemplate?: string;
+    languages?: LanguageDef[];
+  }) =>
     fetch("/api/project/new", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then((r) => json<{ filePath: string } & ProjectFile>(r)),
+
+  getScanRootStatus: (scanRoot: string, emptySuffix: string) =>
+    fetch(`/api/project/scan-root-status?${new URLSearchParams({ scanRoot, emptySuffix })}`).then((r) =>
+      json<{ exists: boolean; volumeCount: number }>(r)
+    ),
+
+  createScanRootFolder: (scanRoot: string) =>
+    fetch("/api/project/scan-root", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scanRoot }),
+    }).then((r) => json<{ created: true }>(r)),
+
+  createVolumeFolders: (data: { scanRoot: string; emptySuffix: string; bookName: string; languageFolderSuffixes: string[] }) =>
+    fetch("/api/project/volume-folders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((r) => json<{ createdPaths: string[] }>(r)),
 
   browse: (path?: string, filter?: "directories" | "json") => {
     const params = new URLSearchParams();

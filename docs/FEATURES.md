@@ -33,8 +33,18 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 
 - **Projekt-Umschalter** (Startbildschirm): Liste zuletzt geöffneter Projekte (Name +
   Dateipfad, ein Klick öffnet sie erneut, bis zu 10 Einträge), ein Formular zum Öffnen
-  eines Projekts über den Pfad einer `projekt.json`, und ein Formular zum Anlegen eines
-  neuen Projekts (Name, Scan-Wurzelordner, Zielpfad der neuen Projektdatei).
+  eines Projekts über den Pfad einer `projekt.json`, und ein Button zum Anlegen eines
+  neuen Projekts über den **Projekt-Wizard**.
+- **Projekt-Wizard**: fünf geführte Schritte statt eines einzelnen Formulars —
+  Grundlagen (Name, Speicherort der Projektdatei, Scan-Ordner), Ordner-
+  Namenskonvention (Suffixe, Export-Vorlage, vorbelegt mit den Standardwerten),
+  initiale Sprachen (frei bearbeitbare Liste, vorbelegt mit Deutsch/Englisch/
+  Japanisch) und optional erste Bände. Der Wizard hilft dabei aktiv beim Anlegen der
+  nötigen Ordner: fehlt der Scan-Ordner, kann er direkt angelegt werden (inkl. Live-
+  Prüfung, ob dort schon Bände gefunden werden); für jeden im letzten Schritt
+  angelegten Band entstehen sofort der `<Name><emptySuffix>`-Ordner sowie ein
+  `<Name>_<folderSuffix>`-Ordner pro ausgewählter Sprache. Der letzte Schritt zeigt
+  eine Zusammenfassung und legt erst dann die eigentliche Projektdatei an.
 - **Projekt-Datei**: Jedes Projekt ist genau eine JSON-Datei, die Name, Scan-Wurzel,
   Ordner-Suffixe, Export-Vorlage, Beschreibung, Sprachen und Charaktere bündelt — die
   komplette Projektkonfiguration liegt also portabel in einer Datei statt verteilt in

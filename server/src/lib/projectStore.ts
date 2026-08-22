@@ -174,14 +174,32 @@ export async function openProject(filePath: string): Promise<ProjectFile> {
   return data;
 }
 
-export async function createProject(filePath: string, init: { name: string; scanRoot: string }): Promise<ProjectFile> {
+export interface CreateProjectInit {
+  name: string;
+  scanRoot: string;
+  /** If true and scanRoot doesn't exist yet, create it (recursive mkdir) before writing
+   * the project file — lets the new-project wizard offer "create this folder" instead
+   * of requiring it to pre-exist. */
+  createScanRootIfMissing?: boolean;
+  emptySuffix?: string;
+  letteringSuffix?: string;
+  scriptSuffix?: string;
+  exportFolderTemplate?: string;
+  languages?: LanguageDef[];
+}
+
+export async function createProject(filePath: string, init: CreateProjectInit): Promise<ProjectFile> {
+  if (init.createScanRootIfMissing) {
+    await fs.mkdir(init.scanRoot, { recursive: true });
+  }
   const data = ProjectFileSchema.parse({
     name: init.name,
     scanRoot: init.scanRoot,
-    emptySuffix: "_empty",
-    letteringSuffix: "_lettering",
-    exportFolderTemplate: "{book}_{folderSuffix}",
-    languages: DEFAULT_LANGUAGES,
+    ...(init.emptySuffix !== undefined && { emptySuffix: init.emptySuffix }),
+    ...(init.letteringSuffix !== undefined && { letteringSuffix: init.letteringSuffix }),
+    ...(init.scriptSuffix !== undefined && { scriptSuffix: init.scriptSuffix }),
+    ...(init.exportFolderTemplate !== undefined && { exportFolderTemplate: init.exportFolderTemplate }),
+    languages: init.languages ?? DEFAULT_LANGUAGES,
   });
   await writeProjectFile(filePath, data);
   active = { filePath, data };

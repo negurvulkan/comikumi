@@ -36,6 +36,16 @@ async function findEmptyDirs(dir: string, depth: number, emptySuffix: string, re
   }
 }
 
+/** Parameterized volume count for callers with no active project yet (the new-project
+ * wizard) — same recursive search as scanVolumes(), just without the readSettings()
+ * coupling. Returns 0 for a scanRoot that doesn't exist or can't be read, same silent
+ * tolerance as findEmptyDirs() itself. */
+export async function countVolumesUnder(scanRoot: string, emptySuffix: string): Promise<number> {
+  const results: string[] = [];
+  await findEmptyDirs(scanRoot, 5, emptySuffix, results);
+  return results.length;
+}
+
 export async function scanVolumes(): Promise<VolumeInfo[]> {
   const settings = await readSettings();
   const emptyDirs: string[] = [];

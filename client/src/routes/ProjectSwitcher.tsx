@@ -6,7 +6,7 @@ import { translateApiError } from "../i18n/translateApiError";
 import { FileBrowserModal } from "../editor/FileBrowserModal";
 import { invalidateFontsCache } from "../editor/fontLoader";
 
-type BrowserTarget = "openPath" | "scanRoot" | "filePath" | null;
+type BrowserTarget = "openPath" | null;
 
 /** "Datei öffnen"-artiger Projektwechsler: zeigt zuletzt geöffnete Projekte, erlaubt
  * das Öffnen einer Projektdatei per Pfad, und das Anlegen eines neuen Projekts. */
@@ -19,10 +19,6 @@ export function ProjectSwitcher() {
   const [browserTarget, setBrowserTarget] = useState<BrowserTarget>(null);
 
   const [openPath, setOpenPath] = useState("");
-
-  const [newName, setNewName] = useState("");
-  const [newScanRoot, setNewScanRoot] = useState("");
-  const [newFilePath, setNewFilePath] = useState("");
 
   useEffect(() => {
     api.listRecentProjects().then(setRecent).catch((e) => setError(translateApiError(e, t)));
@@ -48,33 +44,9 @@ export function ProjectSwitcher() {
     handleOpen(openPath.trim());
   }
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      await api.createProject({ filePath: newFilePath.trim(), name: newName.trim(), scanRoot: newScanRoot.trim() });
-      invalidateFontsCache();
-      navigate("/");
-    } catch (e) {
-      setError(translateApiError(e, t));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function handleBrowserSelect(selectedPath: string) {
-    if (browserTarget === "openPath") {
-      setBrowserTarget(null);
-      handleOpen(selectedPath); // "Projektdatei direkt aufrufen" — no extra click needed
-      return;
-    }
-    if (browserTarget === "scanRoot") {
-      setNewScanRoot(selectedPath);
-    } else if (browserTarget === "filePath") {
-      setNewFilePath(`${selectedPath}\\projekt.json`);
-    }
     setBrowserTarget(null);
+    handleOpen(selectedPath); // "Projektdatei direkt aufrufen" — no extra click needed
   }
 
   return (
@@ -129,56 +101,16 @@ export function ProjectSwitcher() {
             </button>
           </form>
 
-          <form onSubmit={handleCreate} className="inspector" style={{ maxWidth: 420 }}>
+          <div className="inspector" style={{ maxWidth: 420, justifyContent: "center" }}>
             <p style={{ margin: 0, fontWeight: 600 }}>{t("projectSwitcher.newProjectHeading")}</p>
-            <label>
-              {t("managers.characters.nameLabel")}
-              <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t("projectSwitcher.namePlaceholder")} required />
-            </label>
-            <label>
-              {t("projectSwitcher.scanRootLabel")}
-              <div style={{ display: "flex", gap: 6 }}>
-                <input
-                  style={{ flex: 1 }}
-                  value={newScanRoot}
-                  onChange={(e) => setNewScanRoot(e.target.value)}
-                  placeholder={t("settings.scanRootPlaceholder")}
-                  required
-                />
-                <button type="button" onClick={() => setBrowserTarget("scanRoot")}>
-                  {t("common.browse")}
-                </button>
-              </div>
-            </label>
-            <label>
-              {t("projectSwitcher.saveAsLabel")}
-              <div style={{ display: "flex", gap: 6 }}>
-                <input
-                  style={{ flex: 1 }}
-                  value={newFilePath}
-                  onChange={(e) => setNewFilePath(e.target.value)}
-                  placeholder={t("projectSwitcher.filePathPlaceholder")}
-                  required
-                />
-                <button type="button" onClick={() => setBrowserTarget("filePath")}>
-                  {t("common.browse")}
-                </button>
-              </div>
-            </label>
-            <button type="submit" className="primary" disabled={busy}>
+            <button type="button" className="primary" onClick={() => navigate("/project/new")}>
               {t("projectSwitcher.createButton")}
             </button>
-          </form>
+          </div>
         </div>
       </div>
 
-      {browserTarget && (
-        <FileBrowserModal
-          mode={browserTarget === "openPath" ? "file" : "directory"}
-          onSelect={handleBrowserSelect}
-          onClose={() => setBrowserTarget(null)}
-        />
-      )}
+      {browserTarget && <FileBrowserModal mode="file" onSelect={handleBrowserSelect} onClose={() => setBrowserTarget(null)} />}
     </div>
   );
 }
