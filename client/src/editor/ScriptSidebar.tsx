@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ScriptDocument } from "../../../shared/src/script";
 import { scriptPageDisplayLabel } from "../../../shared/src/script";
+import type { PageLayout } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ScriptPanelCard } from "./ScriptPanelCard";
-import { addPanel, deletePanel, emptyPage, movePanel, updatePanel } from "./scriptEditing";
+import { addPanel, deletePanel, movePanel, scriptPageFromLayout, updatePanel } from "./scriptEditing";
 
 interface Props {
   /** Always mounted (needed for the slide transition to animate) — same convention
@@ -18,6 +19,9 @@ interface Props {
   /** The real, currently open page (e.g. "page_03") — looked up against every script
    * page's `linkedPage` to find the one to show/edit here. */
   page: string;
+  /** The currently open page's own layout — used to bootstrap a new linked script
+   * page's panels/dialogue straight from its bubbles instead of starting empty. */
+  layout: PageLayout;
   /** Omitted (not just falsy) when nothing is selected, so ScriptPanelCard's
    * "insert into bubble" button is entirely absent rather than merely disabled —
    * only the clipboard-copy button remains in that case. */
@@ -25,7 +29,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function ScriptSidebar({ open, volumeId, page, onInsertIntoBubble, onClose }: Props) {
+export function ScriptSidebar({ open, volumeId, page, layout, onInsertIntoBubble, onClose }: Props) {
   const { t } = useTranslation();
   const [doc, setDoc] = useState<ScriptDocument | null>(null);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
@@ -89,7 +93,7 @@ export function ScriptSidebar({ open, volumeId, page, onInsertIntoBubble, onClos
   }
 
   function handleCreateAndLink() {
-    update({ pages: [...currentDoc.pages, { ...emptyPage(), linkedPage: page }] });
+    update({ pages: [...currentDoc.pages, scriptPageFromLayout(page, layout)] });
   }
 
   function handleUnlink() {

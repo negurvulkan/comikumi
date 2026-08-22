@@ -436,7 +436,11 @@
     "noLinkForPage": "Aucun script associé à cette page pour l'instant.",
     "chooseScriptPage": "Choisir une page de script…",
     "link": "Associer",
-    "createLinkedPage": "+ Nouvelle page de script associée",
+    "createLinkedPage": "+ Générer à partir de cette page",
+    "generateFromVolume": "Générer à partir des pages lettrées",
+    "generatedCount_one": "{{count}} page ajoutée — n'oubliez pas d'enregistrer.",
+    "generatedCount_other": "{{count}} pages ajoutées — n'oubliez pas d'enregistrer.",
+    "noNewPagesFound": "Aucune nouvelle page lettrée trouvée.",
     "unlink": "Dissocier",
     "linkedWithPage": "Associée à la page {{page}}",
     "insertIntoBubble": "Insérer dans la bulle"

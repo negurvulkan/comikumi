@@ -416,6 +416,7 @@ export function Editor() {
           open={showScriptPanel}
           volumeId={volumeId}
           page={page}
+          layout={layout}
           onInsertIntoBubble={
             selectedBubble
               ? (text) => store.updateBubble(selectedBubble.id, { text: { ...selectedBubble.text, [activeLanguage]: text } })

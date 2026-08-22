@@ -436,7 +436,11 @@
     "noLinkForPage": "Todavía no hay ningún guion vinculado a esta página.",
     "chooseScriptPage": "Elegir página de guion…",
     "link": "Vincular",
-    "createLinkedPage": "+ Nueva página de guion vinculada",
+    "createLinkedPage": "+ Generar a partir de esta página",
+    "generateFromVolume": "Generar a partir de páginas rotuladas",
+    "generatedCount_one": "{{count}} página añadida — no olvides guardar.",
+    "generatedCount_other": "{{count}} páginas añadidas — no olvides guardar.",
+    "noNewPagesFound": "No se encontraron páginas rotuladas nuevas.",
     "unlink": "Desvincular",
     "linkedWithPage": "Vinculada con la página {{page}}",
     "insertIntoBubble": "Insertar en el bocadillo"

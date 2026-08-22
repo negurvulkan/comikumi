@@ -9,7 +9,7 @@ import type { GlossaryEntry } from "../../../shared/src/glossary";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ScriptPanelCard } from "../editor/ScriptPanelCard";
-import { addPanel, deletePanel, emptyPage, movePanel, updatePanel } from "../editor/scriptEditing";
+import { addPanel, deletePanel, emptyPage, movePanel, scriptPageFromLayout, updatePanel } from "../editor/scriptEditing";
 import { useProject } from "../state/ProjectContext";
 
 export function ScriptEditor() {
@@ -24,6 +24,8 @@ export function ScriptEditor() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateMsg, setGenerateMsg] = useState<string | null>(null);
 
   useEffect(() => {
     api.getScript(volumeId).then(setDoc).catch((e) => setError(translateApiError(e, t)));
@@ -78,6 +80,28 @@ export function ScriptEditor() {
     const pages = [...doc.pages];
     [pages[idx], pages[swapWith]] = [pages[swapWith], pages[idx]];
     update({ pages });
+  }
+
+  async function handleGenerateFromVolume() {
+    if (!doc) return;
+    setGenerating(true);
+    setGenerateMsg(null);
+    setError(null);
+    try {
+      const rows = await api.getVolumeReport(volumeId);
+      const linkedPages = new Set(doc.pages.map((p) => p.linkedPage).filter((p): p is string => p !== null));
+      const newPages = rows.filter((r) => !linkedPages.has(r.page)).map((r) => scriptPageFromLayout(r.page, r.layout));
+      if (newPages.length === 0) {
+        setGenerateMsg(t("script.noNewPagesFound"));
+      } else {
+        update({ pages: [...doc.pages, ...newPages] });
+        setGenerateMsg(t("script.generatedCount", { count: newPages.length }));
+      }
+    } catch (err) {
+      setError(translateApiError(err, t));
+    } finally {
+      setGenerating(false);
+    }
   }
 
   async function handleSave() {
@@ -177,9 +201,15 @@ export function ScriptEditor() {
           </div>
         ))}
 
-        <button type="button" onClick={addPage}>
-          {t("script.addPage")}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" onClick={addPage}>
+            {t("script.addPage")}
+          </button>
+          <button type="button" onClick={handleGenerateFromVolume} disabled={generating}>
+            {t("script.generateFromVolume")}
+          </button>
+        </div>
+        {generateMsg && <p className="hint" style={{ margin: "4px 0 0" }}>{generateMsg}</p>}
 
         <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
           <button type="button" className="primary" onClick={handleSave} disabled={saving}>

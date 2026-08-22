@@ -430,7 +430,10 @@
     "noLinkForPage": "このページにはまだスクリプトが関連付けられていません。",
     "chooseScriptPage": "スクリプトページを選択…",
     "link": "関連付け",
-    "createLinkedPage": "+ 新しい関連付けスクリプトページ",
+    "createLinkedPage": "+ このページから生成",
+    "generateFromVolume": "レタリング済みページから生成",
+    "generatedCount_other": "{{count}} ページを追加しました — 保存を忘れずに。",
+    "noNewPagesFound": "新しくレタリング済みのページは見つかりませんでした。",
     "unlink": "関連付けを解除",
     "linkedWithPage": "ページ {{page}} と関連付け済み",
     "insertIntoBubble": "吹き出しに挿入"

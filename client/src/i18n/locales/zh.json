@@ -430,7 +430,10 @@
     "noLinkForPage": "此页面尚未关联任何剧本。",
     "chooseScriptPage": "选择剧本页面…",
     "link": "关联",
-    "createLinkedPage": "+ 新建关联剧本页面",
+    "createLinkedPage": "+ 从本页生成",
+    "generateFromVolume": "从已嵌字页面生成",
+    "generatedCount_other": "已添加 {{count}} 个页面——别忘了保存。",
+    "noNewPagesFound": "未找到新的已嵌字页面。",
     "unlink": "取消关联",
     "linkedWithPage": "已与第 {{page}} 页关联",
     "insertIntoBubble": "插入到气泡"

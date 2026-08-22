@@ -436,7 +436,11 @@
     "noLinkForPage": "Dieser Seite ist noch kein Skript zugeordnet.",
     "chooseScriptPage": "Skript-Seite wählen…",
     "link": "Verknüpfen",
-    "createLinkedPage": "+ Neue verknüpfte Skript-Seite",
+    "createLinkedPage": "+ Aus dieser Seite erzeugen",
+    "generateFromVolume": "Aus geletterten Seiten generieren",
+    "generatedCount_one": "{{count}} Seite hinzugefügt — nicht vergessen zu speichern.",
+    "generatedCount_other": "{{count}} Seiten hinzugefügt — nicht vergessen zu speichern.",
+    "noNewPagesFound": "Keine neuen geletterten Seiten gefunden.",
     "unlink": "Verknüpfung aufheben",
     "linkedWithPage": "Verknüpft mit Seite {{page}}",
     "insertIntoBubble": "In Blase einfügen"

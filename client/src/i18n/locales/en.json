@@ -436,7 +436,11 @@
     "noLinkForPage": "No script linked to this page yet.",
     "chooseScriptPage": "Choose script page…",
     "link": "Link",
-    "createLinkedPage": "+ New linked script page",
+    "createLinkedPage": "+ Generate from this page",
+    "generateFromVolume": "Generate from lettered pages",
+    "generatedCount_one": "{{count}} page added — don't forget to save.",
+    "generatedCount_other": "{{count}} pages added — don't forget to save.",
+    "noNewPagesFound": "No new lettered pages found.",
     "unlink": "Unlink",
     "linkedWithPage": "Linked with page {{page}}",
     "insertIntoBubble": "Insert into bubble"
