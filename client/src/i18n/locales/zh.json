@@ -86,7 +86,9 @@
     "invalid_settings": "设置无效。",
     "invalid_request": "请求无效。",
     "project_open_failed": "无法打开项目文件：{{reason}}",
-    "project_create_failed": "无法创建项目：{{reason}}"
+    "project_create_failed": "无法创建项目：{{reason}}",
+    "project_delete_failed": "无法删除项目文件：{{reason}}",
+    "cannot_modify_active_project": "该项目当前已打开——请先切换到其他项目。"
   },
   "managers": {
     "characters": {
@@ -209,7 +211,14 @@
     "namePlaceholder": "例如：我的漫画",
     "scanRootLabel": "项目文件夹（scanRoot）",
     "saveAsLabel": "项目文件另存为",
-    "createButton": "创建"
+    "createButton": "创建",
+    "currentlyOpen": "当前已打开",
+    "archiveButton": "归档",
+    "removeButton": "删除",
+    "unarchiveButton": "恢复",
+    "archivedHeading": "已归档的项目",
+    "confirmRemove": "从总览中移除该项目？项目文件本身仍会原样保留在磁盘上——之后仍可通过其文件路径重新打开。",
+    "confirmDeleteFile": "是否还要将项目文件从磁盘上彻底删除？此操作无法撤销——如果日后可能还需要，请确保已有备份。存放实际扫描页面/图片的扫描文件夹不会受到影响。"
   },
   "projectWizard": {
     "heading": "新建项目",

@@ -2,7 +2,17 @@ import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { getCurrentProjectInfo, listRecentProjects, openProject, createProject } from "../lib/projectStore.js";
+import {
+  getCurrentProjectInfo,
+  listRecentProjects,
+  listArchivedProjects,
+  openProject,
+  createProject,
+  removeRecentProject,
+  archiveProject,
+  unarchiveProject,
+  deleteProjectFile,
+} from "../lib/projectStore.js";
 import { countVolumesUnder } from "../lib/projectScanner.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { LanguageListSchema } from "../../../shared/src/languages.js";
@@ -20,6 +30,93 @@ projectRouter.get(
   "/recent",
   asyncHandler(async (_req, res) => {
     res.json(await listRecentProjects());
+  })
+);
+
+projectRouter.get(
+  "/archived",
+  asyncHandler(async (_req, res) => {
+    res.json(await listArchivedProjects());
+  })
+);
+
+const FilePathBodySchema = z.object({ filePath: z.string().min(1) });
+
+/** Shared guard for the three list-mutating/destructive routes below — none of them
+ * may target the currently open project (it would leave the app pointing at a project
+ * no longer reachable from the switcher, or in deleteProjectFile's case, delete the
+ * file a running session still has open). The client also disables these actions for
+ * the active project's card; this is the defense-in-depth backstop. */
+async function rejectIfActiveProject(filePath: string): Promise<boolean> {
+  const current = await getCurrentProjectInfo();
+  return current?.filePath === filePath;
+}
+
+projectRouter.post(
+  "/recent/remove",
+  asyncHandler(async (req, res) => {
+    const parsed = FilePathBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    if (await rejectIfActiveProject(parsed.data.filePath)) {
+      res.status(400).json({ error: "cannot_modify_active_project" });
+      return;
+    }
+    await removeRecentProject(parsed.data.filePath);
+    res.json({ ok: true });
+  })
+);
+
+projectRouter.post(
+  "/archive",
+  asyncHandler(async (req, res) => {
+    const parsed = FilePathBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    if (await rejectIfActiveProject(parsed.data.filePath)) {
+      res.status(400).json({ error: "cannot_modify_active_project" });
+      return;
+    }
+    await archiveProject(parsed.data.filePath);
+    res.json({ ok: true });
+  })
+);
+
+projectRouter.post(
+  "/unarchive",
+  asyncHandler(async (req, res) => {
+    const parsed = FilePathBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    await unarchiveProject(parsed.data.filePath);
+    res.json({ ok: true });
+  })
+);
+
+projectRouter.post(
+  "/delete-file",
+  asyncHandler(async (req, res) => {
+    const parsed = FilePathBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    if (await rejectIfActiveProject(parsed.data.filePath)) {
+      res.status(400).json({ error: "cannot_modify_active_project" });
+      return;
+    }
+    try {
+      await deleteProjectFile(parsed.data.filePath);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ error: "project_delete_failed", params: { reason: (err as Error).message } });
+    }
   })
 );
 

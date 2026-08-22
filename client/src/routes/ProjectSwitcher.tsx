@@ -44,10 +44,21 @@ export function ProjectSwitcher() {
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
 
+  const [archived, setArchived] = useState<RecentProject[] | null>(null);
   const [openPath, setOpenPath] = useState("");
 
+  function refreshRecent() {
+    return api.listRecentProjects().then(setRecent).catch((e) => setError(translateApiError(e, t)));
+  }
+
+  function refreshArchived() {
+    return api.listArchivedProjects().then(setArchived).catch((e) => setError(translateApiError(e, t)));
+  }
+
   useEffect(() => {
-    api.listRecentProjects().then(setRecent).catch((e) => setError(translateApiError(e, t)));
+    refreshRecent();
+    refreshArchived();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
   // Only meaningful while a project is still active (see the project-menu entries
@@ -110,6 +121,71 @@ export function ProjectSwitcher() {
     handleOpen(selectedPath); // "Projektdatei direkt aufrufen" — no extra click needed
   }
 
+  async function handleArchive(filePath: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.archiveProject(filePath);
+      await Promise.all([refreshRecent(), refreshArchived()]);
+    } catch (e) {
+      setError(translateApiError(e, t));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleUnarchive(filePath: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.unarchiveProject(filePath);
+      await Promise.all([refreshRecent(), refreshArchived()]);
+    } catch (e) {
+      setError(translateApiError(e, t));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** From the main (non-archived) list: first removes the entry from the overview,
+   * then — only on request, as a clearly separate follow-up question — offers to also
+   * delete the underlying project file from disk. The scan-root folder of scanned
+   * pages/artwork is never touched by either step. */
+  async function handleRemove(filePath: string) {
+    if (!confirm(t("projectSwitcher.confirmRemove"))) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.removeRecentProject(filePath);
+      await refreshRecent();
+    } catch (e) {
+      setError(translateApiError(e, t));
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    if (confirm(t("projectSwitcher.confirmDeleteFile"))) {
+      await handleDeleteFile(filePath, { alreadyRemovedFromRecent: true });
+    }
+  }
+
+  /** Permanently deletes the project's own JSON file from disk (never the scan-root
+   * images it points at) — used both as the archived list's "delete for good" action
+   * and as handleRemove's optional follow-up. */
+  async function handleDeleteFile(filePath: string, opts?: { alreadyRemovedFromRecent?: boolean }) {
+    if (!opts?.alreadyRemovedFromRecent && !confirm(t("projectSwitcher.confirmDeleteFile"))) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.deleteProjectFile(filePath);
+      await Promise.all([refreshRecent(), refreshArchived()]);
+    } catch (e) {
+      setError(translateApiError(e, t));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="page">
       <MenuBar groups={menuGroups} />
@@ -143,20 +219,60 @@ export function ProjectSwitcher() {
           <p style={{ color: "var(--text-muted)" }}>{t("projectSwitcher.noneYet")}</p>
         ) : (
           <div className="card-grid" style={{ marginBottom: 24 }}>
-            {recent.map((p) => (
-              <button
-                key={p.filePath}
-                className="card"
-                style={{ textAlign: "left", width: "100%" }}
-                onClick={() => handleOpen(p.filePath)}
-                disabled={busy}
-              >
-                <div className="label" style={{ fontSize: 16, color: "var(--text)" }}>
-                  {p.name ?? t("projectSwitcher.fileNotFound")}
+            {recent.map((p) => {
+              const isActive = project?.filePath === p.filePath;
+              return (
+                <div key={p.filePath} className={`card project-card${isActive ? " project-card-active" : ""}`}>
+                  <button
+                    type="button"
+                    className="project-card-open"
+                    onClick={() => handleOpen(p.filePath)}
+                    disabled={busy}
+                    title={isActive ? t("projectSwitcher.currentlyOpen") : undefined}
+                  >
+                    <div className="label" style={{ fontSize: 16, color: "var(--text)" }}>
+                      {p.name ?? t("projectSwitcher.fileNotFound")}
+                      {isActive && <span className="project-card-active-badge">{t("projectSwitcher.currentlyOpen")}</span>}
+                    </div>
+                    <div className="label">{p.filePath}</div>
+                  </button>
+                  <div className="project-card-actions">
+                    <button type="button" onClick={() => handleArchive(p.filePath)} disabled={busy || isActive} title={t("projectSwitcher.archiveButton")}>
+                      {t("projectSwitcher.archiveButton")}
+                    </button>
+                    <button type="button" onClick={() => handleRemove(p.filePath)} disabled={busy || isActive} title={t("projectSwitcher.removeButton")}>
+                      {t("projectSwitcher.removeButton")}
+                    </button>
+                  </div>
                 </div>
-                <div className="label">{p.filePath}</div>
-              </button>
-            ))}
+              );
+            })}
+          </div>
+        )}
+
+        {archived !== null && archived.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ margin: "0 0 8px", fontWeight: 600, fontSize: 14, color: "var(--text-muted)" }}>
+              {t("projectSwitcher.archivedHeading")}
+            </p>
+            <div className="card-grid">
+              {archived.map((p) => (
+                <div key={p.filePath} className="card project-card">
+                  <div className="label" style={{ fontSize: 16, color: "var(--text)" }}>
+                    {p.name ?? t("projectSwitcher.fileNotFound")}
+                  </div>
+                  <div className="label">{p.filePath}</div>
+                  <div className="project-card-actions">
+                    <button type="button" onClick={() => handleUnarchive(p.filePath)} disabled={busy} title={t("projectSwitcher.unarchiveButton")}>
+                      {t("projectSwitcher.unarchiveButton")}
+                    </button>
+                    <button type="button" onClick={() => handleDeleteFile(p.filePath)} disabled={busy} title={t("projectSwitcher.removeButton")}>
+                      {t("projectSwitcher.removeButton")}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

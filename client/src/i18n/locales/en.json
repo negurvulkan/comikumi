@@ -86,7 +86,9 @@
     "invalid_settings": "Invalid settings.",
     "invalid_request": "Invalid request.",
     "project_open_failed": "Could not open the project file: {{reason}}",
-    "project_create_failed": "Could not create the project: {{reason}}"
+    "project_create_failed": "Could not create the project: {{reason}}",
+    "project_delete_failed": "Could not delete the project file: {{reason}}",
+    "cannot_modify_active_project": "This project is currently open — switch to a different one first."
   },
   "managers": {
     "characters": {
@@ -210,7 +212,14 @@
     "namePlaceholder": "e.g. My Comic",
     "scanRootLabel": "Project folder (scanRoot)",
     "saveAsLabel": "Save project file as",
-    "createButton": "Create"
+    "createButton": "Create",
+    "currentlyOpen": "Currently open",
+    "archiveButton": "Archive",
+    "removeButton": "Delete",
+    "unarchiveButton": "Restore",
+    "archivedHeading": "Archived projects",
+    "confirmRemove": "Remove this project from the overview? The project file itself stays untouched on disk — you can still reopen it later by its file path.",
+    "confirmDeleteFile": "Also permanently delete the project file from disk? This cannot be undone — make sure you have a backup if you might still need it. The scan folder with the actual scanned pages/artwork is never touched."
   },
   "projectWizard": {
     "heading": "New project",

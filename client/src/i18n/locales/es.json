@@ -86,7 +86,9 @@
     "invalid_settings": "Ajustes no válidos.",
     "invalid_request": "Solicitud no válida.",
     "project_open_failed": "No se pudo abrir el archivo de proyecto: {{reason}}",
-    "project_create_failed": "No se pudo crear el proyecto: {{reason}}"
+    "project_create_failed": "No se pudo crear el proyecto: {{reason}}",
+    "project_delete_failed": "No se pudo eliminar el archivo de proyecto: {{reason}}",
+    "cannot_modify_active_project": "Este proyecto está abierto actualmente — cambia primero a otro."
   },
   "managers": {
     "characters": {
@@ -210,7 +212,14 @@
     "namePlaceholder": "p. ej. Mi Comic",
     "scanRootLabel": "Carpeta del proyecto (scanRoot)",
     "saveAsLabel": "Guardar archivo de proyecto como",
-    "createButton": "Crear"
+    "createButton": "Crear",
+    "currentlyOpen": "Actualmente abierto",
+    "archiveButton": "Archivar",
+    "removeButton": "Eliminar",
+    "unarchiveButton": "Restaurar",
+    "archivedHeading": "Proyectos archivados",
+    "confirmRemove": "¿Quitar este proyecto de la vista general? El archivo del proyecto en sí permanece intacto en el disco — podrás volver a abrirlo más tarde con su ruta de archivo.",
+    "confirmDeleteFile": "¿Eliminar también el archivo del proyecto de forma permanente del disco? Esta acción no se puede deshacer — asegúrate de tener una copia de seguridad si aún podrías necesitarlo. La carpeta de escaneo con las páginas/imágenes reales nunca se toca."
   },
   "projectWizard": {
     "heading": "Nuevo proyecto",

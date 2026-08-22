@@ -86,7 +86,9 @@
     "invalid_settings": "無効な設定です。",
     "invalid_request": "無効なリクエストです。",
     "project_open_failed": "プロジェクトファイルを開けませんでした: {{reason}}",
-    "project_create_failed": "プロジェクトを作成できませんでした: {{reason}}"
+    "project_create_failed": "プロジェクトを作成できませんでした: {{reason}}",
+    "project_delete_failed": "プロジェクトファイルを削除できませんでした: {{reason}}",
+    "cannot_modify_active_project": "このプロジェクトは現在開かれています。先に別のプロジェクトに切り替えてください。"
   },
   "managers": {
     "characters": {
@@ -209,7 +211,14 @@
     "namePlaceholder": "例: マイコミック",
     "scanRootLabel": "プロジェクトフォルダ (scanRoot)",
     "saveAsLabel": "プロジェクトファイルの保存先",
-    "createButton": "作成"
+    "createButton": "作成",
+    "currentlyOpen": "現在開いています",
+    "archiveButton": "アーカイブ",
+    "removeButton": "削除",
+    "unarchiveButton": "復元",
+    "archivedHeading": "アーカイブされたプロジェクト",
+    "confirmRemove": "このプロジェクトを一覧から削除しますか? プロジェクトファイル自体はディスク上にそのまま残ります — 後でファイルパスから再度開くことができます。",
+    "confirmDeleteFile": "プロジェクトファイルをディスクから完全に削除しますか? この操作は元に戻せません — 必要になる場合に備えてバックアップを取っておいてください。実際のスキャンページ/画像が入っているスキャンフォルダには影響しません。"
   },
   "projectWizard": {
     "heading": "新しいプロジェクト",

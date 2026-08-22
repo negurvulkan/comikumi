@@ -86,7 +86,9 @@
     "invalid_settings": "Paramètres invalides.",
     "invalid_request": "Requête invalide.",
     "project_open_failed": "Impossible d'ouvrir le fichier projet : {{reason}}",
-    "project_create_failed": "Impossible de créer le projet : {{reason}}"
+    "project_create_failed": "Impossible de créer le projet : {{reason}}",
+    "project_delete_failed": "Impossible de supprimer le fichier projet : {{reason}}",
+    "cannot_modify_active_project": "Ce projet est actuellement ouvert — changez d'abord de projet."
   },
   "managers": {
     "characters": {
@@ -210,7 +212,14 @@
     "namePlaceholder": "p. ex. Mon Comic",
     "scanRootLabel": "Dossier du projet (scanRoot)",
     "saveAsLabel": "Enregistrer le fichier projet sous",
-    "createButton": "Créer"
+    "createButton": "Créer",
+    "currentlyOpen": "Actuellement ouvert",
+    "archiveButton": "Archiver",
+    "removeButton": "Supprimer",
+    "unarchiveButton": "Restaurer",
+    "archivedHeading": "Projets archivés",
+    "confirmRemove": "Retirer ce projet de la liste ? Le fichier projet lui-même reste intact sur le disque — vous pourrez le rouvrir plus tard via son chemin de fichier.",
+    "confirmDeleteFile": "Supprimer aussi définitivement le fichier projet du disque ? Cette action est irréversible — assurez-vous d'avoir une sauvegarde si vous pourriez encore en avoir besoin. Le dossier de scan contenant les pages/images réelles n'est jamais touché."
   },
   "projectWizard": {
     "heading": "Nouveau projet",

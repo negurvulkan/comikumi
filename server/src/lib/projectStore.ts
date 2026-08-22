@@ -27,6 +27,11 @@ interface ActiveProject {
 const AppStateSchema = z.object({
   lastOpenedProjectFile: z.string().nullable().default(null),
   recentProjectFiles: z.array(z.string()).default([]),
+  /** Projects the user explicitly archived from the switcher — hidden from the main
+   * "recent" list but still recoverable (unarchiveProject) rather than forgotten
+   * outright, unlike removeRecentProject/deleteProjectFile. Additive field: old
+   * app-state.json files without it simply default to an empty archive. */
+  archivedProjectFiles: z.array(z.string()).default([]),
 });
 type AppState = z.infer<typeof AppStateSchema>;
 
@@ -62,7 +67,7 @@ async function writeAppState(state: AppState): Promise<void> {
 async function rememberRecent(filePath: string): Promise<void> {
   const state = await readAppState();
   const recentProjectFiles = [filePath, ...state.recentProjectFiles.filter((p) => p !== filePath)].slice(0, 10);
-  await writeAppState({ lastOpenedProjectFile: filePath, recentProjectFiles });
+  await writeAppState({ ...state, lastOpenedProjectFile: filePath, recentProjectFiles });
 }
 
 async function readProjectFile(filePath: string): Promise<ProjectFile> {
@@ -155,8 +160,17 @@ export async function getThumbnailsDir(globalFallback: string): Promise<string> 
 
 export async function listRecentProjects(): Promise<{ filePath: string; name?: string }[]> {
   const state = await readAppState();
+  return resolveProjectNames(state.recentProjectFiles);
+}
+
+export async function listArchivedProjects(): Promise<{ filePath: string; name?: string }[]> {
+  const state = await readAppState();
+  return resolveProjectNames(state.archivedProjectFiles);
+}
+
+async function resolveProjectNames(filePaths: string[]): Promise<{ filePath: string; name?: string }[]> {
   const results: { filePath: string; name?: string }[] = [];
-  for (const filePath of state.recentProjectFiles) {
+  for (const filePath of filePaths) {
     try {
       const data = await readProjectFile(filePath);
       results.push({ filePath, name: data.name });
@@ -165,6 +179,48 @@ export async function listRecentProjects(): Promise<{ filePath: string; name?: s
     }
   }
   return results;
+}
+
+/** Removes a project from the "recent" overview only — the project file itself is
+ * left untouched on disk, and (unlike archiveProject) it isn't moved anywhere
+ * recoverable; the only way back is reopening it again by its file path. */
+export async function removeRecentProject(filePath: string): Promise<void> {
+  const state = await readAppState();
+  await writeAppState({ ...state, recentProjectFiles: state.recentProjectFiles.filter((p) => p !== filePath) });
+}
+
+/** Moves a project from "recent" into the hidden "archived" list — reversible via
+ * unarchiveProject, distinct from removeRecentProject's one-way forgetting. */
+export async function archiveProject(filePath: string): Promise<void> {
+  const state = await readAppState();
+  await writeAppState({
+    ...state,
+    recentProjectFiles: state.recentProjectFiles.filter((p) => p !== filePath),
+    archivedProjectFiles: [filePath, ...state.archivedProjectFiles.filter((p) => p !== filePath)],
+  });
+}
+
+export async function unarchiveProject(filePath: string): Promise<void> {
+  const state = await readAppState();
+  await writeAppState({
+    ...state,
+    archivedProjectFiles: state.archivedProjectFiles.filter((p) => p !== filePath),
+    recentProjectFiles: [filePath, ...state.recentProjectFiles.filter((p) => p !== filePath)],
+  });
+}
+
+/** Deletes only the project's own JSON file from disk — never the scanRoot folder of
+ * scanned pages/artwork it points at, which the app treats as the user's original,
+ * irreplaceable source material and never removes on its own. Also drops the file
+ * from both the recent and archived lists, wherever it happened to be. */
+export async function deleteProjectFile(filePath: string): Promise<void> {
+  await fs.unlink(filePath);
+  const state = await readAppState();
+  await writeAppState({
+    ...state,
+    recentProjectFiles: state.recentProjectFiles.filter((p) => p !== filePath),
+    archivedProjectFiles: state.archivedProjectFiles.filter((p) => p !== filePath),
+  });
 }
 
 export async function openProject(filePath: string): Promise<ProjectFile> {

@@ -127,6 +127,85 @@ describe("POST /api/project/volume-folders", () => {
   });
 });
 
+describe("Recent-project list management (remove/archive/unarchive/delete-file)", () => {
+  it("removes a project from the recent list without touching its file", async () => {
+    const filePath = path.join(path.dirname(env.projectFile), "removable-projekt.json");
+    await request(app).post("/api/project/new").send({ filePath, name: "Removable", scanRoot: env.scanRoot });
+    // Switch back so "removable-projekt.json" isn't the active project (removal is blocked for that).
+    await request(app).post("/api/project/open").send({ filePath: env.projectFile });
+
+    const before = await request(app).get("/api/project/recent");
+    expect(before.body.some((p: { filePath: string }) => p.filePath === filePath)).toBe(true);
+
+    const res = await request(app).post("/api/project/recent/remove").send({ filePath });
+    expect(res.status).toBe(200);
+
+    const after = await request(app).get("/api/project/recent");
+    expect(after.body.some((p: { filePath: string }) => p.filePath === filePath)).toBe(false);
+
+    // The file itself is untouched — reopening it still works.
+    const reopen = await request(app).post("/api/project/open").send({ filePath });
+    expect(reopen.status).toBe(200);
+    await request(app).post("/api/project/open").send({ filePath: env.projectFile });
+  });
+
+  it("rejects removing the currently active project", async () => {
+    const res = await request(app).post("/api/project/recent/remove").send({ filePath: env.projectFile });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("cannot_modify_active_project");
+  });
+
+  it("archives a project (hidden from recent, listed as archived) and can unarchive it again", async () => {
+    const filePath = path.join(path.dirname(env.projectFile), "archivable-projekt.json");
+    await request(app).post("/api/project/new").send({ filePath, name: "Archivable", scanRoot: env.scanRoot });
+    await request(app).post("/api/project/open").send({ filePath: env.projectFile });
+
+    const archiveRes = await request(app).post("/api/project/archive").send({ filePath });
+    expect(archiveRes.status).toBe(200);
+
+    const recent = await request(app).get("/api/project/recent");
+    expect(recent.body.some((p: { filePath: string }) => p.filePath === filePath)).toBe(false);
+    const archived = await request(app).get("/api/project/archived");
+    expect(archived.body.some((p: { filePath: string }) => p.filePath === filePath)).toBe(true);
+
+    const unarchiveRes = await request(app).post("/api/project/unarchive").send({ filePath });
+    expect(unarchiveRes.status).toBe(200);
+
+    const recentAfter = await request(app).get("/api/project/recent");
+    expect(recentAfter.body.some((p: { filePath: string }) => p.filePath === filePath)).toBe(true);
+    const archivedAfter = await request(app).get("/api/project/archived");
+    expect(archivedAfter.body.some((p: { filePath: string }) => p.filePath === filePath)).toBe(false);
+  });
+
+  it("rejects archiving the currently active project", async () => {
+    const res = await request(app).post("/api/project/archive").send({ filePath: env.projectFile });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("cannot_modify_active_project");
+  });
+
+  it("deletes a project's file from disk and drops it from the recent list", async () => {
+    const filePath = path.join(path.dirname(env.projectFile), "deletable-projekt.json");
+    await request(app).post("/api/project/new").send({ filePath, name: "Deletable", scanRoot: env.scanRoot });
+    await request(app).post("/api/project/open").send({ filePath: env.projectFile });
+
+    const res = await request(app).post("/api/project/delete-file").send({ filePath });
+    expect(res.status).toBe(200);
+
+    const recent = await request(app).get("/api/project/recent");
+    expect(recent.body.some((p: { filePath: string }) => p.filePath === filePath)).toBe(false);
+
+    // The file is actually gone — reopening it now fails.
+    const reopen = await request(app).post("/api/project/open").send({ filePath });
+    expect(reopen.status).toBe(400);
+  });
+
+  it("rejects deleting the currently active project's file", async () => {
+    const res = await request(app).post("/api/project/delete-file").send({ filePath: env.projectFile });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("cannot_modify_active_project");
+  });
+});
+
 describe("POST /api/project/open", () => {
   it("opens a second, previously-created project file and switches the active project to it", async () => {
     const otherFile = path.join(path.dirname(env.projectFile), "other-projekt.json");

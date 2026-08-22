@@ -233,6 +233,36 @@ export const api = {
 
   listRecentProjects: () => fetch("/api/project/recent").then((r) => json<RecentProject[]>(r)),
 
+  listArchivedProjects: () => fetch("/api/project/archived").then((r) => json<RecentProject[]>(r)),
+
+  removeRecentProject: (filePath: string) =>
+    fetch("/api/project/recent/remove", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filePath }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  archiveProject: (filePath: string) =>
+    fetch("/api/project/archive", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filePath }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  unarchiveProject: (filePath: string) =>
+    fetch("/api/project/unarchive", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filePath }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  deleteProjectFile: (filePath: string) =>
+    fetch("/api/project/delete-file", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filePath }),
+    }).then((r) => json<{ ok: true }>(r)),
+
   openProject: (filePath: string) =>
     fetch("/api/project/open", {
       method: "POST",

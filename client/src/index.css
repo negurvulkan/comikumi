@@ -123,6 +123,58 @@ body {
   color: var(--text-muted);
 }
 
+/* Project-switcher recent/archived cards — unlike the plain .card button/link
+   elsewhere, these need a nested action-buttons row (Archivieren/Löschen), so the
+   card itself is a plain div and only its "open" area is the actual button. See
+   ProjectSwitcher.tsx. */
+.project-card {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.project-card-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.project-card-active-badge {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.project-card-open {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-card-open:disabled {
+  cursor: default;
+}
+
+.project-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.project-card-actions button {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
 .editor-body {
   flex: 1 1 auto;
   min-height: 0;
