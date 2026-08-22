@@ -90,7 +90,9 @@ export function ScriptEditor() {
     try {
       const rows = await api.getVolumeReport(volumeId);
       const linkedPages = new Set(doc.pages.map((p) => p.linkedPage).filter((p): p is string => p !== null));
-      const newPages = rows.filter((r) => !linkedPages.has(r.page)).map((r) => scriptPageFromLayout(r.page, r.layout));
+      const newPages = rows
+        .filter((r) => !linkedPages.has(r.page))
+        .map((r) => scriptPageFromLayout(r.page, r.layout, project?.readingDirection ?? "rtl"));
       if (newPages.length === 0) {
         setGenerateMsg(t("script.noNewPagesFound"));
       } else {

@@ -23,6 +23,7 @@ describe("ProjectSettingsSchema", () => {
       description: "",
       autosaveEnabled: false,
       autosaveIntervalSeconds: 30,
+      readingDirection: "rtl",
     });
   });
 });

@@ -6,7 +6,7 @@ import { panelDisplayLabel } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import type { LanguageDef } from "../../../shared/src/languages";
 import { api, type PageSummary } from "../api/client";
-import { characterName, getPageReadingOrder, groupBubblesByPanel } from "./reportUtils";
+import { characterName, getPageReadingOrder, groupBubblesByPanel, type ReadingDirection } from "./reportUtils";
 import { PanelCropPreview } from "./PanelCropPreview";
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
   layout: PageLayout;
   characters: Character[];
   languages: LanguageDef[];
+  readingDirection: ReadingDirection;
   selectedBubbleId: string | null;
   onSelectBubble: (id: string) => void;
   onMove: (direction: "up" | "down") => void;
@@ -49,6 +50,7 @@ export function TranslatorContextPanel({
   layout,
   characters,
   languages,
+  readingDirection,
   selectedBubbleId,
   onSelectBubble,
   onMove,
@@ -65,7 +67,7 @@ export function TranslatorContextPanel({
     api.listPages(volumeId).then(setPages);
   }, [volumeId]);
 
-  const order = getPageReadingOrder(layout.bubbles, layout.panels, panelLanguage);
+  const order = getPageReadingOrder(layout.bubbles, layout.panels, panelLanguage, readingDirection);
   const idx = selectedBubbleId ? order.findIndex((b) => b.id === selectedBubbleId) : -1;
   const current = idx >= 0 ? order[idx] : null;
 
@@ -73,7 +75,7 @@ export function TranslatorContextPanel({
   // "Ohne Panel") — so up/down must be enabled based on the bubble's position within
   // THAT group, not its position in the flat whole-page order used for prev/next.
   const currentGroup = current
-    ? groupBubblesByPanel(layout.bubbles, layout.panels, panelLanguage).find((g) => g.bubbles.some((b) => b.id === current.id))
+    ? groupBubblesByPanel(layout.bubbles, layout.panels, panelLanguage, readingDirection).find((g) => g.bubbles.some((b) => b.id === current.id))
     : undefined;
   const groupIdx = currentGroup ? currentGroup.bubbles.findIndex((b) => b.id === current!.id) : -1;
   const canMoveUp = groupIdx > 0;
@@ -106,7 +108,7 @@ export function TranslatorContextPanel({
     if (!neighborPageName) return null;
     const neighborLayout = neighborCache[neighborPageName];
     if (!neighborLayout) return null;
-    const neighborOrder = getPageReadingOrder(neighborLayout.bubbles, neighborLayout.panels, panelLanguage);
+    const neighborOrder = getPageReadingOrder(neighborLayout.bubbles, neighborLayout.panels, panelLanguage, readingDirection);
     const bubble = direction === "prev" ? neighborOrder[neighborOrder.length - 1] : neighborOrder[0];
     if (!bubble) return null;
     return { bubble, page: neighborPageName, panels: neighborLayout.panels, sameLanguagePage: true };

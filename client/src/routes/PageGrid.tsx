@@ -184,7 +184,12 @@ export function PageGrid() {
       )}
       {showVolumeReport && (
         <Modal onClose={() => setShowVolumeReport(false)}>
-          <VolumeReportModal volumeId={volumeId} characters={characters} onClose={() => setShowVolumeReport(false)} />
+          <VolumeReportModal
+            volumeId={volumeId}
+            characters={characters}
+            readingDirection={project?.readingDirection ?? "rtl"}
+            onClose={() => setShowVolumeReport(false)}
+          />
         </Modal>
       )}
       <div className="page-scroll" style={{ padding: 16 }}>

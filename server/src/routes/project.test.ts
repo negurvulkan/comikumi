@@ -59,6 +59,7 @@ describe("POST /api/project/new (full field set)", () => {
         scriptSuffix: "_drehbuch",
         exportFolderTemplate: "{book}-{folderSuffix}",
         languages: [{ code: "fr", label: "Français", folderSuffix: "french" }],
+        readingDirection: "ltr",
       });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({
@@ -67,6 +68,7 @@ describe("POST /api/project/new (full field set)", () => {
       scriptSuffix: "_drehbuch",
       exportFolderTemplate: "{book}-{folderSuffix}",
       languages: [{ code: "fr", label: "Français", folderSuffix: "french" }],
+      readingDirection: "ltr",
     });
   });
 });

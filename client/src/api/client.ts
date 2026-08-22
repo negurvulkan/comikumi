@@ -37,6 +37,7 @@ async function throwApiError(res: Response): Promise<never> {
 export interface CurrentProject {
   filePath: string;
   name: string;
+  readingDirection: "ltr" | "rtl";
 }
 
 export interface RecentProject {
@@ -239,6 +240,7 @@ export const api = {
     scriptSuffix?: string;
     exportFolderTemplate?: string;
     languages?: LanguageDef[];
+    readingDirection?: "ltr" | "rtl";
   }) =>
     fetch("/api/project/new", {
       method: "POST",

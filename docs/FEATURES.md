@@ -58,7 +58,11 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
   (z. B. `_lettering`) und die Export-Ordner-Namensvorlage mit Platzhaltern
   `{book}`/`{folderSuffix}`. Optional außerdem ein
   [Projekt-Assets-Ordner](#projekt-assets-ordner) für projekteigene Schriften/SVG-
-  Konturen/Bilder sowie, unabhängig davon, ein eigener Thumbnail-Ordner.
+  Konturen/Bilder sowie, unabhängig davon, ein eigener Thumbnail-Ordner. Zusätzlich die
+  **Leserichtung** (rechts→links/Japanisch-Manga, Standard, oder links→rechts/westlich)
+  — bestimmt die automatische [Reading-Order](#reading-order) von Panels und Blasen für
+  das ganze Projekt; bestehende Projekte ohne dieses Feld bleiben unverändert bei
+  rechts→links, der bisherigen impliziten Annahme.
 - **Eingebauter Datei-/Ordner-Browser**: Da ein normales `<input type="file">` keinen
   absoluten Pfad liefert, bringt das Tool einen eigenen, servergestützten
   Dateisystem-Browser mit — listet Laufwerke (Windows) als Wurzeln, erlaubt Navigation
@@ -289,17 +293,27 @@ Eintrag wählt die zugehörige Blase/den Kurventext im Canvas aus.
 
 ## Reading-Order
 
-Jede Blase hat eine Leseposition innerhalb ihrer Gruppe (ihr zugeordnetes Panel, oder
-der Sammelbecken "Ohne Panel") — standardmäßig automatisch anhand der Y-Position
-berechnet, exakt wie bisher. Ein optionales Feld (`readingOrderOverride`) erlaubt eine
-manuelle Korrektur für Fälle, in denen die reine Positions-Sortierung nicht der
-tatsächlichen Erzählreihenfolge entspricht (z. B. nebeneinanderliegende Blasen, die in
-umgekehrter Reihenfolge gelesen werden sollen). Bearbeitet wird das über die
-Hoch-/Runter-Buttons in der [Kontextansicht](#kontextansicht) — ein Klick
-tauscht die Blase mit ihrem Nachbarn in der Gruppe und nummeriert die ganze Gruppe neu
-durch, damit die Reihenfolge auch nach mehreren Korrekturen eindeutig bleibt. Wird einer
-Blase ein anderes (oder gar kein) Panel zugewiesen, wird ihr Override automatisch
-zurückgesetzt, da er nur innerhalb der ursprünglichen Gruppe sinnvoll ist.
+Panels werden zunächst automatisch zu Y-"Zeilen" zusammengefasst (Panels, deren
+vertikale Bounding-Box sich überlappt, gelten als eine Zeile — kein fester
+Pixel-Schwellwert, funktioniert unabhängig von völlig unterschiedlich großen Panels),
+innerhalb einer Zeile dann nach der projektweiten [Leserichtung](#projektverwaltung)
+sortiert (rechts→links für Japanisch/Manga, links→rechts für westliche Comics).
+Dieselbe Zeilen-+Leserichtungs-Logik bestimmt auch die Reihenfolge der Blasen
+innerhalb eines Panels (bzw. im "Ohne Panel"-Sammelbecken) — das war zuvor eine reine
+Y-Sortierung, die bei nebeneinanderliegenden Blasen/Panels auf ähnlicher Höhe keine
+verlässliche Reihenfolge lieferte.
+
+Zusätzlich hat jede Blase eine Leseposition innerhalb ihrer Gruppe (ihr zugeordnetes
+Panel, oder der Sammelbecken "Ohne Panel"). Ein optionales Feld
+(`readingOrderOverride`) erlaubt eine manuelle Korrektur für Fälle, in denen auch die
+Zeilen-/Leserichtungs-Sortierung nicht der tatsächlichen Erzählreihenfolge entspricht
+— der manuelle Override gewinnt dabei immer, unabhängig von der Leserichtung.
+Bearbeitet wird das über die Hoch-/Runter-Buttons in der
+[Kontextansicht](#kontextansicht) — ein Klick tauscht die Blase mit ihrem Nachbarn in
+der Gruppe und nummeriert die ganze Gruppe neu durch, damit die Reihenfolge auch nach
+mehreren Korrekturen eindeutig bleibt. Wird einer Blase ein anderes (oder gar kein)
+Panel zugewiesen, wird ihr Override automatisch zurückgesetzt, da er nur innerhalb der
+ursprünglichen Gruppe sinnvoll ist.
 
 ## Glossar
 

@@ -33,5 +33,10 @@ export const ProjectSettingsSchema = z.object({
   autosaveEnabled: z.boolean().default(false),
   /** How often to autosave, in seconds, while autosaveEnabled is on. */
   autosaveIntervalSeconds: z.number().int().min(5).max(3600).default(30),
+  /** Physical panel/bubble reading order on the page — "rtl" (Japanese manga
+   * convention, the default/status quo) or "ltr" (Western). Independent of
+   * Bubble.direction (per-bubble TEXT layout within a single bubble) — this is about
+   * the SEQUENCE of multiple panels/bubbles relative to each other. */
+  readingDirection: z.enum(["ltr", "rtl"]).default("rtl"),
 });
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;

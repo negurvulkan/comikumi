@@ -5,6 +5,46 @@ import type { Character } from "../../../shared/src/characters";
 export const NO_CHARACTER_LABEL = "– kein Charakter –";
 export const NO_PANEL_LABEL = "Ohne Panel";
 
+/** Physical panel/bubble reading order on the page — see
+ * shared/src/settings.ts's ProjectSettingsSchema.readingDirection. Unrelated to
+ * Bubble.direction (per-bubble TEXT layout). */
+export type ReadingDirection = "ltr" | "rtl";
+
+interface Bounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+/** Groups items into horizontal "rows" by vertical (Y) bounding-box overlap — no fixed
+ * pixel threshold, so it works whether panels/bubbles are tiny or huge: sorted by minY,
+ * a sweep starts a new row whenever the next item's minY falls below the current row's
+ * running maxY (no vertical overlap with anything already in the row); otherwise it
+ * joins the row and extends the row's maxY. Within each row, items are then ordered by
+ * X according to `readingDirection` — ascending minX (ltr) or descending minX (rtl).
+ * Replaces a pure-Y sort, which breaks down whenever two items sit at roughly the same
+ * height (exactly the manga case: side-by-side panels/bubbles in one tier). */
+function sortByRowsAndDirection<T>(items: T[], boundsOf: (item: T) => Bounds, readingDirection: ReadingDirection): T[] {
+  const withBounds = items.map((item) => ({ item, bounds: boundsOf(item) })).sort((a, b) => a.bounds.minY - b.bounds.minY);
+  const rows: (typeof withBounds)[number][][] = [];
+  let currentRow: typeof withBounds = [];
+  let rowMaxY = -Infinity;
+  for (const entry of withBounds) {
+    if (currentRow.length > 0 && entry.bounds.minY > rowMaxY) {
+      rows.push(currentRow);
+      currentRow = [];
+      rowMaxY = -Infinity;
+    }
+    currentRow.push(entry);
+    rowMaxY = Math.max(rowMaxY, entry.bounds.maxY);
+  }
+  if (currentRow.length > 0) rows.push(currentRow);
+  return rows.flatMap((row) =>
+    row.sort((a, b) => (readingDirection === "ltr" ? a.bounds.minX - b.bounds.minX : b.bounds.minX - a.bounds.minX)).map((e) => e.item)
+  );
+}
+
 /** Shared by ReportModal (one page) and VolumeReportModal (many pages), so the two
  * never disagree on what "wer sagt was" / "welche Charaktere" actually mean. */
 
@@ -13,24 +53,34 @@ export function characterName(characters: Character[], characterId: string | nul
   return characters.find((c) => c.id === characterId)?.name ?? NO_CHARACTER_LABEL;
 }
 
-/** Bubbles in top-to-bottom reading order — same convention as TextListPanel.tsx.
- * Two-pass: first the automatic Y-position order establishes a rank (0,1,2,...) for
- * every bubble, then a final sort by `readingOrderOverride ?? autoRank` lets a manual
- * correction (see moveBubbleInReadingOrder) slot a bubble anywhere without needing to
- * touch every other bubble's rank. With no overrides present this is byte-for-byte the
- * same order as the plain Y-sort (stable sort, ES2019+). */
-export function sortBubblesByPosition(bubbles: Bubble[], language: string): Bubble[] {
-  const autoRanked = [...bubbles].sort((a, b) => resolveBubbleForm(a, language).y - resolveBubbleForm(b, language).y);
+/** Bubbles in reading order — same convention as TextListPanel.tsx. Two-pass: first
+ * the automatic row+direction order (see sortByRowsAndDirection) establishes a rank
+ * (0,1,2,...) for every bubble, then a final sort by `readingOrderOverride ?? autoRank`
+ * lets a manual correction (see moveBubbleInReadingOrder) slot a bubble anywhere without
+ * needing to touch every other bubble's rank — the override always wins, regardless of
+ * readingDirection. With no overrides present this is byte-for-byte the same order as
+ * the plain automatic sort (stable sort, ES2019+). */
+export function sortBubblesByPosition(bubbles: Bubble[], language: string, readingDirection: ReadingDirection = "rtl"): Bubble[] {
+  const autoRanked = sortByRowsAndDirection(
+    bubbles,
+    (b) => {
+      const form = resolveBubbleForm(b, language);
+      return { minX: form.x, maxX: form.x + form.width, minY: form.y, maxY: form.y + form.height };
+    },
+    readingDirection
+  );
   return autoRanked
     .map((b, autoRank) => ({ b, key: b.readingOrderOverride ?? autoRank }))
     .sort((x, y) => x.key - y.key)
     .map((x) => x.b);
 }
 
-function sortPanelsByPosition(panels: Panel[]): { panel: Panel; index: number }[] {
-  return panels
-    .map((panel, index) => ({ panel, index }))
-    .sort((a, b) => polygonBounds(a.panel.points).minY - polygonBounds(b.panel.points).minY);
+function sortPanelsByPosition(panels: Panel[], readingDirection: ReadingDirection = "rtl"): { panel: Panel; index: number }[] {
+  return sortByRowsAndDirection(
+    panels.map((panel, index) => ({ panel, index })),
+    ({ panel }) => polygonBounds(panel.points),
+    readingDirection
+  );
 }
 
 /** A bubble's panelId is only "assigned" if it still points at a panel that
@@ -46,18 +96,25 @@ export interface BubbleGroup {
 
 /** "Wer sagt was in welchem Panel?" grouping — panels in reading order, then an
  * "Ohne Panel" group for everything left over (including stale panelId references). */
-export function groupBubblesByPanel(bubbles: Bubble[], panels: Panel[], language: string): BubbleGroup[] {
-  const groups: BubbleGroup[] = sortPanelsByPosition(panels).map(({ panel, index }) => ({
+export function groupBubblesByPanel(
+  bubbles: Bubble[],
+  panels: Panel[],
+  language: string,
+  readingDirection: ReadingDirection = "rtl"
+): BubbleGroup[] {
+  const groups: BubbleGroup[] = sortPanelsByPosition(panels, readingDirection).map(({ panel, index }) => ({
     label: panelDisplayLabel(panel, index),
     bubbles: sortBubblesByPosition(
       bubbles.filter((b) => isAssignedTo(b, panel.id, panels)),
-      language
+      language,
+      readingDirection
     ),
   }));
   const assignedIds = new Set(panels.map((p) => p.id));
   const unassigned = sortBubblesByPosition(
     bubbles.filter((b) => !b.panelId || !assignedIds.has(b.panelId)),
-    language
+    language,
+    readingDirection
   );
   if (unassigned.length > 0) groups.push({ label: NO_PANEL_LABEL, bubbles: unassigned });
   return groups;
@@ -77,8 +134,13 @@ export interface CharacterPanelGroup {
 
 /** "Welche Charaktere kommen in welchen Panels vor?" — panels in reading order,
  * panels with no assigned characters are omitted rather than shown empty. */
-export function charactersByPanel(bubbles: Bubble[], panels: Panel[], characters: Character[]): CharacterPanelGroup[] {
-  return sortPanelsByPosition(panels)
+export function charactersByPanel(
+  bubbles: Bubble[],
+  panels: Panel[],
+  characters: Character[],
+  readingDirection: ReadingDirection = "rtl"
+): CharacterPanelGroup[] {
+  return sortPanelsByPosition(panels, readingDirection)
     .map(({ panel, index }) => ({
       label: panelDisplayLabel(panel, index),
       characterNames: uniqueCharacterNames(
@@ -92,8 +154,13 @@ export function charactersByPanel(bubbles: Bubble[], panels: Panel[], characters
 /** The whole page's bubbles flattened into one reading-order list — panels top-to-bottom,
  * each panel's own bubbles in their (auto/override) order, then the "Ohne Panel" bucket.
  * Used by the context sidebar to find "previous"/"next" bubble on a page. */
-export function getPageReadingOrder(bubbles: Bubble[], panels: Panel[], language: string): Bubble[] {
-  return groupBubblesByPanel(bubbles, panels, language).flatMap((g) => g.bubbles);
+export function getPageReadingOrder(
+  bubbles: Bubble[],
+  panels: Panel[],
+  language: string,
+  readingDirection: ReadingDirection = "rtl"
+): Bubble[] {
+  return groupBubblesByPanel(bubbles, panels, language, readingDirection).flatMap((g) => g.bubbles);
 }
 
 /** Moves one bubble up/down by one slot within its own reading-order group (its panel,
@@ -109,9 +176,10 @@ export function moveBubbleInReadingOrder(
   panels: Panel[],
   language: string,
   bubbleId: string,
-  direction: "up" | "down"
+  direction: "up" | "down",
+  readingDirection: ReadingDirection = "rtl"
 ): { id: string; readingOrderOverride: number }[] {
-  const group = groupBubblesByPanel(bubbles, panels, language).find((g) => g.bubbles.some((b) => b.id === bubbleId));
+  const group = groupBubblesByPanel(bubbles, panels, language, readingDirection).find((g) => g.bubbles.some((b) => b.id === bubbleId));
   if (!group) return [];
   const ordered = group.bubbles;
   const i = ordered.findIndex((b) => b.id === bubbleId);

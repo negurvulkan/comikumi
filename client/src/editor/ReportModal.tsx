@@ -1,13 +1,14 @@
 import { useTranslation } from "react-i18next";
 import type { Bubble, Panel } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
-import { characterName, groupBubblesByPanel, sortBubblesByPosition, uniqueCharacterNames } from "./reportUtils";
+import { characterName, groupBubblesByPanel, sortBubblesByPosition, uniqueCharacterNames, type ReadingDirection } from "./reportUtils";
 
 interface Props {
   bubbles: Bubble[];
   panels: Panel[];
   characters: Character[];
   activeLanguage: string;
+  readingDirection: ReadingDirection;
   onClose: () => void;
 }
 
@@ -18,10 +19,10 @@ function toSingleLine(text: string): string {
 /** The four page-level reports requested: who says what, who-says-what per panel,
  * which characters appear on the page, and which characters appear per panel — all
  * computed live from the already-loaded layout, no extra request needed. */
-export function ReportModal({ bubbles, panels, characters, activeLanguage, onClose }: Props) {
+export function ReportModal({ bubbles, panels, characters, activeLanguage, readingDirection, onClose }: Props) {
   const { t } = useTranslation();
-  const ordered = sortBubblesByPosition(bubbles, activeLanguage);
-  const byPanel = groupBubblesByPanel(bubbles, panels, activeLanguage);
+  const ordered = sortBubblesByPosition(bubbles, activeLanguage, readingDirection);
+  const byPanel = groupBubblesByPanel(bubbles, panels, activeLanguage, readingDirection);
   const pageCharacters = uniqueCharacterNames(bubbles, characters);
   const panelCharacters = byPanel
     .map((g) => ({ label: g.label, characterNames: uniqueCharacterNames(g.bubbles, characters) }))

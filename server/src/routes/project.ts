@@ -52,6 +52,7 @@ const NewProjectSchema = z.object({
   scriptSuffix: z.string().min(1).optional(),
   exportFolderTemplate: z.string().min(1).optional(),
   languages: LanguageListSchema.optional(),
+  readingDirection: z.enum(["ltr", "rtl"]).optional(),
 });
 
 projectRouter.post(

@@ -17,8 +17,8 @@ function bubble(id: string, y: number, extra: Partial<Parameters<typeof createBu
   return createBubble({ id, x: 0, y, width: 100, height: 50, ...extra });
 }
 
-function panel(id: string, minY: number) {
-  return createPanel({ id, points: [{ x: 0, y: minY }, { x: 100, y: minY }, { x: 100, y: minY + 100 }] });
+function panel(id: string, minY: number, minX = 0, label = "") {
+  return createPanel({ id, label, points: [{ x: minX, y: minY }, { x: minX + 100, y: minY }, { x: minX + 100, y: minY + 100 }] });
 }
 
 const characters: Character[] = [
@@ -53,6 +53,24 @@ describe("sortBubblesByPosition", () => {
     // auto ranks (by Y): b1=0, b2=1, b3=2. Effective keys: b1->2, b2->1(auto), b3->0.
     expect(sortBubblesByPosition(bubbles, "de").map((b) => b.id)).toEqual(["b3", "b2", "b1"]);
   });
+
+  it("orders bubbles at roughly the same height (overlapping Y) by X, per readingDirection", () => {
+    const bubbles = [bubble("b-left", 100, { x: 0 }), bubble("b-right", 105, { x: 300 })];
+    expect(sortBubblesByPosition(bubbles, "de", "ltr").map((b) => b.id)).toEqual(["b-left", "b-right"]);
+    expect(sortBubblesByPosition(bubbles, "de", "rtl").map((b) => b.id)).toEqual(["b-right", "b-left"]);
+  });
+
+  it("readingOrderOverride wins regardless of readingDirection", () => {
+    const bubbles = [bubble("b-left", 100, { x: 0, readingOrderOverride: 1 }), bubble("b-right", 105, { x: 300, readingOrderOverride: 0 })];
+    expect(sortBubblesByPosition(bubbles, "de", "ltr").map((b) => b.id)).toEqual(["b-right", "b-left"]);
+    expect(sortBubblesByPosition(bubbles, "de", "rtl").map((b) => b.id)).toEqual(["b-right", "b-left"]);
+  });
+
+  it("non-overlapping Y ranges stay ordered purely by Y regardless of readingDirection", () => {
+    const bubbles = [bubble("b-top", 0, { x: 300 }), bubble("b-bottom", 300, { x: 0 })];
+    expect(sortBubblesByPosition(bubbles, "de", "ltr").map((b) => b.id)).toEqual(["b-top", "b-bottom"]);
+    expect(sortBubblesByPosition(bubbles, "de", "rtl").map((b) => b.id)).toEqual(["b-top", "b-bottom"]);
+  });
 });
 
 describe("groupBubblesByPanel", () => {
@@ -82,6 +100,13 @@ describe("groupBubblesByPanel", () => {
     const p1 = panel("p1", 0);
     const groups = groupBubblesByPanel([bubble("b1", 10, { panelId: "p1" })], [p1], "de");
     expect(groups.map((g) => g.label)).toEqual(["Panel 1"]);
+  });
+
+  it("orders two panels at roughly the same height (overlapping Y) by X, per readingDirection", () => {
+    const pLeft = panel("p-left", 0, 0, "Left");
+    const pRight = panel("p-right", 5, 300, "Right");
+    expect(groupBubblesByPanel([], [pRight, pLeft], "de", "ltr").map((g) => g.label)).toEqual(["Left", "Right"]);
+    expect(groupBubblesByPanel([], [pRight, pLeft], "de", "rtl").map((g) => g.label)).toEqual(["Right", "Left"]);
   });
 });
 

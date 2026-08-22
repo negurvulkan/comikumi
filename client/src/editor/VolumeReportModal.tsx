@@ -4,11 +4,12 @@ import type { Bubble } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
-import { characterName, sortBubblesByPosition } from "./reportUtils";
+import { characterName, sortBubblesByPosition, type ReadingDirection } from "./reportUtils";
 
 interface Props {
   volumeId: string;
   characters: Character[];
+  readingDirection: ReadingDirection;
   onClose: () => void;
 }
 
@@ -20,7 +21,7 @@ function toSingleLine(text: string): string {
  * page of the volume (via the new /reports route) instead of just the currently
  * open one — "welche Charaktere kommen im Band vor" only makes sense at this
  * scope, so it's a separate view rather than the page report reused verbatim. */
-export function VolumeReportModal({ volumeId, characters, onClose }: Props) {
+export function VolumeReportModal({ volumeId, characters, readingDirection, onClose }: Props) {
   const { t } = useTranslation();
   const [pages, setPages] = useState<{ page: string; bubbles: Bubble[] }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +94,7 @@ export function VolumeReportModal({ volumeId, characters, onClose }: Props) {
           </div>
           <div className="text-list" style={{ flex: "0 0 auto", maxHeight: 280 }}>
             {pages.map((p) => {
-              const ordered = sortBubblesByPosition(p.bubbles, language);
+              const ordered = sortBubblesByPosition(p.bubbles, language, readingDirection);
               if (ordered.length === 0) return null;
               return (
                 <div key={p.page} style={{ marginBottom: 4 }}>

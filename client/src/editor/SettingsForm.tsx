@@ -49,6 +49,7 @@ export function SettingsForm({ onClose }: Props) {
         description,
         autosaveEnabled,
         autosaveIntervalSeconds,
+        readingDirection,
       } = settings;
       const next = await api.updateSettings({
         scanRoot,
@@ -61,6 +62,7 @@ export function SettingsForm({ onClose }: Props) {
         description,
         autosaveEnabled,
         autosaveIntervalSeconds,
+        readingDirection,
       });
       setSettings(next);
       setSavedMsg(t("settings.savedMsg"));
@@ -193,6 +195,18 @@ export function SettingsForm({ onClose }: Props) {
         {t("settings.exportTemplateHintPrefix")} <code>{"{book}"}</code> {t("settings.exportTemplateHintMiddle")}{" "}
         <code>{"{folderSuffix}"}</code> {t("settings.exportTemplateHintSuffix")}
       </p>
+
+      <label>
+        {t("settings.readingDirectionLabel")}
+        <select
+          value={settings.readingDirection}
+          onChange={(e) => setSettings({ ...settings, readingDirection: e.target.value as "ltr" | "rtl" })}
+        >
+          <option value="rtl">{t("settings.readingDirectionRtl")}</option>
+          <option value="ltr">{t("settings.readingDirectionLtr")}</option>
+        </select>
+      </label>
+      <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>{t("settings.readingDirectionHint")}</p>
 
       <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <input

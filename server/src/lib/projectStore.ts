@@ -126,9 +126,9 @@ async function getActiveProject(): Promise<ActiveProject> {
   return active;
 }
 
-export async function getCurrentProjectInfo(): Promise<{ filePath: string; name: string } | null> {
+export async function getCurrentProjectInfo(): Promise<{ filePath: string; name: string; readingDirection: "ltr" | "rtl" } | null> {
   await ensureInitialized();
-  return active ? { filePath: active.filePath, name: active.data.name } : null;
+  return active ? { filePath: active.filePath, name: active.data.name, readingDirection: active.data.readingDirection } : null;
 }
 
 /** Resolved project-specific asset subfolder for the given kind, or null if no project
@@ -186,6 +186,7 @@ export interface CreateProjectInit {
   scriptSuffix?: string;
   exportFolderTemplate?: string;
   languages?: LanguageDef[];
+  readingDirection?: "ltr" | "rtl";
 }
 
 export async function createProject(filePath: string, init: CreateProjectInit): Promise<ProjectFile> {
@@ -199,6 +200,7 @@ export async function createProject(filePath: string, init: CreateProjectInit): 
     ...(init.letteringSuffix !== undefined && { letteringSuffix: init.letteringSuffix }),
     ...(init.scriptSuffix !== undefined && { scriptSuffix: init.scriptSuffix }),
     ...(init.exportFolderTemplate !== undefined && { exportFolderTemplate: init.exportFolderTemplate }),
+    ...(init.readingDirection !== undefined && { readingDirection: init.readingDirection }),
     languages: init.languages ?? DEFAULT_LANGUAGES,
   });
   await writeProjectFile(filePath, data);
@@ -223,6 +225,7 @@ export async function readSettings(): Promise<ProjectSettings> {
     description,
     autosaveEnabled,
     autosaveIntervalSeconds,
+    readingDirection,
   } = data;
   return {
     scanRoot,
@@ -235,6 +238,7 @@ export async function readSettings(): Promise<ProjectSettings> {
     description,
     autosaveEnabled,
     autosaveIntervalSeconds,
+    readingDirection,
   };
 }
 

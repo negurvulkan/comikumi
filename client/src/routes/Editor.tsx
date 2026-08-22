@@ -39,6 +39,7 @@ export function Editor() {
   const { volumeId = "", page = "" } = useParams();
   const navigate = useNavigate();
   const { project } = useProject();
+  const readingDirection = project?.readingDirection ?? "rtl";
   const store = useEditorStore();
   const [drawTool, setDrawTool] = useState<DrawTool | null>(null);
   const [showExportPanel, setShowExportPanel] = useState(false);
@@ -354,6 +355,7 @@ export function Editor() {
             panels={layout.panels}
             characters={characters}
             activeLanguage={activeLanguage}
+            readingDirection={readingDirection}
             onClose={() => setShowReport(false)}
           />
         </Modal>
@@ -402,12 +404,13 @@ export function Editor() {
           layout={layout}
           characters={characters}
           languages={languages}
+          readingDirection={readingDirection}
           selectedBubbleId={selectedBubbleIds[0] ?? null}
           onSelectBubble={(id) => store.selectBubble(id)}
           onMove={(direction) => {
             const bubbleId = selectedBubbleIds[0];
             if (!bubbleId) return;
-            const patches = moveBubbleInReadingOrder(layout.bubbles, layout.panels, activeLanguage, bubbleId, direction);
+            const patches = moveBubbleInReadingOrder(layout.bubbles, layout.panels, activeLanguage, bubbleId, direction, readingDirection);
             patches.forEach(({ id, readingOrderOverride }) => store.updateBubble(id, { readingOrderOverride }));
           }}
           onClose={() => setShowContextPanel(false)}
@@ -417,6 +420,7 @@ export function Editor() {
           volumeId={volumeId}
           page={page}
           layout={layout}
+          readingDirection={readingDirection}
           onInsertIntoBubble={
             selectedBubble
               ? (text) => store.updateBubble(selectedBubble.id, { text: { ...selectedBubble.text, [activeLanguage]: text } })

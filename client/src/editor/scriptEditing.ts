@@ -1,7 +1,7 @@
 import { v4 as uuid } from "uuid";
 import type { ScriptDialogueLine, ScriptPage, ScriptPanel } from "../../../shared/src/script";
 import type { PageLayout } from "../../../shared/src/layoutSchema";
-import { groupBubblesByPanel } from "./reportUtils";
+import { groupBubblesByPanel, type ReadingDirection } from "./reportUtils";
 
 /** Pure, immutable update helpers for a single script page/panel — shared by the
  * standalone script editor (routes/ScriptEditor.tsx, operating across a whole
@@ -59,8 +59,8 @@ export function deleteDialogueLine(panel: ScriptPanel, lineId: string): ScriptPa
  * fill in by hand. Groups via groupBubblesByPanel with an empty language code so
  * ordering always uses each bubble's base geometry (resolveBubbleForm finds no
  * formOverride for language ""), independent of any particular project language. */
-export function scriptPageFromLayout(page: string, layout: PageLayout): ScriptPage {
-  const groups = groupBubblesByPanel(layout.bubbles, layout.panels, "");
+export function scriptPageFromLayout(page: string, layout: PageLayout, readingDirection: ReadingDirection = "rtl"): ScriptPage {
+  const groups = groupBubblesByPanel(layout.bubbles, layout.panels, "", readingDirection);
   return {
     id: uuid(),
     label: "",

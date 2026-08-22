@@ -34,6 +34,13 @@ function guessInitialLanguage(uiLanguage: string): WizardLanguage {
   return CONTENT_LANGUAGE_BY_UI_LOCALE[base] ?? CONTENT_LANGUAGE_BY_UI_LOCALE.en;
 }
 
+/** Just a starting suggestion (always shown explicitly for confirmation/change, never
+ * silently applied) — existing projects without this field keep "rtl" as the schema
+ * default regardless of this guess, which only applies to brand-new projects. */
+function guessInitialReadingDirection(uiLanguage: string): "ltr" | "rtl" {
+  return uiLanguage.split("-")[0].toLowerCase() === "ja" ? "rtl" : "ltr";
+}
+
 interface WizardVolume {
   bookName: string;
   createdPaths: string[];
@@ -79,6 +86,7 @@ export function ProjectWizard() {
   // Step 3 — languages, defaulting to just one guessed from the current UI language
   // rather than a fixed multi-language set — see guessInitialLanguage() above.
   const [languages, setLanguages] = useState<WizardLanguage[]>(() => [guessInitialLanguage(i18n.language)]);
+  const [readingDirection, setReadingDirection] = useState<"ltr" | "rtl">(() => guessInitialReadingDirection(i18n.language));
   const [newLangLabel, setNewLangLabel] = useState("");
   const [newLangCode, setNewLangCode] = useState("");
   const [newLangFolderSuffix, setNewLangFolderSuffix] = useState("");
@@ -188,6 +196,7 @@ export function ProjectWizard() {
         scriptSuffix: scriptSuffix.trim(),
         exportFolderTemplate: exportFolderTemplate.trim(),
         languages: languages.map(({ code, label, folderSuffix }) => ({ code, label, folderSuffix })),
+        readingDirection,
       });
       invalidateFontsCache();
       navigate("/");
@@ -357,6 +366,14 @@ export function ProjectWizard() {
                 {t("common.add")}
               </button>
             </form>
+            <label>
+              {t("settings.readingDirectionLabel")}
+              <select value={readingDirection} onChange={(e) => setReadingDirection(e.target.value as "ltr" | "rtl")}>
+                <option value="rtl">{t("settings.readingDirectionRtl")}</option>
+                <option value="ltr">{t("settings.readingDirectionLtr")}</option>
+              </select>
+            </label>
+            <p style={{ color: "var(--text-muted)", fontSize: 12, margin: 0 }}>{t("settings.readingDirectionHint")}</p>
           </div>
         )}
 
@@ -417,6 +434,11 @@ export function ProjectWizard() {
               <li>{t("projectWizard.summaryScanRoot", { scanRoot })}</li>
               <li>
                 {t("projectWizard.summaryLanguages", { languages: languages.map((l) => l.label).join(", ") })}
+              </li>
+              <li>
+                {t("projectWizard.summaryReadingDirection", {
+                  value: t(readingDirection === "rtl" ? "settings.readingDirectionRtl" : "settings.readingDirectionLtr"),
+                })}
               </li>
               <li>{t("projectWizard.summaryVolumeCount", { count: volumes.length })}</li>
             </ul>

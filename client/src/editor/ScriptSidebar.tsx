@@ -10,6 +10,7 @@ import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ScriptPanelCard } from "./ScriptPanelCard";
 import { addPanel, deletePanel, movePanel, scriptPageFromLayout, updatePanel } from "./scriptEditing";
+import type { ReadingDirection } from "./reportUtils";
 
 interface Props {
   /** Always mounted (needed for the slide transition to animate) — same convention
@@ -22,6 +23,7 @@ interface Props {
   /** The currently open page's own layout — used to bootstrap a new linked script
    * page's panels/dialogue straight from its bubbles instead of starting empty. */
   layout: PageLayout;
+  readingDirection: ReadingDirection;
   /** Omitted (not just falsy) when nothing is selected, so ScriptPanelCard's
    * "insert into bubble" button is entirely absent rather than merely disabled —
    * only the clipboard-copy button remains in that case. */
@@ -29,7 +31,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function ScriptSidebar({ open, volumeId, page, layout, onInsertIntoBubble, onClose }: Props) {
+export function ScriptSidebar({ open, volumeId, page, layout, readingDirection, onInsertIntoBubble, onClose }: Props) {
   const { t } = useTranslation();
   const [doc, setDoc] = useState<ScriptDocument | null>(null);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
@@ -93,7 +95,7 @@ export function ScriptSidebar({ open, volumeId, page, layout, onInsertIntoBubble
   }
 
   function handleCreateAndLink() {
-    update({ pages: [...currentDoc.pages, scriptPageFromLayout(page, layout)] });
+    update({ pages: [...currentDoc.pages, scriptPageFromLayout(page, layout, readingDirection)] });
   }
 
   function handleUnlink() {
