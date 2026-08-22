@@ -218,6 +218,7 @@
     "unarchiveButton": "복원",
     "archivedHeading": "보관된 프로젝트",
     "confirmRemove": "이 프로젝트를 목록에서 제거할까요? 프로젝트 파일 자체는 디스크에 그대로 남아 있으며, 나중에 파일 경로로 다시 열 수 있습니다.",
+    "confirmDeleteFileTitle": "프로젝트 파일을 완전히 삭제할까요?",
     "confirmDeleteFile": "프로젝트 파일도 디스크에서 완전히 삭제할까요? 이 작업은 되돌릴 수 없습니다 — 나중에 필요할 수 있다면 백업이 있는지 확인하세요. 실제 스캔 페이지/이미지가 있는 스캔 폴더는 영향을 받지 않습니다."
   },
   "projectWizard": {

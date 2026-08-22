@@ -5,6 +5,7 @@ import { translateApiError } from "../i18n/translateApiError";
 import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "../../../shared/src/presets";
 import type { BubbleVisualStyle, TailChainSegmentShape, TailStyle, TextAlign, TextDirection } from "../../../shared/src/layoutSchema";
 import { FontPicker } from "./FontPicker";
+import { useConfirmDialog } from "./ConfirmDialog";
 
 interface Props {
   presets: LetteringPreset[];
@@ -74,6 +75,7 @@ function FieldToggle<T>({
  * presetId (see resolveBubbleStyle/resolveBubbleForm/resolveCurvedTextStyle). */
 export function PresetManager({ presets, onChange, onClose }: Props) {
   const { t } = useTranslation();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [form, setForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +116,7 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t("managers.presets.confirmDelete"))) return;
+    if (!(await confirm({ message: t("managers.presets.confirmDelete"), danger: true, confirmLabel: t("common.delete") }))) return;
     setError(null);
     setBusy(true);
     try {
@@ -134,6 +136,7 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
 
   return (
     <div className="inspector" style={{ maxWidth: 460, maxHeight: "80vh", overflowY: "auto" }}>
+      {confirmDialog}
       <p style={{ margin: 0, fontWeight: 600 }}>{t("managers.presets.title")}</p>
 
       <div className="language-manager-list">

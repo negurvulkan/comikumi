@@ -218,6 +218,7 @@
     "unarchiveButton": "恢复",
     "archivedHeading": "已归档的项目",
     "confirmRemove": "从总览中移除该项目？项目文件本身仍会原样保留在磁盘上——之后仍可通过其文件路径重新打开。",
+    "confirmDeleteFileTitle": "永久删除项目文件？",
     "confirmDeleteFile": "是否还要将项目文件从磁盘上彻底删除？此操作无法撤销——如果日后可能还需要，请确保已有备份。存放实际扫描页面/图片的扫描文件夹不会受到影响。"
   },
   "projectWizard": {

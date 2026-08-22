@@ -219,6 +219,7 @@
     "unarchiveButton": "Wiederherstellen",
     "archivedHeading": "Archivierte Projekte",
     "confirmRemove": "Dieses Projekt aus der Übersicht entfernen? Die Projektdatei selbst bleibt dabei unangetastet auf der Festplatte — du kannst sie später jederzeit wieder per Dateipfad öffnen.",
+    "confirmDeleteFileTitle": "Projektdatei endgültig löschen?",
     "confirmDeleteFile": "Die Projektdatei zusätzlich endgültig von der Festplatte löschen? Das kann nicht rückgängig gemacht werden — stelle sicher, dass du ein Backup hast, falls du sie noch brauchst. Der Scan-Ordner mit den eigentlichen gescannten Seiten/Bildern bleibt davon unberührt."
   },
   "projectWizard": {

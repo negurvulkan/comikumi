@@ -219,6 +219,7 @@
     "unarchiveButton": "Restaurar",
     "archivedHeading": "Proyectos archivados",
     "confirmRemove": "¿Quitar este proyecto de la vista general? El archivo del proyecto en sí permanece intacto en el disco — podrás volver a abrirlo más tarde con su ruta de archivo.",
+    "confirmDeleteFileTitle": "¿Eliminar definitivamente el archivo del proyecto?",
     "confirmDeleteFile": "¿Eliminar también el archivo del proyecto de forma permanente del disco? Esta acción no se puede deshacer — asegúrate de tener una copia de seguridad si aún podrías necesitarlo. La carpeta de escaneo con las páginas/imágenes reales nunca se toca."
   },
   "projectWizard": {

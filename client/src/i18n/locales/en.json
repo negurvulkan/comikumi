@@ -219,6 +219,7 @@
     "unarchiveButton": "Restore",
     "archivedHeading": "Archived projects",
     "confirmRemove": "Remove this project from the overview? The project file itself stays untouched on disk — you can still reopen it later by its file path.",
+    "confirmDeleteFileTitle": "Permanently delete project file?",
     "confirmDeleteFile": "Also permanently delete the project file from disk? This cannot be undone — make sure you have a backup if you might still need it. The scan folder with the actual scanned pages/artwork is never touched."
   },
   "projectWizard": {

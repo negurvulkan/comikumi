@@ -6,6 +6,7 @@
   --text: #e8e8ea;
   --text-muted: #9a9ba3;
   --accent: #6c8cff;
+  --danger: #e5484d;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -369,6 +370,15 @@ button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: #12131a;
+  font-weight: 600;
+}
+
+/* For a confirm dialog's destructive action (e.g. "delete from disk") — same solid-
+   button treatment as .primary, red instead of accent-colored. */
+button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -916,4 +926,38 @@ button.active {
   max-width: 90vw;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+/* Styled stand-in for window.confirm()/alert() — see ConfirmDialog.tsx's
+   useConfirmDialog() hook. Same visual treatment as .inspector (card look), sized for
+   a short prompt rather than a full form. */
+.confirm-dialog {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 420px;
+  max-width: 100%;
+}
+
+.confirm-dialog-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }

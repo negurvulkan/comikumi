@@ -13,6 +13,7 @@ import { invalidateFontsCache } from "../editor/fontLoader";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuEntry, MenuGroup } from "../editor/MenuBar";
 import { Modal } from "../editor/Modal";
+import { useConfirmDialog } from "../editor/ConfirmDialog";
 import { SettingsForm } from "../editor/SettingsForm";
 import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
@@ -31,6 +32,7 @@ export function ProjectSwitcher() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { project } = useProject();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [recent, setRecent] = useState<RecentProject[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -152,7 +154,7 @@ export function ProjectSwitcher() {
    * delete the underlying project file from disk. The scan-root folder of scanned
    * pages/artwork is never touched by either step. */
   async function handleRemove(filePath: string) {
-    if (!confirm(t("projectSwitcher.confirmRemove"))) return;
+    if (!(await confirm({ message: t("projectSwitcher.confirmRemove"), danger: true, confirmLabel: t("projectSwitcher.removeButton") }))) return;
     setBusy(true);
     setError(null);
     try {
@@ -164,7 +166,14 @@ export function ProjectSwitcher() {
       return;
     }
     setBusy(false);
-    if (confirm(t("projectSwitcher.confirmDeleteFile"))) {
+    if (
+      await confirm({
+        title: t("projectSwitcher.confirmDeleteFileTitle"),
+        message: t("projectSwitcher.confirmDeleteFile"),
+        danger: true,
+        confirmLabel: t("projectSwitcher.removeButton"),
+      })
+    ) {
       await handleDeleteFile(filePath, { alreadyRemovedFromRecent: true });
     }
   }
@@ -173,7 +182,16 @@ export function ProjectSwitcher() {
    * images it points at) — used both as the archived list's "delete for good" action
    * and as handleRemove's optional follow-up. */
   async function handleDeleteFile(filePath: string, opts?: { alreadyRemovedFromRecent?: boolean }) {
-    if (!opts?.alreadyRemovedFromRecent && !confirm(t("projectSwitcher.confirmDeleteFile"))) return;
+    if (
+      !opts?.alreadyRemovedFromRecent &&
+      !(await confirm({
+        title: t("projectSwitcher.confirmDeleteFileTitle"),
+        message: t("projectSwitcher.confirmDeleteFile"),
+        danger: true,
+        confirmLabel: t("projectSwitcher.removeButton"),
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -189,6 +207,7 @@ export function ProjectSwitcher() {
   return (
     <div className="page">
       <MenuBar groups={menuGroups} />
+      {confirmDialog}
       {showSettings && (
         <Modal onClose={() => setShowSettings(false)}>
           <SettingsForm onClose={() => setShowSettings(false)} />

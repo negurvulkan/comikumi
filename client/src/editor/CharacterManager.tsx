@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
+import { useConfirmDialog } from "./ConfirmDialog";
 import type { Character } from "../../../shared/src/characters";
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
  * since that's a field you revise over time, not just set once at creation. */
 export function CharacterManager({ characters, onChange, onClose }: Props) {
   const { t } = useTranslation();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [name, setName] = useState("");
   const [color, setColor] = useState("#6c8cff");
   const [voiceNotes, setVoiceNotes] = useState("");
@@ -57,7 +59,7 @@ export function CharacterManager({ characters, onChange, onClose }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t("managers.characters.confirmDelete"))) return;
+    if (!(await confirm({ message: t("managers.characters.confirmDelete"), danger: true, confirmLabel: t("common.delete") }))) return;
     setError(null);
     setBusy(true);
     try {
@@ -73,6 +75,7 @@ export function CharacterManager({ characters, onChange, onClose }: Props) {
 
   return (
     <div className="inspector" style={{ maxWidth: 380 }}>
+      {confirmDialog}
       <p style={{ margin: 0, fontWeight: 600 }}>{t("managers.characters.title")}</p>
 
       <div className="language-manager-list">

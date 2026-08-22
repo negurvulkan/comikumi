@@ -219,6 +219,7 @@
     "unarchiveButton": "Restaurer",
     "archivedHeading": "Projets archivés",
     "confirmRemove": "Retirer ce projet de la liste ? Le fichier projet lui-même reste intact sur le disque — vous pourrez le rouvrir plus tard via son chemin de fichier.",
+    "confirmDeleteFileTitle": "Supprimer définitivement le fichier projet ?",
     "confirmDeleteFile": "Supprimer aussi définitivement le fichier projet du disque ? Cette action est irréversible — assurez-vous d'avoir une sauvegarde si vous pourriez encore en avoir besoin. Le dossier de scan contenant les pages/images réelles n'est jamais touché."
   },
   "projectWizard": {

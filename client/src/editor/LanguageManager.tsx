@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
+import { useConfirmDialog } from "./ConfirmDialog";
 import type { LanguageDef } from "../../../shared/src/languages";
 
 interface Props {
@@ -22,6 +23,7 @@ function slugify(value: string): string {
 
 export function LanguageManager({ languages, onChange, compact }: Props) {
   const { t } = useTranslation();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [label, setLabel] = useState("");
@@ -62,7 +64,8 @@ export function LanguageManager({ languages, onChange, compact }: Props) {
   }
 
   async function handleDelete(langCode: string) {
-    if (!confirm(t("managers.languages.confirmDelete", { code: langCode }))) return;
+    if (!(await confirm({ message: t("managers.languages.confirmDelete", { code: langCode }), danger: true, confirmLabel: t("common.delete") })))
+      return;
     setError(null);
     setBusy(true);
     try {
@@ -77,6 +80,7 @@ export function LanguageManager({ languages, onChange, compact }: Props) {
 
   return (
     <div className="language-manager">
+      {confirmDialog}
       <button
         onClick={() => setOpen((o) => !o)}
         className={compact ? `lang-chip add${open ? " active" : ""}` : open ? "active" : ""}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
+import { useConfirmDialog } from "./ConfirmDialog";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LanguageDef } from "../../../shared/src/languages";
 
@@ -22,6 +23,7 @@ function emptyTranslations(languages: LanguageDef[]): Record<string, string> {
  * translations feed BubbleInspector's/CurvedTextInspector's glossary highlighting. */
 export function GlossaryManager({ glossary, languages, onChange, onClose }: Props) {
   const { t } = useTranslation();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [term, setTerm] = useState("");
   const [translations, setTranslations] = useState<Record<string, string>>(emptyTranslations(languages));
   const [note, setNote] = useState("");
@@ -60,7 +62,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t("managers.glossary.confirmDelete"))) return;
+    if (!(await confirm({ message: t("managers.glossary.confirmDelete"), danger: true, confirmLabel: t("common.delete") }))) return;
     setError(null);
     setBusy(true);
     try {
@@ -76,6 +78,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
 
   return (
     <div className="inspector" style={{ maxWidth: 420 }}>
+      {confirmDialog}
       <p style={{ margin: 0, fontWeight: 600 }}>{t("managers.glossary.title")}</p>
 
       <div className="language-manager-list">
