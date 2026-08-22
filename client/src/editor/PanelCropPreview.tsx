@@ -12,8 +12,8 @@ interface Props {
 }
 
 /** Crops a Panel's bounding-box region out of the full-res page source image into a
- * small `<canvas>` preview — used by TranslatorContextPanel.tsx so a translator can see
- * the current bubble's panel without scrolling the main canvas. Bounding-box crop, not a
+ * small `<canvas>` preview — used by TranslatorContextPanel.tsx so whoever is working on
+ * a bubble can see its panel without scrolling the main canvas. Bounding-box crop, not a
  * true polygon mask (simpler, and panels are usually close to their bounding box anyway
  * since they mark a region rather than an exact shape). */
 export function PanelCropPreview({ imageUrl, panel, width = 220 }: Props) {

@@ -35,9 +35,11 @@ function toSingleLine(text: string): string {
   return text.trim().replace(/\s*\n+\s*/g, " ⏎ ");
 }
 
-/** Shows the previous/current/next bubble in reading order for the translator — crossing
- * page boundaries when the current bubble is first/last on its page — plus the current
- * bubble's speaker (with Voice Notes) and a cropped preview of its panel. Cross-page
+/** Shows the previous/current/next bubble in reading order — crossing page boundaries
+ * when the current bubble is first/last on its page — plus the current bubble's speaker
+ * (with Voice Notes) and a cropped preview of its panel. Useful beyond translation
+ * itself (lettering, authoring) — anyone editing a page benefits from seeing speaker/
+ * reading-order/panel context, so this isn't framed as translator-only. Cross-page
  * neighbor layouts are fetched directly via the API and cached locally (never through
  * store.loadPage, which would reset the current page's selection/undo history). */
 export function TranslatorContextPanel({

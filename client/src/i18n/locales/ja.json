@@ -313,7 +313,7 @@
       "noPanelsWithCharacters": "キャラクターが割り当てられたパネルはありません。"
     },
     "translatorContextPanel": {
-      "title": "翻訳のためのコンテキスト",
+      "title": "コンテキストビュー",
       "selectBubbleHint": "吹き出しを選択するとコンテキストが表示されます。",
       "speakerLabel": "話者:",
       "panelLabel": "パネル:",

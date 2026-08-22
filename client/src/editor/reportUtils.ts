@@ -91,7 +91,7 @@ export function charactersByPanel(bubbles: Bubble[], panels: Panel[], characters
 
 /** The whole page's bubbles flattened into one reading-order list — panels top-to-bottom,
  * each panel's own bubbles in their (auto/override) order, then the "Ohne Panel" bucket.
- * Used by the translator context sidebar to find "previous"/"next" bubble on a page. */
+ * Used by the context sidebar to find "previous"/"next" bubble on a page. */
 export function getPageReadingOrder(bubbles: Bubble[], panels: Panel[], language: string): Bubble[] {
   return groupBubblesByPanel(bubbles, panels, language).flatMap((g) => g.bubbles);
 }
@@ -101,7 +101,7 @@ export function getPageReadingOrder(bubbles: Bubble[], panels: Panel[], language
  * commit that — the ENTIRE group is renumbered to dense 0..n-1 in the new order, not
  * just the two swapped bubbles. A two-value swap would eventually produce colliding
  * effective keys after repeated reorders (whose tie-break would then depend on
- * incidental array storage order, not on anything the translator set) — renumbering the
+ * incidental array storage order, not on anything the user set) — renumbering the
  * whole group avoids that at negligible cost, since panel groups are small (a handful
  * of bubbles). Returns [] if the bubble isn't found or the move would go out of bounds. */
 export function moveBubbleInReadingOrder(

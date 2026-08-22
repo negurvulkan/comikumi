@@ -313,7 +313,7 @@
       "noPanelsWithCharacters": "没有分配角色的分格。"
     },
     "translatorContextPanel": {
-      "title": "翻译上下文",
+      "title": "上下文视图",
       "selectBubbleHint": "选择一个气泡以查看上下文。",
       "speakerLabel": "说话者：",
       "panelLabel": "分格：",

@@ -321,7 +321,7 @@
       "noPanelsWithCharacters": "No hay viñetas con personajes asignados."
     },
     "translatorContextPanel": {
-      "title": "Contexto de traducción",
+      "title": "Vista de contexto",
       "selectBubbleHint": "Selecciona un bocadillo para ver el contexto.",
       "speakerLabel": "Hablante:",
       "panelLabel": "Viñeta:",

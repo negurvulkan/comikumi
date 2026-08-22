@@ -313,7 +313,7 @@
       "noPanelsWithCharacters": "캐릭터가 할당된 패널이 없습니다."
     },
     "translatorContextPanel": {
-      "title": "번역용 맥락",
+      "title": "맥락 보기",
       "selectBubbleHint": "말풍선을 선택하면 맥락이 표시됩니다.",
       "speakerLabel": "화자:",
       "panelLabel": "패널:",

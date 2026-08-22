@@ -321,7 +321,7 @@
       "noPanelsWithCharacters": "Aucune case avec des personnages assignés."
     },
     "translatorContextPanel": {
-      "title": "Contexte de traduction",
+      "title": "Vue contextuelle",
       "selectBubbleHint": "Sélectionnez une bulle pour voir le contexte.",
       "speakerLabel": "Locuteur :",
       "panelLabel": "Case :",

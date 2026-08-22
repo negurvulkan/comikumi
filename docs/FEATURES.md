@@ -17,7 +17,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Text-Liste](#text-liste)
 - [Reading-Order](#reading-order)
 - [Glossar](#glossar)
-- [Kontextansicht für Übersetzer](#kontextansicht-für-übersetzer)
+- [Kontextansicht](#kontextansicht)
 - [Skript-Editor & Skript-Sidebar](#skript-editor--skript-sidebar)
 - [Berichte](#berichte)
 - [Export & Import](#export--import)
@@ -150,7 +150,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
   Zuordnung verlieren, nicht gelöscht werden).
 - **Zuordnung**: pro Blase über ein Dropdown im Bubble-Inspector oder über das
   Rechtsklick-Kontextmenü im Canvas ("Charakter zuweisen"-Untermenü). Fließt direkt in
-  die [Berichte](#berichte) und die [Kontextansicht](#kontextansicht-für-übersetzer)
+  die [Berichte](#berichte) und die [Kontextansicht](#kontextansicht)
   ein — die Voice Notes werden dort und unter dem Charakter-Dropdown im Bubble-Inspector
   angezeigt, sobald einer Blase ein Charakter mit Notizen zugeordnet ist.
 
@@ -295,7 +295,7 @@ berechnet, exakt wie bisher. Ein optionales Feld (`readingOrderOverride`) erlaub
 manuelle Korrektur für Fälle, in denen die reine Positions-Sortierung nicht der
 tatsächlichen Erzählreihenfolge entspricht (z. B. nebeneinanderliegende Blasen, die in
 umgekehrter Reihenfolge gelesen werden sollen). Bearbeitet wird das über die
-Hoch-/Runter-Buttons in der [Kontextansicht](#kontextansicht-für-übersetzer) — ein Klick
+Hoch-/Runter-Buttons in der [Kontextansicht](#kontextansicht) — ein Klick
 tauscht die Blase mit ihrem Nachbarn in der Gruppe und nummeriert die ganze Gruppe neu
 durch, damit die Reihenfolge auch nach mehreren Korrekturen eindeutig bleibt. Wird einer
 Blase ein anderes (oder gar kein) Panel zugewiesen, wird ihr Override automatisch
@@ -315,11 +315,12 @@ IME-Eingabe und Rückgängig funktionieren dadurch unverändert nativ). Bei vert
 (japanischem) Text wird bewusst nicht hervorgehoben — nur eine normale Textarea, da
 vertikale Textumbrüche eine grundlegend andere Sonderbehandlung bräuchten.
 
-## Kontextansicht für Übersetzer
+## Kontextansicht
 
 Einklappbare Seitenleiste (Werkzeugleisten-Symbol, schließt beim Öffnen automatisch die
 Text-Liste und umgekehrt — beide docken an derselben Stelle), die zur aktuell
-ausgewählten Blase anzeigt:
+ausgewählten Blase anzeigt. Nützlich nicht nur beim Übersetzen — Sprecher, Lese-
+reihenfolge und Panel-Ausschnitt helfen genauso beim reinen Lettern oder beim Schreiben:
 
 - **Speaker** (samt Voice Notes, falls vorhanden) und das zugeordnete **Panel**.
 - **Vorherige/Aktuelle/Nächste** Blase in Leserichtung — mit eigener, von der

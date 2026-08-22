@@ -321,7 +321,7 @@
       "noPanelsWithCharacters": "Keine Panels mit zugeordneten Charakteren."
     },
     "translatorContextPanel": {
-      "title": "Kontext für Übersetzung",
+      "title": "Kontextansicht",
       "selectBubbleHint": "Blase auswählen, um Kontext zu sehen.",
       "speakerLabel": "Speaker:",
       "panelLabel": "Panel:",

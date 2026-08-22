@@ -30,9 +30,10 @@ React + Konva canvas editor.
 - **Lettering presets** — define a reusable style ("SFX Style", "Narration", …) that
   live-updates every bubble/curved text linked to it, field by field, without
   overwriting values a preset doesn't define.
-- **Translator tooling** — a reading-order-aware context sidebar (previous/current/next
-  bubble, speaker + voice notes, panel crop), a project glossary with live
-  highlighting in the text field, and "who says what" reports per page/volume.
+- **Context view & glossary** — a reading-order-aware context sidebar (previous/current/
+  next bubble, speaker + voice notes, panel crop) useful for lettering and writing just
+  as much as translation, a project glossary with live highlighting in the text field,
+  and "who says what" reports per page/volume.
 - **Script planning** — a standalone, volume-wide script editor (plot, panel layout,
   image composition, and per-language dialogue, independent of the scanned page) plus
   an in-editor sidebar that links a script page to a real page and inserts dialogue
