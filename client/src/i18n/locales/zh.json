@@ -43,6 +43,8 @@
     "exportTemplateHintSuffix": "（来自语言设置）。",
     "saving": "正在保存…",
     "savedMsg": "已保存。",
+    "autosaveEnabledLabel": "启用自动保存",
+    "autosaveIntervalLabel": "自动保存间隔（秒）",
     "backLink": "← 返回卷列表"
   },
   "errors": {

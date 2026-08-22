@@ -43,6 +43,8 @@
     "exportTemplateHintSuffix": "(aus der Spracheinstellung).",
     "saving": "Speichert…",
     "savedMsg": "Gespeichert.",
+    "autosaveEnabledLabel": "Autosave aktivieren",
+    "autosaveIntervalLabel": "Autosave-Intervall (Sekunden)",
     "backLink": "← Zurück zur Bandliste"
   },
   "errors": {

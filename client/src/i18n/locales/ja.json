@@ -43,6 +43,8 @@
     "exportTemplateHintSuffix": "(言語設定から)。",
     "saving": "保存中…",
     "savedMsg": "保存しました。",
+    "autosaveEnabledLabel": "自動保存を有効にする",
+    "autosaveIntervalLabel": "自動保存の間隔（秒）",
     "backLink": "← 巻一覧に戻る"
   },
   "errors": {

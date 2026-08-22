@@ -62,6 +62,7 @@ export function Editor() {
   // with the correct glyphs — otherwise the canvas just keeps the stale look.
   const [fontsVersion, setFontsVersion] = useState(0);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
+  const [autosave, setAutosave] = useState<{ enabled: boolean; intervalSeconds: number } | null>(null);
 
   useEffect(() => {
     store.loadPage(volumeId, page);
@@ -87,6 +88,26 @@ export function Editor() {
   useEffect(() => {
     api.listPresets().then(setPresets);
   }, []);
+
+  // Re-read whenever the Settings modal closes, so a just-changed autosave
+  // interval/toggle takes effect immediately without needing a page reload.
+  useEffect(() => {
+    if (showSettings) return;
+    api.getSettings().then((s) => setAutosave({ enabled: s.autosaveEnabled, intervalSeconds: s.autosaveIntervalSeconds }));
+  }, [showSettings]);
+
+  // Autosave: on the configured interval, save only if there are actually
+  // unsaved changes and no save is already in flight — reads fresh state via
+  // getState() (not the `store` snapshot) so this effect doesn't need to
+  // restart on every keystroke, only when the autosave config itself changes.
+  useEffect(() => {
+    if (!autosave?.enabled) return;
+    const id = setInterval(() => {
+      const s = useEditorStore.getState();
+      if (s.dirty && !s.saving) s.save();
+    }, autosave.intervalSeconds * 1000);
+    return () => clearInterval(id);
+  }, [autosave]);
 
   // Once languages are known, make sure the active tab actually exists — the
   // store defaults to "de" before we know whether that language still exists.

@@ -43,6 +43,8 @@
     "exportTemplateHintSuffix": "(언어 설정에서).",
     "saving": "저장 중…",
     "savedMsg": "저장되었습니다.",
+    "autosaveEnabledLabel": "자동 저장 사용",
+    "autosaveIntervalLabel": "자동 저장 간격 (초)",
     "backLink": "← 권 목록으로 돌아가기"
   },
   "errors": {

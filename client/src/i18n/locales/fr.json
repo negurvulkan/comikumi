@@ -43,6 +43,8 @@
     "exportTemplateHintSuffix": "(d'après le paramètre de langue).",
     "saving": "Enregistrement…",
     "savedMsg": "Enregistré.",
+    "autosaveEnabledLabel": "Activer la sauvegarde automatique",
+    "autosaveIntervalLabel": "Intervalle de sauvegarde automatique (secondes)",
     "backLink": "← Retour à la liste des volumes"
   },
   "errors": {

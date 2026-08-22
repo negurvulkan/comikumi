@@ -43,6 +43,8 @@
     "exportTemplateHintSuffix": "(según el ajuste de idioma).",
     "saving": "Guardando…",
     "savedMsg": "Guardado.",
+    "autosaveEnabledLabel": "Activar guardado automático",
+    "autosaveIntervalLabel": "Intervalo de guardado automático (segundos)",
     "backLink": "← Volver a la lista de volúmenes"
   },
   "errors": {

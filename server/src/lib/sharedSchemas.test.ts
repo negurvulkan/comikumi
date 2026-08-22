@@ -20,6 +20,8 @@ describe("ProjectSettingsSchema", () => {
       letteringSuffix: "_lettering",
       exportFolderTemplate: "{book}_{folderSuffix}",
       description: "",
+      autosaveEnabled: false,
+      autosaveIntervalSeconds: 30,
     });
   });
 });

@@ -43,6 +43,8 @@
     "exportTemplateHintSuffix": "(from the language setting).",
     "saving": "Saving…",
     "savedMsg": "Saved.",
+    "autosaveEnabledLabel": "Enable autosave",
+    "autosaveIntervalLabel": "Autosave interval (seconds)",
     "backLink": "← Back to volume list"
   },
   "errors": {

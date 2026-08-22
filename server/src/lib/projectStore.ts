@@ -194,8 +194,28 @@ export async function createProject(filePath: string, init: { name: string; scan
 
 export async function readSettings(): Promise<ProjectSettings> {
   const { data } = await getActiveProject();
-  const { scanRoot, assetsDir, thumbnailsDir, emptySuffix, letteringSuffix, exportFolderTemplate, description } = data;
-  return { scanRoot, assetsDir, thumbnailsDir, emptySuffix, letteringSuffix, exportFolderTemplate, description };
+  const {
+    scanRoot,
+    assetsDir,
+    thumbnailsDir,
+    emptySuffix,
+    letteringSuffix,
+    exportFolderTemplate,
+    description,
+    autosaveEnabled,
+    autosaveIntervalSeconds,
+  } = data;
+  return {
+    scanRoot,
+    assetsDir,
+    thumbnailsDir,
+    emptySuffix,
+    letteringSuffix,
+    exportFolderTemplate,
+    description,
+    autosaveEnabled,
+    autosaveIntervalSeconds,
+  };
 }
 
 export async function writeSettings(settings: ProjectSettings): Promise<void> {
