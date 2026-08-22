@@ -79,6 +79,25 @@ then use **Project → Switch/create** to point the app at a folder of scanned p
 convention (a `<book>_empty` source-page folder per volume, `<book>_<language>` folders
 for translated exports).
 
+### Running client and server on separate hosts
+
+By default the client talks to `http://localhost:3001` when unconfigured (matching the
+dev setup above), or same-origin (`""`, relative paths) in a production build. To point a
+built client at a server hosted elsewhere — a different machine, network, or port — set
+`VITE_API_BASE_URL` (a Vite build-time env var, e.g. in `client/.env.local`) to that
+server's absolute origin, no trailing slash:
+
+```
+VITE_API_BASE_URL=https://comikumi.example.com
+```
+
+The server already accepts cross-origin requests from anywhere (`cors()` with no
+restrictions in [`server/src/app.ts`](server/src/app.ts)). Note that this setup has no
+authentication yet — anyone who can reach the server's origin has full read/write access
+to every project it can open, and the server does all of its file I/O (scan folders,
+project files, assets, thumbnails) on its own local disk, so the actual scanned pages
+must live on (or be reachable from) the machine the server runs on, not the client's.
+
 ### Scripts
 
 | Command | Description |
