@@ -6,6 +6,7 @@ import App from "./App";
 import { VolumeList } from "./routes/VolumeList";
 import { PageGrid } from "./routes/PageGrid";
 import { Editor } from "./routes/Editor";
+import { ScriptEditor } from "./routes/ScriptEditor";
 import { Settings } from "./routes/Settings";
 import { ProjectSwitcher } from "./routes/ProjectSwitcher";
 import "./index.css";
@@ -19,6 +20,7 @@ const router = createHashRouter([
       { path: "project", element: <ProjectSwitcher /> },
       { path: "settings", element: <Settings /> },
       { path: "volumes/:volumeId", element: <PageGrid /> },
+      { path: "volumes/:volumeId/script", element: <ScriptEditor /> },
       { path: "volumes/:volumeId/pages/:page", element: <Editor /> },
     ],
   },

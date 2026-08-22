@@ -125,6 +125,7 @@ export function PageGrid() {
         { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
+        { type: "action", label: t("script.menuEntry"), onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/script`) },
         { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
       ],
     },

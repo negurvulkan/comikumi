@@ -52,6 +52,13 @@ export function letteringFolderName(bookFolderName: string, letteringSuffix: str
   return `${bookFolderName}${letteringSuffix}`;
 }
 
+/** e.g. "volume_01" + "_script" -> "volume_01_script.json" — a single JSON file
+ * (sibling of the <book><letteringSuffix> folder), not a folder, since a volume's
+ * whole script is naturally viewed/edited together. */
+export function scriptFileName(bookFolderName: string, scriptSuffix: string): string {
+  return `${bookFolderName}${scriptSuffix}.json`;
+}
+
 /** Rejects any single-segment file name that could escape its storage directory
  * (path separators, "..", or ".") — used by every "/file/:fileName" route before
  * joining it onto a fixed storage dir, so a request can't read arbitrary files

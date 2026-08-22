@@ -21,6 +21,9 @@ export const ProjectSettingsSchema = z.object({
   thumbnailsDir: z.string().default(""),
   emptySuffix: z.string().min(1).default("_empty"),
   letteringSuffix: z.string().min(1).default("_lettering"),
+  /** Suffix for the per-volume script-planning JSON file (see shared/src/script.ts),
+   * e.g. "volume_01" + "_script" -> "volume_01_script.json". */
+  scriptSuffix: z.string().min(1).default("_script"),
   /** Export folder name template; {book} and {folderSuffix} get interpolated. */
   exportFolderTemplate: z.string().min(1).default("{book}_{folderSuffix}"),
   /** Free-text notes about the project, editable in the Settings dialog. */

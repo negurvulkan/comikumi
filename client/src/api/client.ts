@@ -5,6 +5,7 @@ import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "../../../shared/src/presets";
 import type { ProjectSettings } from "../../../shared/src/settings";
 import type { ProjectFile } from "../../../shared/src/project";
+import type { ScriptDocument } from "../../../shared/src/script";
 
 /** Thrown for any non-ok API response whose body is the `{ error, params? }` shape
  * every server route now returns (see server/src/routes/*.ts) — `code` is a stable
@@ -121,6 +122,16 @@ export const api = {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(layout),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  getScript: (volumeId: string) =>
+    fetch(`/api/volumes/${encodeURIComponent(volumeId)}/script`).then((r) => json<ScriptDocument>(r)),
+
+  saveScript: (volumeId: string, doc: ScriptDocument) =>
+    fetch(`/api/volumes/${encodeURIComponent(volumeId)}/script`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(doc),
     }).then((r) => json<{ ok: true }>(r)),
 
   listFonts: () => fetch("/api/fonts").then((r) => json<FontEntry[]>(r)),

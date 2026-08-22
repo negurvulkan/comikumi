@@ -44,6 +44,7 @@ export function SettingsForm({ onClose }: Props) {
         thumbnailsDir,
         emptySuffix,
         letteringSuffix,
+        scriptSuffix,
         exportFolderTemplate,
         description,
         autosaveEnabled,
@@ -55,6 +56,7 @@ export function SettingsForm({ onClose }: Props) {
         thumbnailsDir,
         emptySuffix,
         letteringSuffix,
+        scriptSuffix,
         exportFolderTemplate,
         description,
         autosaveEnabled,
@@ -164,6 +166,16 @@ export function SettingsForm({ onClose }: Props) {
           value={settings.letteringSuffix}
           onChange={(e) => setSettings({ ...settings, letteringSuffix: e.target.value })}
           placeholder="_lettering"
+          required
+        />
+      </label>
+
+      <label>
+        {t("settings.scriptSuffixLabel")}
+        <input
+          value={settings.scriptSuffix}
+          onChange={(e) => setSettings({ ...settings, scriptSuffix: e.target.value })}
+          placeholder="_script"
           required
         />
       </label>
