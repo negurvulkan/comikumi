@@ -16,11 +16,11 @@ function HeaderProjectLink() {
 
 export default function App() {
   const { t } = useTranslation();
-  // Screens with their own menu bar (volume list, page overview, editor) carry
-  // a "Projekt > Einstellungen" entry there instead — showing it here too would
-  // be a redundant second entry point and break the cohesive look.
+  // Screens with their own menu bar (volume list, page overview, editor, project
+  // switcher) carry a "Projekt > Einstellungen" entry there instead — showing it
+  // here too would be a redundant second entry point and break the cohesive look.
   const { pathname } = useLocation();
-  const hasOwnMenuBar = pathname === "/" || pathname.startsWith("/volumes/");
+  const hasOwnMenuBar = pathname === "/" || pathname === "/project" || pathname.startsWith("/volumes/");
 
   return (
     <ProjectProvider>

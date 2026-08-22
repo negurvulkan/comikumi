@@ -170,6 +170,7 @@
   "menu": {
     "project": "プロジェクト",
     "switch": "切り替え",
+    "newProject": "新規プロジェクト",
     "help": "ヘルプ",
     "noEntriesYet": "まだ項目がありません"
   },

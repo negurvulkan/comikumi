@@ -170,6 +170,7 @@
   "menu": {
     "project": "项目",
     "switch": "切换",
+    "newProject": "新建项目",
     "help": "帮助",
     "noEntriesYet": "暂无条目"
   },

@@ -170,6 +170,7 @@
   "menu": {
     "project": "Projet",
     "switch": "Changer",
+    "newProject": "Nouveau projet",
     "help": "Aide",
     "noEntriesYet": "Aucune entrée pour l'instant"
   },

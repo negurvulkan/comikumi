@@ -170,6 +170,7 @@
   "menu": {
     "project": "Project",
     "switch": "Switch",
+    "newProject": "New Project",
     "help": "Help",
     "noEntriesYet": "No entries yet"
   },
