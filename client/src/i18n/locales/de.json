@@ -196,6 +196,7 @@
     "menuVolumeReport": "Bericht für den Band",
     "menuBackToVolumes": "Zurück zu Bänden",
     "titlebarPages": "Seiten",
+    "breadcrumbBackToVolumes": "Zurück zur Bandübersicht",
     "loading": "Lade Seiten…",
     "importErrorPrefix": "Fehler: {{message}}",
     "importedMsg": "{{count}} Layout(s) importiert{{skippedText}}",
@@ -266,6 +267,7 @@
     "chooseThisFolder": "Diesen Ordner wählen"
   },
   "editor": {
+    "breadcrumbBackToPages": "Zurück zur Seitenübersicht",
     "imagePicker": {
       "insertImage": "Bild einfügen",
       "addShort": "+ Bild",

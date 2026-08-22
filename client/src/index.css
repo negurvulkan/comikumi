@@ -323,6 +323,29 @@ body {
   font-size: 13px;
 }
 
+/* Breadcrumb-style "back" link — the whole titlebar becomes a link back to the
+   volume list (see PageGrid.tsx). Plain by default (matches the surrounding titlebar
+   text, name/path keep their own colors at rest), only turns accent-colored/underlined
+   on hover/focus so the titlebar doesn't look like a random blue link when idle. */
+.canvas-titlebar-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.canvas-titlebar-link:hover,
+.canvas-titlebar-link:hover .canvas-titlebar-name,
+.canvas-titlebar-link:hover .canvas-titlebar-path,
+.canvas-titlebar-link:focus-visible,
+.canvas-titlebar-link:focus-visible .canvas-titlebar-name,
+.canvas-titlebar-link:focus-visible .canvas-titlebar-path {
+  color: var(--accent);
+}
+
+.canvas-titlebar-link:hover,
+.canvas-titlebar-link:focus-visible {
+  text-decoration: underline;
+}
+
 .canvas-titlebar-path {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 11px;

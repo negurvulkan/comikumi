@@ -196,6 +196,7 @@
     "menuVolumeReport": "Report for this volume",
     "menuBackToVolumes": "Back to volumes",
     "titlebarPages": "Pages",
+    "breadcrumbBackToVolumes": "Back to volumes",
     "loading": "Loading pages…",
     "importErrorPrefix": "Error: {{message}}",
     "importedMsg": "{{count}} layout(s) imported{{skippedText}}",
@@ -266,6 +267,7 @@
     "chooseThisFolder": "Choose this folder"
   },
   "editor": {
+    "breadcrumbBackToPages": "Back to pages",
     "imagePicker": {
       "insertImage": "Insert image",
       "addShort": "+ Image",

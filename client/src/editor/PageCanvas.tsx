@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Stage, Layer, Image as KonvaImage, Rect, Ellipse } from "react-konva";
 import Konva from "konva";
@@ -326,7 +327,14 @@ export function PageCanvas({
     <div className="canvas-panel">
       <div className="canvas-titlebar">
         <span className="canvas-titlebar-name">{page}</span>
-        <span className="canvas-titlebar-path">/{projectName ? `${projectName}/${volumeId}` : volumeId}/{page}</span>
+        <Link
+          to={`/volumes/${encodeURIComponent(volumeId)}`}
+          className="canvas-titlebar-path canvas-titlebar-link"
+          title={t("editor.breadcrumbBackToPages")}
+        >
+          /{projectName ? `${projectName}/${volumeId}` : volumeId}
+        </Link>
+        <span className="canvas-titlebar-path">/{page}</span>
       </div>
       <div className="canvas-viewport" ref={viewportRef}>
         <Stage

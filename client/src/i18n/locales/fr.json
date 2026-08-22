@@ -196,6 +196,7 @@
     "menuVolumeReport": "Rapport pour ce volume",
     "menuBackToVolumes": "Retour aux volumes",
     "titlebarPages": "Pages",
+    "breadcrumbBackToVolumes": "Retour aux tomes",
     "loading": "Chargement des pages…",
     "importErrorPrefix": "Erreur : {{message}}",
     "importedMsg": "{{count}} mise(s) en page importée(s){{skippedText}}",
@@ -266,6 +267,7 @@
     "chooseThisFolder": "Choisir ce dossier"
   },
   "editor": {
+    "breadcrumbBackToPages": "Retour aux pages",
     "imagePicker": {
       "insertImage": "Insérer une image",
       "addShort": "+ Image",

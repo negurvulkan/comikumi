@@ -196,6 +196,7 @@
     "menuVolumeReport": "本卷报告",
     "menuBackToVolumes": "返回卷列表",
     "titlebarPages": "页面",
+    "breadcrumbBackToVolumes": "返回卷列表",
     "loading": "正在加载页面…",
     "importErrorPrefix": "错误：{{message}}",
     "importedMsg": "已导入 {{count}} 个版式{{skippedText}}",
@@ -263,6 +264,7 @@
     "chooseThisFolder": "选择此文件夹"
   },
   "editor": {
+    "breadcrumbBackToPages": "返回页面列表",
     "imagePicker": {
       "insertImage": "插入图片",
       "addShort": "+ 图片",

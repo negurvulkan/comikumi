@@ -196,6 +196,7 @@
     "menuVolumeReport": "Informe de este volumen",
     "menuBackToVolumes": "Volver a los volúmenes",
     "titlebarPages": "Páginas",
+    "breadcrumbBackToVolumes": "Volver a los tomos",
     "loading": "Cargando páginas…",
     "importErrorPrefix": "Error: {{message}}",
     "importedMsg": "{{count}} maquetación(es) importada(s){{skippedText}}",
@@ -266,6 +267,7 @@
     "chooseThisFolder": "Elegir esta carpeta"
   },
   "editor": {
+    "breadcrumbBackToPages": "Volver a las páginas",
     "imagePicker": {
       "insertImage": "Insertar imagen",
       "addShort": "+ Imagen",

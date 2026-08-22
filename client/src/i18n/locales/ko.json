@@ -196,6 +196,7 @@
     "menuVolumeReport": "이 권의 리포트",
     "menuBackToVolumes": "권 목록으로 돌아가기",
     "titlebarPages": "페이지",
+    "breadcrumbBackToVolumes": "볼륨 목록으로 돌아가기",
     "loading": "페이지를 불러오는 중…",
     "importErrorPrefix": "오류: {{message}}",
     "importedMsg": "레이아웃 {{count}}개를 가져왔습니다{{skippedText}}",
@@ -263,6 +264,7 @@
     "chooseThisFolder": "이 폴더 선택"
   },
   "editor": {
+    "breadcrumbBackToPages": "페이지 목록으로 돌아가기",
     "imagePicker": {
       "insertImage": "이미지 삽입",
       "addShort": "+ 이미지",

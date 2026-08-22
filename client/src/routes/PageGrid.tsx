@@ -140,10 +140,10 @@ export function PageGrid() {
     <div className="page">
       <MenuBar groups={menuGroups} />
       <input ref={importInputRef} type="file" accept=".zip,application/zip" onChange={handleImportZipFile} style={{ display: "none" }} />
-      <div className="canvas-titlebar">
+      <Link to="/" className="canvas-titlebar canvas-titlebar-link" title={t("pageGrid.breadcrumbBackToVolumes")}>
         <span className="canvas-titlebar-name">{t("pageGrid.titlebarPages")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
-      </div>
+      </Link>
       {(message || exportMsg) && (
         <div
           className="error-banner"
