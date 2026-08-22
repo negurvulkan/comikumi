@@ -4,12 +4,14 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import type { PageSelection, PageSelectionMode } from "../export/pageSelection";
 import { parseCustomSelection, PageSelectionError } from "../export/pageSelection";
 
+export type ExportFormat = "png" | "print";
+
 interface Props {
   languages: LanguageDef[];
   /** Omitted in views with no single active page (e.g. the volume overview) — hides the "Aktuelle Seite" option. */
   currentPage?: string;
   exporting: boolean;
-  onExport: (selection: PageSelection, onlyTranslated: boolean, languageFilter: "all" | string) => void;
+  onExport: (selection: PageSelection, onlyTranslated: boolean, languageFilter: "all" | string, format: ExportFormat) => void;
   onClose: () => void;
 }
 
@@ -35,6 +37,7 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
   const [custom, setCustom] = useState("");
   const [onlyTranslated, setOnlyTranslated] = useState(false);
   const [languageFilter, setLanguageFilter] = useState<"all" | string>("all");
+  const [format, setFormat] = useState<ExportFormat>("png");
 
   let customError: string | null = null;
   if (mode === "custom") {
@@ -54,7 +57,7 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
 
   function handleSubmit() {
     if (!canSubmit) return;
-    onExport(buildSelection(), onlyTranslated, languageFilter);
+    onExport(buildSelection(), onlyTranslated, languageFilter, format);
   }
 
   return (
@@ -117,6 +120,19 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
           ))}
         </select>
       </label>
+
+      <label>{t("exportPanel.formatLabel")}</label>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <button className={format === "png" ? "active" : ""} onClick={() => setFormat("png")}>
+          {t("exportPanel.formatPng")}
+        </button>
+        <button className={format === "print" ? "active" : ""} onClick={() => setFormat("print")}>
+          {t("exportPanel.formatPrint")}
+        </button>
+      </div>
+      {format === "print" && (
+        <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.formatPrintHint")}</p>
+      )}
 
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button className="primary" onClick={handleSubmit} disabled={!canSubmit}>

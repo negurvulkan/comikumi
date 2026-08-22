@@ -7,6 +7,7 @@ import { translateApiError } from "../i18n/translateApiError";
 import { ensureFontsLoaded } from "../editor/fontLoader";
 import { renderPageToPng } from "./renderPageToPng";
 import { selectPages, type PageSelection } from "./pageSelection";
+import type { ExportFormat } from "../editor/ExportPanel";
 
 // A page counts as "translated" for a language if at least one bubble has
 // non-empty text for it, or a placed image has a file assigned for it —
@@ -49,6 +50,7 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
     selection: PageSelection,
     onlyTranslated: boolean,
     languageFilter: "all" | string,
+    format: ExportFormat = "png",
     preloadedLayout?: { page: string; layout: PageLayout } | null
   ) {
     if (languages.length === 0) return;
@@ -69,7 +71,11 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
         const img = await loadHtmlImage(api.pageImageUrl(volumeId, p.page));
         for (const lang of langsForPage) {
           const blob = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets);
-          await api.exportPage(volumeId, p.page, lang.folderSuffix, blob);
+          if (format === "print") {
+            await api.exportPrintPage(volumeId, p.page, lang.folderSuffix, blob);
+          } else {
+            await api.exportPage(volumeId, p.page, lang.folderSuffix, blob);
+          }
           exportCount++;
           setExportMsg(t("useExportRun.progress", { count: exportCount }));
         }

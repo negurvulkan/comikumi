@@ -157,7 +157,7 @@ export function PageGrid() {
           <ExportPanel
             languages={languages}
             exporting={exporting}
-            onExport={(selection, onlyTranslated, languageFilter) => runExport(selection, onlyTranslated, languageFilter, null)}
+            onExport={(selection, onlyTranslated, languageFilter, format) => runExport(selection, onlyTranslated, languageFilter, format, null)}
             onClose={() => setShowExportPanel(false)}
           />
         </Modal>

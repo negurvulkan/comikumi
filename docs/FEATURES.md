@@ -425,6 +425,18 @@ lassen sich aus Blasendaten nicht ableiten und bleiben leer, zum Nachtragen von 
   "nur Seiten mit Übersetzung für diese Sprache" (überspringt Seiten ohne Inhalt in der
   Zielsprache), und ein Sprachfilter (alle oder nur eine). Fortschritt wird live
   angezeigt.
+- **Druck-Export (TIFF, CMYK)**: zusätzliches Ausgabeformat neben PNG, im selben
+  Export-Dialog wählbar (gleicher Seiten-/Sprachfilter). Nutzt exakt dasselbe
+  gerenderte Bild wie der PNG-Export — nur die Nachbearbeitung unterscheidet
+  sich: der Server konvertiert es serverseitig (`sharp`) nach CMYK und schreibt
+  es als `.tiff` mit einer 300dpi-Auflösungsangabe in denselben Sprachordner.
+  Bewusst einfach gehalten: **keine Pixel-Neuberechnung** (die Auflösungsangabe
+  ist reine Metadaten, ein niedrig aufgelöster Scan wird nicht künstlich
+  "geschärft") und **generische CMYK-Konvertierung** (kein eigenes
+  FOGRA-/SWOP-ICC-Profil) — löst nicht das Vektortext-Problem professioneller
+  Druckvorstufen (siehe `docs/Professional-Workflow-Gaps.md`), macht den
+  bestehenden Raster-Export aber überhaupt erst druckfähig (PNG kennt technisch
+  keinen CMYK-Farbraum).
 - **Rendering-Grundlagen**: Schrumpf-zu-Passform + Umbruch für horizontalen Text,
   vollständige Tategaki-Engine (erzwungene Umbrüche, Furigana-Läufe,
   Tate-chū-yoko-Ziffern-/Lateinläufe, Kana-Verkleinerung/-Versatz, Kinsoku-Shori-

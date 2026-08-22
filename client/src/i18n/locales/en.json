@@ -62,6 +62,7 @@
     "file_required": "A {{field}} file is required.",
     "volume_not_found": "Volume not found.",
     "export_fields_required": "Folder suffix, page and PNG file are required.",
+    "print_export_failed": "Could not create the print file: {{reason}}",
     "invalid_character": "Invalid character data.",
     "character_not_found": "Character not found.",
     "invalid_glossary_entry": "Invalid glossary entry.",
@@ -424,6 +425,10 @@
     "allLanguages": "All languages",
     "exporting": "Exporting…",
     "exportButton": "Export",
+    "formatLabel": "Format",
+    "formatPng": "PNG (Web)",
+    "formatPrint": "Print (TIFF, CMYK)",
+    "formatPrintHint": "300dpi tag only, no resampling — a low-resolution scan stays low-resolution. Generic CMYK conversion, no custom print-shop ICC profile yet.",
     "errors": {
       "empty_selection": "Please enter page numbers, e.g. \"1,3,5,10-14\".",
       "invalid_range": "Invalid range \"{{part}}\" — the first number must be less than or equal to the second.",

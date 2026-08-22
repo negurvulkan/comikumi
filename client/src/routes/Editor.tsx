@@ -321,8 +321,8 @@ export function Editor() {
             languages={languages}
             currentPage={page}
             exporting={exporting}
-            onExport={(selection, onlyTranslated, languageFilter) =>
-              runExport(selection, onlyTranslated, languageFilter, layout ? { page, layout } : null)
+            onExport={(selection, onlyTranslated, languageFilter, format) =>
+              runExport(selection, onlyTranslated, languageFilter, format, layout ? { page, layout } : null)
             }
             onClose={() => setShowExportPanel(false)}
           />

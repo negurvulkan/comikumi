@@ -153,6 +153,16 @@ export const api = {
     );
   },
 
+  exportPrintPage: (volumeId: string, page: string, folderSuffix: string, blob: Blob) => {
+    const form = new FormData();
+    form.append("png", blob, `${page}.png`);
+    form.append("folderSuffix", folderSuffix);
+    form.append("page", page);
+    return fetch(`/api/volumes/${encodeURIComponent(volumeId)}/export-print`, { method: "POST", body: form }).then((r) =>
+      json<{ ok: true; path: string }>(r)
+    );
+  },
+
   exportLayoutsZip: async (volumeId: string) => {
     const res = await fetch(`/api/volumes/${encodeURIComponent(volumeId)}/layouts/export-zip`);
     if (!res.ok) await throwApiError(res);

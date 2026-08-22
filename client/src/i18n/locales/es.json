@@ -62,6 +62,7 @@
     "file_required": "Se requiere un archivo {{field}}.",
     "volume_not_found": "Volumen no encontrado.",
     "export_fields_required": "Se requieren el sufijo de carpeta, la página y el archivo PNG.",
+    "print_export_failed": "No se pudo crear el archivo de impresión: {{reason}}",
     "invalid_character": "Datos de personaje no válidos.",
     "character_not_found": "Personaje no encontrado.",
     "invalid_glossary_entry": "Entrada de glosario no válida.",
@@ -424,6 +425,10 @@
     "allLanguages": "Todos los idiomas",
     "exporting": "Exportando…",
     "exportButton": "Exportar",
+    "formatLabel": "Formato",
+    "formatPng": "PNG (web)",
+    "formatPrint": "Impresión (TIFF, CMYK)",
+    "formatPrintHint": "Solo una etiqueta de 300dpi, sin remuestreo — un escaneo de baja resolución sigue siendo de baja resolución. Conversión CMYK genérica, todavía sin perfil ICC propio de imprenta.",
     "errors": {
       "empty_selection": "Introduce números de página, p. ej. «1,3,5,10-14».",
       "invalid_range": "Rango no válido «{{part}}» — el primer número debe ser menor o igual que el segundo.",

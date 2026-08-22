@@ -62,6 +62,7 @@
     "file_required": "{{field}} 파일이 필요합니다.",
     "volume_not_found": "권을 찾을 수 없습니다.",
     "export_fields_required": "폴더 접미사, 페이지, PNG 파일이 필요합니다.",
+    "print_export_failed": "인쇄용 파일을 만들 수 없습니다: {{reason}}",
     "invalid_character": "캐릭터 데이터가 올바르지 않습니다.",
     "character_not_found": "캐릭터를 찾을 수 없습니다.",
     "invalid_glossary_entry": "용어집 항목이 올바르지 않습니다.",
@@ -416,6 +417,10 @@
     "allLanguages": "모든 언어",
     "exporting": "내보내는 중…",
     "exportButton": "내보내기",
+    "formatLabel": "형식",
+    "formatPng": "PNG (웹용)",
+    "formatPrint": "인쇄용 (TIFF, CMYK)",
+    "formatPrintHint": "300dpi는 메타데이터로만 표시되며 픽셀을 다시 계산하지 않습니다 — 저해상도 스캔은 그대로 저해상도로 남습니다. 범용 CMYK 변환이며, 아직 인쇄소 전용 ICC 프로필은 지원하지 않습니다.",
     "errors": {
       "empty_selection": "페이지 번호를 입력하세요 (예: \"1,3,5,10-14\").",
       "invalid_range": "잘못된 범위 \"{{part}}\" — 첫 번째 숫자는 두 번째 숫자보다 작거나 같아야 합니다.",

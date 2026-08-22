@@ -62,6 +62,7 @@
     "file_required": "Eine {{field}}-Datei ist erforderlich.",
     "volume_not_found": "Band nicht gefunden.",
     "export_fields_required": "Ordner-Suffix, Seite und PNG-Datei sind erforderlich.",
+    "print_export_failed": "Druckdatei konnte nicht erstellt werden: {{reason}}",
     "invalid_character": "Ungültige Charakterdaten.",
     "character_not_found": "Charakter nicht gefunden.",
     "invalid_glossary_entry": "Ungültiger Glossareintrag.",
@@ -424,6 +425,10 @@
     "allLanguages": "Alle Sprachen",
     "exporting": "Exportiert…",
     "exportButton": "Exportieren",
+    "formatLabel": "Format",
+    "formatPng": "PNG (Web)",
+    "formatPrint": "Druck (TIFF, CMYK)",
+    "formatPrintHint": "Nur 300dpi-Metadaten, keine Neuberechnung der Pixel — ein niedrig aufgelöster Scan bleibt niedrig aufgelöst. Generische CMYK-Konvertierung, noch kein eigenes Druckerei-ICC-Profil.",
     "errors": {
       "empty_selection": "Bitte Seitenzahlen angeben, z. B. „1,3,5,10-14“.",
       "invalid_range": "Ungültiger Bereich „{{part}}“ — erste Zahl muss kleiner/gleich der zweiten sein.",
