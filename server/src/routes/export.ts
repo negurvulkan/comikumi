@@ -3,11 +3,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import multer from "multer";
 import sharp from "sharp";
-import { findVolume } from "../lib/projectScanner.js";
+import { findVolume, listPages } from "../lib/projectScanner.js";
 import { languageFolderName } from "../lib/paths.js";
-import { readSettings } from "../lib/projectStore.js";
+import { readPresets, readSettings } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
+import { PageLayoutSchema } from "../../../shared/src/layoutSchema.js";
+import { buildVectorPdfPage } from "../lib/vectorPdf/buildPdfPage.js";
+import { buildLayeredPsd } from "../lib/psdExport.js";
+import { resolveImageFilePath } from "../lib/imageResolver.js";
 
 export const exportRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -86,6 +90,131 @@ exportRouter.post(
     await fs.mkdir(dir, { recursive: true });
     const file = path.join(dir, `${page}.tiff`);
     await fs.writeFile(file, tiff);
+    res.json({ ok: true, path: path.relative(volume.parentDir, file) });
+  })
+);
+
+/**
+ * Vector print PDF — unlike /export and /export-print, the client sends the raw
+ * PageLayout JSON (not an already-rendered raster blob): rendering happens HERE, on the
+ * server, via server/src/lib/vectorPdf/buildPdfPage.ts, so that bubble/curved text can
+ * become genuine PDF vector text instead of rasterized pixels (see that module's own
+ * doc comment for what's covered — rect/oval exact, curved-path per-glyph exact,
+ * quad-shape an affine approximation — and pdfXMetadata.ts for why `pdfxStamped` in the
+ * response can legitimately come back false).
+ */
+exportRouter.post(
+  "/:id/export-vector-pdf",
+  requireLetterer,
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const { folderSuffix, page, languageCode, pdfxVersion } = req.body as {
+      folderSuffix?: string;
+      page?: string;
+      languageCode?: string;
+      pdfxVersion?: string;
+    };
+    if (!folderSuffix || !page || !languageCode || (pdfxVersion !== "x1a" && pdfxVersion !== "x4")) {
+      res.status(400).json({ error: "export_fields_required" });
+      return;
+    }
+    const parsed = PageLayoutSchema.safeParse(req.body.layout);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_layout", details: parsed.error.flatten() });
+      return;
+    }
+    const pages = await listPages(volume);
+    const pageInfo = pages.find((p) => p.page === page);
+    if (!pageInfo) {
+      res.status(404).json({ error: "page_not_found" });
+      return;
+    }
+
+    const presets = await readPresets();
+    let result: { bytes: Buffer; pdfxStamped: boolean };
+    try {
+      result = await buildVectorPdfPage({
+        baseImagePath: pageInfo.absolutePath,
+        layout: parsed.data,
+        languageCode,
+        presets,
+        resolveImagePath: resolveImageFilePath,
+        pdfxVersion,
+      });
+    } catch (err) {
+      res.status(500).json({ error: "vector_pdf_export_failed", params: { reason: (err as Error).message } });
+      return;
+    }
+
+    const settings = await readSettings();
+    const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
+    await fs.mkdir(dir, { recursive: true });
+    const file = path.join(dir, `${page}.pdf`);
+    await fs.writeFile(file, result.bytes);
+    res.json({ ok: true, path: path.relative(volume.parentDir, file), pdfxStamped: result.pdfxStamped });
+  })
+);
+
+/**
+ * Layered PSD export — same "client sends the raw PageLayout JSON, server renders"
+ * pattern as /export-vector-pdf (see that route's doc comment). Layers are plain
+ * raster PNG-with-alpha (see psdExport.ts's own doc comment for why), not editable
+ * PSD text objects — Photoshop can hide/show/move/mask each layer independently.
+ */
+exportRouter.post(
+  "/:id/export-psd",
+  requireLetterer,
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const { folderSuffix, page, languageCode } = req.body as {
+      folderSuffix?: string;
+      page?: string;
+      languageCode?: string;
+    };
+    if (!folderSuffix || !page || !languageCode) {
+      res.status(400).json({ error: "export_fields_required" });
+      return;
+    }
+    const parsed = PageLayoutSchema.safeParse(req.body.layout);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_layout", details: parsed.error.flatten() });
+      return;
+    }
+    const pages = await listPages(volume);
+    const pageInfo = pages.find((p) => p.page === page);
+    if (!pageInfo) {
+      res.status(404).json({ error: "page_not_found" });
+      return;
+    }
+
+    const presets = await readPresets();
+    let bytes: Buffer;
+    try {
+      bytes = await buildLayeredPsd({
+        baseImagePath: pageInfo.absolutePath,
+        layout: parsed.data,
+        languageCode,
+        presets,
+        resolveImagePath: resolveImageFilePath,
+      });
+    } catch (err) {
+      res.status(500).json({ error: "psd_export_failed", params: { reason: (err as Error).message } });
+      return;
+    }
+
+    const settings = await readSettings();
+    const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
+    await fs.mkdir(dir, { recursive: true });
+    const file = path.join(dir, `${page}.psd`);
+    await fs.writeFile(file, bytes);
     res.json({ ok: true, path: path.relative(volume.parentDir, file) });
   })
 );

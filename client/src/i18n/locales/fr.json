@@ -77,6 +77,8 @@
     "volume_not_found": "Volume introuvable.",
     "export_fields_required": "Le suffixe de dossier, la page et le fichier PNG sont requis.",
     "print_export_failed": "Impossible de créer le fichier d'impression : {{reason}}",
+    "vector_pdf_export_failed": "Impossible de créer le PDF vectoriel : {{reason}}",
+    "psd_export_failed": "Impossible de créer le PSD en calques : {{reason}}",
     "invalid_character": "Données de personnage invalides.",
     "character_not_found": "Personnage introuvable.",
     "invalid_glossary_entry": "Entrée de glossaire invalide.",
@@ -556,6 +558,11 @@
     "formatPng": "PNG (web)",
     "formatPrint": "Impression (TIFF, CMJN)",
     "formatPrintHint": "Uniquement une balise 300dpi, sans rééchantillonnage — un scan basse résolution reste en basse résolution. Conversion CMJN générique, pas encore de profil ICC d'imprimerie personnalisé.",
+    "formatVectorPdf": "PDF vectoriel (impression)",
+    "formatVectorPdfHint": "Le texte des bulles devient du vrai texte vectoriel PDF, sélectionnable/copiable (pas une image pixellisée) — texte rectangle/ovale/courbe exact, bulles en quadrilatère via une approximation affine (la vraie perspective est techniquement impossible dans le format PDF lui-même). Le texte vertical (tategaki) viendra plus tard. Sans profil ICC configuré, le fichier n'est pas un PDF/X certifié (voir le rapport après l'export).",
+    "pdfxVersionLabel": "Variante PDF/X",
+    "formatPsd": "PSD (calques)",
+    "formatPsdHint": "Exporte un fichier Photoshop en calques : arrière-plan / retouches-découpes-images / un calque par bulle et par texte courbe. Les calques sont des rasters PNG avec alpha, pas des objets texte PSD éditables — chaque calque peut être masqué/déplacé/masqué, mais le texte ne peut pas être retapé avec l'outil texte de Photoshop.",
     "errors": {
       "empty_selection": "Veuillez indiquer des numéros de page, p. ex. « 1,3,5,10-14 ».",
       "invalid_range": "Plage invalide « {{part}} » — le premier nombre doit être inférieur ou égal au second.",
@@ -565,7 +572,8 @@
   "useExportRun": {
     "progress": "{{count}} exporté(s)…",
     "noneFound": "Aucune page correspondante trouvée.",
-    "done": "{{count}} export(s) page/langue terminé(s)."
+    "done": "{{count}} export(s) page/langue terminé(s).",
+    "pdfxNotStamped": "Remarque : au moins un fichier n'est pas un PDF/X certifié (aucun profil ICC configuré sur le serveur) — vrai texte vectoriel, mais non conforme PDF/X au sens strict."
   },
   "volumeReport": {
     "title": "Rapport pour tout le volume",

@@ -116,6 +116,8 @@
     "volume_not_found": "Volume not found.",
     "export_fields_required": "Folder suffix, page and PNG file are required.",
     "print_export_failed": "Could not create the print file: {{reason}}",
+    "vector_pdf_export_failed": "Could not create the vector PDF: {{reason}}",
+    "psd_export_failed": "Could not create the layered PSD: {{reason}}",
     "invalid_character": "Invalid character data.",
     "character_not_found": "Character not found.",
     "invalid_glossary_entry": "Invalid glossary entry.",
@@ -148,6 +150,8 @@
     "setup_already_completed": "Setup has already been completed — please log in instead.",
     "username_already_exists": "That username is already taken.",
     "cannot_delete_own_account": "You can't delete your own account.",
+    "cannot_remove_last_system_admin": "The last system administrator cannot be deleted or demoted.",
+    "cannot_demote_own_account": "You cannot demote your own system administrator privilege.",
     "user_not_found": "No account with that username was found."
   },
   "managers": {
@@ -556,6 +560,11 @@
     "formatPng": "PNG (Web)",
     "formatPrint": "Print (TIFF, CMYK)",
     "formatPrintHint": "300dpi tag only, no resampling — a low-resolution scan stays low-resolution. Generic CMYK conversion, no custom print-shop ICC profile yet.",
+    "formatVectorPdf": "Vector PDF (print)",
+    "formatVectorPdfHint": "Bubble text becomes real, selectable/copyable PDF vector text (not a pixel raster) — rect/oval/curved text exact, quad bubbles as an affine approximation (true perspective is technically impossible in the PDF format itself). Vertical (tategaki) text is a later phase. Without a configured ICC profile, the file isn't a certified PDF/X (see the report after export).",
+    "pdfxVersionLabel": "PDF/X variant",
+    "formatPsd": "PSD (layers)",
+    "formatPsdHint": "Exports a layered Photoshop file: background / retouches-cut-panels-images / one layer per bubble and curved-text element. Layers are raster PNG-with-alpha, not editable PSD text objects — you can hide/move/mask each layer, not retype the text with Photoshop's Type tool.",
     "errors": {
       "empty_selection": "Please enter page numbers, e.g. \"1,3,5,10-14\".",
       "invalid_range": "Invalid range \"{{part}}\" — the first number must be less than or equal to the second.",
@@ -565,7 +574,8 @@
   "useExportRun": {
     "progress": "{{count}} exported…",
     "noneFound": "No matching pages found.",
-    "done": "{{count}} page-language exports completed."
+    "done": "{{count}} page-language exports completed.",
+    "pdfxNotStamped": "Note: at least one file is not a certified PDF/X (no ICC profile configured on the server) — real vector text, but not formally PDF/X compliant."
   },
   "volumeReport": {
     "title": "Report for the whole volume",
@@ -610,5 +620,33 @@
     "unlink": "Unlink",
     "linkedWithPage": "Linked with page {{page}}",
     "insertIntoBubble": "Insert into bubble"
+  },
+  "admin": {
+    "title": "Administration & Profile",
+    "tabProjects": "Projects & Members",
+    "tabProfile": "My Profile",
+    "searchUsersPlaceholder": "Search users...",
+    "searchProjectsPlaceholder": "Search projects...",
+    "searchMembersPlaceholder": "Search members...",
+    "noUsersFound": "No users found.",
+    "noProjectsFound": "No projects found.",
+    "badgeYou": "You",
+    "leaveBlankToKeep": "Leave blank to keep current password",
+    "editUserTitle": "Edit Account: {{name}}",
+    "selectProjectHint": "Select a project on the left to manage its members.",
+    "inviteUsernamePlaceholder": "e.g. Aiko",
+    "profileChangePasswordTitle": "Change Password",
+    "currentPasswordLabel": "Current Password",
+    "newPasswordLabel": "New Password",
+    "confirmNewPasswordLabel": "Confirm New Password",
+    "profileChangePasswordButton": "Update Password",
+    "userCreatedSuccess": "User account created successfully.",
+    "userUpdatedSuccess": "User account updated successfully.",
+    "userDeletedSuccess": "User account deleted successfully.",
+    "memberAddedSuccess": "Member added successfully.",
+    "roleUpdatedSuccess": "Role updated successfully.",
+    "memberRemovedSuccess": "Member removed from the project successfully.",
+    "passwordChangedSuccess": "Password changed successfully."
   }
 }
+

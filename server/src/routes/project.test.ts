@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Express } from "express";
 import path from "node:path";
+import request from "supertest";
 import { setupTestEnv, authedAgent, type TestEnv } from "../test-utils/fixtures.js";
 
 let app: Express;
@@ -244,3 +245,71 @@ describe("POST /api/project/open", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("Project list and member management by path", () => {
+  it("allows system admin to list all projects with isAdmin: true", async () => {
+    const res = await api.get("/api/project/list");
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.every((p: { isAdmin: boolean }) => p.isAdmin === true)).toBe(true);
+  });
+
+  it("allows managing project members via filePath param", async () => {
+    // 1. Create a user
+    const createUsr = await request(app)
+      .post("/api/auth/users")
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ username: "member-test-user", password: "pw" });
+    expect(createUsr.status).toBe(201);
+
+    // 2. Add member to other project (by path) without activating it
+    const otherFile = path.join(path.dirname(env.projectFile), "other-projekt.json");
+    const addMem = await api
+      .post("/api/project/members")
+      .send({ username: "member-test-user", role: "translator", filePath: otherFile });
+    expect(addMem.status).toBe(201);
+
+    // 3. List members of the other project by path
+    const listMem = await api.get("/api/project/members").query({ filePath: otherFile });
+    expect(listMem.status).toBe(200);
+    const addedMember = listMem.body.find((m: { username: string }) => m.username === "member-test-user");
+    expect(addedMember).toBeDefined();
+    expect(addedMember.role).toBe("translator");
+
+    // 4. Update member role by path (POST /members upserts)
+    const updateMem = await api
+      .post("/api/project/members")
+      .send({ username: "member-test-user", role: "admin", filePath: otherFile });
+    expect(updateMem.status).toBe(201);
+
+    const listMem2 = await api.get("/api/project/members").query({ filePath: otherFile });
+    const updatedMember = listMem2.body.find((m: { username: string }) => m.username === "member-test-user");
+    expect(updatedMember.role).toBe("admin");
+
+    // 5. Test access control: non-system-admin who is not an admin of other-projekt.json cannot list members
+    const loginRes = await request(app).post("/api/auth/login").send({ username: "member-test-user", password: "pw" });
+    const plainToken = loginRes.body.token as string;
+    const userApi = authedAgent(app, plainToken);
+
+    // Since they are now "admin" of other-projekt.json (upserted in step 4), they CAN list members of other-projekt
+    const userListMem = await userApi.get("/api/project/members").query({ filePath: otherFile });
+    expect(userListMem.status).toBe(200);
+
+    // But they are not an admin of env.projectFile ("Neues Projekt"), so listing its members should be forbidden (403)
+    const forbiddenList = await userApi.get("/api/project/members").query({ filePath: env.projectFile });
+    expect(forbiddenList.status).toBe(403);
+
+    // 6. Delete member by path
+    const delMem = await api
+      .delete(`/api/project/members/${createUsr.body.id}`)
+      .query({ filePath: otherFile });
+    expect(delMem.status).toBe(200);
+
+    const listMem3 = await api.get("/api/project/members").query({ filePath: otherFile });
+    expect(listMem3.body.some((m: { username: string }) => m.username === "member-test-user")).toBe(false);
+
+    // Clean up user
+    await request(app).delete(`/api/auth/users/${createUsr.body.id}`).set("Authorization", `Bearer ${env.token}`);
+  });
+});
+

@@ -80,6 +80,7 @@ export function ProjectSwitcher() {
       label: t("menu.project"),
       entries: [
         { type: "action", label: t("menu.newProject"), onClick: () => navigate("/project/new") },
+        { type: "action", label: t("admin.title"), onClick: () => navigate("/admin") },
         ...(project
           ? ([
               { type: "separator" },

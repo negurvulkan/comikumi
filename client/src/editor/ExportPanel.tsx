@@ -4,14 +4,23 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import type { PageSelection, PageSelectionMode } from "../export/pageSelection";
 import { parseCustomSelection, PageSelectionError } from "../export/pageSelection";
 
-export type ExportFormat = "png" | "print";
+export type ExportFormat = "png" | "print" | "vector-pdf" | "psd";
+export type PdfXVersion = "x1a" | "x4";
 
 interface Props {
   languages: LanguageDef[];
   /** Omitted in views with no single active page (e.g. the volume overview) — hides the "Aktuelle Seite" option. */
   currentPage?: string;
   exporting: boolean;
-  onExport: (selection: PageSelection, onlyTranslated: boolean, languageFilter: "all" | string, format: ExportFormat) => void;
+  /** `pdfxVersion` is only meaningful when `format === "vector-pdf"` — always passed for
+   * a uniform signature, ignored by callers for the other two formats. */
+  onExport: (
+    selection: PageSelection,
+    onlyTranslated: boolean,
+    languageFilter: "all" | string,
+    format: ExportFormat,
+    pdfxVersion: PdfXVersion
+  ) => void;
   onClose: () => void;
 }
 
@@ -38,6 +47,7 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
   const [onlyTranslated, setOnlyTranslated] = useState(false);
   const [languageFilter, setLanguageFilter] = useState<"all" | string>("all");
   const [format, setFormat] = useState<ExportFormat>("png");
+  const [pdfxVersion, setPdfxVersion] = useState<PdfXVersion>("x4");
 
   let customError: string | null = null;
   if (mode === "custom") {
@@ -57,7 +67,7 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
 
   function handleSubmit() {
     if (!canSubmit) return;
-    onExport(buildSelection(), onlyTranslated, languageFilter, format);
+    onExport(buildSelection(), onlyTranslated, languageFilter, format, pdfxVersion);
   }
 
   return (
@@ -129,9 +139,32 @@ export function ExportPanel({ languages, currentPage, exporting, onExport, onClo
         <button className={format === "print" ? "active" : ""} onClick={() => setFormat("print")}>
           {t("exportPanel.formatPrint")}
         </button>
+        <button className={format === "vector-pdf" ? "active" : ""} onClick={() => setFormat("vector-pdf")}>
+          {t("exportPanel.formatVectorPdf")}
+        </button>
+        <button className={format === "psd" ? "active" : ""} onClick={() => setFormat("psd")}>
+          {t("exportPanel.formatPsd")}
+        </button>
       </div>
       {format === "print" && (
         <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.formatPrintHint")}</p>
+      )}
+      {format === "psd" && (
+        <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.formatPsdHint")}</p>
+      )}
+      {format === "vector-pdf" && (
+        <>
+          <label>{t("exportPanel.pdfxVersionLabel")}</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <button className={pdfxVersion === "x1a" ? "active" : ""} onClick={() => setPdfxVersion("x1a")}>
+              PDF/X-1a
+            </button>
+            <button className={pdfxVersion === "x4" ? "active" : ""} onClick={() => setPdfxVersion("x4")}>
+              PDF/X-4
+            </button>
+          </div>
+          <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.formatVectorPdfHint")}</p>
+        </>
       )}
 
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>

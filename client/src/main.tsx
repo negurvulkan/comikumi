@@ -12,6 +12,7 @@ import { ProjectSwitcher } from "./routes/ProjectSwitcher";
 import { ProjectWizard } from "./routes/ProjectWizard";
 import { Login } from "./routes/Login";
 import { Setup } from "./routes/Setup";
+import { AdminDashboard } from "./routes/AdminDashboard";
 import "./index.css";
 
 const router = createHashRouter([
@@ -25,6 +26,7 @@ const router = createHashRouter([
       { path: "project", element: <ProjectSwitcher /> },
       { path: "project/new", element: <ProjectWizard /> },
       { path: "settings", element: <Settings /> },
+      { path: "admin", element: <AdminDashboard /> },
       { path: "volumes/:volumeId", element: <PageGrid /> },
       { path: "volumes/:volumeId/script", element: <ScriptEditor /> },
       { path: "volumes/:volumeId/pages/:page", element: <Editor /> },

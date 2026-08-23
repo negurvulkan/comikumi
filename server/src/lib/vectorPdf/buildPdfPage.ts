@@ -10,6 +10,7 @@ import { paddingRatioFor, fitHorizontalText } from "../../../../shared/src/rende
 import { fitCurvedText, pointAtArcLength, totalArcLength } from "../../../../shared/src/rendering/curvedText.js";
 import { ensurePageRasterReady, panelOriginFor, registerFont, renderPageBackground } from "../pageRaster.js";
 import { findFontFileForFamily } from "../fontResolver.js";
+import { applyPdfXMetadata, loadConfiguredIccProfile, type PdfXVersion } from "./pdfXMetadata.js";
 
 /**
  * Builds one page of the vector-print PDF: the raster background (see pageRaster.ts —
@@ -33,6 +34,17 @@ export interface BuildPdfPageOptions {
   languageCode: string;
   presets?: LetteringPreset[];
   resolveImagePath: (fileName: string) => Promise<string | null>;
+  /** "x1a" or "x4" — only actually affects the XMP conformance stamp, and only when an
+   * ICC profile is configured at all (see pdfXMetadata.ts's loadConfiguredIccProfile). */
+  pdfxVersion: PdfXVersion;
+}
+
+export interface BuildPdfPageResult {
+  bytes: Buffer;
+  /** False when no PDFX_ICC_PROFILE_PATH is configured — the PDF is still real vector
+   * text over a CMYK background, just not stamped/certifiable as PDF/X (see
+   * pdfXMetadata.ts's doc comment). Surface this to the user rather than hide it. */
+  pdfxStamped: boolean;
 }
 
 function hexToRgb01(hex: string): [number, number, number] {
@@ -138,7 +150,7 @@ function drawQuadBubbleText(
   });
 }
 
-export async function buildVectorPdfPage(opts: BuildPdfPageOptions): Promise<Buffer> {
+export async function buildVectorPdfPage(opts: BuildPdfPageOptions): Promise<BuildPdfPageResult> {
   ensurePageRasterReady();
   const { layout, languageCode } = opts;
   const presets = opts.presets ?? [];
@@ -211,7 +223,15 @@ export async function buildVectorPdfPage(opts: BuildPdfPageOptions): Promise<Buf
       continue;
     }
 
-    const form: BubbleForm = resolveBubbleForm(bubble, languageCode, presets);
+    const resolvedForm: BubbleForm = resolveBubbleForm(bubble, languageCode, presets);
+    // A bubble that's a child of a panel stores panel-RELATIVE x/y — the embedded
+    // background raster already accounts for this (see pageRaster.ts's
+    // drawBubbleBackgroundsOnly/drawBubbleElement), so text must be shifted by the same
+    // panel origin or it visibly detaches from its bubble (same fix drawQuadBubbleText
+    // already applies internally for quad bubbles, just missing here for rect/oval).
+    const origin = panelOriginFor(bubble, layout.panels);
+    const form: BubbleForm =
+      origin.x || origin.y ? { ...resolvedForm, x: resolvedForm.x + origin.x, y: resolvedForm.y + origin.y } : resolvedForm;
     const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape);
     const boxWidth = form.width * (1 - ratio);
     const boxHeight = form.height * (1 - ratio);
@@ -313,5 +333,13 @@ export async function buildVectorPdfPage(opts: BuildPdfPageOptions): Promise<Buf
     }
   }
 
-  return Buffer.from(await pdfDoc.save());
+  const iccProfileBytes = await loadConfiguredIccProfile();
+  const { pdfxStamped } = applyPdfXMetadata(pdfDoc, page, {
+    version: opts.pdfxVersion,
+    iccProfileBytes,
+    pageWidthPt,
+    pageHeightPt,
+  });
+
+  return { bytes: Buffer.from(await pdfDoc.save()), pdfxStamped };
 }

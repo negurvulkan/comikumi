@@ -1,5 +1,6 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { PDFDocument } from "pdf-lib";
@@ -9,8 +10,15 @@ let env: TestEnv;
 let createBubble: typeof import("../../../../shared/src/layoutSchema.js").createBubble;
 let createEmptyLayout: typeof import("../../../../shared/src/layoutSchema.js").createEmptyLayout;
 let createCurvedTextElement: typeof import("../../../../shared/src/layoutSchema.js").createCurvedTextElement;
+let createPanel: typeof import("../../../../shared/src/layoutSchema.js").createPanel;
 let buildVectorPdfPage: typeof import("./buildPdfPage.js").buildVectorPdfPage;
 let baseImagePath: string;
+
+/** Test convenience wrapper — defaults `pdfxVersion` (irrelevant to most cases here,
+ * see pdfXMetadata.test.ts for version-specific behavior) and unwraps `.bytes`. */
+function build(opts: Omit<Parameters<typeof buildVectorPdfPage>[0], "pdfxVersion">) {
+  return buildVectorPdfPage({ ...opts, pdfxVersion: "x4" }).then((r) => r.bytes);
+}
 
 beforeAll(async () => {
   env = await setupTestEnv();
@@ -18,7 +26,9 @@ beforeAll(async () => {
   await fs.mkdir(fontsDir, { recursive: true });
   await fs.copyFile("C:\\Windows\\Fonts\\arial.ttf", path.join(fontsDir, "TestFont.ttf"));
 
-  ({ createBubble, createEmptyLayout, createCurvedTextElement } = await import("../../../../shared/src/layoutSchema.js"));
+  ({ createBubble, createEmptyLayout, createCurvedTextElement, createPanel } = await import(
+    "../../../../shared/src/layoutSchema.js"
+  ));
   ({ buildVectorPdfPage } = await import("./buildPdfPage.js"));
 
   baseImagePath = path.join(env.dataDir, "page.png");
@@ -27,10 +37,14 @@ beforeAll(async () => {
     .toFile(baseImagePath);
 });
 
+afterEach(() => {
+  delete process.env.PDFX_ICC_PROFILE_PATH;
+});
+
 describe("buildVectorPdfPage", () => {
   it("produces a valid single-page PDF sized to the layout at 300dpi", async () => {
     const layout = createEmptyLayout("page_01", "page.png", 400, 300);
-    const bytes = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
+    const bytes = await build({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
     expect(bytes.length).toBeGreaterThan(0);
     expect(bytes.subarray(0, 5).toString("latin1")).toBe("%PDF-");
 
@@ -42,9 +56,29 @@ describe("buildVectorPdfPage", () => {
     expect(page.getHeight()).toBeCloseTo(72, 5);
   });
 
+  it("reports pdfxStamped: false when no ICC profile is configured (the default in this test env)", async () => {
+    const layout = createEmptyLayout("page_01", "page.png", 400, 300);
+    const result = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null, pdfxVersion: "x4" });
+    expect(result.pdfxStamped).toBe(false);
+  });
+
+  it("reports pdfxStamped: true once PDFX_ICC_PROFILE_PATH points at a readable file", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "icc-test-"));
+    const iccPath = path.join(dir, "fake.icc");
+    await fs.writeFile(iccPath, Buffer.from("not a real ICC profile, just needs to exist"));
+    process.env.PDFX_ICC_PROFILE_PATH = iccPath;
+
+    const layout = createEmptyLayout("page_01", "page.png", 400, 300);
+    const result = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null, pdfxVersion: "x4" });
+    expect(result.pdfxStamped).toBe(true);
+
+    const doc = await PDFDocument.load(result.bytes);
+    expect(doc.getPageCount()).toBe(1); // still a structurally valid PDF
+  });
+
   it("embeds a real font subset for a rect bubble with text (larger output than a textless page)", async () => {
     const emptyLayout = createEmptyLayout("page_01", "page.png", 400, 300);
-    const emptyBytes = await buildVectorPdfPage({ baseImagePath, layout: emptyLayout, languageCode: "de", resolveImagePath: async () => null });
+    const emptyBytes = await build({ baseImagePath, layout: emptyLayout, languageCode: "de", resolveImagePath: async () => null });
 
     const bubble = createBubble({
       id: "b1",
@@ -57,7 +91,7 @@ describe("buildVectorPdfPage", () => {
       text: { de: "Hallo" },
     });
     const layout = { ...createEmptyLayout("page_01", "page.png", 400, 300), bubbles: [bubble] };
-    const bytes = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
+    const bytes = await build({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(1);
     // A genuinely embedded font subset adds real glyph-outline data — a page with text
@@ -77,14 +111,14 @@ describe("buildVectorPdfPage", () => {
       text: { de: "Hallo" },
     });
     const layout = { ...createEmptyLayout("page_01", "page.png", 400, 300), bubbles: [bubble] };
-    const bytes = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
+    const bytes = await build({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(1); // still produces a valid page (background only)
   });
 
   it("draws real vector text for a quad-shape bubble via the affine approximation (larger output than a textless page)", async () => {
     const emptyLayout = createEmptyLayout("page_01", "page.png", 400, 300);
-    const emptyBytes = await buildVectorPdfPage({ baseImagePath, layout: emptyLayout, languageCode: "de", resolveImagePath: async () => null });
+    const emptyBytes = await build({ baseImagePath, layout: emptyLayout, languageCode: "de", resolveImagePath: async () => null });
 
     const quadBubble = createBubble({
       id: "b1",
@@ -106,7 +140,7 @@ describe("buildVectorPdfPage", () => {
       { x: 60, y: 220 },
     ];
     const layout = { ...createEmptyLayout("page_01", "page.png", 400, 300), bubbles: [quadBubble] };
-    const bytes = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
+    const bytes = await build({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(1);
     expect(bytes.length).toBeGreaterThan(emptyBytes.length + 500);
@@ -142,14 +176,14 @@ describe("buildVectorPdfPage", () => {
       { x: 150, y: 250 },
     ];
     const layout = { ...createEmptyLayout("page_01", "page.png", 400, 300), bubbles: [verticalRect, verticalQuad] };
-    const bytes = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
+    const bytes = await build({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(1);
   });
 
   it("embeds real vector text for a curved-text element (larger output than a textless page)", async () => {
     const emptyLayout = createEmptyLayout("page_01", "page.png", 400, 300);
-    const emptyBytes = await buildVectorPdfPage({ baseImagePath, layout: emptyLayout, languageCode: "de", resolveImagePath: async () => null });
+    const emptyBytes = await build({ baseImagePath, layout: emptyLayout, languageCode: "de", resolveImagePath: async () => null });
 
     const curved = createCurvedTextElement({
       id: "c1",
@@ -163,15 +197,59 @@ describe("buildVectorPdfPage", () => {
       fontSize: 26,
     });
     const layout = { ...createEmptyLayout("page_01", "page.png", 400, 300), curvedTexts: [{ ...curved, text: { de: "BOOM!" } }] };
-    const bytes = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
+    const bytes = await build({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(1);
     expect(bytes.length).toBeGreaterThan(emptyBytes.length + 500);
   });
 
+  it("shifts a panel-child bubble's text by the panel's origin, matching its background (regression: text used to stay at the raw panel-relative coordinate while the background moved)", async () => {
+    // A bubble that's a child of a panel stores x/y RELATIVE to panel.origin. Rendering
+    // {panel origin (100,80), bubble x/y (20,20)} must look identical to a bubble with no
+    // panel at all placed directly at the equivalent ABSOLUTE coordinate (120,100) — if the
+    // text-position fix regresses, only the background shifts and these two diverge.
+    const panel = createPanel({
+      id: "p1",
+      points: [
+        { x: 100, y: 80 },
+        { x: 400, y: 80 },
+        { x: 400, y: 350 },
+        { x: 100, y: 350 },
+      ],
+    });
+    const childBubble = createBubble({
+      id: "b1",
+      panelId: "p1",
+      x: 20,
+      y: 20,
+      width: 200,
+      height: 100,
+      bubbleStyle: "speech",
+      fontFamily: "TestFont",
+      text: { de: "Hallo" },
+    });
+    const layoutWithPanel = { ...createEmptyLayout("page_01", "page.png", 400, 300), panels: [panel], bubbles: [childBubble] };
+    const bytesWithPanel = await build({ baseImagePath, layout: layoutWithPanel, languageCode: "de", resolveImagePath: async () => null });
+
+    const absoluteBubble = createBubble({
+      id: "b1",
+      x: 120,
+      y: 100,
+      width: 200,
+      height: 100,
+      bubbleStyle: "speech",
+      fontFamily: "TestFont",
+      text: { de: "Hallo" },
+    });
+    const layoutAbsolute = { ...createEmptyLayout("page_01", "page.png", 400, 300), bubbles: [absoluteBubble] };
+    const bytesAbsolute = await build({ baseImagePath, layout: layoutAbsolute, languageCode: "de", resolveImagePath: async () => null });
+
+    expect(bytesWithPanel.equals(bytesAbsolute)).toBe(true);
+  });
+
   it("has no text at all for an empty layout (background only)", async () => {
     const layout = createEmptyLayout("page_01", "page.png", 400, 300);
-    const bytes = await buildVectorPdfPage({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
+    const bytes = await build({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
     expect(bytes.length).toBeGreaterThan(0);
   });
 });

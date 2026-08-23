@@ -107,3 +107,104 @@ describe("POST /:id/export-print", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("POST /:id/export-vector-pdf", () => {
+  it("renders and writes a vector PDF from the raw layout JSON (server-side rendering, no upload)", async () => {
+    const { createEmptyLayout } = await import("../../../shared/src/layoutSchema.js");
+    const layout = createEmptyLayout("page_01", "page_01.png", 4, 4);
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-vector-pdf`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      pdfxVersion: "x4",
+      layout,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.pdfxStamped).toBe(false); // no PDFX_ICC_PROFILE_PATH configured in this test env
+
+    const writtenPath = path.join(env.scanRoot, "Volume_01", "volume_01_german", "page_01.pdf");
+    const written = await fs.readFile(writtenPath);
+    expect(written.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+  });
+
+  it("rejects a request missing required fields", async () => {
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-vector-pdf`).send({ page: "page_01" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("export_fields_required");
+  });
+
+  it("rejects an invalid layout body", async () => {
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-vector-pdf`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      pdfxVersion: "x4",
+      layout: { not: "a valid layout" },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("invalid_layout");
+  });
+
+  it("404s for an unknown volume", async () => {
+    const { createEmptyLayout } = await import("../../../shared/src/layoutSchema.js");
+    const layout = createEmptyLayout("page_01", "page_01.png", 4, 4);
+    const res = await api.post(`/api/volumes/does-not-exist/export-vector-pdf`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      pdfxVersion: "x4",
+      layout,
+    });
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("POST /:id/export-psd", () => {
+  it("renders and writes a layered PSD from the raw layout JSON (server-side rendering, no upload)", async () => {
+    const { createEmptyLayout } = await import("../../../shared/src/layoutSchema.js");
+    const layout = createEmptyLayout("page_01", "page_01.png", 4, 4);
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-psd`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      layout,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+
+    const writtenPath = path.join(env.scanRoot, "Volume_01", "volume_01_german", "page_01.psd");
+    const written = await fs.readFile(writtenPath);
+    expect(written.length).toBeGreaterThan(0);
+    expect(written.subarray(0, 4).toString("latin1")).toBe("8BPS"); // PSD magic bytes
+  });
+
+  it("rejects a request missing required fields", async () => {
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-psd`).send({ page: "page_01" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("export_fields_required");
+  });
+
+  it("rejects an invalid layout body", async () => {
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-psd`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      layout: { not: "a valid layout" },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("invalid_layout");
+  });
+
+  it("404s for an unknown volume", async () => {
+    const { createEmptyLayout } = await import("../../../shared/src/layoutSchema.js");
+    const layout = createEmptyLayout("page_01", "page_01.png", 4, 4);
+    const res = await api.post(`/api/volumes/does-not-exist/export-psd`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      layout,
+    });
+    expect(res.status).toBe(404);
+  });
+});

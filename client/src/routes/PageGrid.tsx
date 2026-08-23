@@ -232,7 +232,9 @@ export function PageGrid() {
           <ExportPanel
             languages={languages}
             exporting={exporting}
-            onExport={(selection, onlyTranslated, languageFilter, format) => runExport(selection, onlyTranslated, languageFilter, format, null)}
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion) =>
+              runExport(selection, onlyTranslated, languageFilter, format, null, pdfxVersion)
+            }
             onClose={() => setShowExportPanel(false)}
           />
         </Modal>

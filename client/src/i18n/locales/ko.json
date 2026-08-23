@@ -77,6 +77,8 @@
     "volume_not_found": "권을 찾을 수 없습니다.",
     "export_fields_required": "폴더 접미사, 페이지, PNG 파일이 필요합니다.",
     "print_export_failed": "인쇄용 파일을 만들 수 없습니다: {{reason}}",
+    "vector_pdf_export_failed": "벡터 PDF를 만들 수 없습니다: {{reason}}",
+    "psd_export_failed": "레이어 PSD를 만들 수 없습니다: {{reason}}",
     "invalid_character": "캐릭터 데이터가 올바르지 않습니다.",
     "character_not_found": "캐릭터를 찾을 수 없습니다.",
     "invalid_glossary_entry": "용어집 항목이 올바르지 않습니다.",
@@ -548,6 +550,11 @@
     "formatPng": "PNG (웹용)",
     "formatPrint": "인쇄용 (TIFF, CMYK)",
     "formatPrintHint": "300dpi는 메타데이터로만 표시되며 픽셀을 다시 계산하지 않습니다 — 저해상도 스캔은 그대로 저해상도로 남습니다. 범용 CMYK 변환이며, 아직 인쇄소 전용 ICC 프로필은 지원하지 않습니다.",
+    "formatVectorPdf": "벡터 PDF (인쇄용)",
+    "formatVectorPdfHint": "말풍선 텍스트가 실제 선택/복사 가능한 PDF 벡터 텍스트가 됩니다(픽셀 이미지가 아님) — 사각형/타원/곡선 텍스트는 정확하게, 사각형(quad) 말풍선은 아핀 근사로 처리됩니다(진짜 원근법은 PDF 형식 자체에서 기술적으로 불가능합니다). 세로쓰기(다테가키)는 이후 단계에서 지원됩니다. ICC 프로필이 설정되지 않은 경우 이 파일은 인증된 PDF/X가 아닙니다(내보내기 후 안내 참고).",
+    "pdfxVersionLabel": "PDF/X 버전",
+    "formatPsd": "PSD (레이어)",
+    "formatPsdHint": "레이어로 나뉜 포토샵 파일을 내보냅니다: 배경 / 리터치-컷 패널-이미지 / 말풍선과 곡선 텍스트마다 하나의 레이어. 레이어는 알파가 있는 래스터 PNG이며 편집 가능한 PSD 텍스트 개체가 아닙니다 — 각 레이어를 표시/이동/마스크할 수 있지만 포토샵의 문자 도구로 텍스트를 다시 입력할 수는 없습니다.",
     "errors": {
       "empty_selection": "페이지 번호를 입력하세요 (예: \"1,3,5,10-14\").",
       "invalid_range": "잘못된 범위 \"{{part}}\" — 첫 번째 숫자는 두 번째 숫자보다 작거나 같아야 합니다.",
@@ -557,7 +564,8 @@
   "useExportRun": {
     "progress": "{{count}}개 내보냄…",
     "noneFound": "일치하는 페이지를 찾을 수 없습니다.",
-    "done": "{{count}}개의 페이지-언어 내보내기가 완료되었습니다."
+    "done": "{{count}}개의 페이지-언어 내보내기가 완료되었습니다.",
+    "pdfxNotStamped": "참고: 하나 이상의 파일이 인증된 PDF/X가 아닙니다(서버에 ICC 프로필이 설정되지 않음) — 실제 벡터 텍스트이지만 공식적으로 PDF/X를 준수하지는 않습니다."
   },
   "volumeReport": {
     "title": "전체 권 리포트",

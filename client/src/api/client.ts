@@ -251,6 +251,36 @@ export const api = {
     );
   },
 
+  /** Vector print PDF — unlike exportPage/exportPrintPage, sends the raw PageLayout JSON
+   * (no client-side render): the server renders it itself so bubble/curved text becomes
+   * genuine PDF vector text (see server/src/lib/vectorPdf/buildPdfPage.ts). `pdfxStamped`
+   * in the response is false when the server has no PDFX_ICC_PROFILE_PATH configured —
+   * the PDF is still real vector text over a CMYK background, just not certifiable as
+   * PDF/X (surface this to the user rather than silently claim compliance). */
+  exportVectorPdfPage: (
+    volumeId: string,
+    page: string,
+    folderSuffix: string,
+    layout: PageLayout,
+    languageCode: string,
+    pdfxVersion: "x1a" | "x4"
+  ) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/export-vector-pdf`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folderSuffix, page, languageCode, pdfxVersion, layout }),
+    }).then((r) => json<{ ok: true; path: string; pdfxStamped: boolean }>(r)),
+
+  /** Layered PSD export — same "send the raw PageLayout JSON, server renders" pattern
+   * as exportVectorPdfPage. Layers are raster PNG-with-alpha, not editable PSD text
+   * objects (see server/src/lib/psdExport.ts). */
+  exportPsdPage: (volumeId: string, page: string, folderSuffix: string, layout: PageLayout, languageCode: string) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/export-psd`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folderSuffix, page, languageCode, layout }),
+    }).then((r) => json<{ ok: true; path: string }>(r)),
+
   exportLayoutsZip: async (volumeId: string) => {
     const res = await authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/layouts/export-zip`));
     if (!res.ok) await throwApiError(res);
@@ -549,17 +579,42 @@ export const api = {
 
   deleteUser: (id: string) => authFetch(apiUrl(`/api/auth/users/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<PublicUser[]>(r)),
 
-  listMembers: () => authFetch(apiUrl("/api/project/members")).then((r) => json<ProjectMemberView[]>(r)),
+  updateUser: (id: string, data: { password?: string; isSystemAdmin?: boolean }) =>
+    authFetch(apiUrl(`/api/auth/users/${encodeURIComponent(id)}`), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((r) => json<PublicUser>(r)),
 
-  addMember: (username: string, role: ProjectRole) =>
+  changeOwnPassword: (currentPassword: string, newPassword: string) =>
+    authFetch(apiUrl("/api/auth/change-password"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  listProjectsForAdmin: () =>
+    authFetch(apiUrl("/api/project/list")).then((r) =>
+      json<{ filePath: string; name: string; coverImagePath?: string; isAdmin: boolean; isArchived: boolean }[]>(r)
+    ),
+
+  listMembers: (filePath?: string) =>
+    authFetch(apiUrl("/api/project/members" + (filePath ? `?filePath=${encodeURIComponent(filePath)}` : ""))).then((r) =>
+      json<ProjectMemberView[]>(r)
+    ),
+
+  addMember: (username: string, role: ProjectRole, filePath?: string) =>
     authFetch(apiUrl("/api/project/members"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, role }),
+      body: JSON.stringify({ username, role, filePath }),
     }).then((r) => json<{ ok: true }>(r)),
 
-  removeMember: (userId: string) =>
-    authFetch(apiUrl(`/api/project/members/${encodeURIComponent(userId)}`), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+  removeMember: (userId: string, filePath?: string) =>
+    authFetch(
+      apiUrl(`/api/project/members/${encodeURIComponent(userId)}` + (filePath ? `?filePath=${encodeURIComponent(filePath)}` : "")),
+      { method: "DELETE" }
+    ).then((r) => json<{ ok: true }>(r)),
 };
 
 /** Triggers a browser download for arbitrary text/blob content — used for single-page JSON export. */

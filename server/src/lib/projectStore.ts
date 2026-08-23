@@ -388,6 +388,21 @@ export async function writeMembers(members: ProjectMember[]): Promise<void> {
   await writeProjectFile(project.filePath, project.data);
 }
 
+export async function readMembersByPath(filePath: string): Promise<ProjectMember[]> {
+  const data = await readProjectFile(filePath);
+  return data.members;
+}
+
+export async function writeMembersByPath(filePath: string, members: ProjectMember[]): Promise<void> {
+  const data = await readProjectFile(filePath);
+  data.members = members;
+  await writeProjectFile(filePath, data);
+  if (active && active.filePath === filePath) {
+    active.data.members = members;
+  }
+}
+
+
 /** Non-throwing variant of readMembers() for server/src/lib/auth.ts's
  * requireProjectRole() — a missing active project should 404/409 further down the
  * request (e.g. an unknown volume id), not be swallowed here as "no members". */

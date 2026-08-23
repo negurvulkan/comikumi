@@ -15,10 +15,12 @@ import {
   peekProjectMembers,
   readMembers,
   writeMembers,
+  readMembersByPath,
+  writeMembersByPath,
 } from "../lib/projectStore.js";
 import { countVolumesUnder, invalidateVolumesCache } from "../lib/projectScanner.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
-import { requireSystemAdmin, requireProjectRole } from "../lib/auth.js";
+import { requireSystemAdmin, requireProjectRole, requireAuth } from "../lib/auth.js";
 import { findUserByUsername, listUsers } from "../lib/authStore.js";
 import { LanguageListSchema } from "../../../shared/src/languages.js";
 import { ProjectRoleSchema } from "../../../shared/src/users.js";
@@ -332,49 +334,152 @@ projectRouter.post(
   })
 );
 
-/** Members of the currently active project — resolved to username for display (the
- * client never needs to know internal user ids). requireProjectRole("admin") also
- * lets a system admin manage members even without their own entry in the list. */
+/** Members of the project — resolved to username for display.
+ * Supports optional query parameter filePath (defaults to active project if omitted).
+ * Access is restricted to System Admins or Project Admins of the specified project. */
 projectRouter.get(
   "/members",
-  requireProjectRole("admin"),
-  asyncHandler(async (_req, res) => {
-    const [members, users] = await Promise.all([readMembers(), listUsers()]);
-    const usersById = new Map(users.map((u) => [u.id, u]));
-    res.json(members.map((m) => ({ userId: m.userId, role: m.role, username: usersById.get(m.userId)?.username ?? null })));
+  asyncHandler(async (req, res) => {
+    let filePath = req.query.filePath as string | undefined;
+    if (!filePath) {
+      const current = await getCurrentProjectInfo();
+      if (!current) {
+        res.status(400).json({ error: "no_active_project" });
+        return;
+      }
+      filePath = current.filePath;
+    }
+    // Authorization check: system admin or project admin of this project file
+    if (!req.user!.isSystemAdmin) {
+      const members = await peekProjectMembers(filePath);
+      const membership = members?.find((m) => m.userId === req.user!.sub);
+      if (!membership || membership.role !== "admin") {
+        res.status(403).json({ error: "forbidden" });
+        return;
+      }
+    }
+    try {
+      const [members, users] = await Promise.all([readMembersByPath(filePath), listUsers()]);
+      const usersById = new Map(users.map((u) => [u.id, u]));
+      res.json(
+        members.map((m) => ({
+          userId: m.userId,
+          role: m.role,
+          username: usersById.get(m.userId)?.username ?? null,
+        }))
+      );
+    } catch (err) {
+      res.status(400).json({ error: "project_read_failed", params: { reason: (err as Error).message } });
+    }
   })
 );
 
-const AddMemberSchema = z.object({ username: z.string().trim().min(1), role: ProjectRoleSchema });
+const AddMemberSchema = z.object({
+  username: z.string().trim().min(1),
+  role: ProjectRoleSchema,
+  filePath: z.string().optional(),
+});
 
 projectRouter.post(
   "/members",
-  requireProjectRole("admin"),
   asyncHandler(async (req, res) => {
     const parsed = AddMemberSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
       return;
     }
+    let filePath = parsed.data.filePath;
+    if (!filePath) {
+      const current = await getCurrentProjectInfo();
+      if (!current) {
+        res.status(400).json({ error: "no_active_project" });
+        return;
+      }
+      filePath = current.filePath;
+    }
+    // Authorization check
+    if (!req.user!.isSystemAdmin) {
+      const members = await peekProjectMembers(filePath);
+      const membership = members?.find((m) => m.userId === req.user!.sub);
+      if (!membership || membership.role !== "admin") {
+        res.status(403).json({ error: "forbidden" });
+        return;
+      }
+    }
     const user = await findUserByUsername(parsed.data.username);
     if (!user) {
       res.status(404).json({ error: "user_not_found" });
       return;
     }
-    const members = await readMembers();
-    const next = [...members.filter((m) => m.userId !== user.id), { userId: user.id, role: parsed.data.role }];
-    await writeMembers(next);
-    res.status(201).json({ ok: true });
+    try {
+      const members = await readMembersByPath(filePath);
+      const next = [...members.filter((m) => m.userId !== user.id), { userId: user.id, role: parsed.data.role }];
+      await writeMembersByPath(filePath, next);
+      res.status(201).json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ error: "project_write_failed", params: { reason: (err as Error).message } });
+    }
   })
 );
 
 projectRouter.delete(
   "/members/:userId",
-  requireProjectRole("admin"),
   asyncHandler(async (req, res) => {
-    const members = await readMembers();
-    const next = members.filter((m) => m.userId !== req.params.userId);
-    await writeMembers(next);
-    res.json({ ok: true });
+    let filePath = req.query.filePath as string | undefined;
+    if (!filePath) {
+      const current = await getCurrentProjectInfo();
+      if (!current) {
+        res.status(400).json({ error: "no_active_project" });
+        return;
+      }
+      filePath = current.filePath;
+    }
+    // Authorization check
+    if (!req.user!.isSystemAdmin) {
+      const members = await peekProjectMembers(filePath);
+      const membership = members?.find((m) => m.userId === req.user!.sub);
+      if (!membership || membership.role !== "admin") {
+        res.status(403).json({ error: "forbidden" });
+        return;
+      }
+    }
+    try {
+      const members = await readMembersByPath(filePath);
+      const next = members.filter((m) => m.userId !== req.params.userId);
+      await writeMembersByPath(filePath, next);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ error: "project_write_failed", params: { reason: (err as Error).message } });
+    }
   })
 );
+
+/** List of projects for admin page.
+ * System Admins see all projects; Project Admins see only their own projects. */
+projectRouter.get(
+  "/list",
+  asyncHandler(async (req, res) => {
+    const [recent, archived] = await Promise.all([listRecentProjects(), listArchivedProjects()]);
+    const all = [
+      ...recent.map((p) => ({ ...p, isArchived: false })),
+      ...archived.map((p) => ({ ...p, isArchived: true })),
+    ];
+    const results: any[] = [];
+    for (const p of all) {
+      const members = await peekProjectMembers(p.filePath);
+      const isProjectAdmin = members?.some((m) => m.userId === req.user!.sub && m.role === "admin") ?? false;
+      const isAdmin = req.user!.isSystemAdmin || isProjectAdmin;
+
+      results.push({
+        filePath: p.filePath,
+        name: p.name ?? path.basename(p.filePath, ".json"),
+        coverImagePath: p.coverImagePath,
+        isAdmin,
+        isArchived: p.isArchived,
+      });
+    }
+    const filtered = req.user!.isSystemAdmin ? results : results.filter((p) => p.isAdmin);
+    res.json(filtered);
+  })
+);
+

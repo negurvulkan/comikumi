@@ -81,10 +81,48 @@ export async function createUser(username: string, password: string, isSystemAdm
 
 export async function deleteUser(id: string): Promise<PublicUser[]> {
   const users = await readUsersRaw();
+  // Prevent deleting the last system admin
+  const userToDelete = users.find((u) => u.id === id);
+  if (userToDelete?.isSystemAdmin) {
+    const otherAdmins = users.filter((u) => u.id !== id && u.isSystemAdmin);
+    if (otherAdmins.length === 0) {
+      throw new Error("cannot_remove_last_system_admin");
+    }
+  }
   const next = users.filter((u) => u.id !== id);
   await writeUsersRaw(next);
   return next.map(toPublicUser);
 }
+
+export async function updateUser(
+  id: string,
+  updates: { password?: string; isSystemAdmin?: boolean }
+): Promise<UserAccount> {
+  const users = await readUsersRaw();
+  const index = users.findIndex((u) => u.id === id);
+  if (index === -1) {
+    throw new Error("user_not_found");
+  }
+  const user = users[index];
+
+  if (updates.isSystemAdmin === false && user.isSystemAdmin) {
+    const otherAdmins = users.filter((u) => u.id !== id && u.isSystemAdmin);
+    if (otherAdmins.length === 0) {
+      throw new Error("cannot_remove_last_system_admin");
+    }
+  }
+
+  if (updates.password !== undefined) {
+    user.passwordHash = hashPassword(updates.password);
+  }
+  if (updates.isSystemAdmin !== undefined) {
+    user.isSystemAdmin = updates.isSystemAdmin;
+  }
+
+  await writeUsersRaw(users);
+  return user;
+}
+
 
 let cachedSecret: string | null = null;
 

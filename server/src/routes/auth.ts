@@ -4,6 +4,7 @@ import {
   hasAnyUsers,
   createUser,
   deleteUser,
+  updateUser,
   listUsers,
   findUserById,
   findUserByUsername,
@@ -131,6 +132,67 @@ authRouter.delete(
       res.status(400).json({ error: "cannot_delete_own_account" });
       return;
     }
-    res.json(await deleteUser(req.params.id));
+    try {
+      res.json(await deleteUser(req.params.id));
+    } catch (err) {
+      res.status(400).json({ error: (err as Error).message });
+    }
   })
 );
+
+const UpdateUserSchema = z.object({
+  password: z.string().min(1).optional(),
+  isSystemAdmin: z.boolean().optional(),
+});
+
+authRouter.patch(
+  "/users/:id",
+  requireAuth,
+  requireSystemAdmin,
+  asyncHandler(async (req, res) => {
+    const parsed = UpdateUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    if (req.params.id === req.user!.sub && parsed.data.isSystemAdmin === false) {
+      res.status(400).json({ error: "cannot_demote_own_account" });
+      return;
+    }
+    try {
+      const user = await updateUser(req.params.id, parsed.data);
+      res.json(toPublicUser(user));
+    } catch (err) {
+      res.status(400).json({ error: (err as Error).message });
+    }
+  })
+);
+
+const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(1),
+});
+
+authRouter.post(
+  "/change-password",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = ChangePasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    const user = await findUserById(req.user!.sub);
+    if (!user || !verifyPassword(parsed.data.currentPassword, user.passwordHash)) {
+      res.status(400).json({ error: "invalid_credentials" });
+      return;
+    }
+    try {
+      await updateUser(user.id, { password: parsed.data.newPassword });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ error: (err as Error).message });
+    }
+  })
+);
+

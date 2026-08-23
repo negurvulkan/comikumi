@@ -77,6 +77,8 @@
     "volume_not_found": "巻が見つかりません。",
     "export_fields_required": "フォルダ接尾辞、ページ、PNGファイルが必要です。",
     "print_export_failed": "印刷用ファイルを作成できませんでした: {{reason}}",
+    "vector_pdf_export_failed": "ベクターPDFを作成できませんでした: {{reason}}",
+    "psd_export_failed": "レイヤーPSDを作成できませんでした: {{reason}}",
     "invalid_character": "無効なキャラクターデータです。",
     "character_not_found": "キャラクターが見つかりません。",
     "invalid_glossary_entry": "無効な用語集項目です。",
@@ -548,6 +550,11 @@
     "formatPng": "PNG（Web用）",
     "formatPrint": "印刷用（TIFF、CMYK）",
     "formatPrintHint": "300dpiはメタデータとして付与するのみで、ピクセルの再計算は行いません — 低解像度のスキャンはそのまま低解像度です。CMYK変換は汎用的なもので、印刷所独自のICCプロファイルにはまだ対応していません。",
+    "formatVectorPdf": "ベクターPDF（印刷用）",
+    "formatVectorPdfHint": "セリフのテキストは実際に選択・コピー可能なPDFベクターテキストになります（ピクセル画像ではありません）— 長方形・楕円・カーブテキストは正確に、四角形（クアッド）ふきだしはアフィン近似で処理されます（真の遠近法はPDF形式そのものでは技術的に不可能です）。縦書きは今後のフェーズで対応予定です。ICCプロファイルが設定されていない場合、このファイルは認証済みPDF/Xにはなりません（書き出し後の案内を参照）。",
+    "pdfxVersionLabel": "PDF/Xバージョン",
+    "formatPsd": "PSD（レイヤー）",
+    "formatPsdHint": "レイヤー分けされたPhotoshopファイルを書き出します：背景／レタッチ・カットパネル・画像／吹き出しとカーブテキストごとに1レイヤー。レイヤーはアルファ付きのラスターPNGであり、編集可能なPSDテキストオブジェクトではありません——表示/非表示・移動・マスクは可能ですが、Photoshopの文字ツールでの打ち直しはできません。",
     "errors": {
       "empty_selection": "ページ番号を入力してください（例: 「1,3,5,10-14」）。",
       "invalid_range": "無効な範囲「{{part}}」 — 最初の数字は2番目以下である必要があります。",
@@ -557,7 +564,8 @@
   "useExportRun": {
     "progress": "{{count}} 件エクスポート済み…",
     "noneFound": "該当するページが見つかりません。",
-    "done": "{{count}} 件のページ・言語エクスポートが完了しました。"
+    "done": "{{count}} 件のページ・言語エクスポートが完了しました。",
+    "pdfxNotStamped": "注意: 少なくとも1件のファイルは認証済みPDF/Xではありません（サーバーにICCプロファイルが設定されていません）— 実際のベクターテキストですが、正式にはPDF/X準拠ではありません。"
   },
   "volumeReport": {
     "title": "巻全体のレポート",
