@@ -7,6 +7,10 @@
 
 <p align="center">A local-first lettering &amp; typesetting tool for manga/comic translation projects.</p>
 
+<p align="center">
+  <img alt="ComiKumi Editor Overview" src="docs/screenshot/03_editor_page_26.png" width="100%">
+</p>
+
 ---
 
 ComiKumi is a desktop-style web app for placing and translating speech bubbles, curved
@@ -22,7 +26,7 @@ React + Konva canvas editor.
   languages as you configure.
 - **Full vertical Japanese typesetting** (tategaki) — forced line breaks, furigana
   (`{漢字|かんじ}`), automatic tate-chū-yoko for digit/Latin runs, and kinsoku shori
-  line-breaking rules. See [`docs/Japanese-Typesetting.md`](docs/Japanese-Typesetting.md).
+  line-breaking rules (see [screenshot](docs/screenshot/04_bubble_inspector_jp_tategaki.png)). See [`docs/Japanese-Typesetting.md`](docs/Japanese-Typesetting.md).
 - **Four element types**: speech bubbles (rect/oval/free perspective quad, with
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
   (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
@@ -31,12 +35,12 @@ React + Konva canvas editor.
   live-updates every bubble/curved text linked to it, field by field, without
   overwriting values a preset doesn't define.
 - **Context view & glossary** — a reading-order-aware context sidebar (previous/current/
-  next bubble, speaker + voice notes, panel crop) useful for lettering and writing just
+  next bubble, speaker + voice notes, panel crop; see [screenshot](docs/screenshot/05_editor_sidebar_context_view.png)) useful for lettering and writing just
   as much as translation, a project glossary with live highlighting in the text field,
   and "who says what" reports per page/volume.
 - **Script planning** — a standalone, volume-wide script editor (plot, panel layout,
   image composition, and per-language dialogue, independent of the scanned page) plus
-  an in-editor sidebar that links a script page to a real page and inserts dialogue
+  an in-editor sidebar that links a script page to a real page (see [screenshot](docs/screenshot/05_editor_sidebar_script.png)) and inserts dialogue
   straight into the selected bubble. Either can be generated with one click from
   already-lettered pages instead of typed up from scratch.
 - **Project-specific asset folders** — fonts, SVG bubble contours, and the image
