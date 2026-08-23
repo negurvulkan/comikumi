@@ -163,6 +163,13 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
   Stunden, `server/src/index.ts`) räumt den Papierkorb danach selbstständig auf — wie
   lange eine Datei dort verbleibt, bevor sie endgültig entfernt wird, ist über
   Einstellungen → "Papierkorb-Aufbewahrung (Tage)" konfigurierbar (Default: 30 Tage).
+- **Leere Seite anlegen**: über "Seite → Leere Seite…" lässt sich statt eines Uploads
+  auch eine komplett leere (weiße) Seite in gewählter Größe anlegen — für Seiten, die
+  nicht aus einem Gesamt-Scan entstehen, sondern Panel für Panel aus bereits fertig
+  gezeichneten Einzelgrafiken zusammengesetzt werden sollen (siehe
+  [Panel-Inhalt ersetzen](#cut-panel) und die Panel-Raster-Vorlagen im Editor-Werkzeug).
+  Nutzt denselben Upload-Weg wie oben, verhält sich danach wie jede andere Seite und
+  öffnet sich direkt im Editor.
 - Beide Bildschirme haben ein **"Projekt"-Menü** (Projekt wechseln, Charaktere
   verwalten, Einstellungen öffnen) sowie eine Menüleiste mit Import-/Export-Aktionen
   (siehe [Export & Import](#export--import)), einen Eintrag "Bericht für den Band" und
@@ -336,6 +343,13 @@ Rechtsklick auf einen Punkt entfernt ihn (mindestens 3 Punkte bleiben immer erha
 Blasen können einem Panel manuell zugeordnet werden, um "wer sagt was pro
 Panel"-Auswertungen zu ermöglichen. **Erscheint nie im PNG-Export.**
 
+Neben dem einzelnen Panel-Werkzeug bietet die Werkzeugleiste ein **Panel-Raster-Menü**
+mit gängigen Vorlagen (1 Panel/ganze Seite, 2/3 übereinander, 2×2, 2×3) — legt auf einen
+Klick mehrere Panels gleichmäßig verteilt an, jedes bereits im Zustand
+[„Ersetzt durch eigenes Bild"](#cut-panel) (für alle Sprachen aktiviert): einfach
+anklicken und die fertige Panel-Grafik zuweisen. Gedacht für den
+Panel-für-Panel-Aufbau einer [leeren Seite](#bände--seiten).
+
 ## Sperren
 
 Jedes Element (Blase, Panel, Bild, Kurventext) lässt sich einzeln gegen versehentliches
@@ -367,13 +381,19 @@ Anwendungsfälle: ein Panel für eine RTL→LTR-Umgestaltung an eine andere Stel
 bringen, oder ein leicht verrutschtes Panel korrigieren — ganz ohne externes
 Grafikprogramm.
 
-**Aktivierung ist ein sprachabhängiger Schalter**: der Knopf betrifft ausschließlich die
-gerade aktive Sprache — alle anderen Sprachen bleiben unverändert ein normales,
-unbearbeitetes Panel. Ein „Cut-Panel für „{Sprache}" deaktivieren"-Knopf (erscheint,
-sobald für die aktive Sprache Cut-Verhalten aktiv ist) macht das gezielt für genau diese
-eine Sprache wieder rückgängig — z. B. bleibt ein Panel im japanischen Original
-unverändert eine reine Referenzmarkierung, während es für „de"/„en" verschoben, entfernt
-oder ersetzt ist (siehe [Sprachabhängiges Verhalten](#sprachabhängiges-verhalten) unten).
+**Aktivierung** gibt es in zwei Varianten:
+- **„Für alle Sprachen aktivieren"** — löst den Panel-Inhalt einmalig für jede Sprache
+  gleichzeitig (schreibt in die Basis-Felder des Panels). Die richtige Wahl, wenn der
+  Panel-Inhalt sprachunabhängig ist — allen voran beim [Panel-für-Panel-Aufbau einer
+  leeren Seite](#bände--seiten) aus fertigen Einzelgrafiken: einmal ein Bild zuweisen,
+  sichtbar in jeder Projektsprache, ohne erneuten Upload.
+- **„Cut-Panel für „{Sprache}" aktivieren"** — betrifft ausschließlich die gerade aktive
+  Sprache; alle anderen bleiben unverändert ein normales, unbearbeitetes Panel. Gedacht
+  für gezielte Ausnahmen (z. B. ein Schild, das nur in „de"/„en" lokalisiert werden muss,
+  im japanischen Original aber unverändert bleibt). Ein „...deaktivieren"-Knopf (erscheint,
+  sobald für die aktive Sprache Cut-Verhalten aktiv ist) macht das gezielt für genau diese
+  eine Sprache wieder rückgängig (siehe [Sprachabhängiges Verhalten](#sprachabhängiges-verhalten)
+  unten).
 
 Verhalten (ansonsten identisch zu einem normalen Panel — Beschriftung, Rahmenfarbe,
 Kind-Blasen-Zuordnung, Sperren, Duplizieren, Löschen funktionieren gleich):

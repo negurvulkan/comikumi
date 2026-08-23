@@ -260,6 +260,11 @@
     "menuImportLabel": "Importer",
     "menuImportZip": "JSON (ZIP)",
     "menuUploadPages": "Téléverser des pages…",
+    "menuNewBlankPage": "Page vierge…",
+    "newBlankPageTitle": "Page vierge",
+    "newBlankPageWidthLabel": "Largeur (px)",
+    "newBlankPageHeightLabel": "Hauteur (px)",
+    "newBlankPageCreate": "Créer",
     "menuExportLabel": "Exporter",
     "menuExportImage": "Image…",
     "menuExportAllZip": "Tous les JSON (ZIP)",
@@ -411,6 +416,8 @@
       "removedHint": "Le contenu n'est plus recouvert qu'à son emplacement d'origine, jamais redessiné ailleurs — la case compte alors comme absente du scénario, des rapports et de l'ordre de lecture. Purement visuel/sémantique : la géométrie et les bulles enfants restent inchangées, réversible à tout moment en revenant à « Découpe originale ». Indépendant du bouton « Supprimer la case » ci-dessous, qui supprime définitivement l'enregistrement.",
       "removedSuffix": "(supprimée)",
       "cutPanelHint": "Case découpée : son contenu est détaché de la page originale. Le déplacer emporte le contenu ; l'emplacement laissé vacant est recouvert par la couleur de remplissage. Reformer un coin ajuste la découpe.",
+      "activateCutAllLanguages": "Activer pour toutes les langues",
+      "activateCutAllLanguagesHint": "Détache le contenu de la case une seule fois pour toutes les langues à la fois — le bon choix quand l'illustration de cette case (par ex. un dessin terminé placé sur une page vierge) est identique quelle que soit la langue. N'utilisez l'option par langue ci-dessous que pour une exception ponctuelle.",
       "activateCut": "Activer la case découpée pour « {{language}} »",
       "activateCutHint": "Détache le contenu de la case de la page originale, pour cette seule langue — il peut ensuite être déplacé, supprimé ou remplacé par une image personnalisée (voir ci-dessous). Les autres langues restent inchangées. Non destructif : tant que « Contenu » est sur « Découpe originale », la case reste visuellement inchangée.",
       "deactivateCut": "Désactiver la case découpée pour « {{language}} »",
@@ -470,6 +477,15 @@
       "rect": "Rectangle",
       "quadPerspective": "Quadrilatère (perspective)",
       "panelRefRegion": "Case (zone de référence)",
+      "panelGrid": "Modèles de grille de cases",
+      "panelGridHint": "Crée plusieurs cases d'un coup, chacune déjà réglée sur « remplacée par une image personnelle » pour toutes les langues — il suffit de cliquer sur chacune et d'y assigner son illustration.",
+      "panelGridTemplate": {
+        "1x1": "1 case (page entière)",
+        "2stack": "2 empilées",
+        "3stack": "3 empilées",
+        "2x2": "Grille 2×2",
+        "2x3": "Grille 2×3"
+      },
       "textsThisPage": "Textes de cette page"
     },
     "contextMenu": {

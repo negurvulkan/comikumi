@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { PageLayoutSchema } from "../../../shared/src/layoutSchema";
+import { PageLayoutSchema, originFromPoints } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
@@ -420,6 +420,17 @@ export function Editor() {
             setShowScriptPanel((v) => !v);
             setShowTextPanel(false);
             setShowContextPanel(false);
+          }}
+          imageWidth={layout.imageWidth}
+          imageHeight={layout.imageHeight}
+          onCreatePanelGrid={(rects) => {
+            for (const points of rects) {
+              store.addPanel(points, {
+                cutOrigin: originFromPoints(points),
+                holeFill: { mode: "manual", color: "#ffffff" },
+                replacement: { files: {} },
+              });
+            }
           }}
         />
         <TextListPanel

@@ -367,10 +367,19 @@ describe("locked — removeSelected/duplicateSelected/nudgeSelected skip locked 
 });
 
 describe("addPanel", () => {
-  it("always creates a plain (non-cut) panel — Cut-Panel behavior is activated later via PanelInspector, not at creation", () => {
+  it("creates a plain (non-cut) panel when called with no second argument — Cut-Panel behavior is activated later via PanelInspector, not at creation", () => {
     useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }]);
 
     expect(useEditorStore.getState().layout!.panels[0].cut).toBeUndefined();
+  });
+
+  it("seeds the new panel's BASE cut field when an initialCut is given (used by the panel-grid quick-start templates)", () => {
+    const initialCut = { cutOrigin: { x: 10, y: 10 }, holeFill: { mode: "manual" as const, color: "#ffffff" }, replacement: { files: {} } };
+    useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }], initialCut);
+
+    const panel = useEditorStore.getState().layout!.panels[0];
+    expect(panel.cut).toEqual(initialCut);
+    expect(panel.languageOverride).toBeUndefined(); // base-level, not per-language
   });
 });
 

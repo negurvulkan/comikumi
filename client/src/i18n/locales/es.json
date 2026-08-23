@@ -260,6 +260,11 @@
     "menuImportLabel": "Importar",
     "menuImportZip": "JSON (ZIP)",
     "menuUploadPages": "Subir páginas…",
+    "menuNewBlankPage": "Página en blanco…",
+    "newBlankPageTitle": "Página en blanco",
+    "newBlankPageWidthLabel": "Ancho (px)",
+    "newBlankPageHeightLabel": "Alto (px)",
+    "newBlankPageCreate": "Crear",
     "menuExportLabel": "Exportar",
     "menuExportImage": "Imagen…",
     "menuExportAllZip": "Todos los JSON (ZIP)",
@@ -411,6 +416,8 @@
       "removedHint": "El contenido solo se cubre en su lugar original, nunca se vuelve a dibujar en ningún sitio — la viñeta cuenta entonces como ausente en el guion, los informes y el orden de lectura. Puramente visual/semántico: la geometría y las burbujas hijas quedan intactas, reversible en cualquier momento volviendo a «Recorte original». Independiente del botón «Eliminar viñeta» de abajo, que elimina el registro de forma definitiva.",
       "removedSuffix": "(eliminada)",
       "cutPanelHint": "Viñeta recortada: su contenido está separado de la página original. Moverla arrastra el contenido consigo; el hueco dejado se cubre con el color de relleno. Reformar una esquina ajusta el recorte.",
+      "activateCutAllLanguages": "Activar para todos los idiomas",
+      "activateCutAllLanguagesHint": "Separa el contenido de la viñeta una sola vez para todos los idiomas a la vez — la opción correcta cuando el arte de esta viñeta (p. ej. un dibujo terminado que colocas en una página en blanco) es igual sin importar el idioma. Usa la opción por idioma de abajo solo para una excepción concreta.",
       "activateCut": "Activar viñeta recortada para «{{language}}»",
       "activateCutHint": "Separa el contenido de la viñeta de la página original solo para este idioma — después se puede mover, eliminar o sustituir por una imagen propia (ver abajo). Los demás idiomas no se ven afectados. No destructivo: mientras «Contenido» esté en «Recorte original», la viñeta se ve sin cambios.",
       "deactivateCut": "Desactivar viñeta recortada para «{{language}}»",
@@ -470,6 +477,15 @@
       "rect": "Rectángulo",
       "quadPerspective": "Cuadrilátero (perspectiva)",
       "panelRefRegion": "Viñeta (zona de referencia)",
+      "panelGrid": "Plantillas de cuadrícula de viñetas",
+      "panelGridHint": "Crea varias viñetas a la vez, cada una ya configurada en \"reemplazada por imagen propia\" para todos los idiomas — solo hay que hacer clic en cada una y asignar su ilustración.",
+      "panelGridTemplate": {
+        "1x1": "1 viñeta (página completa)",
+        "2stack": "2 apiladas",
+        "3stack": "3 apiladas",
+        "2x2": "Cuadrícula 2×2",
+        "2x3": "Cuadrícula 2×3"
+      },
       "textsThisPage": "Textos de esta página"
     },
     "contextMenu": {

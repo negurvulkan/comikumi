@@ -210,6 +210,14 @@ export function PanelInspector({ panel, index, activeLanguage, onChange, onDelet
       {!resolved.cut && (
         <>
           <button
+            onClick={() => onChange({ cut: { cutOrigin: resolved.origin, holeFill: { mode: "manual", color: panel.color } } })}
+          >
+            {t("editor.panelInspector.activateCutAllLanguages")}
+          </button>
+          <p className="hint" style={{ margin: 0 }}>
+            {t("editor.panelInspector.activateCutAllLanguagesHint")}
+          </p>
+          <button
             onClick={() => commitCutForActiveLanguage({ cutOrigin: resolved.origin, holeFill: { mode: "manual", color: panel.color } })}
           >
             {t("editor.panelInspector.activateCut", { language: activeLanguage })}

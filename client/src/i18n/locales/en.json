@@ -262,6 +262,11 @@
     "menuImportLabel": "Import",
     "menuImportZip": "JSONs (ZIP)",
     "menuUploadPages": "Upload pages…",
+    "menuNewBlankPage": "New blank page…",
+    "newBlankPageTitle": "New blank page",
+    "newBlankPageWidthLabel": "Width (px)",
+    "newBlankPageHeightLabel": "Height (px)",
+    "newBlankPageCreate": "Create",
     "menuExportLabel": "Export",
     "menuExportImage": "Image…",
     "menuExportAllZip": "All JSONs (ZIP)",
@@ -413,6 +418,8 @@
       "removedHint": "The content is only ever painted over at its original spot, never redrawn anywhere — the panel then counts as absent from scripts, reports, and reading order. Purely visual/semantic: geometry and child bubbles stay unchanged, reversible any time by switching back to \"Original cut-out\". Independent of the \"Delete panel\" button below, which permanently removes the record.",
       "removedSuffix": "(removed)",
       "cutPanelHint": "Cut-Panel: its content is detached from the original page. Moving it carries the content along; the vacated spot is covered with the fill color. Reshaping a corner adjusts the cut region.",
+      "activateCutAllLanguages": "Activate for all languages",
+      "activateCutAllLanguagesHint": "Detaches the panel's content once for every language at once — the right choice when this panel's art (e.g. a finished panel drawing you're placing on a blank page) is the same regardless of language. Use the per-language option below instead for a language-specific exception.",
       "activateCut": "Activate Cut-Panel for \"{{language}}\"",
       "activateCutHint": "Detaches the panel's content from the original page for this one language — it can then be moved, removed, or replaced with your own image (see below). Other languages stay unchanged. Non-destructive: as long as \"Content\" is set to \"Original cut-out\", the panel looks unchanged.",
       "deactivateCut": "Deactivate Cut-Panel for \"{{language}}\"",
@@ -472,6 +479,15 @@
       "rect": "Rectangle",
       "quadPerspective": "Quad (perspective)",
       "panelRefRegion": "Panel (reference region)",
+      "panelGrid": "Panel grid templates",
+      "panelGridHint": "Creates several panels at once, each already set to \"replace with own image\" for all languages — just click one and assign its artwork.",
+      "panelGridTemplate": {
+        "1x1": "1 panel (full page)",
+        "2stack": "2 stacked",
+        "3stack": "3 stacked",
+        "2x2": "2×2 grid",
+        "2x3": "2×3 grid"
+      },
       "textsThisPage": "Texts on this page"
     },
     "contextMenu": {

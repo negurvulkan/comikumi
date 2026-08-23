@@ -17,9 +17,35 @@ import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { VolumeReportModal } from "../editor/VolumeReportModal";
+import { NewBlankPageDialog } from "../editor/NewBlankPageDialog";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
+import { nextPageName } from "./pageNaming";
+
+const DEFAULT_BLANK_PAGE_WIDTH = 2000;
+const DEFAULT_BLANK_PAGE_HEIGHT = 3000;
+
+/** Draws a plain white canvas of the given size and resolves it as a PNG File — the
+ * only "content" a freshly created blank page needs; panels placed on top of it get
+ * their actual artwork via the existing Cut-Panel "replace with own image" mechanism. */
+function blankPagePngFile(width: number, height: number, fileName: string): Promise<File> {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("blank page canvas export failed"));
+        return;
+      }
+      resolve(new File([blob], `${fileName}.png`, { type: "image/png" }));
+    }, "image/png");
+  });
+}
 
 export function PageGrid() {
   const { t } = useTranslation();
@@ -41,6 +67,7 @@ export function PageGrid() {
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showVolumeReport, setShowVolumeReport] = useState(false);
+  const [showNewBlankPage, setShowNewBlankPage] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
   const uploadPagesInputRef = useRef<HTMLInputElement>(null);
   const { exporting, exportMsg, runExport } = useExportRun(volumeId, languages);
@@ -132,6 +159,22 @@ export function PageGrid() {
     }
   }
 
+  async function handleCreateBlankPage(width: number, height: number) {
+    setShowNewBlankPage(false);
+    setBusy(true);
+    setMessage(null);
+    try {
+      const currentPages = pages ?? [];
+      const name = nextPageName(currentPages);
+      const file = await blankPagePngFile(width, height, name);
+      await api.uploadPages(volumeId, [file]);
+      navigate(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(name)}`);
+    } catch (e) {
+      setMessage(t("pageGrid.uploadErrorPrefix", { message: translateApiError(e, t) }));
+      setBusy(false);
+    }
+  }
+
   async function handleDeletePage(page: string) {
     const ok = await confirm({ message: t("pageGrid.deletePageConfirm", { page }), danger: true });
     if (!ok) return;
@@ -161,6 +204,12 @@ export function PageGrid() {
           type: "action",
           label: t("pageGrid.menuUploadPages"),
           onClick: () => uploadPagesInputRef.current?.click(),
+          disabled: busy || !hasAtLeast("letterer"),
+        },
+        {
+          type: "action",
+          label: t("pageGrid.menuNewBlankPage"),
+          onClick: () => setShowNewBlankPage(true),
           disabled: busy || !hasAtLeast("letterer"),
         },
         { type: "separator" },
@@ -258,6 +307,14 @@ export function PageGrid() {
         <Modal onClose={() => setShowPresets(false)}>
           <PresetManager presets={presets} onChange={setPresets} onClose={() => setShowPresets(false)} />
         </Modal>
+      )}
+      {showNewBlankPage && (
+        <NewBlankPageDialog
+          defaultWidth={pages && pages.length > 0 ? pages[pages.length - 1].width : DEFAULT_BLANK_PAGE_WIDTH}
+          defaultHeight={pages && pages.length > 0 ? pages[pages.length - 1].height : DEFAULT_BLANK_PAGE_HEIGHT}
+          onCreate={handleCreateBlankPage}
+          onClose={() => setShowNewBlankPage(false)}
+        />
       )}
       {showVolumeReport && (
         <Modal onClose={() => setShowVolumeReport(false)}>

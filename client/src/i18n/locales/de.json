@@ -262,6 +262,11 @@
     "menuImportLabel": "Import",
     "menuImportZip": "JSONs (ZIP)",
     "menuUploadPages": "Seiten hochladen…",
+    "menuNewBlankPage": "Leere Seite…",
+    "newBlankPageTitle": "Leere Seite",
+    "newBlankPageWidthLabel": "Breite (px)",
+    "newBlankPageHeightLabel": "Höhe (px)",
+    "newBlankPageCreate": "Anlegen",
     "menuExportLabel": "Export",
     "menuExportImage": "Bild…",
     "menuExportAllZip": "Alle JSONs (ZIP)",
@@ -413,6 +418,8 @@
       "removedHint": "Der Inhalt wird nur an seiner ursprünglichen Stelle überdeckt, nirgends erneut gezeichnet — das Panel gilt danach als nicht mehr vorhanden in Skript, Berichten und Leserichtung. Rein visuell/semantisch: Geometrie und Kind-Blasen bleiben unverändert, jederzeit durch Umstellen auf „Original-Ausschnitt“ rückgängig zu machen. Unabhängig vom „Panel löschen“-Button unten, der den Datensatz endgültig entfernt.",
       "removedSuffix": "(entfernt)",
       "cutPanelHint": "Cut-Panel: der Inhalt ist aus der Originalseite gelöst. Verschieben trägt ihn mit, die alte Stelle wird mit der Füllfarbe überdeckt. Ein Eckpunkt-Reshape passt den Ausschnitt an.",
+      "activateCutAllLanguages": "Für alle Sprachen aktivieren",
+      "activateCutAllLanguagesHint": "Löst den Panel-Inhalt einmalig für alle Sprachen gleichzeitig — die richtige Wahl, wenn die Panel-Grafik (z. B. eine fertige Zeichnung auf einer leeren Seite) sprachunabhängig ist. Für eine gezielte Ausnahme nur in einer Sprache stattdessen die Option darunter verwenden.",
       "activateCut": "Cut-Panel für „{{language}}“ aktivieren",
       "activateCutHint": "Löst den Panel-Inhalt für diese eine Sprache von der Originalseite — danach lässt er sich verschieben, entfernen oder durch ein eigenes Bild ersetzen (siehe unten). Andere Sprachen bleiben unverändert. Nicht-destruktiv: solange „Inhalt“ auf „Original-Ausschnitt“ steht, sieht das Panel optisch unverändert aus.",
       "deactivateCut": "Cut-Panel für „{{language}}“ deaktivieren",
@@ -472,6 +479,15 @@
       "rect": "Rechteck",
       "quadPerspective": "Raute (Perspektive)",
       "panelRefRegion": "Panel (Referenzbereich)",
+      "panelGrid": "Panel-Raster-Vorlagen",
+      "panelGridHint": "Legt mehrere Panels auf einmal an, jedes bereits auf „Ersetzt durch eigenes Bild“ für alle Sprachen gestellt — einfach anklicken und Grafik zuweisen.",
+      "panelGridTemplate": {
+        "1x1": "1 Panel (ganze Seite)",
+        "2stack": "2 übereinander",
+        "3stack": "3 übereinander",
+        "2x2": "2×2-Raster",
+        "2x3": "2×3-Raster"
+      },
       "textsThisPage": "Texte dieser Seite"
     },
     "contextMenu": {

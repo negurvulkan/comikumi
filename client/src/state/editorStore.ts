@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { v4 as uuid } from "uuid";
-import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, PageLayout, Panel, Point } from "../../../shared/src/layoutSchema";
+import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, PageLayout, Panel, PanelCut, Point } from "../../../shared/src/layoutSchema";
 import { boxCorners, createBubble, createCurvedTextElement, createImageElement, createPanel, offsetBubble } from "../../../shared/src/layoutSchema";
 import { bubbleCenter, pointInQuad } from "../editor/geometry";
 import { api } from "../api/client";
@@ -85,7 +85,11 @@ interface EditorState {
   /** Always creates a plain reference-only Panel — its optional Cut-Panel behavior (see
    * shared/src/layoutSchema.ts's Panel.cut doc comment) is activated afterward from
    * PanelInspector.tsx, not at creation time. */
-  addPanel: (points: Point[]) => void;
+  /** `initialCut`, when given, seeds the new panel's BASE `cut` field directly (used by
+   * the panel-grid quick-start templates to create panels that are immediately ready
+   * for "replace with own image" content in every language) — optional and additive,
+   * the plain Panel drawing tool never passes it. */
+  addPanel: (points: Point[], initialCut?: PanelCut) => void;
   updatePanel: (id: string, patch: Partial<Panel>) => void;
   removePanel: (id: string) => void;
   /** Single choke point for every manual panel (re)assignment/detachment — converts the
@@ -388,11 +392,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
       });
     },
 
-    addPanel(points) {
+    addPanel(points, initialCut) {
       const layout = get().layout;
       if (!layout) return;
       pushHistory(true);
-      const panel = createPanel({ id: uuid(), points });
+      const panel = createPanel({ id: uuid(), points, cut: initialCut });
       // Auto-assign: any bubble not already belonging to another panel whose center falls
       // inside the new polygon becomes a child (coordinates converted to panel-relative).
       // Bubbles already assigned elsewhere are left alone — no stealing.

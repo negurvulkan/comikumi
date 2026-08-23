@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import type { BubbleShapeKind } from "../../../shared/src/layoutSchema";
+import type { BubbleShapeKind, Point } from "../../../shared/src/layoutSchema";
 import { ImagePicker } from "./ImagePicker";
+import { PanelGridTemplateMenu } from "./PanelGridTemplateMenu";
 import {
   BubbleToolIcon,
   RectToolIcon,
@@ -38,6 +39,9 @@ interface Props {
   onToggleContextPanel: () => void;
   scriptPanelOpen: boolean;
   onToggleScriptPanel: () => void;
+  imageWidth: number;
+  imageHeight: number;
+  onCreatePanelGrid: (rects: Point[][]) => void;
 }
 
 /** Narrow, always-visible icon strip for the six insert tools plus the text-sidebar
@@ -56,6 +60,9 @@ export function ToolStrip({
   onToggleContextPanel,
   scriptPanelOpen,
   onToggleScriptPanel,
+  imageWidth,
+  imageHeight,
+  onCreatePanelGrid,
 }: Props) {
   const { t } = useTranslation();
   return (
@@ -96,6 +103,12 @@ export function ToolStrip({
       >
         <PanelToolIcon />
       </button>
+      <PanelGridTemplateMenu
+        imageWidth={imageWidth}
+        imageHeight={imageHeight}
+        onCreate={onCreatePanelGrid}
+        disabled={creationDisabled}
+      />
       <span className="toolstrip-sep" />
       <button
         className={`tool-btn${textPanelOpen ? " active" : ""}`}

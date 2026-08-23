@@ -260,6 +260,11 @@
     "menuImportLabel": "导入",
     "menuImportZip": "JSON（ZIP）",
     "menuUploadPages": "上传页面…",
+    "menuNewBlankPage": "新建空白页…",
+    "newBlankPageTitle": "空白页",
+    "newBlankPageWidthLabel": "宽度（像素）",
+    "newBlankPageHeightLabel": "高度（像素）",
+    "newBlankPageCreate": "创建",
     "menuExportLabel": "导出",
     "menuExportImage": "图片…",
     "menuExportAllZip": "全部JSON（ZIP）",
@@ -408,6 +413,8 @@
       "removedHint": "内容只会在原位置被覆盖，不会在任何地方重新绘制——此分格随后在脚本、报告和阅读顺序中都被视为不存在。这纯粹是视觉/语义上的处理：几何形状和子气泡保持不变，随时可通过切换回“原始裁剪”来撤销。此选项与下方的“删除分格”按钮（会永久删除该记录）相互独立。",
       "removedSuffix": "（已移除）",
       "cutPanelHint": "切割分格：其内容已从原始页面中分离。移动时内容随之移动，留下的位置将用填充颜色覆盖。调整角点会相应调整切割区域。",
+      "activateCutAllLanguages": "为所有语言启用",
+      "activateCutAllLanguagesHint": "一次性为所有语言分离该分格的内容——当这个分格的画面（例如放在空白页上的成品分格画）与语言无关、每种语言都相同时，应选择此项。仅在需要针对某一种语言单独例外处理时，才使用下面的按语言启用选项。",
       "activateCut": "为“{{language}}”启用切割分格",
       "activateCutHint": "仅针对该语言将分格内容从原始页面中分离——之后可以移动、移除或替换为自定义图片（见下文）。其他语言不受影响。非破坏性：只要“内容”仍为“原始裁剪”，分格外观就不会改变。",
       "deactivateCut": "为“{{language}}”停用切割分格",
@@ -462,6 +469,15 @@
       "rect": "矩形",
       "quadPerspective": "四边形（透视）",
       "panelRefRegion": "分格（参考区域）",
+      "panelGrid": "分格网格模板",
+      "panelGridHint": "一次性创建多个分格，每个分格在所有语言下都已设置为“替换为自定义图片”——只需点击每个分格并指定画面即可。",
+      "panelGridTemplate": {
+        "1x1": "1个分格（整页）",
+        "2stack": "上下2格",
+        "3stack": "上下3格",
+        "2x2": "2×2 网格",
+        "2x3": "2×3 网格"
+      },
       "textsThisPage": "本页文字"
     },
     "contextMenu": {

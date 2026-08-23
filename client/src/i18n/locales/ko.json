@@ -260,6 +260,11 @@
     "menuImportLabel": "가져오기",
     "menuImportZip": "JSON (ZIP)",
     "menuUploadPages": "페이지 업로드…",
+    "menuNewBlankPage": "빈 페이지 추가…",
+    "newBlankPageTitle": "빈 페이지",
+    "newBlankPageWidthLabel": "너비 (px)",
+    "newBlankPageHeightLabel": "높이 (px)",
+    "newBlankPageCreate": "만들기",
     "menuExportLabel": "내보내기",
     "menuExportImage": "이미지…",
     "menuExportAllZip": "모든 JSON (ZIP)",
@@ -408,6 +413,8 @@
       "removedHint": "내용은 원래 위치에서만 덮이며 다른 곳에는 다시 그려지지 않습니다 — 이후 이 패널은 스크립트, 보고서, 읽기 순서에서 존재하지 않는 것으로 처리됩니다. 순전히 시각적/의미적 처리이며, 기하학적 정보와 하위 말풍선은 그대로 유지되고 '원본 잘라내기'로 되돌리면 언제든 다시 되돌릴 수 있습니다. 아래의 '패널 삭제' 버튼(레코드를 영구히 제거)과는 별개입니다.",
       "removedSuffix": "(제거됨)",
       "cutPanelHint": "컷 패널: 내용이 원본 페이지에서 분리되어 있습니다. 이동하면 내용도 함께 이동하며, 비워진 자리는 채우기 색상으로 덮입니다. 모서리를 조정하면 잘라낸 영역도 함께 조정됩니다.",
+      "activateCutAllLanguages": "모든 언어에 대해 활성화",
+      "activateCutAllLanguagesHint": "모든 언어에 대해 한 번에 패널 내용을 분리합니다 — 이 패널의 그림(예: 빈 페이지에 배치하는 완성된 그림)이 언어와 상관없이 동일할 때 적합합니다. 특정 언어만의 예외가 필요하면 아래의 언어별 옵션을 사용하세요.",
       "activateCut": "'{{language}}'용 컷 패널 활성화",
       "activateCutHint": "이 언어에 한해서만 패널 내용을 원본 페이지에서 분리합니다 — 이후 이동, 제거, 또는 직접 업로드한 이미지로 대체(아래 참조)할 수 있습니다. 다른 언어에는 영향을 주지 않습니다. 비파괴적: '내용'이 '원본 잘라내기'로 설정되어 있는 한 패널의 모습은 변하지 않습니다.",
       "deactivateCut": "'{{language}}'용 컷 패널 비활성화",
@@ -462,6 +469,15 @@
       "rect": "사각형",
       "quadPerspective": "사각형 (원근)",
       "panelRefRegion": "패널 (참조 영역)",
+      "panelGrid": "패널 그리드 템플릿",
+      "panelGridHint": "여러 패널을 한 번에 만듭니다. 각 패널은 모든 언어에 대해 이미 \"자체 이미지로 교체\"로 설정되어 있습니다 — 클릭한 뒤 그림만 지정하면 됩니다.",
+      "panelGridTemplate": {
+        "1x1": "패널 1개 (전체 페이지)",
+        "2stack": "2단 쌓기",
+        "3stack": "3단 쌓기",
+        "2x2": "2×2 격자",
+        "2x3": "2×3 격자"
+      },
       "textsThisPage": "이 페이지의 텍스트"
     },
     "contextMenu": {
