@@ -18,7 +18,7 @@ export function ImageInspector({ element, activeLanguage, activeLanguageLabel, o
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    api.listImages().then(setLibrary);
+    api.listImages().then((l) => setLibrary(l.files));
   }, []);
 
   const currentFile = element.files[activeLanguage];
@@ -33,7 +33,7 @@ export function ImageInspector({ element, activeLanguage, activeLanguageLabel, o
     setUploading(true);
     try {
       const result = await api.uploadImage(file);
-      setLibrary(await api.listImages());
+      setLibrary((await api.listImages()).files);
       assign(result.fileName);
     } finally {
       setUploading(false);

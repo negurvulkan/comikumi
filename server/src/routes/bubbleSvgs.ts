@@ -9,4 +9,5 @@ export const bubbleSvgsRouter = createAssetRouter({
   uploadFieldName: "svg",
   maxFileSizeBytes: 5 * 1024 * 1024,
   defaultMimeOnServe: "image/svg+xml",
+  foldersEnabled: true,
 });

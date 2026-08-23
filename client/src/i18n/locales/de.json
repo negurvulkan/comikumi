@@ -107,6 +107,11 @@
     "invalid_file_name": "Ungültiger Dateiname.",
     "unsupported_file_type": "Nicht unterstützter {{kind}}-Dateityp.",
     "unsupported_page_file_type": "Nicht unterstützter Dateityp: {{fileName}}",
+    "invalid_folder": "Ungültiger Ordnerpfad.",
+    "folder_not_empty": "Ordner ist nicht leer.",
+    "folder_not_found": "Ordner nicht gefunden.",
+    "asset_move_conflict": "Im Zielordner existiert bereits eine Datei mit diesem Namen.",
+    "file_not_found": "Datei nicht gefunden.",
     "file_required": "Eine {{field}}-Datei ist erforderlich.",
     "volume_not_found": "Band nicht gefunden.",
     "export_fields_required": "Ordner-Suffix, Seite und PNG-Datei sind erforderlich.",
@@ -350,6 +355,17 @@
       "chooseSvgShort": "SVG wählen…",
       "empty": "Noch keine SVG-Konturen hochgeladen.",
       "uploadNew": "Neue SVG-Kontur hochladen"
+    },
+    "assetFolders": {
+      "rootLabel": "Alle",
+      "newFolderButton": "+ Neuer Ordner",
+      "newFolderPlaceholder": "Ordnername",
+      "createFolder": "Anlegen",
+      "deleteFolder": "Ordner löschen",
+      "deleteFolderConfirm": "Ordner „{{folder}}“ löschen? Nur möglich, wenn er leer ist.",
+      "moveAction": "In Ordner verschieben",
+      "moveTitle": "„{{fileName}}“ verschieben nach:",
+      "moveHere": "Hierher verschieben"
     },
     "textEffects": {
       "presetOverrideHint": "Von Preset vorgegeben.",

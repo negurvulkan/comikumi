@@ -21,6 +21,7 @@ export const imagesRouter = createAssetRouter({
   uploadFieldName: "image",
   maxFileSizeBytes: 30 * 1024 * 1024,
   mimeByExt: MIME_BY_EXT,
+  foldersEnabled: true,
   enrichEntry: async (_fileName, absPath) => {
     let width = 0;
     let height = 0;

@@ -78,6 +78,16 @@ export function isSafeFileName(name: string): boolean {
   return path.basename(name) === name;
 }
 
+/** Validates a "/"-joined relative folder path used by asset-router folder browsing
+ * (images/bubble-svgs libraries) — "" means root. Rejects ".."/"." segments, empty
+ * segments, leading/trailing slashes, and backslashes, so a validated folder can be
+ * safely path.join()'d onto a fixed base directory without escaping it. */
+export function isSafeFolderPath(folder: string): boolean {
+  if (folder === "") return true;
+  if (folder.includes("\\") || folder.startsWith("/") || folder.endsWith("/")) return false;
+  return folder.split("/").every((seg) => seg.length > 0 && seg !== "." && seg !== "..");
+}
+
 /** Interpolates {key} placeholders in `template` from `vars`; unknown keys are left as literal text. */
 export function renderTemplate(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) => vars[key] ?? match);

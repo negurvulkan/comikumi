@@ -107,6 +107,11 @@
     "invalid_file_name": "Invalid file name.",
     "unsupported_file_type": "Unsupported {{kind}} file type.",
     "unsupported_page_file_type": "Unsupported file type: {{fileName}}",
+    "invalid_folder": "Invalid folder path.",
+    "folder_not_empty": "Folder is not empty.",
+    "folder_not_found": "Folder not found.",
+    "asset_move_conflict": "A file with this name already exists in the target folder.",
+    "file_not_found": "File not found.",
     "file_required": "A {{field}} file is required.",
     "volume_not_found": "Volume not found.",
     "export_fields_required": "Folder suffix, page and PNG file are required.",
@@ -350,6 +355,17 @@
       "chooseSvgShort": "Choose SVG…",
       "empty": "No SVG contours uploaded yet.",
       "uploadNew": "Upload new SVG contour"
+    },
+    "assetFolders": {
+      "rootLabel": "All",
+      "newFolderButton": "+ New folder",
+      "newFolderPlaceholder": "Folder name",
+      "createFolder": "Create",
+      "deleteFolder": "Delete folder",
+      "deleteFolderConfirm": "Delete folder \"{{folder}}\"? Only possible if it's empty.",
+      "moveAction": "Move to folder",
+      "moveTitle": "Move \"{{fileName}}\" to:",
+      "moveHere": "Move here"
     },
     "textEffects": {
       "presetOverrideHint": "Set by preset.",

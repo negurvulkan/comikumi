@@ -68,6 +68,11 @@
     "invalid_file_name": "Nombre de archivo no válido.",
     "unsupported_file_type": "Tipo de archivo {{kind}} no admitido.",
     "unsupported_page_file_type": "Tipo de archivo no admitido: {{fileName}}",
+    "invalid_folder": "Ruta de carpeta no válida.",
+    "folder_not_empty": "La carpeta no está vacía.",
+    "folder_not_found": "Carpeta no encontrada.",
+    "asset_move_conflict": "Ya existe un archivo con este nombre en la carpeta de destino.",
+    "file_not_found": "Archivo no encontrado.",
     "file_required": "Se requiere un archivo {{field}}.",
     "volume_not_found": "Volumen no encontrado.",
     "export_fields_required": "Se requieren el sufijo de carpeta, la página y el archivo PNG.",
@@ -350,6 +355,17 @@
       "chooseSvgShort": "Elegir SVG…",
       "empty": "Aún no se han subido contornos SVG.",
       "uploadNew": "Subir nuevo contorno SVG"
+    },
+    "assetFolders": {
+      "rootLabel": "Todo",
+      "newFolderButton": "+ Nueva carpeta",
+      "newFolderPlaceholder": "Nombre de la carpeta",
+      "createFolder": "Crear",
+      "deleteFolder": "Eliminar carpeta",
+      "deleteFolderConfirm": "¿Eliminar la carpeta «{{folder}}»? Solo es posible si está vacía.",
+      "moveAction": "Mover a carpeta",
+      "moveTitle": "Mover «{{fileName}}» a:",
+      "moveHere": "Mover aquí"
     },
     "textEffects": {
       "presetOverrideHint": "Definido por el preajuste.",

@@ -668,6 +668,23 @@ Datei-Browser und Existenz-Prüfung) — darin legt das Tool automatisch die Unt
   gruppiert ("Projekt"/"Gemeinsam"), damit klar ist, was nur in diesem Projekt verfügbar
   ist.
 
+**Ordnerverwaltung** (Bild-Bibliothek und SVG-Blasenkonturen, nicht Schriften): beide
+Bibliotheken lassen sich in beliebig tiefe Unterordner gliedern (z. B. "Effekte",
+"Icons"), um bei wachsender Sammlung schneller etwas wiederzufinden.
+- Im jeweiligen Bild-/SVG-Picker-Popover navigiert man per Breadcrumb + Ordner-Chips
+  durch die Struktur; ein Klick auf einen Ordner-Chip springt hinein, "+ Neuer Ordner"
+  legt einen neuen Unterordner auf der aktuellen Ebene an. Ein Ordner lässt sich nur
+  löschen, wenn er **auf beiden Seiten** (gemeinsame Bibliothek wie projekteigener
+  Ordner) leer ist.
+- Ein Upload landet automatisch im gerade geöffneten Ordner; bereits vorhandene Dateien
+  lassen sich nachträglich per "In Ordner verschieben…"-Aktion an der jeweiligen
+  Bild-Kachel einsortieren.
+- Ein bereits platziertes Bild/eine SVG-Kontur merkt sich beim Einfügen ihren vollen
+  Pfad (Ordner + Dateiname) — verschiebt man die Datei später in einen anderen Ordner,
+  verweisen bereits vorhandene Platzierungen weiterhin auf den alten Pfad (kein
+  automatisches Nachziehen aller Referenzen), genau wie beim Verschieben einer Datei
+  im Dateisystem, während ein anderes Dokument noch den alten Pfad kennt.
+
 **Thumbnail-Ordner** (Cache der Seiten-Vorschaubilder) ist ein eigenes, unabhängiges
 Einstellungsfeld — kein Unterordner des Assets-Ordners, da reiner Rendering-Cache statt
 kuratiertes Asset. Bleibt er leer, verwendet das Tool automatisch einen `thumbnails/`-

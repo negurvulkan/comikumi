@@ -68,6 +68,11 @@
     "invalid_file_name": "無効なファイル名です。",
     "unsupported_file_type": "サポートされていない{{kind}}ファイル形式です。",
     "unsupported_page_file_type": "サポートされていないファイル形式です: {{fileName}}",
+    "invalid_folder": "無効なフォルダパスです。",
+    "folder_not_empty": "フォルダが空ではありません。",
+    "folder_not_found": "フォルダが見つかりません。",
+    "asset_move_conflict": "移動先のフォルダに同名のファイルが既に存在します。",
+    "file_not_found": "ファイルが見つかりません。",
     "file_required": "{{field}}ファイルが必要です。",
     "volume_not_found": "巻が見つかりません。",
     "export_fields_required": "フォルダ接尾辞、ページ、PNGファイルが必要です。",
@@ -347,6 +352,17 @@
       "chooseSvgShort": "SVGを選択…",
       "empty": "まだSVG輪郭がアップロードされていません。",
       "uploadNew": "新しいSVG輪郭をアップロード"
+    },
+    "assetFolders": {
+      "rootLabel": "すべて",
+      "newFolderButton": "+ 新しいフォルダ",
+      "newFolderPlaceholder": "フォルダ名",
+      "createFolder": "作成",
+      "deleteFolder": "フォルダを削除",
+      "deleteFolderConfirm": "フォルダ「{{folder}}」を削除しますか？空の場合のみ削除できます。",
+      "moveAction": "フォルダへ移動",
+      "moveTitle": "「{{fileName}}」の移動先:",
+      "moveHere": "ここに移動"
     },
     "textEffects": {
       "presetOverrideHint": "プリセットで指定されています。",

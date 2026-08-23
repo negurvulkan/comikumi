@@ -68,6 +68,11 @@
     "invalid_file_name": "Nom de fichier invalide.",
     "unsupported_file_type": "Type de fichier {{kind}} non pris en charge.",
     "unsupported_page_file_type": "Type de fichier non pris en charge : {{fileName}}",
+    "invalid_folder": "Chemin de dossier non valide.",
+    "folder_not_empty": "Le dossier n'est pas vide.",
+    "folder_not_found": "Dossier introuvable.",
+    "asset_move_conflict": "Un fichier portant ce nom existe déjà dans le dossier de destination.",
+    "file_not_found": "Fichier introuvable.",
     "file_required": "Un fichier {{field}} est requis.",
     "volume_not_found": "Volume introuvable.",
     "export_fields_required": "Le suffixe de dossier, la page et le fichier PNG sont requis.",
@@ -350,6 +355,17 @@
       "chooseSvgShort": "Choisir un SVG…",
       "empty": "Aucun contour SVG téléversé pour l'instant.",
       "uploadNew": "Téléverser un nouveau contour SVG"
+    },
+    "assetFolders": {
+      "rootLabel": "Tout",
+      "newFolderButton": "+ Nouveau dossier",
+      "newFolderPlaceholder": "Nom du dossier",
+      "createFolder": "Créer",
+      "deleteFolder": "Supprimer le dossier",
+      "deleteFolderConfirm": "Supprimer le dossier « {{folder}} » ? Uniquement possible s'il est vide.",
+      "moveAction": "Déplacer vers un dossier",
+      "moveTitle": "Déplacer « {{fileName}} » vers :",
+      "moveHere": "Déplacer ici"
     },
     "textEffects": {
       "presetOverrideHint": "Défini par le préréglage.",

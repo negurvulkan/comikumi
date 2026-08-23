@@ -885,6 +885,99 @@ button.active {
   color: var(--text);
 }
 
+/* Folder browsing chrome shared by ImagePicker.tsx and SvgBubblePicker.tsx (both
+   folder-enabled asset libraries, see server/src/lib/assetRouter.ts). */
+.asset-folder-breadcrumb {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.asset-folder-crumb {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.asset-folder-crumb:hover {
+  color: var(--accent);
+}
+
+.asset-folder-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.asset-folder-chip {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 12px;
+  background: var(--bg-elevated);
+  cursor: pointer;
+}
+
+.asset-folder-chip:hover {
+  border-color: var(--accent);
+}
+
+.asset-folder-chip-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.asset-folder-chip-delete {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.asset-folder-chip-delete:hover {
+  color: #ff6b6b;
+}
+
+/* Wraps an .image-picker-thumb so a small "move to folder" button can float over its
+   corner without nesting a <button> inside another <button>. */
+.image-picker-thumb-wrap {
+  position: relative;
+}
+
+.image-picker-move-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  font-size: 11px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(20, 20, 24, 0.8);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.image-picker-thumb-wrap:hover .image-picker-move-btn {
+  opacity: 1;
+}
+
+.image-picker-move-btn:hover {
+  border-color: var(--accent);
+}
+
 .error-banner {
   background: #4a1f24;
   border: 1px solid #7a2f38;

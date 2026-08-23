@@ -68,6 +68,11 @@
     "invalid_file_name": "文件名无效。",
     "unsupported_file_type": "不支持的{{kind}}文件类型。",
     "unsupported_page_file_type": "不支持的文件类型：{{fileName}}",
+    "invalid_folder": "无效的文件夹路径。",
+    "folder_not_empty": "文件夹不为空。",
+    "folder_not_found": "未找到文件夹。",
+    "asset_move_conflict": "目标文件夹中已存在同名文件。",
+    "file_not_found": "未找到文件。",
     "file_required": "需要一个{{field}}文件。",
     "volume_not_found": "未找到该卷。",
     "export_fields_required": "需要文件夹后缀、页面和PNG文件。",
@@ -347,6 +352,17 @@
       "chooseSvgShort": "选择SVG…",
       "empty": "尚未上传任何SVG轮廓。",
       "uploadNew": "上传新的SVG轮廓"
+    },
+    "assetFolders": {
+      "rootLabel": "全部",
+      "newFolderButton": "+ 新建文件夹",
+      "newFolderPlaceholder": "文件夹名称",
+      "createFolder": "创建",
+      "deleteFolder": "删除文件夹",
+      "deleteFolderConfirm": "删除文件夹“{{folder}}”？仅当其为空时才可删除。",
+      "moveAction": "移动到文件夹",
+      "moveTitle": "将“{{fileName}}”移动到：",
+      "moveHere": "移动到此处"
     },
     "textEffects": {
       "presetOverrideHint": "由预设指定。",

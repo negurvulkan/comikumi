@@ -126,6 +126,17 @@ export interface BubbleSvgEntry {
   scope: AssetScope;
 }
 
+/** Folder-browsing response shape for images/bubble-svgs (fonts stay a flat array —
+ * see server/src/lib/assetRouter.ts's `foldersEnabled` option). `folder` is the "/"-
+ * joined path that was listed ("" = root); `subfolders` are the direct child folder
+ * names at that level (merged across global + project, scope-agnostic); `files` are
+ * the entries directly inside it. */
+export interface AssetListing<T> {
+  folder: string;
+  subfolders: string[];
+  files: T[];
+}
+
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) await throwApiError(res);
   return res.json() as Promise<T>;
@@ -138,6 +149,26 @@ async function json<T>(res: Response): Promise<T> {
  * "/api/..." path in this file. */
 function withApiUrls<T extends { url: string }>(entries: T[]): T[] {
   return entries.map((e) => ({ ...e, url: authUrl(apiUrl(e.url)) }));
+}
+
+function withListingApiUrls<T extends { url: string }>(listing: AssetListing<T>): AssetListing<T> {
+  return { ...listing, files: withApiUrls(listing.files) };
+}
+
+function folderQuery(folder: string): string {
+  return folder ? `?folder=${encodeURIComponent(folder)}` : "";
+}
+
+/** Combines a folder and leaf name into the single "/"-joined relative-path string
+ * that ImageElement.files/PanelCut replacement files store as their `fileName` value
+ * (see imagesFileUrl()/bubbleSvgFileUrl() below, which split it back apart). */
+function joinAssetPath(folder: string, fileName: string): string {
+  return folder ? `${folder}/${fileName}` : fileName;
+}
+
+function splitAssetPath(relativePath: string): { folder: string; fileName: string } {
+  const idx = relativePath.lastIndexOf("/");
+  return idx === -1 ? { folder: "", fileName: relativePath } : { folder: relativePath.slice(0, idx), fileName: relativePath.slice(idx + 1) };
 }
 
 export const api = {
@@ -234,29 +265,78 @@ export const api = {
     );
   },
 
-  listImages: () => authFetch(apiUrl("/api/images")).then((r) => json<ImageEntry[]>(r)).then(withApiUrls),
+  listImages: (folder = "") =>
+    authFetch(apiUrl(`/api/images${folderQuery(folder)}`)).then((r) => json<AssetListing<ImageEntry>>(r)).then(withListingApiUrls),
 
-  imagesFileUrl: (fileName: string) => authUrl(apiUrl(`/api/images/file/${encodeURIComponent(fileName)}`)),
+  /** `relativePath` is a "/"-joined path as stored in ImageElement.files/PanelCut
+   * replacement files ("" or no slash = root, "effects/boom.png" = inside a folder) —
+   * split internally so every call site can keep passing just one string regardless of
+   * which folder the image actually lives in. */
+  imagesFileUrl: (relativePath: string) => {
+    const { folder, fileName } = splitAssetPath(relativePath);
+    return authUrl(apiUrl(`/api/images/file/${encodeURIComponent(fileName)}${folderQuery(folder)}`));
+  },
 
-  uploadImage: (file: File) => {
+  uploadImage: (file: File, folder = "") => {
     const form = new FormData();
     form.append("image", file);
+    if (folder) form.append("folder", folder);
     return authFetch(apiUrl("/api/images"), { method: "POST", body: form }).then((r) =>
-      json<{ ok: true; fileName: string; width: number; height: number; scope: AssetScope }>(r)
-    );
+      json<{ ok: true; fileName: string; folder: string; width: number; height: number; scope: AssetScope }>(r)
+    ).then((result) => ({ ...result, fileName: joinAssetPath(result.folder, result.fileName) }));
   },
 
-  listBubbleSvgs: () => authFetch(apiUrl("/api/bubble-svgs")).then((r) => json<BubbleSvgEntry[]>(r)).then(withApiUrls),
+  createImageFolder: (folder: string) =>
+    authFetch(apiUrl("/api/images/folders"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder }),
+    }).then((r) => json<{ ok: true; folder: string }>(r)),
 
-  bubbleSvgFileUrl: (fileName: string) => authUrl(apiUrl(`/api/bubble-svgs/file/${encodeURIComponent(fileName)}`)),
+  deleteImageFolder: (folder: string) =>
+    authFetch(apiUrl(`/api/images/folders${folderQuery(folder)}`), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
 
-  uploadBubbleSvg: (file: File) => {
+  moveImage: (fileName: string, fromFolder: string, toFolder: string) =>
+    authFetch(apiUrl("/api/images/move"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName, fromFolder, toFolder }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  listBubbleSvgs: (folder = "") =>
+    authFetch(apiUrl(`/api/bubble-svgs${folderQuery(folder)}`)).then((r) => json<AssetListing<BubbleSvgEntry>>(r)).then(withListingApiUrls),
+
+  /** Same "/"-joined-full-path contract as imagesFileUrl() above. */
+  bubbleSvgFileUrl: (relativePath: string) => {
+    const { folder, fileName } = splitAssetPath(relativePath);
+    return authUrl(apiUrl(`/api/bubble-svgs/file/${encodeURIComponent(fileName)}${folderQuery(folder)}`));
+  },
+
+  uploadBubbleSvg: (file: File, folder = "") => {
     const form = new FormData();
     form.append("svg", file);
+    if (folder) form.append("folder", folder);
     return authFetch(apiUrl("/api/bubble-svgs"), { method: "POST", body: form }).then((r) =>
-      json<{ ok: true; fileName: string; scope: AssetScope }>(r)
-    );
+      json<{ ok: true; fileName: string; folder: string; scope: AssetScope }>(r)
+    ).then((result) => ({ ...result, fileName: joinAssetPath(result.folder, result.fileName) }));
   },
+
+  createBubbleSvgFolder: (folder: string) =>
+    authFetch(apiUrl("/api/bubble-svgs/folders"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder }),
+    }).then((r) => json<{ ok: true; folder: string }>(r)),
+
+  deleteBubbleSvgFolder: (folder: string) =>
+    authFetch(apiUrl(`/api/bubble-svgs/folders${folderQuery(folder)}`), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  moveBubbleSvg: (fileName: string, fromFolder: string, toFolder: string) =>
+    authFetch(apiUrl("/api/bubble-svgs/move"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName, fromFolder, toFolder }),
+    }).then((r) => json<{ ok: true }>(r)),
 
   listLanguages: () => authFetch(apiUrl("/api/languages")).then((r) => json<LanguageDef[]>(r)),
 

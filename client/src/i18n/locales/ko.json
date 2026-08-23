@@ -68,6 +68,11 @@
     "invalid_file_name": "파일 이름이 올바르지 않습니다.",
     "unsupported_file_type": "지원되지 않는 {{kind}} 파일 형식입니다.",
     "unsupported_page_file_type": "지원되지 않는 파일 형식: {{fileName}}",
+    "invalid_folder": "잘못된 폴더 경로입니다.",
+    "folder_not_empty": "폴더가 비어 있지 않습니다.",
+    "folder_not_found": "폴더를 찾을 수 없습니다.",
+    "asset_move_conflict": "대상 폴더에 동일한 이름의 파일이 이미 있습니다.",
+    "file_not_found": "파일을 찾을 수 없습니다.",
     "file_required": "{{field}} 파일이 필요합니다.",
     "volume_not_found": "권을 찾을 수 없습니다.",
     "export_fields_required": "폴더 접미사, 페이지, PNG 파일이 필요합니다.",
@@ -347,6 +352,17 @@
       "chooseSvgShort": "SVG 선택…",
       "empty": "아직 업로드된 SVG 윤곽선이 없습니다.",
       "uploadNew": "새 SVG 윤곽선 업로드"
+    },
+    "assetFolders": {
+      "rootLabel": "전체",
+      "newFolderButton": "+ 새 폴더",
+      "newFolderPlaceholder": "폴더 이름",
+      "createFolder": "만들기",
+      "deleteFolder": "폴더 삭제",
+      "deleteFolderConfirm": "폴더 \"{{folder}}\"를 삭제하시겠습니까? 비어 있는 경우에만 가능합니다.",
+      "moveAction": "폴더로 이동",
+      "moveTitle": "\"{{fileName}}\"을(를) 다음으로 이동:",
+      "moveHere": "여기로 이동"
     },
     "textEffects": {
       "presetOverrideHint": "프리셋에 의해 지정됨.",
