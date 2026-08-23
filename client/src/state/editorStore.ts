@@ -82,10 +82,10 @@ interface EditorState {
   addCurvedText: () => void;
   updateCurvedText: (id: string, patch: Partial<CurvedTextElement>) => void;
   removeCurvedText: (id: string) => void;
-  /** `cutHoleFillColor` (a hex color) marks the new panel as a Cut-Panel — its content is
-   * detached from the page's source image and can be repositioned; omit for a plain
-   * reference-only Panel. See shared/src/layoutSchema.ts's Panel.cut doc comment. */
-  addPanel: (points: Point[], cutHoleFillColor?: string) => void;
+  /** Always creates a plain reference-only Panel — its optional Cut-Panel behavior (see
+   * shared/src/layoutSchema.ts's Panel.cut doc comment) is activated afterward from
+   * PanelInspector.tsx, not at creation time. */
+  addPanel: (points: Point[]) => void;
   updatePanel: (id: string, patch: Partial<Panel>) => void;
   removePanel: (id: string) => void;
   /** Single choke point for every manual panel (re)assignment/detachment — converts the
@@ -388,14 +388,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
       });
     },
 
-    addPanel(points, cutHoleFillColor) {
+    addPanel(points) {
       const layout = get().layout;
       if (!layout) return;
       pushHistory(true);
-      const basePanel = createPanel({ id: uuid(), points });
-      const panel = cutHoleFillColor
-        ? { ...basePanel, cut: { cutOrigin: basePanel.origin, holeFill: { mode: "auto" as const, color: cutHoleFillColor } } }
-        : basePanel;
+      const panel = createPanel({ id: uuid(), points });
       // Auto-assign: any bubble not already belonging to another panel whose center falls
       // inside the new polygon becomes a child (coordinates converted to panel-relative).
       // Bubbles already assigned elsewhere are left alone — no stealing.

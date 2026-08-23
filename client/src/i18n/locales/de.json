@@ -382,6 +382,9 @@
       "removedHint": "Der Inhalt wird nur an seiner ursprünglichen Stelle überdeckt, nirgends erneut gezeichnet — das Panel gilt danach als nicht mehr vorhanden in Skript, Berichten und Leserichtung. Rein visuell/semantisch: Geometrie und Kind-Blasen bleiben unverändert, jederzeit durch Umstellen auf „Original-Ausschnitt“ rückgängig zu machen. Unabhängig vom „Panel löschen“-Button unten, der den Datensatz endgültig entfernt.",
       "removedSuffix": "(entfernt)",
       "cutPanelHint": "Cut-Panel: der Inhalt ist aus der Originalseite gelöst. Verschieben trägt ihn mit, die alte Stelle wird mit der Füllfarbe überdeckt. Ein Eckpunkt-Reshape passt den Ausschnitt an.",
+      "activateCut": "Cut-Panel für „{{language}}“ aktivieren",
+      "activateCutHint": "Löst den Panel-Inhalt für diese eine Sprache von der Originalseite — danach lässt er sich verschieben, entfernen oder durch ein eigenes Bild ersetzen (siehe unten). Andere Sprachen bleiben unverändert. Nicht-destruktiv: solange „Inhalt“ auf „Original-Ausschnitt“ steht, sieht das Panel optisch unverändert aus.",
+      "deactivateCut": "Cut-Panel für „{{language}}“ deaktivieren",
       "deletePanel": "Panel löschen"
     },
     "multiSelect": {
@@ -438,7 +441,6 @@
       "rect": "Rechteck",
       "quadPerspective": "Raute (Perspektive)",
       "panelRefRegion": "Panel (Referenzbereich)",
-      "cutPanel": "Cut-Panel (Inhalt lösen & verschieben)",
       "textsThisPage": "Texte dieser Seite"
     },
     "contextMenu": {

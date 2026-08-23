@@ -70,15 +70,6 @@ export function PanelToolIcon() {
   );
 }
 
-export function CutPanelToolIcon() {
-  return (
-    <svg {...common}>
-      <rect x="2.5" y="2.5" width="15" height="15" rx="1.5" strokeDasharray="3 2.5" />
-      <path d="M6 6 L14 14 M14 6 L6 14" />
-    </svg>
-  );
-}
-
 export function GlobeToolIcon() {
   return (
     <svg {...common}>

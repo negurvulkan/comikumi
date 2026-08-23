@@ -366,15 +366,8 @@ describe("locked — removeSelected/duplicateSelected/nudgeSelected skip locked 
   });
 });
 
-describe("addPanel — Cut-Panel creation", () => {
-  it("marks the new panel as a Cut-Panel with cutOrigin equal to its own origin, when a hole-fill color is passed", () => {
-    useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }], "#abcdef");
-
-    const panel = useEditorStore.getState().layout!.panels[0];
-    expect(panel.cut).toEqual({ cutOrigin: panel.origin, holeFill: { mode: "auto", color: "#abcdef" } });
-  });
-
-  it("creates a plain (non-cut) panel when no color is passed", () => {
+describe("addPanel", () => {
+  it("always creates a plain (non-cut) panel — Cut-Panel behavior is activated later via PanelInspector, not at creation", () => {
     useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }]);
 
     expect(useEditorStore.getState().layout!.panels[0].cut).toBeUndefined();
@@ -383,7 +376,12 @@ describe("addPanel — Cut-Panel creation", () => {
 
 describe("duplicateSelected — Cut-Panel", () => {
   it("copies cut.cutOrigin unchanged onto the duplicate, so it shows the same source content at its new position", () => {
-    useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }], "#abcdef");
+    useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }]);
+    const created = useEditorStore.getState().layout!.panels[0];
+    // Simulate activating Cut-Panel behavior via PanelInspector (a plain onChange patch).
+    useEditorStore
+      .getState()
+      .updatePanel(created.id, { cut: { cutOrigin: created.origin, holeFill: { mode: "manual", color: "#abcdef" } } });
     const original = useEditorStore.getState().layout!.panels[0];
     useEditorStore.setState({ selectedPanelIds: [original.id] });
 

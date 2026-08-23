@@ -382,6 +382,9 @@
       "removedHint": "El contenido solo se cubre en su lugar original, nunca se vuelve a dibujar en ningún sitio — la viñeta cuenta entonces como ausente en el guion, los informes y el orden de lectura. Puramente visual/semántico: la geometría y las burbujas hijas quedan intactas, reversible en cualquier momento volviendo a «Recorte original». Independiente del botón «Eliminar viñeta» de abajo, que elimina el registro de forma definitiva.",
       "removedSuffix": "(eliminada)",
       "cutPanelHint": "Viñeta recortada: su contenido está separado de la página original. Moverla arrastra el contenido consigo; el hueco dejado se cubre con el color de relleno. Reformar una esquina ajusta el recorte.",
+      "activateCut": "Activar viñeta recortada para «{{language}}»",
+      "activateCutHint": "Separa el contenido de la viñeta de la página original solo para este idioma — después se puede mover, eliminar o sustituir por una imagen propia (ver abajo). Los demás idiomas no se ven afectados. No destructivo: mientras «Contenido» esté en «Recorte original», la viñeta se ve sin cambios.",
+      "deactivateCut": "Desactivar viñeta recortada para «{{language}}»",
       "deletePanel": "Eliminar viñeta"
     },
     "multiSelect": {
@@ -438,7 +441,6 @@
       "rect": "Rectángulo",
       "quadPerspective": "Cuadrilátero (perspectiva)",
       "panelRefRegion": "Viñeta (zona de referencia)",
-      "cutPanel": "Viñeta recortada (separar y mover contenido)",
       "textsThisPage": "Textos de esta página"
     },
     "contextMenu": {

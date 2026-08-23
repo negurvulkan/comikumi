@@ -382,6 +382,9 @@
       "removedHint": "The content is only ever painted over at its original spot, never redrawn anywhere — the panel then counts as absent from scripts, reports, and reading order. Purely visual/semantic: geometry and child bubbles stay unchanged, reversible any time by switching back to \"Original cut-out\". Independent of the \"Delete panel\" button below, which permanently removes the record.",
       "removedSuffix": "(removed)",
       "cutPanelHint": "Cut-Panel: its content is detached from the original page. Moving it carries the content along; the vacated spot is covered with the fill color. Reshaping a corner adjusts the cut region.",
+      "activateCut": "Activate Cut-Panel for \"{{language}}\"",
+      "activateCutHint": "Detaches the panel's content from the original page for this one language — it can then be moved, removed, or replaced with your own image (see below). Other languages stay unchanged. Non-destructive: as long as \"Content\" is set to \"Original cut-out\", the panel looks unchanged.",
+      "deactivateCut": "Deactivate Cut-Panel for \"{{language}}\"",
       "deletePanel": "Delete panel"
     },
     "multiSelect": {
@@ -438,7 +441,6 @@
       "rect": "Rectangle",
       "quadPerspective": "Quad (perspective)",
       "panelRefRegion": "Panel (reference region)",
-      "cutPanel": "Cut-Panel (detach & move content)",
       "textsThisPage": "Texts on this page"
     },
     "contextMenu": {

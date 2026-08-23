@@ -41,6 +41,16 @@ export function PanelInspector({ panel, index, activeLanguage, onChange, onDelet
     }
   }
 
+  // Unlike commitPanel above, activating/deactivating Cut-Panel behavior is *always*
+  // scoped to the active language — that's the whole point of it being a per-language
+  // switch (see Panel.languageOverride's doc comment): it must never silently write into
+  // the shared base, or it would affect every other language too. Always creates/updates
+  // a `languageOverride` entry for `activeLanguage`, seeded from whatever's currently
+  // resolved (base or an existing override) so nothing else about it changes.
+  function commitCutForActiveLanguage(cut: PanelCut | undefined) {
+    onChange({ languageOverride: { ...panel.languageOverride, [activeLanguage]: { points: resolved.points, origin: resolved.origin, cut } } });
+  }
+
   const replacementFile = cutPanelReplacementFileForLanguage(resolved.cut, activeLanguage);
 
   return (
@@ -61,8 +71,11 @@ export function PanelInspector({ panel, index, activeLanguage, onChange, onDelet
         <input type="color" value={panel.color} onChange={(e) => onChange({ color: e.target.value })} />
       </label>
 
-      {panel.cut && (
+      {resolved.cut && (
         <>
+          <button onClick={() => commitCutForActiveLanguage(undefined)}>
+            {t("editor.panelInspector.deactivateCut", { language: activeLanguage })}
+          </button>
           <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <input
               type="checkbox"
@@ -190,6 +203,19 @@ export function PanelInspector({ panel, index, activeLanguage, onChange, onDelet
 
           <p className="hint" style={{ margin: 0 }}>
             {t("editor.panelInspector.cutPanelHint")}
+          </p>
+        </>
+      )}
+
+      {!resolved.cut && (
+        <>
+          <button
+            onClick={() => commitCutForActiveLanguage({ cutOrigin: resolved.origin, holeFill: { mode: "manual", color: panel.color } })}
+          >
+            {t("editor.panelInspector.activateCut", { language: activeLanguage })}
+          </button>
+          <p className="hint" style={{ margin: 0 }}>
+            {t("editor.panelInspector.activateCutHint")}
           </p>
         </>
       )}

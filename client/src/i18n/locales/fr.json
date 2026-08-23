@@ -382,6 +382,9 @@
       "removedHint": "Le contenu n'est plus recouvert qu'à son emplacement d'origine, jamais redessiné ailleurs — la case compte alors comme absente du scénario, des rapports et de l'ordre de lecture. Purement visuel/sémantique : la géométrie et les bulles enfants restent inchangées, réversible à tout moment en revenant à « Découpe originale ». Indépendant du bouton « Supprimer la case » ci-dessous, qui supprime définitivement l'enregistrement.",
       "removedSuffix": "(supprimée)",
       "cutPanelHint": "Case découpée : son contenu est détaché de la page originale. Le déplacer emporte le contenu ; l'emplacement laissé vacant est recouvert par la couleur de remplissage. Reformer un coin ajuste la découpe.",
+      "activateCut": "Activer la case découpée pour « {{language}} »",
+      "activateCutHint": "Détache le contenu de la case de la page originale, pour cette seule langue — il peut ensuite être déplacé, supprimé ou remplacé par une image personnalisée (voir ci-dessous). Les autres langues restent inchangées. Non destructif : tant que « Contenu » est sur « Découpe originale », la case reste visuellement inchangée.",
+      "deactivateCut": "Désactiver la case découpée pour « {{language}} »",
       "deletePanel": "Supprimer la case"
     },
     "multiSelect": {
@@ -438,7 +441,6 @@
       "rect": "Rectangle",
       "quadPerspective": "Quadrilatère (perspective)",
       "panelRefRegion": "Case (zone de référence)",
-      "cutPanel": "Case découpée (détacher et déplacer le contenu)",
       "textsThisPage": "Textes de cette page"
     },
     "contextMenu": {

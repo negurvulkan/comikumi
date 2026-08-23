@@ -7,17 +7,18 @@ import {
   QuadToolIcon,
   CurvedTextToolIcon,
   PanelToolIcon,
-  CutPanelToolIcon,
   GlobeToolIcon,
   ContextToolIcon,
   ScriptToolIcon,
 } from "./Icons";
 
-/** What the canvas is currently armed to draw — bubble shapes, a Panel reference region,
- * or a Cut-Panel (same rectangle-drag gesture as "panel", but detaches the drawn area's
- * content from the page's source image so it can be repositioned — see PanelShape.tsx /
- * CutPanelContentShape.tsx). Not a BubbleShapeKind itself since Panels aren't bubbles. */
-export type DrawTool = BubbleShapeKind | "panel" | "cut-panel";
+/** What the canvas is currently armed to draw — bubble shapes, or a Panel reference
+ * region. Every panel starts as a plain reference marker; its optional Cut-Panel
+ * behavior (detach/move/remove/replace content — see PanelShape.tsx/PanelInspector.tsx)
+ * is activated afterward from the inspector, not via a separate draw tool, since Panel
+ * and Cut-Panel are the same entity. Not a BubbleShapeKind itself since Panels aren't
+ * bubbles. */
+export type DrawTool = BubbleShapeKind | "panel";
 
 interface Props {
   drawTool: DrawTool | null;
@@ -94,14 +95,6 @@ export function ToolStrip({
         disabled={creationDisabled}
       >
         <PanelToolIcon />
-      </button>
-      <button
-        className={`tool-btn${drawTool === "cut-panel" ? " active" : ""}`}
-        onClick={() => onSetDrawTool(drawTool === "cut-panel" ? null : "cut-panel")}
-        title={t("editor.toolStrip.cutPanel")}
-        disabled={creationDisabled}
-      >
-        <CutPanelToolIcon />
       </button>
       <span className="toolstrip-sep" />
       <button

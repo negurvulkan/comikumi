@@ -339,21 +339,31 @@ das Element zuletzt gesperrt war (siehe `locked` in
 
 ## Cut-Panel
 
-Eine Alternative zum normalen [Panel](#elementtypen): mit dem Cut-Panel-Werkzeug wird ein
-Rechteck über einen Bereich der Original-Seite (`_empty`-Quelldatei) gezogen — der Inhalt
-dieses Bereichs wird dadurch visuell von der Seite gelöst und lässt sich danach frei
-verschieben. Typische Anwendungsfälle: ein Panel für eine RTL→LTR-Umgestaltung an eine
-andere Stelle der Seite bringen, oder ein leicht verrutschtes Panel korrigieren — ganz
-ohne externes Grafikprogramm.
+Keine eigene Werkzeugleisten-Schaltfläche und kein eigener Datentyp — jedes [Panel](#elementtypen)
+lässt sich im Panel-Inspector per Knopf „Cut-Panel für „{Sprache}" aktivieren" zusätzlich
+zum Cut-Panel aufwerten: sein Inhalt wird dadurch visuell von der Original-Seite
+(`_empty`-Quelldatei) gelöst und lässt sich danach frei verschieben. Typische
+Anwendungsfälle: ein Panel für eine RTL→LTR-Umgestaltung an eine andere Stelle der Seite
+bringen, oder ein leicht verrutschtes Panel korrigieren — ganz ohne externes
+Grafikprogramm.
+
+**Aktivierung ist ein sprachabhängiger Schalter**: der Knopf betrifft ausschließlich die
+gerade aktive Sprache — alle anderen Sprachen bleiben unverändert ein normales,
+unbearbeitetes Panel. Ein „Cut-Panel für „{Sprache}" deaktivieren"-Knopf (erscheint,
+sobald für die aktive Sprache Cut-Verhalten aktiv ist) macht das gezielt für genau diese
+eine Sprache wieder rückgängig — z. B. bleibt ein Panel im japanischen Original
+unverändert eine reine Referenzmarkierung, während es für „de"/„en" verschoben, entfernt
+oder ersetzt ist (siehe [Sprachabhängiges Verhalten](#sprachabhängiges-verhalten) unten).
 
 Verhalten (ansonsten identisch zu einem normalen Panel — Beschriftung, Rahmenfarbe,
 Kind-Blasen-Zuordnung, Sperren, Duplizieren, Löschen funktionieren gleich):
 
 - **Die ganze Fläche verschieben** trägt den losgelösten Inhalt mit an die neue Position.
-  Die verlassene Original-Stelle wird mit einer Fläche überdeckt — automatisch aus der
-  Umgebung abgetastet, oder im Panel-Inspector manuell wählbar. Das ist **nicht
-  destruktiv**: die `_empty`-Quelldatei selbst bleibt unverändert, die Überdeckung
-  passiert nur beim Rendern (Vorschau wie PNG-Export).
+  Die verlassene Original-Stelle wird mit einer Fläche überdeckt — die Füllfarbe wird
+  beim Aufwerten zunächst von der Panel-Randfarbe übernommen und ist im Panel-Inspector
+  jederzeit manuell änderbar. Das ist **nicht destruktiv**: die `_empty`-Quelldatei
+  selbst bleibt unverändert, die Überdeckung passiert nur beim Rendern (Vorschau wie
+  PNG-Export).
 - **Einen einzelnen Eckpunkt verformen** korrigiert die Kontur, ohne das Panel zu
   verschieben — der angezeigte Ausschnitt aus der Originalseite passt sich dabei
   automatisch an die neue Form an.
@@ -404,26 +414,31 @@ in den PNG-Export gezeichnet.
 
 ### Sprachabhängiges Verhalten
 
-Alles auf dieser Seite Beschriebene — Position/Form, „Inhalt"-Zustand, Loch-Füllung,
-Ersatzbild/Rahmen — lässt sich zusätzlich **pro Sprache** unterschiedlich einstellen,
-über das Häkchen „Eigene Version für „{Sprache}““ im Panel-Inspector (erscheint bei
-jedem Cut-Panel). Damit ist dasselbe Panel gleichzeitig eine unveränderte
-Referenzmarkierung in einer Sprache und ein voll bearbeitetes Cut-Panel in einer
-anderen — **eine einzige Entity** deckt beide Rollen ab, es gibt keinen separaten
-Panel-Typ.
+Ob ein Panel überhaupt ein Cut-Panel ist, ist selbst ein **Schalter pro Sprache** — nicht
+nur seine Details. Der „Cut-Panel für „{Sprache}" aktivieren/deaktivieren"-Knopf im
+Panel-Inspector betrifft ausschließlich die gerade aktive Sprache; Position/Form,
+„Inhalt"-Zustand, Loch-Füllung und Ersatzbild/Rahmen lassen sich danach zusätzlich **pro
+Sprache** unterschiedlich einstellen, über das Häkchen „Eigene Version für „{Sprache}""
+(nur relevant, sobald Cut-Verhalten für diese Sprache aktiv ist). Damit ist dasselbe
+Panel gleichzeitig eine unveränderte Referenzmarkierung in einer Sprache und ein voll
+bearbeitetes Cut-Panel in einer anderen — **eine einzige Entity** deckt beide Rollen ab,
+es gibt keinen separaten Panel-Typ.
 
 Beispiel: ein Panel bleibt in „ja" (Original) unverändert an Ort und Stelle — reine
-semantische Markierung, keine sichtbare Wirkung. In „de"/„en" ist es dagegen
-verschoben, entfernt oder durch ein eigenes Bild ersetzt (z. B. für eine
-RTL→LTR-Umgestaltung oder eine Zensur-Auflage im Zielmarkt).
+semantische Markierung, keine sichtbare Wirkung, kein aktiviertes Cut-Verhalten. In
+„de"/„en" wurde es dagegen gezielt aktiviert und ist dort verschoben, entfernt oder
+durch ein eigenes Bild ersetzt (z. B. für eine RTL→LTR-Umgestaltung oder eine
+Zensur-Auflage im Zielmarkt).
 
-- Ohne eigene Version für eine Sprache gilt einfach die Basis (Position/Form/Zustand,
-  wie beim Zeichnen des Panels festgelegt bzw. seither ohne Sprach-Override bearbeitet)
-  — bestehende Cut-Panels aus früheren Arbeitsständen verhalten sich dadurch
-  unverändert für jede Sprache gleich, bis gezielt ein Sprach-Override angelegt wird.
-- Beim Einschalten wird die aktuell angezeigte Version 1:1 in den Sprach-Override
-  übernommen (kein optischer Sprung); beim Ausschalten fällt die Sprache sauber auf die
-  Basis zurück.
+- Ohne Aktivierung für eine Sprache verhält sich das Panel dort wie ein ganz normales,
+  unbearbeitetes Panel — unabhängig davon, ob/wie es für andere Sprachen aktiviert ist.
+  Ältere, noch sprachunabhängige Cut-Panels aus früheren Arbeitsständen bleiben davon
+  unberührt: sie gelten weiterhin einfach für jede Sprache gleich, bis gezielt eine
+  Sprache abweichend aktiviert/deaktiviert wird.
+- Aktivieren/Deaktivieren übernimmt beim Umschalten die aktuell angezeigte Geometrie 1:1
+  (kein optischer Sprung) und legt dafür automatisch einen Sprach-Override an; das
+  Häkchen „Eigene Version" zeigt diesen Zustand an und erlaubt einen vollständigen Reset
+  auf die Basis.
 - **Kind-Blasen sind davon unberührt**: ihre Position bleibt immer relativ zum
   **Basis**-Anker des Panels, unabhängig davon, ob und wie das Panel für die gerade
   aktive Sprache verschoben ist. Wer eine Blase pro Sprache anders platzieren möchte,
