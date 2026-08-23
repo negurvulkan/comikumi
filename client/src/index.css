@@ -1121,6 +1121,17 @@ button.active {
   color: #ff8080;
 }
 
+.context-menu-number-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+}
+
+.context-menu-number-input input {
+  width: 64px;
+}
+
 /* Tool strip — narrow always-visible icon column, far left of .editor-body. Flush
    against the panel next to it (border-right only, no radius) rather than floating
    as a separate rounded box. */

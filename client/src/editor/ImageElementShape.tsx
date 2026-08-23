@@ -3,7 +3,7 @@ import { Circle, Group, Image as KonvaImage, Line } from "react-konva";
 import Konva from "konva";
 import type { ImageElement, Point } from "../../../shared/src/layoutSchema";
 import { imageFileForLanguage } from "../../../shared/src/layoutSchema";
-import { warpImageIntoQuad } from "../export/perspective";
+import { warpImageIntoQuad } from "../../../shared/src/rendering/perspective";
 import { api } from "../api/client";
 import { useHtmlImage } from "./useHtmlImage";
 import { LockToggleHandle } from "./LockToggleHandle";

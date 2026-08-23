@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Point } from "../../../shared/src/layoutSchema";
+import type { Point } from "../../../../shared/src/layoutSchema.js";
 import {
   buildSmoothBoundary,
   buildBoundaryForStyle,
@@ -9,7 +9,7 @@ import {
   insertTail,
   perpendicularOffset,
   tailBasePoints,
-} from "./bubbleBackground";
+} from "../../../../shared/src/rendering/bubbleBackground.js";
 
 describe("buildSmoothBoundary", () => {
   it("returns a closed, finite point set for an oval", () => {

@@ -1,6 +1,7 @@
-import type { TextAlign, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
-import { MIN_FONT_SIZE } from "./textLayout";
-import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects";
+import type { TextAlign, TextGradient, TextOutline } from "../layoutSchema.js";
+import { MIN_FONT_SIZE } from "./textLayout.js";
+import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
+import { createOffscreenCanvas } from "./canvasFactory.js";
 
 /**
  * Vertical (tategaki) Japanese typesetting — tokenizes text into the units
@@ -8,8 +9,9 @@ import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEf
  * furigana runs, tate-chū-yoko number/Latin runs, and individually-styled
  * characters), lays them into columns with basic kinsoku shori (line-breaking
  * rules), then draws them. Single source of truth shared by the live Konva
- * preview (BubbleShape.tsx), the PNG export (renderPageToPng.ts) and the
- * perspective-warped quad text (perspective.ts) — same pattern as
+ * preview (BubbleShape.tsx), the PNG export (renderPageToPng.ts), the
+ * perspective-warped quad text (perspective.ts), and the server-side
+ * vector-PDF/PSD exporters (pageRaster.ts) — same pattern as
  * fitHorizontalText in textLayout.ts.
  */
 
@@ -126,9 +128,7 @@ const verticalGlyphSupportCache = new Map<string, boolean>();
 /** Renders `ch` in `fontFamily` and returns its ink bounding box (null if nothing painted). */
 function measureInkBBox(fontFamily: string, ch: string): { w: number; h: number } | null {
   const size = 64;
-  const probeCanvas = document.createElement("canvas");
-  probeCanvas.width = size;
-  probeCanvas.height = size;
+  const probeCanvas = createOffscreenCanvas(size, size);
   const pctx = probeCanvas.getContext("2d")!;
   pctx.font = `${Math.round(size * 0.8)}px "${fontFamily}"`;
   pctx.textBaseline = "middle";

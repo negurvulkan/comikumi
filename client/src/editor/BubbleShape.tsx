@@ -4,10 +4,16 @@ import Konva from "konva";
 import type { Bubble, BubbleForm } from "../../../shared/src/layoutSchema";
 import { resolveBubbleForm, resolveBubbleStyle, resolveEffectiveTailStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { paddingRatioFor, fitHorizontalText } from "../export/textLayout";
-import { drawVerticalText, fitVerticalText } from "../export/verticalTypesetting";
-import { buildBoundaryForStyle, canHaveTail, drawBubbleBackground, perpendicularOffset, tailBasePoints } from "../export/bubbleBackground";
-import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../export/textEffects";
+import { paddingRatioFor, fitHorizontalText } from "../../../shared/src/rendering/textLayout";
+import { drawVerticalText, fitVerticalText } from "../../../shared/src/rendering/verticalTypesetting";
+import {
+  buildBoundaryForStyle,
+  canHaveTail,
+  drawBubbleBackground,
+  perpendicularOffset,
+  tailBasePoints,
+} from "../../../shared/src/rendering/bubbleBackground";
+import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects";
 import { getCachedSvgBubbleBoundary } from "../export/svgBubbleGeometry";
 import { projectOntoPerpendicularBow } from "./geometry";
 import { QuadBubbleShape } from "./QuadBubbleShape";
@@ -26,6 +32,11 @@ interface Props {
   onChange: (patch: Partial<Bubble>) => void;
   /** Native screen coordinates (clientX/clientY) of a right-click on this bubble — used to position a ContextMenu (PageCanvas.tsx), independent of canvas zoom/pan. */
   onContextMenu?: (clientX: number, clientY: number) => void;
+  /** Native screen coordinates of a right-click on one of a quad-bubble's 4 corner
+   * handles, plus which corner index — only used by QuadBubbleShape (rect/oval bubbles
+   * have no per-corner menu), forwarded here via the `{...props}` spread in
+   * BubbleShape() below so callers don't need to special-case the shape kind. */
+  onCornerContextMenu?: (clientX: number, clientY: number, cornerIndex: number) => void;
   /** Disables every drag/resize/rotate/tail-reshape handle (but not selection) — used
    * for the "translator" project role, which the server only lets change bubble .text
    * (see routes/layout.ts's diff guard). Selecting a bubble still works so its text

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { Point } from "../../../shared/src/layoutSchema";
-import { unitSquareToQuad, invert3, apply, pointInQuad } from "./perspective";
+import type { Point } from "../../../../shared/src/layoutSchema.js";
+import { unitSquareToQuad, invert3, apply, pointInQuad } from "../../../../shared/src/rendering/perspective.js";
 
 // Axis-aligned quad — a box from (10,20) to (110,70) — makes expected mapped
 // points easy to reason about, and exercises the "already a parallelogram"

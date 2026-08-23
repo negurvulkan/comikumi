@@ -1,8 +1,9 @@
-import type { Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
-import { fitHorizontalText } from "./textLayout";
-import { drawVerticalText, fitVerticalText } from "./verticalTypesetting";
-import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects";
-import { pointInQuad } from "../editor/geometry";
+import type { Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../layoutSchema.js";
+import { fitHorizontalText } from "./textLayout.js";
+import { drawVerticalText, fitVerticalText } from "./verticalTypesetting.js";
+import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
+import { pointInQuad } from "./geometry.js";
+import { createOffscreenCanvas } from "./canvasFactory.js";
 
 export { pointInQuad };
 
@@ -103,7 +104,10 @@ function bilinearSample(data: Uint8ClampedArray, w: number, h: number, x: number
  * text warping (renders text to a flat canvas first) and image placement
  * (uses the uploaded image directly as the source). Returns a canvas sized to
  * the quad's bounding box (transparent outside the quad) plus that box's
- * top-left offset, ready to be composited with drawImage.
+ * top-left offset, ready to be composited with drawImage. `srcCanvas`/the
+ * returned `.canvas` are typed as HTMLCanvasElement for browser call sites'
+ * convenience — server-side callers (pageRaster.ts) pass/receive a
+ * @napi-rs/canvas Canvas instead, cast at that boundary (see canvasFactory.ts).
  */
 function warpCanvasIntoQuad(
   quad: Point[],
@@ -127,9 +131,7 @@ function warpCanvasIntoQuad(
   const forward = unitSquareToQuad(localQuad);
   const inverse = invert3(forward);
 
-  const destCanvas = document.createElement("canvas");
-  destCanvas.width = bboxW;
-  destCanvas.height = bboxH;
+  const destCanvas = createOffscreenCanvas(bboxW, bboxH) as unknown as HTMLCanvasElement;
   const dctx = destCanvas.getContext("2d")!;
   const destImage = dctx.createImageData(bboxW, bboxH);
   const destData = destImage.data;
@@ -171,9 +173,10 @@ export function warpImageIntoQuad(
   const naturalH = image.naturalHeight || image.height;
   if (!naturalW || !naturalH) return null;
   const capScale = Math.min(1, MAX_IMAGE_SOURCE_DIM / Math.max(naturalW, naturalH));
-  const srcCanvas = document.createElement("canvas");
-  srcCanvas.width = Math.max(1, Math.round(naturalW * capScale));
-  srcCanvas.height = Math.max(1, Math.round(naturalH * capScale));
+  const srcCanvas = createOffscreenCanvas(
+    Math.max(1, Math.round(naturalW * capScale)),
+    Math.max(1, Math.round(naturalH * capScale))
+  ) as unknown as HTMLCanvasElement;
   const sctx = srcCanvas.getContext("2d")!;
   sctx.drawImage(image, 0, 0, srcCanvas.width, srcCanvas.height);
   return warpCanvasIntoQuad(quad, srcCanvas, opacity);
@@ -215,9 +218,7 @@ export function renderPerspectiveText(
   const oversample = Math.min(3, Math.max(1, 600 / Math.max(flatWidth, flatHeight)));
   const srcW = Math.max(1, Math.round(flatWidth * oversample));
   const srcH = Math.max(1, Math.round(flatHeight * oversample));
-  const srcCanvas = document.createElement("canvas");
-  srcCanvas.width = srcW;
-  srcCanvas.height = srcH;
+  const srcCanvas = createOffscreenCanvas(srcW, srcH) as unknown as HTMLCanvasElement;
   const sctx = srcCanvas.getContext("2d")!;
   const padX = srcW * 0.06;
   const padY = srcH * 0.1;

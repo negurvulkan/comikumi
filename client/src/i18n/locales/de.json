@@ -478,7 +478,11 @@
       "assignPreset": "Preset zuweisen",
       "noPreset": "– kein Preset –",
       "duplicate": "Duplizieren",
-      "removePoint": "Punkt entfernen"
+      "removePoint": "Punkt entfernen",
+      "setAngleFixPrevious": "Winkel setzen (vorherigen Punkt fixieren)",
+      "setAngleFixNext": "Winkel setzen (nächsten Punkt fixieren)",
+      "anglePlaceholder": "Winkel in Grad",
+      "applyAngle": "Anwenden"
     },
     "canvas": {
       "zoomOut": "Verkleinern",

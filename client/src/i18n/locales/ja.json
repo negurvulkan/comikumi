@@ -470,7 +470,11 @@
       "assignPreset": "プリセットを割り当て",
       "noPreset": "– プリセットなし –",
       "duplicate": "複製",
-      "removePoint": "点を削除"
+      "removePoint": "点を削除",
+      "setAngleFixPrevious": "角度を設定（前の点を固定）",
+      "setAngleFixNext": "角度を設定（次の点を固定）",
+      "anglePlaceholder": "角度（度）",
+      "applyAngle": "適用"
     },
     "canvas": {
       "zoomOut": "縮小",

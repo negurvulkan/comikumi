@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { paddingRatioFor, fitHorizontalText, wrapHorizontal, PADDING_RATIO, SVG_BUBBLE_PADDING_RATIO } from "./textLayout";
+import { paddingRatioFor, fitHorizontalText, wrapHorizontal, PADDING_RATIO, SVG_BUBBLE_PADDING_RATIO } from "../../../../shared/src/rendering/textLayout.js";
 
 function fakeCtx(widthPerChar: number) {
   return {

@@ -1,6 +1,6 @@
 import { Shape } from "react-konva";
 import { cutPanelReplacementFileForLanguage, resolvePanelForLanguage, type Panel } from "../../../shared/src/layoutSchema";
-import { drawCutPanelContent } from "../export/cutPanel";
+import { drawCutPanelContent } from "../../../shared/src/rendering/cutPanel";
 import { api } from "../api/client";
 import { useHtmlImage } from "./useHtmlImage";
 

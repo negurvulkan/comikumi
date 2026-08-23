@@ -15,7 +15,17 @@ export interface ContextMenuSubmenu {
   label: string;
   options: { label: string; onClick: () => void; selected?: boolean }[];
 }
-export type ContextMenuEntry = ContextMenuAction | ContextMenuSeparator | ContextMenuSubmenu;
+export interface ContextMenuNumberInput {
+  type: "numberInput";
+  label: string;
+  placeholder?: string;
+  defaultValue?: number;
+  min?: number;
+  max?: number;
+  submitLabel: string;
+  onSubmit: (value: number) => void;
+}
+export type ContextMenuEntry = ContextMenuAction | ContextMenuSeparator | ContextMenuSubmenu | ContextMenuNumberInput;
 
 interface Props {
   /** Screen position (native MouseEvent clientX/clientY) — independent of canvas zoom/pan. */
@@ -95,6 +105,20 @@ export function ContextMenu({ x, y, entries, onClose }: Props) {
             </div>
           );
         }
+        if (entry.type === "numberInput") {
+          const open = openSubmenu === entry.label;
+          return (
+            <div key={i}>
+              <button
+                className="menu-item context-menu-submenu-trigger"
+                onClick={() => setOpenSubmenu(open ? null : entry.label)}
+              >
+                {entry.label} <span className="context-menu-caret">{open ? "▾" : "▸"}</span>
+              </button>
+              {open && <NumberInputRow entry={entry} onSubmit={(v) => runAndClose(() => entry.onSubmit(v))} />}
+            </div>
+          );
+        }
         return (
           <button
             className={`menu-item${entry.danger ? " context-menu-danger" : ""}`}
@@ -106,6 +130,37 @@ export function ContextMenu({ x, y, entries, onClose }: Props) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Inline number field + submit button shown under an expanded `numberInput` entry —
+ * mirrors a `submenu`'s accordion body, but for free-form numeric entry (e.g. an
+ * exact angle in degrees) instead of a fixed option list. */
+function NumberInputRow({ entry, onSubmit }: { entry: ContextMenuNumberInput; onSubmit: (value: number) => void }) {
+  const [value, setValue] = useState(String(entry.defaultValue ?? ""));
+
+  function submit() {
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed) && value.trim() !== "") onSubmit(parsed);
+  }
+
+  return (
+    <div className="context-menu-submenu context-menu-number-input">
+      <input
+        type="number"
+        autoFocus
+        min={entry.min}
+        max={entry.max}
+        placeholder={entry.placeholder}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && submit()}
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button className="menu-item" onClick={submit}>
+        {entry.submitLabel}
+      </button>
     </div>
   );
 }

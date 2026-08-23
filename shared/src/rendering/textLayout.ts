@@ -1,4 +1,4 @@
-import type { BubbleShapeKind, BubbleVisualStyle } from "../../../shared/src/layoutSchema";
+import type { BubbleShapeKind, BubbleVisualStyle } from "../layoutSchema.js";
 
 export interface Line {
   text: string;

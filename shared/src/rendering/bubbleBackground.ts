@@ -1,15 +1,16 @@
-import type { BubbleForm, BubbleShapeKind, Point } from "../../../shared/src/layoutSchema";
-import { resolveEffectiveTailStyle } from "../../../shared/src/layoutSchema";
+import type { BubbleForm, BubbleShapeKind, Point } from "../layoutSchema.js";
+import { resolveEffectiveTailStyle } from "../layoutSchema.js";
 
 /**
  * Shared bubble-background geometry: builds a closed boundary point list for
  * each visual style, then a shared path/tail routine draws it — used by both
- * the live Konva preview (BubbleShape.tsx, via a raw sceneFunc) and the PNG
- * export (renderPageToPng.ts, canvas 2D) so they can never visually diverge.
- * Everything here operates in LOCAL box coordinates (0,0 = top-left of the
- * w x h box the caller already translated/rotated into) and an explicit
- * `scale` (1 for export's real image px, the display zoom factor for the
- * editor preview) — the same pattern used by textLayout.ts's font sizing.
+ * the live Konva preview (BubbleShape.tsx, via a raw sceneFunc), the PNG
+ * export (renderPageToPng.ts, canvas 2D), and the server-side vector-PDF/PSD
+ * exporters (pageRaster.ts) so they can never visually diverge. Everything
+ * here operates in LOCAL box coordinates (0,0 = top-left of the w x h box the
+ * caller already translated/rotated into) and an explicit `scale` (1 for
+ * export's real image px, the display zoom factor for the editor preview) —
+ * the same pattern used by textLayout.ts's font sizing.
  */
 
 function ellipsePoints(w: number, h: number, steps: number): Point[] {

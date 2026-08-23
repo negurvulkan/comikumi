@@ -4,7 +4,7 @@ import Konva from "konva";
 import type { CurvedTextElement, Point } from "../../../shared/src/layoutSchema";
 import { resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { drawCurvedText, fitCurvedText, sampleCurvePolyline } from "../export/curvedText";
+import { drawCurvedText, fitCurvedText, sampleCurvePolyline } from "../../../shared/src/rendering/curvedText";
 import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {

@@ -1,11 +1,12 @@
-import type { Point, TextAlign } from "../../../shared/src/layoutSchema";
-import { MIN_FONT_SIZE } from "./textLayout";
-import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects";
+import type { Point, TextAlign } from "../layoutSchema.js";
+import { MIN_FONT_SIZE } from "./textLayout.js";
+import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
 
 /**
  * Freestanding "text on a Bézier path" — the geometry/drawing core shared by
- * the live Konva preview (CurvedTextElementShape.tsx) and the PNG export
- * (renderPageToPng.ts), same pattern as bubbleBackground.ts/verticalTypesetting.ts.
+ * the live Konva preview (CurvedTextElementShape.tsx), the PNG export
+ * (renderPageToPng.ts), and the server-side vector-PDF/PSD exporters
+ * (pageRaster.ts), same pattern as bubbleBackground.ts/verticalTypesetting.ts.
  * Single-line only: text is laid out along the curve's arc length, not
  * wrapped — a whole paragraph following a curve is a different, much harder
  * problem this tool doesn't attempt.
@@ -68,8 +69,12 @@ export function sampleCurvePolyline(points: Point[], steps = 48): Point[] {
   return out;
 }
 
-/** Point + tangent angle at a given distance along the curve (clamped to the curve's ends), via linear interpolation between table entries. */
-function pointAtArcLength(points: Point[], table: ArcLengthEntry[], dist: number): { point: Point; angle: number } {
+/** Point + tangent angle (radians, canvas/atan2 convention) at a given distance along the
+ * curve (clamped to the curve's ends), via linear interpolation between table entries.
+ * Exported alongside drawCurvedText — the server-side vector-PDF exporter needs the same
+ * per-character point+angle to place real (rotated) PDF text objects, not just to drive
+ * `ctx.fillText` calls. */
+export function pointAtArcLength(points: Point[], table: ArcLengthEntry[], dist: number): { point: Point; angle: number } {
   const total = totalArcLength(table);
   const clamped = Math.max(0, Math.min(total, dist));
   let lo = 0;

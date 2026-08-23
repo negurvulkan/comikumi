@@ -478,7 +478,11 @@
       "assignPreset": "Assign preset",
       "noPreset": "– no preset –",
       "duplicate": "Duplicate",
-      "removePoint": "Remove point"
+      "removePoint": "Remove point",
+      "setAngleFixPrevious": "Set angle (keep previous point fixed)",
+      "setAngleFixNext": "Set angle (keep next point fixed)",
+      "anglePlaceholder": "Angle in degrees",
+      "applyAngle": "Apply"
     },
     "canvas": {
       "zoomOut": "Zoom out",

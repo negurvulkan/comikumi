@@ -14,6 +14,7 @@ import { CurvedTextElementShape } from "./CurvedTextElementShape";
 import { PanelShape } from "./PanelShape";
 import { CutPanelContentShape } from "./CutPanelContentShape";
 import { ContextMenu, type ContextMenuEntry } from "./ContextMenu";
+import { setVertexAngle } from "./geometry";
 import type { DrawTool } from "./ToolStrip";
 
 // Konva 9 only fires pointer* events by default (no legacy mouse* aliases),
@@ -115,7 +116,9 @@ export function PageCanvas({
   const image = useHtmlImage(imageUrl);
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; kind: "bubble" | "panel"; id: string } | null>(null);
-  const [vertexMenu, setVertexMenu] = useState<{ x: number; y: number; panelId: string; vertexIndex: number } | null>(null);
+  const [vertexMenu, setVertexMenu] = useState<{ x: number; y: number; kind: "panel" | "bubble"; targetId: string; vertexIndex: number } | null>(
+    null
+  );
 
   // The Stage is sized to whatever room the surrounding layout actually gives
   // it (tracked via ResizeObserver), not a fixed pixel width — so tall pages
@@ -321,21 +324,56 @@ export function PageCanvas({
     ];
   }
 
-  /** Right-click menu for a single polygon vertex — kept separate from
-   * contextMenuEntries() since it needs the panel's own current point count
-   * (to disable removal at the 3-point floor) rather than the layout at large. */
+  /** Right-click menu for a single polygon vertex (a Panel point or a Quad-Bubble
+   * corner) — kept separate from contextMenuEntries() since it needs the target's own
+   * current points/corners (e.g. to disable point-removal at the 3-point floor)
+   * rather than the layout at large. Writes straight to the target's base geometry
+   * (onChangePanel/onChange), same as the existing drag handlers and "Punkt
+   * entfernen" already do — no languageOverride involved for either Panel points or
+   * Bubble corners at this level. */
   function vertexMenuEntries(): ContextMenuEntry[] {
     if (!vertexMenu) return [];
-    const panel = panels.find((p) => p.id === vertexMenu.panelId);
-    if (!panel) return [];
-    return [
+    const { kind, targetId, vertexIndex } = vertexMenu;
+    const points = kind === "panel" ? panels.find((p) => p.id === targetId)?.points : bubbles.find((b) => b.id === targetId)?.corners;
+    if (!points) return [];
+
+    function applyAngle(fixedNeighbor: "previous" | "next", value: number) {
+      const next = setVertexAngle(points!, vertexIndex, fixedNeighbor, value);
+      if (kind === "panel") onChangePanel(targetId, { points: next });
+      else onChange(targetId, { corners: next });
+    }
+
+    const entries: ContextMenuEntry[] = [
       {
-        type: "action",
-        label: t("editor.contextMenu.removePoint"),
-        disabled: panel.points.length <= 3,
-        onClick: () => onChangePanel(panel.id, { points: panel.points.filter((_, i) => i !== vertexMenu.vertexIndex) }),
+        type: "numberInput",
+        label: t("editor.contextMenu.setAngleFixPrevious"),
+        placeholder: t("editor.contextMenu.anglePlaceholder"),
+        defaultValue: 90,
+        min: 1,
+        max: 359,
+        submitLabel: t("editor.contextMenu.applyAngle"),
+        onSubmit: (value) => applyAngle("previous", value),
+      },
+      {
+        type: "numberInput",
+        label: t("editor.contextMenu.setAngleFixNext"),
+        placeholder: t("editor.contextMenu.anglePlaceholder"),
+        defaultValue: 90,
+        min: 1,
+        max: 359,
+        submitLabel: t("editor.contextMenu.applyAngle"),
+        onSubmit: (value) => applyAngle("next", value),
       },
     ];
+    if (kind === "panel") {
+      entries.push({
+        type: "action",
+        label: t("editor.contextMenu.removePoint"),
+        disabled: points.length <= 3,
+        onClick: () => onChangePanel(targetId, { points: points.filter((_, i) => i !== vertexIndex) }),
+      });
+    }
+    return entries;
   }
 
   return (
@@ -396,7 +434,7 @@ export function PageCanvas({
               onChange={(patch) => onChangePanel(panel.id, patch)}
               onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "panel", id: panel.id })}
               onVertexContextMenu={(clientX, clientY, vertexIndex) =>
-                setVertexMenu({ x: clientX, y: clientY, panelId: panel.id, vertexIndex })
+                setVertexMenu({ x: clientX, y: clientY, kind: "panel", targetId: panel.id, vertexIndex })
               }
               readOnly={readOnly}
             />
@@ -428,6 +466,9 @@ export function PageCanvas({
                 onSelect={(additive) => onSelect(b.id, additive)}
                 onChange={(patch) => onChange(b.id, patch)}
                 onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
+                onCornerContextMenu={(clientX, clientY, vertexIndex) =>
+                  setVertexMenu({ x: clientX, y: clientY, kind: "bubble", targetId: b.id, vertexIndex })
+                }
                 readOnly={readOnly}
               />
             ))}
@@ -452,6 +493,9 @@ export function PageCanvas({
                     onSelect={(additive) => onSelect(b.id, additive)}
                     onChange={(patch) => onChange(b.id, patch)}
                     onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
+                    onCornerContextMenu={(clientX, clientY, vertexIndex) =>
+                      setVertexMenu({ x: clientX, y: clientY, kind: "bubble", targetId: b.id, vertexIndex })
+                    }
                     readOnly={readOnly}
                   />
                 ))}

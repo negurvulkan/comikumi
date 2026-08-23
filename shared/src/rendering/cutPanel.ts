@@ -1,5 +1,5 @@
-import type { Point, ResolvedPanel } from "../../../shared/src/layoutSchema";
-import { polygonBounds } from "../../../shared/src/layoutSchema";
+import type { Point, ResolvedPanel } from "../layoutSchema.js";
+import { polygonBounds } from "../layoutSchema.js";
 
 /** How far a Cut-Panel has moved since it was cut (0,0 = never moved) — the resolved
  * panel's `origin` minus its frozen `cut.cutOrigin`. Combined with the resolved `points`,
@@ -40,7 +40,7 @@ function tracePolygonPath(ctx: CanvasRenderingContext2D, points: Point[]): void 
  * "has it moved" special case). All coordinates are expected in the SAME space as
  * `baseImage`'s natural pixel dimensions (`imageWidth`/`imageHeight`) — callers scale by
  * their own display `scale` factor as needed (see CutPanelContentShape.tsx /
- * renderPageToPng.ts, which apply it before calling this).
+ * renderPageToPng.ts / pageRaster.ts, which apply it before calling this).
  *
  * Takes an already-*resolved* panel (see resolvePanelForLanguage() in layoutSchema.ts) —
  * callers resolve for whichever language is being rendered/exported before calling this,

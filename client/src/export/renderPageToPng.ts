@@ -8,14 +8,14 @@ import {
   resolvePanelForLanguage,
 } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { paddingRatioFor, fitHorizontalText } from "./textLayout";
-import { drawVerticalText, fitVerticalText } from "./verticalTypesetting";
-import { renderPerspectiveText, warpImageIntoQuad } from "./perspective";
-import { drawBubbleBackground } from "./bubbleBackground";
-import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects";
-import { drawCurvedText, fitCurvedText } from "./curvedText";
+import { paddingRatioFor, fitHorizontalText } from "../../../shared/src/rendering/textLayout";
+import { drawVerticalText, fitVerticalText } from "../../../shared/src/rendering/verticalTypesetting";
+import { renderPerspectiveText, warpImageIntoQuad } from "../../../shared/src/rendering/perspective";
+import { drawBubbleBackground } from "../../../shared/src/rendering/bubbleBackground";
+import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects";
+import { drawCurvedText, fitCurvedText } from "../../../shared/src/rendering/curvedText";
 import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary } from "./svgBubbleGeometry";
-import { drawCutPanelContent } from "./cutPanel";
+import { drawCutPanelContent } from "../../../shared/src/rendering/cutPanel";
 
 /** A child bubble's x/y/corners are relative to its parent panel's origin (see
  * PanelPointsSchema.origin) — unlike the live Konva canvas, this is a plain 2D-context

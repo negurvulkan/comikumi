@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tokenizeVertical, fitVerticalText } from "./verticalTypesetting";
+import { tokenizeVertical, fitVerticalText } from "../../../../shared/src/rendering/verticalTypesetting.js";
 
 describe("tokenizeVertical", () => {
   it("tokenizes plain characters one-by-one", () => {

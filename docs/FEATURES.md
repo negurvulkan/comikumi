@@ -274,7 +274,11 @@ Textstil-Teil, keinen Blasenhintergrund).
   außerhalb oder Escape. Auf einer Blase: Untermenüs "Panel zuweisen" und "Charakter
   zuweisen" (live aus dem aktuellen Layout aufgebaut, aktuelle Zuordnung markiert),
   sowie Duplizieren/Löschen. Auf einem Panel (Fläche, nicht Eckpunkt): Duplizieren/
-  Löschen; auf einem einzelnen Panel-Eckpunkt stattdessen "Punkt entfernen" (deaktiviert
+  Löschen; auf einem einzelnen Panel-Eckpunkt oder einer Viereck-Blasen-Ecke
+  zusätzlich "Winkel setzen" (zwei Varianten — vorherigen bzw. nächsten Punkt
+  fixieren, mit Eingabefeld für den exakten Winkel in Grad; der jeweils nicht
+  fixierte Nachbarpunkt dreht sich um den angeklickten Punkt, bis genau dieser Winkel
+  anliegt, Kantenlänge bleibt erhalten), auf einem Panel-Eckpunkt außerdem "Punkt entfernen" (deaktiviert
   bei nur noch 3 Punkten). Untermenüs klappen inline auf (kein Hover-Flyout).
 
 ## Elementtypen

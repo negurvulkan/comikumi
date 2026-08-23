@@ -470,7 +470,11 @@
       "assignPreset": "分配预设",
       "noPreset": "– 无预设 –",
       "duplicate": "复制",
-      "removePoint": "删除点"
+      "removePoint": "删除点",
+      "setAngleFixPrevious": "设置角度（固定前一个点）",
+      "setAngleFixNext": "设置角度（固定后一个点）",
+      "anglePlaceholder": "角度（度）",
+      "applyAngle": "应用"
     },
     "canvas": {
       "zoomOut": "缩小",

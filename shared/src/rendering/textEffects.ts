@@ -1,4 +1,4 @@
-import type { TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type { TextGradient, TextOutline } from "../layoutSchema.js";
 
 /**
  * Shared text-fill styling (solid color, optional gradient, optional

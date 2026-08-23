@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { Point } from "../../../shared/src/layoutSchema";
-import { buildArcLengthTable, totalArcLength, sampleCurvePolyline, fitCurvedText } from "./curvedText";
+import type { Point } from "../../../../shared/src/layoutSchema.js";
+import { buildArcLengthTable, totalArcLength, sampleCurvePolyline, fitCurvedText } from "../../../../shared/src/rendering/curvedText.js";
 
 /** Minimal CanvasRenderingContext2D stand-in — fitCurvedText only ever reads
  * `ctx.font` (settable) and calls `ctx.measureText(text).width`, so a fixed

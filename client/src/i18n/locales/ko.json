@@ -470,7 +470,11 @@
       "assignPreset": "프리셋 지정",
       "noPreset": "– 프리셋 없음 –",
       "duplicate": "복제",
-      "removePoint": "점 제거"
+      "removePoint": "점 제거",
+      "setAngleFixPrevious": "각도 설정 (이전 점 고정)",
+      "setAngleFixNext": "각도 설정 (다음 점 고정)",
+      "anglePlaceholder": "각도(도)",
+      "applyAngle": "적용"
     },
     "canvas": {
       "zoomOut": "축소",

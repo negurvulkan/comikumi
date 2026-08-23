@@ -4,7 +4,7 @@ import Konva from "konva";
 import type { Bubble, Point } from "../../../shared/src/layoutSchema";
 import { resolveBubbleStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { renderPerspectiveText } from "../export/perspective";
+import { renderPerspectiveText } from "../../../shared/src/rendering/perspective";
 import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {
@@ -20,6 +20,8 @@ interface Props {
   /** Native screen coordinates (clientX/clientY) of a right-click on this bubble — used to position a ContextMenu (PageCanvas.tsx), independent of canvas zoom/pan. */
   onContextMenu?: (clientX: number, clientY: number) => void;
   /** See BubbleShape.tsx's Props doc comment. */
+  onCornerContextMenu?: (clientX: number, clientY: number, cornerIndex: number) => void;
+  /** See BubbleShape.tsx's Props doc comment. */
   readOnly?: boolean;
 }
 
@@ -28,7 +30,19 @@ interface Props {
  * independently draggable corners, text warped with a true projective
  * transform to fit — not just rotated/skewed. See export/perspective.ts.
  */
-export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, selected, onSelect, onChange, onContextMenu, readOnly }: Props) {
+export function QuadBubbleShape({
+  bubble,
+  scale,
+  zoom,
+  activeLanguage,
+  presets,
+  selected,
+  onSelect,
+  onChange,
+  onContextMenu,
+  onCornerContextMenu,
+  readOnly,
+}: Props) {
   const handleScale = 1 / zoom;
   const corners = bubble.corners ?? [];
   const displayCorners = useMemo(() => corners.map((p) => ({ x: p.x * scale, y: p.y * scale })), [corners, scale]);
@@ -124,6 +138,10 @@ export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, 
             draggable
             onDragMove={(e) => handleCornerDragMove(i, e)}
             onDragEnd={(e) => handleCornerDragEnd(i, e)}
+            onContextMenu={(e) => {
+              e.evt.preventDefault();
+              onCornerContextMenu?.(e.evt.clientX, e.evt.clientY, i);
+            }}
           />
         ))}
       {selected && !readOnly && (

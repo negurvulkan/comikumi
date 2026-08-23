@@ -478,7 +478,11 @@
       "assignPreset": "Asignar preajuste",
       "noPreset": "– sin preajuste –",
       "duplicate": "Duplicar",
-      "removePoint": "Eliminar punto"
+      "removePoint": "Eliminar punto",
+      "setAngleFixPrevious": "Establecer ángulo (fijar punto anterior)",
+      "setAngleFixNext": "Establecer ángulo (fijar punto siguiente)",
+      "anglePlaceholder": "Ángulo en grados",
+      "applyAngle": "Aplicar"
     },
     "canvas": {
       "zoomOut": "Alejar",

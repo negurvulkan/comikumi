@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createPanel } from "../../../shared/src/layoutSchema";
-import { cutPanelDelta, cutPanelSourcePolygon, drawCutPanelContent } from "./cutPanel";
+import { createPanel } from "../../../../shared/src/layoutSchema.js";
+import { cutPanelDelta, cutPanelSourcePolygon, drawCutPanelContent } from "../../../../shared/src/rendering/cutPanel.js";
 
 /** Minimal CanvasRenderingContext2D stand-in that only records which calls happened —
  * drawCutPanelContent never reads back geometry, just issues path/fill/clip/drawImage
