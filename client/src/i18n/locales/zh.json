@@ -56,6 +56,8 @@
     "savedMsg": "已保存。",
     "autosaveEnabledLabel": "启用自动保存",
     "autosaveIntervalLabel": "自动保存间隔（秒）",
+    "trashRetentionDaysLabel": "回收站保留时间（天）",
+    "trashRetentionDaysHint": "删除的页面会移入扫描文件夹旁的“_trash”文件夹，而不会立即永久删除。超过此天数后，服务器会在后台自动清理；在此之前，系统管理员可以手动恢复。",
     "backLink": "← 返回卷列表"
   },
   "errors": {
@@ -65,6 +67,7 @@
     "folder_create_failed": "无法创建文件夹：{{reason}}",
     "invalid_file_name": "文件名无效。",
     "unsupported_file_type": "不支持的{{kind}}文件类型。",
+    "unsupported_page_file_type": "不支持的文件类型：{{fileName}}",
     "file_required": "需要一个{{field}}文件。",
     "volume_not_found": "未找到该卷。",
     "export_fields_required": "需要文件夹后缀、页面和PNG文件。",
@@ -249,6 +252,7 @@
     "menuPageLabel": "页面",
     "menuImportLabel": "导入",
     "menuImportZip": "JSON（ZIP）",
+    "menuUploadPages": "上传页面…",
     "menuExportLabel": "导出",
     "menuExportImage": "图片…",
     "menuExportAllZip": "全部JSON（ZIP）",
@@ -260,6 +264,13 @@
     "importErrorPrefix": "错误：{{message}}",
     "importedMsg": "已导入 {{count}} 个版式{{skippedText}}",
     "skippedPrefix": " – 已跳过：{{list}}",
+    "uploadConflictTitle": "页面已存在",
+    "uploadConflictMessage": "此卷中已存在以下文件：{{list}}。是否覆盖？",
+    "uploadConflictConfirm": "覆盖",
+    "uploadedMsg": "已上传 {{count}} 个页面",
+    "uploadErrorPrefix": "错误：{{message}}",
+    "deletePage": "删除页面",
+    "deletePageConfirm": "删除页面“{{page}}”？源文件会移入回收站（不会立即永久删除）——该页面已保存的嵌字文件无论如何都会被保留。",
     "pagesCount_other": "{{count}} 页"
   },
   "projectSwitcher": {

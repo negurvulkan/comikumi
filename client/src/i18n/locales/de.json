@@ -95,6 +95,8 @@
     "savedMsg": "Gespeichert.",
     "autosaveEnabledLabel": "Autosave aktivieren",
     "autosaveIntervalLabel": "Autosave-Intervall (Sekunden)",
+    "trashRetentionDaysLabel": "Papierkorb-Aufbewahrung (Tage)",
+    "trashRetentionDaysHint": "Gelöschte Seiten landen im „_trash“-Ordner neben dem Scan-Ordner statt sofort endgültig entfernt zu werden. Nach dieser Anzahl Tage bereinigt der Server sie automatisch im Hintergrund; bis dahin kann eine Systemverwaltung sie manuell wiederherstellen.",
     "backLink": "← Zurück zur Bandliste"
   },
   "errors": {
@@ -104,6 +106,7 @@
     "folder_create_failed": "Ordner konnte nicht angelegt werden: {{reason}}",
     "invalid_file_name": "Ungültiger Dateiname.",
     "unsupported_file_type": "Nicht unterstützter {{kind}}-Dateityp.",
+    "unsupported_page_file_type": "Nicht unterstützter Dateityp: {{fileName}}",
     "file_required": "Eine {{field}}-Datei ist erforderlich.",
     "volume_not_found": "Band nicht gefunden.",
     "export_fields_required": "Ordner-Suffix, Seite und PNG-Datei sind erforderlich.",
@@ -249,6 +252,7 @@
     "menuPageLabel": "Seite",
     "menuImportLabel": "Import",
     "menuImportZip": "JSONs (ZIP)",
+    "menuUploadPages": "Seiten hochladen…",
     "menuExportLabel": "Export",
     "menuExportImage": "Bild…",
     "menuExportAllZip": "Alle JSONs (ZIP)",
@@ -260,6 +264,13 @@
     "importErrorPrefix": "Fehler: {{message}}",
     "importedMsg": "{{count}} Layout(s) importiert{{skippedText}}",
     "skippedPrefix": " – übersprungen: {{list}}",
+    "uploadConflictTitle": "Seiten bereits vorhanden",
+    "uploadConflictMessage": "Folgende Dateien existieren bereits in diesem Band: {{list}}. Überschreiben?",
+    "uploadConflictConfirm": "Überschreiben",
+    "uploadedMsg": "{{count}} Seite(n) hochgeladen",
+    "uploadErrorPrefix": "Fehler: {{message}}",
+    "deletePage": "Seite löschen",
+    "deletePageConfirm": "Seite „{{page}}“ löschen? Die Quelldatei landet im Papierkorb (nicht sofort endgültig) — eine bereits gespeicherte Lettering-Datei für diese Seite bleibt in jedem Fall erhalten.",
     "pagesCount_one": "{{count}} Seite",
     "pagesCount_other": "{{count}} Seiten"
   },

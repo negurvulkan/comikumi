@@ -56,6 +56,8 @@
     "savedMsg": "Enregistré.",
     "autosaveEnabledLabel": "Activer la sauvegarde automatique",
     "autosaveIntervalLabel": "Intervalle de sauvegarde automatique (secondes)",
+    "trashRetentionDaysLabel": "Conservation de la corbeille (jours)",
+    "trashRetentionDaysHint": "Les pages supprimées atterrissent dans un dossier « _trash » à côté du dossier de scan au lieu d'être supprimées définitivement tout de suite. Passé ce délai, le serveur les nettoie automatiquement en arrière-plan ; jusque-là, un administrateur système peut les restaurer manuellement.",
     "backLink": "← Retour à la liste des volumes"
   },
   "errors": {
@@ -65,6 +67,7 @@
     "folder_create_failed": "Impossible de créer le dossier : {{reason}}",
     "invalid_file_name": "Nom de fichier invalide.",
     "unsupported_file_type": "Type de fichier {{kind}} non pris en charge.",
+    "unsupported_page_file_type": "Type de fichier non pris en charge : {{fileName}}",
     "file_required": "Un fichier {{field}} est requis.",
     "volume_not_found": "Volume introuvable.",
     "export_fields_required": "Le suffixe de dossier, la page et le fichier PNG sont requis.",
@@ -249,6 +252,7 @@
     "menuPageLabel": "Page",
     "menuImportLabel": "Importer",
     "menuImportZip": "JSON (ZIP)",
+    "menuUploadPages": "Téléverser des pages…",
     "menuExportLabel": "Exporter",
     "menuExportImage": "Image…",
     "menuExportAllZip": "Tous les JSON (ZIP)",
@@ -260,6 +264,13 @@
     "importErrorPrefix": "Erreur : {{message}}",
     "importedMsg": "{{count}} mise(s) en page importée(s){{skippedText}}",
     "skippedPrefix": " – ignoré(s) : {{list}}",
+    "uploadConflictTitle": "Pages déjà existantes",
+    "uploadConflictMessage": "Ces fichiers existent déjà dans ce volume : {{list}}. Les remplacer ?",
+    "uploadConflictConfirm": "Remplacer",
+    "uploadedMsg": "{{count}} page(s) téléversée(s)",
+    "uploadErrorPrefix": "Erreur : {{message}}",
+    "deletePage": "Supprimer la page",
+    "deletePageConfirm": "Supprimer la page « {{page}} » ? Le fichier source est déplacé vers la corbeille (pas immédiatement définitif) — un fichier de lettrage déjà enregistré pour cette page est conservé dans tous les cas.",
     "pagesCount_one": "{{count}} page",
     "pagesCount_other": "{{count}} pages"
   },

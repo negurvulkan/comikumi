@@ -152,6 +152,24 @@ export const api = {
   pageThumbnailUrl: (volumeId: string, page: string) =>
     authUrl(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/thumbnail`)),
 
+  /** Uploads one or more page-scan images into the volume's source folder — lets a
+   * client on a different machine than the server add pages without filesystem/
+   * network-share access to scanRoot. `overwrite` names files the caller has already
+   * confirmed replacing (the second call after a user approves a collision modal). */
+  uploadPages: (volumeId: string, files: File[], overwrite?: string[]) => {
+    const form = new FormData();
+    files.forEach((f) => form.append("pages", f));
+    if (overwrite && overwrite.length > 0) form.append("overwrite", JSON.stringify(overwrite));
+    return authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages`), { method: "POST", body: form }).then((r) =>
+      json<{ written: string[]; conflicts: string[] }>(r)
+    );
+  },
+
+  deletePage: (volumeId: string, page: string) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}`), {
+      method: "DELETE",
+    }).then((r) => json<{ ok: true }>(r)),
+
   getLayout: (volumeId: string, page: string) =>
     authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`)).then((r) =>
       json<PageLayout>(r)

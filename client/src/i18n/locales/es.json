@@ -56,6 +56,8 @@
     "savedMsg": "Guardado.",
     "autosaveEnabledLabel": "Activar guardado automático",
     "autosaveIntervalLabel": "Intervalo de guardado automático (segundos)",
+    "trashRetentionDaysLabel": "Retención de la papelera (días)",
+    "trashRetentionDaysHint": "Las páginas eliminadas van a una carpeta «_trash» junto a la carpeta de escaneo en lugar de eliminarse permanentemente de inmediato. Tras estos días el servidor las limpia automáticamente en segundo plano; hasta entonces, un administrador del sistema puede restaurarlas manualmente.",
     "backLink": "← Volver a la lista de volúmenes"
   },
   "errors": {
@@ -65,6 +67,7 @@
     "folder_create_failed": "No se pudo crear la carpeta: {{reason}}",
     "invalid_file_name": "Nombre de archivo no válido.",
     "unsupported_file_type": "Tipo de archivo {{kind}} no admitido.",
+    "unsupported_page_file_type": "Tipo de archivo no admitido: {{fileName}}",
     "file_required": "Se requiere un archivo {{field}}.",
     "volume_not_found": "Volumen no encontrado.",
     "export_fields_required": "Se requieren el sufijo de carpeta, la página y el archivo PNG.",
@@ -249,6 +252,7 @@
     "menuPageLabel": "Página",
     "menuImportLabel": "Importar",
     "menuImportZip": "JSON (ZIP)",
+    "menuUploadPages": "Subir páginas…",
     "menuExportLabel": "Exportar",
     "menuExportImage": "Imagen…",
     "menuExportAllZip": "Todos los JSON (ZIP)",
@@ -260,6 +264,13 @@
     "importErrorPrefix": "Error: {{message}}",
     "importedMsg": "{{count}} maquetación(es) importada(s){{skippedText}}",
     "skippedPrefix": " – omitidas: {{list}}",
+    "uploadConflictTitle": "Las páginas ya existen",
+    "uploadConflictMessage": "Estos archivos ya existen en este volumen: {{list}}. ¿Sobrescribirlos?",
+    "uploadConflictConfirm": "Sobrescribir",
+    "uploadedMsg": "{{count}} página(s) subida(s)",
+    "uploadErrorPrefix": "Error: {{message}}",
+    "deletePage": "Eliminar página",
+    "deletePageConfirm": "¿Eliminar la página «{{page}}»? El archivo pasa a la papelera (no es permanente de inmediato); un archivo de rotulación ya guardado para esta página se conserva en cualquier caso.",
     "pagesCount_one": "{{count}} página",
     "pagesCount_other": "{{count}} páginas"
   },

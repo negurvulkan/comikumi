@@ -95,6 +95,8 @@
     "savedMsg": "Saved.",
     "autosaveEnabledLabel": "Enable autosave",
     "autosaveIntervalLabel": "Autosave interval (seconds)",
+    "trashRetentionDaysLabel": "Trash retention (days)",
+    "trashRetentionDaysHint": "Deleted pages land in a \"_trash\" folder next to the scan folder instead of being permanently removed right away. After this many days the server automatically cleans them up in the background; until then, a system administrator can restore them manually.",
     "backLink": "← Back to volume list"
   },
   "errors": {
@@ -104,6 +106,7 @@
     "folder_create_failed": "Could not create the folder: {{reason}}",
     "invalid_file_name": "Invalid file name.",
     "unsupported_file_type": "Unsupported {{kind}} file type.",
+    "unsupported_page_file_type": "Unsupported file type: {{fileName}}",
     "file_required": "A {{field}} file is required.",
     "volume_not_found": "Volume not found.",
     "export_fields_required": "Folder suffix, page and PNG file are required.",
@@ -249,6 +252,7 @@
     "menuPageLabel": "Page",
     "menuImportLabel": "Import",
     "menuImportZip": "JSONs (ZIP)",
+    "menuUploadPages": "Upload pages…",
     "menuExportLabel": "Export",
     "menuExportImage": "Image…",
     "menuExportAllZip": "All JSONs (ZIP)",
@@ -260,6 +264,13 @@
     "importErrorPrefix": "Error: {{message}}",
     "importedMsg": "{{count}} layout(s) imported{{skippedText}}",
     "skippedPrefix": " – skipped: {{list}}",
+    "uploadConflictTitle": "Pages already exist",
+    "uploadConflictMessage": "These files already exist in this volume: {{list}}. Overwrite them?",
+    "uploadConflictConfirm": "Overwrite",
+    "uploadedMsg": "{{count}} page(s) uploaded",
+    "uploadErrorPrefix": "Error: {{message}}",
+    "deletePage": "Delete page",
+    "deletePageConfirm": "Delete page \"{{page}}\"? The source file moves to trash (not immediately permanent) — a lettering file already saved for this page is kept either way.",
     "pagesCount_one": "{{count}} page",
     "pagesCount_other": "{{count}} pages"
   },

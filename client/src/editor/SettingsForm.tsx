@@ -52,6 +52,7 @@ export function SettingsForm({ onClose }: Props) {
         autosaveEnabled,
         autosaveIntervalSeconds,
         readingDirection,
+        trashRetentionDays,
       } = settings;
       const next = await api.updateSettings({
         scanRoot,
@@ -66,6 +67,7 @@ export function SettingsForm({ onClose }: Props) {
         autosaveEnabled,
         autosaveIntervalSeconds,
         readingDirection,
+        trashRetentionDays,
       });
       setSettings(next);
       setSavedMsg(t("settings.savedMsg"));
@@ -259,6 +261,17 @@ export function SettingsForm({ onClose }: Props) {
           />
         </label>
       )}
+
+      <label>
+        {t("settings.trashRetentionDaysLabel")}
+        <input
+          type="number"
+          min={1}
+          value={settings.trashRetentionDays}
+          onChange={(e) => setSettings({ ...settings, trashRetentionDays: Number(e.target.value) })}
+        />
+      </label>
+      <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>{t("settings.trashRetentionDaysHint")}</p>
 
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button type="submit" className="primary" disabled={saving}>

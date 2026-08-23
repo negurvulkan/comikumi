@@ -154,6 +154,16 @@ export async function getActiveProjectAssetDir(kind: "fonts" | "images" | "bubbl
   return path.join(active.data.assetsDir, kind);
 }
 
+/** Non-throwing scanRoot + retention lookup for the background trash-purge sweep in
+ * index.ts — that sweep runs on a timer with no request/route context, so it must
+ * tolerate "no project open" (returns null) instead of catching NoActiveProjectError
+ * at every call site, mirroring getActiveProjectAssetDir()'s direct `active` read. */
+export async function getActiveScanRootForTrash(): Promise<{ scanRoot: string; trashRetentionDays: number } | null> {
+  await ensureInitialized();
+  if (!active) return null;
+  return { scanRoot: active.data.scanRoot, trashRetentionDays: active.data.trashRetentionDays };
+}
+
 /** Resolved thumbnail-cache folder: the explicit `thumbnailsDir` setting if configured,
  * else a "thumbnails" folder next to the project file itself, else (no project open at
  * all) the caller's global fallback dir. Unlike fonts/images/bubble-svgs, this is pure
@@ -298,6 +308,7 @@ export async function readSettings(): Promise<ProjectSettings> {
     autosaveEnabled,
     autosaveIntervalSeconds,
     readingDirection,
+    trashRetentionDays,
   } = data;
   return {
     scanRoot,
@@ -312,6 +323,7 @@ export async function readSettings(): Promise<ProjectSettings> {
     autosaveEnabled,
     autosaveIntervalSeconds,
     readingDirection,
+    trashRetentionDays,
   };
 }
 

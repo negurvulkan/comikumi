@@ -114,6 +114,10 @@ export interface PageInfo {
   absolutePath: string;
 }
 
+/** Extensions accepted as a page source image — shared by listPages() (reading) and
+ * the pages.ts upload route (writing), so both sides agree on what counts as a page. */
+export const PAGE_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
+
 export async function listPages(volume: VolumeInfo): Promise<PageInfo[]> {
   let entries: import("node:fs").Dirent[];
   try {
@@ -121,9 +125,8 @@ export async function listPages(volume: VolumeInfo): Promise<PageInfo[]> {
   } catch {
     return [];
   }
-  const imageExt = new Set([".png", ".jpg", ".jpeg", ".webp"]);
   return entries
-    .filter((e) => e.isFile() && imageExt.has(path.extname(e.name).toLowerCase()))
+    .filter((e) => e.isFile() && PAGE_IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
     .map((e) => ({
       page: path.basename(e.name, path.extname(e.name)),
       fileName: e.name,

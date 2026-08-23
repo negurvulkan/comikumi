@@ -42,5 +42,10 @@ export const ProjectSettingsSchema = z.object({
    * Bubble.direction (per-bubble TEXT layout within a single bubble) — this is about
    * the SEQUENCE of multiple panels/bubbles relative to each other. */
   readingDirection: z.enum(["ltr", "rtl"]).default("rtl"),
+  /** Days a deleted page's source image stays recoverable in the "_trash" folder
+   * (under scanRoot) before an automatic sweep permanently removes it — see
+   * server/src/lib/trash.ts. Deletion is never immediate/destructive; this only
+   * controls how long the safety net lasts. */
+  trashRetentionDays: z.number().int().positive().default(30),
 });
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;

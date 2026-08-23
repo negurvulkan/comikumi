@@ -17,6 +17,7 @@ import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { VolumeReportModal } from "../editor/VolumeReportModal";
+import { useConfirmDialog } from "../editor/ConfirmDialog";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
 
@@ -41,7 +42,9 @@ export function PageGrid() {
   const [showPresets, setShowPresets] = useState(false);
   const [showVolumeReport, setShowVolumeReport] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const uploadPagesInputRef = useRef<HTMLInputElement>(null);
   const { exporting, exportMsg, runExport } = useExportRun(volumeId, languages);
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     setPages(null);
@@ -99,6 +102,51 @@ export function PageGrid() {
     }
   }
 
+  async function handleUploadPagesFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await api.uploadPages(volumeId, files);
+      let totalWritten = result.written.length;
+      if (result.conflicts.length > 0) {
+        const overwrite = await confirm({
+          title: t("pageGrid.uploadConflictTitle"),
+          message: t("pageGrid.uploadConflictMessage", { list: result.conflicts.join(", ") }),
+          confirmLabel: t("pageGrid.uploadConflictConfirm"),
+        });
+        if (overwrite) {
+          const conflictingFiles = files.filter((f) => result.conflicts.includes(f.name.replace(/[^\w.\- ]/g, "_")));
+          const retry = await api.uploadPages(volumeId, conflictingFiles, result.conflicts);
+          totalWritten += retry.written.length;
+        }
+      }
+      setMessage(t("pageGrid.uploadedMsg", { count: totalWritten }));
+      setPages(await api.listPages(volumeId));
+    } catch (e) {
+      setMessage(t("pageGrid.uploadErrorPrefix", { message: translateApiError(e, t) }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeletePage(page: string) {
+    const ok = await confirm({ message: t("pageGrid.deletePageConfirm", { page }), danger: true });
+    if (!ok) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      await api.deletePage(volumeId, page);
+      setPages(await api.listPages(volumeId));
+    } catch (e) {
+      setMessage(t("pageGrid.uploadErrorPrefix", { message: translateApiError(e, t) }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (error) return <div className="error-banner">{error}</div>;
   if (!pages) return <p>{t("pageGrid.loading")}</p>;
 
@@ -109,6 +157,12 @@ export function PageGrid() {
       entries: [
         { type: "sublabel", label: t("pageGrid.menuImportLabel") },
         { type: "action", label: t("pageGrid.menuImportZip"), onClick: () => importInputRef.current?.click(), disabled: busy || !hasAtLeast("letterer") },
+        {
+          type: "action",
+          label: t("pageGrid.menuUploadPages"),
+          onClick: () => uploadPagesInputRef.current?.click(),
+          disabled: busy || !hasAtLeast("letterer"),
+        },
         { type: "separator" },
         { type: "sublabel", label: t("pageGrid.menuExportLabel") },
         {
@@ -152,6 +206,15 @@ export function PageGrid() {
     <div className="page">
       <MenuBar groups={menuGroups} />
       <input ref={importInputRef} type="file" accept=".zip,application/zip" onChange={handleImportZipFile} style={{ display: "none" }} />
+      <input
+        ref={uploadPagesInputRef}
+        type="file"
+        multiple
+        accept="image/png,image/jpeg,image/webp"
+        onChange={handleUploadPagesFiles}
+        style={{ display: "none" }}
+      />
+      {confirmDialog}
       <Link to="/" className="canvas-titlebar canvas-titlebar-link" title={t("pageGrid.breadcrumbBackToVolumes")}>
         <span className="canvas-titlebar-name">{t("pageGrid.titlebarPages")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
@@ -207,14 +270,26 @@ export function PageGrid() {
       <div className="page-scroll" style={{ padding: 16 }}>
         <div className="card-grid">
           {pages.map((p) => (
-            <Link
-              key={p.page}
-              to={`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`}
-              className="card"
-            >
-              <img src={api.pageThumbnailUrl(volumeId, p.page)} alt={p.page} loading="lazy" />
-              <div className="label">{p.page}</div>
-            </Link>
+            <div key={p.page} className="card-wrap">
+              <Link to={`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`} className="card">
+                <img src={api.pageThumbnailUrl(volumeId, p.page)} alt={p.page} loading="lazy" />
+                <div className="label">{p.page}</div>
+              </Link>
+              {hasAtLeast("letterer") && (
+                <button
+                  type="button"
+                  className="card-delete-btn"
+                  title={t("pageGrid.deletePage")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDeletePage(p.page);
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </div>

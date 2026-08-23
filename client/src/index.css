@@ -124,6 +124,37 @@ body {
   color: var(--text-muted);
 }
 
+/* Wraps a .card so a delete button can float over its corner without being a
+   descendant of the card's own <Link> (which would otherwise trigger navigation). */
+.card-wrap {
+  position: relative;
+}
+
+.card-delete-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(20, 20, 24, 0.75);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.card-wrap:hover .card-delete-btn {
+  opacity: 1;
+}
+
+.card-delete-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
 /* Volume overview cards (VolumeList.tsx) — first-page preview + compact per-volume
    stats row. */
 .volume-card-preview {

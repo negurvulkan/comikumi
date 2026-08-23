@@ -56,6 +56,8 @@
     "savedMsg": "저장되었습니다.",
     "autosaveEnabledLabel": "자동 저장 사용",
     "autosaveIntervalLabel": "자동 저장 간격 (초)",
+    "trashRetentionDaysLabel": "휴지통 보관 기간 (일)",
+    "trashRetentionDaysHint": "삭제된 페이지는 즉시 영구 삭제되지 않고 스캔 폴더 옆의 \"_trash\" 폴더로 이동합니다. 이 일수가 지나면 서버가 백그라운드에서 자동으로 정리합니다. 그 전까지는 시스템 관리자가 수동으로 복원할 수 있습니다.",
     "backLink": "← 권 목록으로 돌아가기"
   },
   "errors": {
@@ -65,6 +67,7 @@
     "folder_create_failed": "폴더를 만들 수 없습니다: {{reason}}",
     "invalid_file_name": "파일 이름이 올바르지 않습니다.",
     "unsupported_file_type": "지원되지 않는 {{kind}} 파일 형식입니다.",
+    "unsupported_page_file_type": "지원되지 않는 파일 형식: {{fileName}}",
     "file_required": "{{field}} 파일이 필요합니다.",
     "volume_not_found": "권을 찾을 수 없습니다.",
     "export_fields_required": "폴더 접미사, 페이지, PNG 파일이 필요합니다.",
@@ -249,6 +252,7 @@
     "menuPageLabel": "페이지",
     "menuImportLabel": "가져오기",
     "menuImportZip": "JSON (ZIP)",
+    "menuUploadPages": "페이지 업로드…",
     "menuExportLabel": "내보내기",
     "menuExportImage": "이미지…",
     "menuExportAllZip": "모든 JSON (ZIP)",
@@ -260,6 +264,13 @@
     "importErrorPrefix": "오류: {{message}}",
     "importedMsg": "레이아웃 {{count}}개를 가져왔습니다{{skippedText}}",
     "skippedPrefix": " – 건너뜀: {{list}}",
+    "uploadConflictTitle": "이미 존재하는 페이지",
+    "uploadConflictMessage": "다음 파일이 이 권에 이미 존재합니다: {{list}}. 덮어쓰시겠습니까?",
+    "uploadConflictConfirm": "덮어쓰기",
+    "uploadedMsg": "{{count}}개 페이지 업로드됨",
+    "uploadErrorPrefix": "오류: {{message}}",
+    "deletePage": "페이지 삭제",
+    "deletePageConfirm": "페이지 \"{{page}}\"를 삭제하시겠습니까? 원본 파일은 휴지통으로 이동합니다(즉시 영구 삭제되지 않음) — 이 페이지에 이미 저장된 레터링 파일은 어느 경우든 그대로 유지됩니다.",
     "pagesCount_other": "{{count}}페이지"
   },
   "projectSwitcher": {

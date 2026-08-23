@@ -56,6 +56,8 @@
     "savedMsg": "保存しました。",
     "autosaveEnabledLabel": "自動保存を有効にする",
     "autosaveIntervalLabel": "自動保存の間隔（秒）",
+    "trashRetentionDaysLabel": "ゴミ箱の保持期間（日）",
+    "trashRetentionDaysHint": "削除したページはすぐに完全削除されず、スキャンフォルダの横にある「_trash」フォルダに移動します。この日数が経過すると、サーバーがバックグラウンドで自動的に削除します。それまではシステム管理者が手動で復元できます。",
     "backLink": "← 巻一覧に戻る"
   },
   "errors": {
@@ -65,6 +67,7 @@
     "folder_create_failed": "フォルダを作成できませんでした: {{reason}}",
     "invalid_file_name": "無効なファイル名です。",
     "unsupported_file_type": "サポートされていない{{kind}}ファイル形式です。",
+    "unsupported_page_file_type": "サポートされていないファイル形式です: {{fileName}}",
     "file_required": "{{field}}ファイルが必要です。",
     "volume_not_found": "巻が見つかりません。",
     "export_fields_required": "フォルダ接尾辞、ページ、PNGファイルが必要です。",
@@ -249,6 +252,7 @@
     "menuPageLabel": "ページ",
     "menuImportLabel": "インポート",
     "menuImportZip": "JSON (ZIP)",
+    "menuUploadPages": "ページをアップロード…",
     "menuExportLabel": "エクスポート",
     "menuExportImage": "画像…",
     "menuExportAllZip": "すべてのJSON (ZIP)",
@@ -260,6 +264,13 @@
     "importErrorPrefix": "エラー: {{message}}",
     "importedMsg": "{{count}} 件のレイアウトをインポートしました{{skippedText}}",
     "skippedPrefix": " – スキップ: {{list}}",
+    "uploadConflictTitle": "既に存在するページ",
+    "uploadConflictMessage": "この巻には既に次のファイルが存在します: {{list}}。上書きしますか？",
+    "uploadConflictConfirm": "上書き",
+    "uploadedMsg": "{{count}} 件のページをアップロードしました",
+    "uploadErrorPrefix": "エラー: {{message}}",
+    "deletePage": "ページを削除",
+    "deletePageConfirm": "ページ「{{page}}」を削除しますか？元ファイルはゴミ箱に移動します（即座に完全削除はされません）。このページの既存のレタリングファイルはいずれにせよそのまま残ります。",
     "pagesCount_other": "{{count}} ページ"
   },
   "projectSwitcher": {

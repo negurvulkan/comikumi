@@ -147,6 +147,22 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
   sich die Quelldatei ändert), ein Klick öffnet den Editor für diese Seite. Zeigt einen
   Seitenzähler in der Statusleiste. Der Cache liegt in einem separat konfigurierbaren
   [Thumbnail-Ordner](#projekt-assets-ordner), standardmäßig direkt neben der Projektdatei.
+- **Seiten hochladen**: Über "Seite → Seiten hochladen…" lassen sich ein oder mehrere
+  Seiten-Scans direkt aus dem Browser in den `_empty`-Ordner des Bandes hochladen —
+  wichtig, sobald Client und Server auf getrennten Geräten laufen (bisher ließ sich
+  eine neue Seite nur hinzufügen, indem die Bilddatei direkt ins `scanRoot` auf der
+  Server-Maschine kopiert wurde). Existiert bereits eine Seite mit demselben
+  Dateinamen, fragt ein Dialog vor dem Überschreiben nach. Jede Seiten-Karte hat
+  zusätzlich einen "Löschen"-Button — entfernt nur die Quelldatei (eine für diese
+  Seite bereits gespeicherte Lettering-Datei bleibt in jedem Fall bestehen) und **nicht
+  destruktiv**: die Datei landet in einem `_trash`-Ordner direkt neben `scanRoot` (mit
+  Zeitstempel im Dateinamen und derselben relativen Ordnerstruktur wie im Original), statt
+  sofort endgültig gelöscht zu werden. Eine Systemverwaltung kann eine Datei jederzeit
+  manuell wiederherstellen, indem sie sie zurück an ihren ursprünglichen Ort verschiebt
+  und den Zeitstempel-Präfix entfernt. Ein automatischer Hintergrund-Sweep (alle 6
+  Stunden, `server/src/index.ts`) räumt den Papierkorb danach selbstständig auf — wie
+  lange eine Datei dort verbleibt, bevor sie endgültig entfernt wird, ist über
+  Einstellungen → "Papierkorb-Aufbewahrung (Tage)" konfigurierbar (Default: 30 Tage).
 - Beide Bildschirme haben ein **"Projekt"-Menü** (Projekt wechseln, Charaktere
   verwalten, Einstellungen öffnen) sowie eine Menüleiste mit Import-/Export-Aktionen
   (siehe [Export & Import](#export--import)), einen Eintrag "Bericht für den Band" und

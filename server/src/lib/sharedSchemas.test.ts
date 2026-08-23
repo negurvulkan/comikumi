@@ -26,6 +26,7 @@ describe("ProjectSettingsSchema", () => {
       autosaveEnabled: false,
       autosaveIntervalSeconds: 30,
       readingDirection: "rtl",
+      trashRetentionDays: 30,
     });
   });
 });
