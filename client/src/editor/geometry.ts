@@ -1,4 +1,31 @@
-import type { Point } from "../../../shared/src/layoutSchema";
+import type { Bubble, Point } from "../../../shared/src/layoutSchema";
+
+/**
+ * Ray-casting point-in-polygon test — works for any simple polygon, not just quads
+ * (despite historically living in export/perspective.ts, where it's used for quad-bubble
+ * text warping). Relocated here since it's also the panel-membership test used by
+ * editorStore.ts (auto-assign a bubble to a panel on creation, auto-detach when dragged
+ * outside); perspective.ts re-exports it so its existing callers/tests are unaffected.
+ */
+export function pointInQuad(p: Point, q: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = q.length - 1; i < q.length; j = i++) {
+    const xi = q[i].x,
+      yi = q[i].y,
+      xj = q[j].x,
+      yj = q[j].y;
+    const intersect = yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/** Center of a bubble's own base box (ignores any per-language formOverride/rotation) —
+ * used as the structural, language-independent point tested against a panel's polygon
+ * for auto-assign-on-creation and auto-detach-on-drag. */
+export function bubbleCenter(bubble: Pick<Bubble, "x" | "y" | "width" | "height">): Point {
+  return { x: bubble.x + bubble.width / 2, y: bubble.y + bubble.height / 2 };
+}
 
 /** Closest point on the segment a→b to point p, and its squared distance — used to find
  * which edge a double-click landed nearest to when inserting a new vertex (PanelShape.tsx). */

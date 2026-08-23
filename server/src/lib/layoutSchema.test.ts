@@ -200,6 +200,24 @@ describe("createBubble", () => {
   });
 });
 
+describe("locked field", () => {
+  it("is undefined (not stored) for a fresh bubble/panel", () => {
+    const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    const panel = createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    expect(bubble.locked).toBeUndefined();
+    expect(panel.locked).toBeUndefined();
+    // JSON.stringify drops undefined-valued keys entirely — never written to disk unless locked.
+    expect(JSON.parse(JSON.stringify(bubble))).not.toHaveProperty("locked");
+    expect(JSON.parse(JSON.stringify(panel))).not.toHaveProperty("locked");
+  });
+
+  it("round-trips true when explicitly locked", () => {
+    const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10, locked: true });
+    expect(bubble.locked).toBe(true);
+    expect(JSON.parse(JSON.stringify(bubble))).toHaveProperty("locked", true);
+  });
+});
+
 describe("createEmptyLayout", () => {
   it("produces an empty page layout with no bubbles/images/curvedTexts/panels", () => {
     const layout = createEmptyLayout("page_01", "page_01.png", 800, 1200);
@@ -212,6 +230,7 @@ describe("createEmptyLayout", () => {
       images: [],
       curvedTexts: [],
       panels: [],
+      schemaVersion: 2,
     });
   });
 });

@@ -1,4 +1,4 @@
-import type { Bubble, BubbleForm, PageLayout, TextAlign, TextDirection, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type { Bubble, BubbleForm, PageLayout, Panel, Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
 import { imageFileForLanguage, resolveBubbleForm, resolveBubbleStyle, resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { paddingRatioFor, fitHorizontalText } from "./textLayout";
@@ -8,6 +8,16 @@ import { drawBubbleBackground } from "./bubbleBackground";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects";
 import { drawCurvedText, fitCurvedText } from "./curvedText";
 import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary } from "./svgBubbleGeometry";
+
+/** A child bubble's x/y/corners are relative to its parent panel's origin (see
+ * PanelPointsSchema.origin) — unlike the live Konva canvas, this is a plain 2D-context
+ * renderer with no parent-transform to lean on, so the origin must be added back in
+ * explicitly before any of the drawing math below runs. Unassigned/stale-panelId bubbles
+ * resolve to {x:0,y:0} (a no-op shift), matching how they're already absolute today. */
+function panelOriginFor(bubble: Bubble, panels: Panel[]): Point {
+  const panel = bubble.panelId ? panels.find((p) => p.id === bubble.panelId) : undefined;
+  return panel?.origin ?? { x: 0, y: 0 };
+}
 
 interface ResolvedStyle {
   fontSize: number;
@@ -118,7 +128,10 @@ export async function renderPageToPng(
 
     if (bubble.shape === "quad" && bubble.corners) {
       if (!hasText) continue;
-      const warped = renderPerspectiveText(bubble.corners, {
+      const quadOrigin = panelOriginFor(bubble, layout.panels);
+      const corners =
+        quadOrigin.x || quadOrigin.y ? bubble.corners.map((c) => ({ x: c.x + quadOrigin.x, y: c.y + quadOrigin.y })) : bubble.corners;
+      const warped = renderPerspectiveText(corners, {
         text,
         fontFamily: style.fontFamily,
         fontSize: style.fontSize,
@@ -133,7 +146,9 @@ export async function renderPageToPng(
       continue;
     }
 
-    const form = resolveBubbleForm(bubble, languageCode, presets);
+    const resolvedForm = resolveBubbleForm(bubble, languageCode, presets);
+    const origin = panelOriginFor(bubble, layout.panels);
+    const form = origin.x || origin.y ? { ...resolvedForm, x: resolvedForm.x + origin.x, y: resolvedForm.y + origin.y } : resolvedForm;
     // A bubble with a visible background is real page artwork now, not just
     // an invisible text overlay — it must still be drawn even when this
     // language has no translation yet (e.g. a batch export of an

@@ -46,8 +46,30 @@ export async function countVolumesUnder(scanRoot: string, emptySuffix: string): 
   return results.length;
 }
 
+// scanVolumes() is called by nearly every route (pages/layout/script/export all
+// resolve their volume via findVolume() first) and does a full recursive directory
+// walk of scanRoot every single time. On a local disk that's cheap; on a remote
+// share (NAS, especially over SMB/WiFi) each fs.readdir() carries real per-call
+// latency, so this walk dominates request time. A short TTL cache (a few seconds,
+// not "forever") turns repeated requests within one editing burst into a single
+// scan while still picking up newly created volumes quickly. Invalidated eagerly
+// after any action that creates volume folders (see invalidateVolumesCache()).
+const VOLUMES_CACHE_TTL_MS = 5000;
+let volumesCache: { key: string; expiresAt: number; volumes: VolumeInfo[] } | null = null;
+
+/** Forces the next scanVolumes() call to re-scan disk instead of using the cached
+ * result — call after creating volume folders so a newly added book shows up
+ * immediately instead of waiting out the TTL. */
+export function invalidateVolumesCache(): void {
+  volumesCache = null;
+}
+
 export async function scanVolumes(): Promise<VolumeInfo[]> {
   const settings = await readSettings();
+  const cacheKey = `${settings.scanRoot}|${settings.emptySuffix}`;
+  if (volumesCache && volumesCache.key === cacheKey && volumesCache.expiresAt > Date.now()) {
+    return volumesCache.volumes;
+  }
   const emptyDirs: string[] = [];
   await findEmptyDirs(settings.scanRoot, 5, settings.emptySuffix, emptyDirs);
 
@@ -76,6 +98,7 @@ export async function scanVolumes(): Promise<VolumeInfo[]> {
       existingLanguageFolders,
     });
   }
+  volumesCache = { key: cacheKey, expiresAt: Date.now() + VOLUMES_CACHE_TTL_MS, volumes };
   return volumes;
 }
 

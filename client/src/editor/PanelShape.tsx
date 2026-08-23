@@ -4,6 +4,7 @@ import Konva from "konva";
 import type { Panel, Point } from "../../../shared/src/layoutSchema";
 import { panelDisplayLabel, polygonBounds } from "../../../shared/src/layoutSchema";
 import { closestPointOnSegment } from "./geometry";
+import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {
   panel: Panel;
@@ -38,13 +39,23 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
   useEffect(() => setLivePoints(displayPoints), [panel.points, scale]);
 
   const bounds = polygonBounds(panel.points);
+  // See BubbleShape.tsx's Props doc comment — role-based readOnly vs. the panel's own
+  // `locked` field both disable geometry, but only readOnly hides the lock toggle itself.
+  const geometryDisabled = readOnly || panel.locked;
 
   function handleLineDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
     const node = e.target;
     const dx = node.x() / scale;
     const dy = node.y() / scale;
     node.position({ x: 0, y: 0 });
-    onChange({ points: panel.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) });
+    // A whole-panel drag is a rigid translate — origin must move by the same (dx, dy) as
+    // points, or child bubbles (rendered in a Group anchored at origin) would visually
+    // detach from the panel outline. A vertex-only reshape (handleVertexDragEnd below)
+    // deliberately never touches origin — see PanelPointsSchema.origin's doc comment.
+    onChange({
+      points: panel.points.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+      origin: { x: panel.origin.x + dx, y: panel.origin.y + dy },
+    });
   }
 
   function handleVertexDragMove(i: number, e: Konva.KonvaEventObject<DragEvent>) {
@@ -61,7 +72,7 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
 
   function handleLineDblClick(e: Konva.KonvaEventObject<MouseEvent>) {
     e.evt.preventDefault();
-    if (readOnly) return;
+    if (geometryDisabled) return;
     const pos = e.target.getRelativePointerPosition();
     if (!pos) return;
     let bestEdge = 0;
@@ -91,7 +102,7 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
         hitStrokeWidth={12}
         dash={[8, 6]}
         fill={selected ? "rgba(108,140,255,0.08)" : undefined}
-        draggable={!readOnly}
+        draggable={!geometryDisabled}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         onDblClick={handleLineDblClick}
@@ -111,7 +122,7 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
         listening={false}
       />
       {selected &&
-        !readOnly &&
+        !geometryDisabled &&
         livePoints.map((p, i) => (
           <Circle
             key={i}
@@ -131,6 +142,15 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
             }}
           />
         ))}
+      {selected && !readOnly && (
+        <LockToggleHandle
+          x={bounds.maxX * scale + 14 * handleScale}
+          y={bounds.minY * scale - 14 * handleScale}
+          scale={handleScale}
+          locked={!!panel.locked}
+          onToggle={() => onChange({ locked: panel.locked ? undefined : true })}
+        />
+      )}
     </Group>
   );
 }

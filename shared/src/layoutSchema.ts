@@ -184,8 +184,38 @@ export const BubbleSchema = z.object({
    * the preset changes. Null/stale (deleted preset) means unassigned, same convention as
    * panelId/characterId. */
   presetId: z.string().nullable().default(null),
+  /** User-set protection against accidental drag/resize/rotate/reshape/delete/duplicate —
+   * independent of the "translator" role's readOnly restriction. Deliberately `.optional()`
+   * (not `.default(false)`): set to `true` when locked, `undefined` (not `false`) when
+   * unlocked, so JSON.stringify drops the key entirely once unlocked — only ever written
+   * to disk when the element was last locked. */
+  locked: z.boolean().optional(),
 });
 export type Bubble = z.infer<typeof BubbleSchema>;
+
+/**
+ * Shifts a bubble's position (and everything position-derived: quad corners, per-language
+ * form overrides) by (dx, dy). Deliberately does NOT touch `tail`/`tailAnchor` — those are
+ * already LOCAL, box-relative coordinates (see BubbleFormSchema doc comments above), so
+ * they stay correct automatically when the box itself moves. This is also exactly the
+ * conversion needed to re-parent a bubble to/from a Panel: since a child bubble's `x`/`y`
+ * are relative to its panel's `origin` (see PanelPointsSchema.origin), attaching is
+ * `offsetBubble(bubble, -origin.x, -origin.y)` and detaching is `offsetBubble(bubble,
+ * +origin.x, +origin.y)` — the same field list applies either way. Shared between the
+ * client editor store (drag/nudge/duplicate) and this file's own PageLayout migration
+ * (below), which needs the identical field list on raw, not-yet-validated data.
+ */
+export function offsetBubble<T extends Pick<Bubble, "x" | "y" | "corners" | "formOverride">>(b: T, dx: number, dy: number): T {
+  return {
+    ...b,
+    x: b.x + dx,
+    y: b.y + dy,
+    corners: b.corners ? b.corners.map((c) => ({ x: c.x + dx, y: c.y + dy })) : b.corners,
+    formOverride: b.formOverride
+      ? Object.fromEntries(Object.entries(b.formOverride).map(([lang, f]) => [lang, { ...f, x: f.x + dx, y: f.y + dy }]))
+      : b.formOverride,
+  };
+}
 
 /**
  * Resolves the effective font size/family/line-height/align/direction/color for a given
@@ -259,6 +289,9 @@ export const ImageElementSchema = z.object({
   opacity: z.number().min(0).max(1).default(1),
   /** language code -> file name of an uploaded image under server/data/images. */
   files: z.record(z.string(), z.string()).default({}),
+  /** See Bubble.locked's doc comment — same semantics, same reason for `.optional()`
+   * instead of `.default(false)`. */
+  locked: z.boolean().optional(),
 });
 export type ImageElement = z.infer<typeof ImageElementSchema>;
 
@@ -299,6 +332,9 @@ export const CurvedTextElementSchema = z.object({
   /** Same live-preset-link idea as Bubble.presetId — only the text-style subset of a
    * preset applies (curved text has no bubble background). */
   presetId: z.string().nullable().default(null),
+  /** See Bubble.locked's doc comment — same semantics, same reason for `.optional()`
+   * instead of `.default(false)`. */
+  locked: z.boolean().optional(),
 });
 export type CurvedTextElement = z.infer<typeof CurvedTextElementSchema>;
 
@@ -369,25 +405,56 @@ export const PanelPointsSchema = z.object({
   /** Empty means "show the auto-numbered label" (Panel {index+1} by array position). */
   label: z.string().default(""),
   color: z.string().default("#6c8cff"),
+  /**
+   * Anchor a child Bubble's coordinates are relative to (see Bubble.panelId) —
+   * deliberately NOT recomputed from the live polygon's bounds. Set once at creation
+   * (bounding-box top-left of the initial polygon) and moved only by a rigid whole-panel
+   * translate (dragging the panel body, nudging/duplicating a selected panel) — a
+   * single-vertex reshape never touches it. If it were derived from polygonBounds() on
+   * every read instead, reshaping a corner that happens to be the bounding box's min
+   * corner would silently drag every child bubble along with it, which is surprising:
+   * reshaping the outline should never move its contents, only a deliberate move should.
+   */
+  origin: PointSchema,
+  /** See Bubble.locked's doc comment — same semantics, same reason for `.optional()`
+   * instead of `.default(false)`. */
+  locked: z.boolean().optional(),
 });
+
+/** Bounding-box top-left of a polygon — the natural, deterministic default for a new
+ * panel's `origin` (see PanelPointsSchema.origin doc comment). */
+export function originFromPoints(points: Point[]): Point {
+  const b = polygonBounds(points);
+  return { x: b.minX, y: b.minY };
+}
 
 /**
  * Migrates a pre-polygon panel (`x/y/width/height/rotation`) into its equivalent 4-corner
  * polygon before validation, so old saved layouts keep rendering unchanged but become
  * freely reshapeable immediately. Zod strips the now-unknown legacy fields from the
- * parsed output automatically. Panels already saved as `points` pass through untouched.
+ * parsed output automatically. Also backfills `origin` for any panel saved before that
+ * field existed (both the legacy-box case and the already-`points` case) — derived from
+ * the (possibly just-migrated) polygon's bounds, so re-saving preserves the exact same
+ * visual layout under the new coordinate scheme. Panels that already have both `points`
+ * and `origin` pass through untouched.
  */
 export const PanelSchema = z.preprocess((raw) => {
-  if (raw && typeof raw === "object" && !("points" in raw) && "width" in raw && "height" in raw) {
-    const legacy = raw as { x: number; y: number; width: number; height: number; rotation?: number };
-    return { ...legacy, points: rotatedBoxCorners(legacy.x, legacy.y, legacy.width, legacy.height, legacy.rotation ?? 0) };
+  if (raw && typeof raw === "object") {
+    if (!("points" in raw) && "width" in raw && "height" in raw) {
+      const legacy = raw as { x: number; y: number; width: number; height: number; rotation?: number };
+      const points = rotatedBoxCorners(legacy.x, legacy.y, legacy.width, legacy.height, legacy.rotation ?? 0);
+      return { ...legacy, points, origin: originFromPoints(points) };
+    }
+    if ("points" in raw && !("origin" in raw)) {
+      return { ...raw, origin: originFromPoints((raw as { points: Point[] }).points) };
+    }
   }
   return raw;
 }, PanelPointsSchema);
 export type Panel = z.infer<typeof PanelPointsSchema>;
 
 export function createPanel(partial: Partial<Panel> & Pick<Panel, "id" | "points">): Panel {
-  return PanelPointsSchema.parse(partial);
+  return PanelPointsSchema.parse({ origin: originFromPoints(partial.points), ...partial });
 }
 
 /** The label to display for a panel — its custom label if set, otherwise "Panel N"
@@ -404,7 +471,7 @@ export function polygonBounds(points: Point[]): { minX: number; minY: number; ma
   return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
 }
 
-export const PageLayoutSchema = z.object({
+const PageLayoutObjectSchema = z.object({
   page: z.string(),
   sourceImage: z.string(),
   imageWidth: z.number().positive(),
@@ -413,11 +480,69 @@ export const PageLayoutSchema = z.object({
   images: z.array(ImageElementSchema).default([]),
   curvedTexts: z.array(CurvedTextElementSchema).default([]),
   panels: z.array(PanelSchema).default([]),
+  /** Bumped to 2 the first time a layout is migrated for panel-relative bubble
+   * coordinates (see the z.preprocess below) — everything saved by the app from that
+   * point on carries schemaVersion 2 forward, so the migration only ever runs once. */
+  schemaVersion: z.number().default(1),
 });
+
+/** Same box→points + origin derivation PanelSchema's own preprocess uses, applied here
+ * to a raw (not-yet-validated) panel object — needed one level up so the PageLayout
+ * migration below can resolve each panel's origin before the nested schemas run. */
+function derivePanelOrigin(rawPanel: unknown): Point {
+  if (rawPanel && typeof rawPanel === "object") {
+    const p = rawPanel as Record<string, unknown>;
+    if (!("points" in p) && "width" in p) {
+      const legacy = p as { x: number; y: number; width: number; height: number; rotation?: number };
+      return originFromPoints(rotatedBoxCorners(legacy.x, legacy.y, legacy.width, legacy.height, legacy.rotation ?? 0));
+    }
+    if (Array.isArray(p.points)) return originFromPoints(p.points as Point[]);
+  }
+  return { x: 0, y: 0 };
+}
+
+/**
+ * Bubbles used to reference a Panel purely informationally (Bubble.panelId), with x/y
+ * always absolute regardless — now that a child bubble's x/y/corners/formOverride are
+ * relative to its panel's origin, an old saved layout with pre-existing panelId
+ * assignments would be silently misinterpreted (its already-absolute coordinates read as
+ * if they were relative). This preprocess runs once per file (guarded by
+ * schemaVersion < 2): for every bubble whose panelId points at a real panel, it subtracts
+ * that panel's derived origin from the bubble's x/y/corners/formOverride[*].x/y — the
+ * exact same field list offsetBubble() shifts — on raw, pre-Zod data, then marks the file
+ * as migrated. A bubble with no (or a stale) panelId is left untouched (already correctly
+ * absolute). Mirrors the technique PanelSchema's own preprocess already uses one level
+ * down (legacy box → polygon), just cross-referential across both arrays.
+ */
+export const PageLayoutSchema = z.preprocess((raw) => {
+  if (!raw || typeof raw !== "object") return raw;
+  const obj = raw as Record<string, unknown>;
+  const version = typeof obj.schemaVersion === "number" ? obj.schemaVersion : 1;
+  if (version >= 2) return obj;
+
+  const rawPanels = Array.isArray(obj.panels) ? obj.panels : [];
+  const originById = new Map<string, Point>(
+    rawPanels
+      .filter((p): p is Record<string, unknown> => !!p && typeof p === "object" && typeof (p as { id?: unknown }).id === "string")
+      .map((p) => [(p as { id: string }).id, derivePanelOrigin(p)])
+  );
+
+  const rawBubbles = Array.isArray(obj.bubbles) ? obj.bubbles : [];
+  const migratedBubbles = rawBubbles.map((b) => {
+    if (!b || typeof b !== "object") return b;
+    const bubbleObj = b as Record<string, unknown>;
+    const panelId = bubbleObj.panelId as string | null | undefined;
+    const origin = panelId ? originById.get(panelId) : undefined;
+    if (!origin) return bubbleObj;
+    return offsetBubble(bubbleObj as unknown as Bubble, -origin.x, -origin.y);
+  });
+
+  return { ...obj, bubbles: migratedBubbles, schemaVersion: 2 };
+}, PageLayoutObjectSchema);
 export type PageLayout = z.infer<typeof PageLayoutSchema>;
 
 export function createEmptyLayout(page: string, sourceImage: string, imageWidth: number, imageHeight: number): PageLayout {
-  return { page, sourceImage, imageWidth, imageHeight, bubbles: [], images: [], curvedTexts: [], panels: [] };
+  return { page, sourceImage, imageWidth, imageHeight, bubbles: [], images: [], curvedTexts: [], panels: [], schemaVersion: 2 };
 }
 
 export function createImageElement(partial: {

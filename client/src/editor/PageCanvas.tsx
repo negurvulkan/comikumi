@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Stage, Layer, Image as KonvaImage, Rect, Ellipse } from "react-konva";
+import { Stage, Layer, Image as KonvaImage, Rect, Ellipse, Group } from "react-konva";
 import Konva from "konva";
 import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, Panel, Point } from "../../../shared/src/layoutSchema";
 import { boxCorners, panelDisplayLabel } from "../../../shared/src/layoutSchema";
@@ -62,6 +62,10 @@ interface Props {
   onSelectPanel: (id: string | null, additive?: boolean) => void;
   onChangePanel: (id: string, patch: Partial<Panel>) => void;
   onCreatePanel: (points: Point[]) => void;
+  /** Manual (re)assignment/detachment from the right-click "Panel zuweisen" submenu —
+   * goes through editorStore's reassignBubblePanel so the bubble's coordinates convert
+   * between absolute and panel-relative correctly (never a raw panelId patch). */
+  onReassignPanel: (bubbleId: string, panelId: string | null) => void;
   onDeselectAll: () => void;
   /** Right-click actions on the currently (single-)selected element — the context menu
    * selects that element first, so these mirror the generic keyboard shortcuts (Ctrl+D /
@@ -101,6 +105,7 @@ export function PageCanvas({
   onSelectPanel,
   onChangePanel,
   onCreatePanel,
+  onReassignPanel,
   onDeselectAll,
   onDuplicateSelected,
   onDeleteSelected,
@@ -267,12 +272,12 @@ export function PageCanvas({
             {
               label: t("editor.contextMenu.noPanel"),
               selected: !bubble.panelId,
-              onClick: () => onChange(bubble.id, { panelId: null, readingOrderOverride: undefined }),
+              onClick: () => onReassignPanel(bubble.id, null),
             },
             ...panels.map((p, i) => ({
               label: panelDisplayLabel(p, i),
               selected: bubble.panelId === p.id,
-              onClick: () => onChange(bubble.id, { panelId: p.id, readingOrderOverride: undefined }),
+              onClick: () => onReassignPanel(bubble.id, p.id),
             })),
           ],
         },
@@ -301,13 +306,14 @@ export function PageCanvas({
           ],
         },
         { type: "separator" },
-        { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected },
-        { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected },
+        { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected, disabled: bubble.locked },
+        { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected, disabled: bubble.locked },
       ];
     }
+    const panel = panels.find((p) => p.id === contextMenu.id);
     return [
-      { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected },
-      { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected },
+      { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected, disabled: panel?.locked },
+      { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected, disabled: panel?.locked },
     ];
   }
 
@@ -389,21 +395,50 @@ export function PageCanvas({
               readOnly={readOnly}
             />
           ))}
-          {bubbles.map((b) => (
-            <BubbleShape
-              key={`${b.id}-${fontsVersion}`}
-              bubble={b}
-              scale={scale}
-              zoom={zoom}
-              activeLanguage={activeLanguage}
-              presets={presets}
-              selected={selectedIds.includes(b.id)}
-              onSelect={(additive) => onSelect(b.id, additive)}
-              onChange={(patch) => onChange(b.id, patch)}
-              onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
-              readOnly={readOnly}
-            />
-          ))}
+          {bubbles
+            .filter((b) => !b.panelId || !panels.some((p) => p.id === b.panelId))
+            .map((b) => (
+              <BubbleShape
+                key={`${b.id}-${fontsVersion}`}
+                bubble={b}
+                scale={scale}
+                zoom={zoom}
+                activeLanguage={activeLanguage}
+                presets={presets}
+                selected={selectedIds.includes(b.id)}
+                onSelect={(additive) => onSelect(b.id, additive)}
+                onChange={(patch) => onChange(b.id, patch)}
+                onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
+                readOnly={readOnly}
+              />
+            ))}
+          {panels.map((panel) => {
+            const children = bubbles.filter((b) => b.panelId === panel.id);
+            if (children.length === 0) return null;
+            // Nested inside a Group anchored at the panel's origin — a child bubble's own
+            // x/y are relative to this origin, and Konva composes the parent transform
+            // automatically, so BubbleShape's drag/transform handlers need no changes at
+            // all: e.target.x()/y() already comes back panel-relative for free.
+            return (
+              <Group key={`panel-children-${panel.id}`} x={panel.origin.x * scale} y={panel.origin.y * scale}>
+                {children.map((b) => (
+                  <BubbleShape
+                    key={`${b.id}-${fontsVersion}`}
+                    bubble={b}
+                    scale={scale}
+                    zoom={zoom}
+                    activeLanguage={activeLanguage}
+                    presets={presets}
+                    selected={selectedIds.includes(b.id)}
+                    onSelect={(additive) => onSelect(b.id, additive)}
+                    onChange={(patch) => onChange(b.id, patch)}
+                    onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
+                    readOnly={readOnly}
+                  />
+                ))}
+              </Group>
+            );
+          })}
           {curvedTexts.map((el) => (
             <CurvedTextElementShape
               key={`${el.id}-${fontsVersion}`}

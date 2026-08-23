@@ -504,6 +504,7 @@ export function Editor() {
               store.addPanel(points);
               setDrawTool(null);
             }}
+            onReassignPanel={(bubbleId, panelId) => store.reassignBubblePanel(bubbleId, panelId)}
             onDeselectAll={store.deselectAll}
             onDuplicateSelected={() => store.duplicateSelected()}
             onDeleteSelected={() => store.removeSelected()}
@@ -526,6 +527,7 @@ export function Editor() {
               glossary={glossary}
               presets={presets}
               onChange={(patch) => store.updateBubble(selectedBubble.id, patch)}
+              onReassignPanel={(panelId) => store.reassignBubblePanel(selectedBubble.id, panelId)}
               onDelete={() => store.removeBubble(selectedBubble.id)}
             />
           ) : selectedImage ? (

@@ -16,7 +16,7 @@ import {
   readMembers,
   writeMembers,
 } from "../lib/projectStore.js";
-import { countVolumesUnder } from "../lib/projectScanner.js";
+import { countVolumesUnder, invalidateVolumesCache } from "../lib/projectScanner.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireSystemAdmin, requireProjectRole } from "../lib/auth.js";
 import { findUserByUsername, listUsers } from "../lib/authStore.js";
@@ -324,6 +324,7 @@ projectRouter.post(
       for (const dir of targets) {
         await fs.mkdir(dir, { recursive: true });
       }
+      invalidateVolumesCache();
       res.status(201).json({ createdPaths: targets });
     } catch (err) {
       res.status(400).json({ error: "folder_create_failed", params: { reason: (err as Error).message } });

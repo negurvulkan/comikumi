@@ -15,6 +15,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Projekt-Assets-Ordner](#projekt-assets-ordner)
 - [Editor — Canvas-Grundlagen](#editor--canvas-grundlagen)
 - [Elementtypen](#elementtypen)
+- [Sperren](#sperren)
 - [Text-Liste](#text-liste)
 - [Reading-Order](#reading-order)
 - [Glossar](#glossar)
@@ -313,6 +314,27 @@ Eckpunkt verformt sie, Doppelklick auf die Kontur fügt dort einen neuen Punkt e
 Rechtsklick auf einen Punkt entfernt ihn (mindestens 3 Punkte bleiben immer erhalten).
 Blasen können einem Panel manuell zugeordnet werden, um "wer sagt was pro
 Panel"-Auswertungen zu ermöglichen. **Erscheint nie im PNG-Export.**
+
+## Sperren
+
+Jedes Element (Blase, Panel, Bild, Kurventext) lässt sich einzeln gegen versehentliches
+Verschieben, Verformen, Löschen und Duplizieren sperren. Ein ausgewähltes Element zeigt
+ein kleines Schloss-Symbol an seiner Ecke — offen bedeutet entsperrt, geschlossen
+gesperrt; ein Klick darauf schaltet um. Solange ein Element gesperrt ist:
+
+- Ziehen, Größenänderung, Rotation und Konturpunkte lassen sich nicht mehr bewegen.
+- Entf-Taste und Duplizieren (Strg+D) wirken nicht — auch nicht über das
+  Rechtsklick-Menü. Ist das Element Teil einer Mehrfachauswahl, werden nur die
+  ungesperrten Elemente betroffen, das gesperrte bleibt unangetastet (und ausgewählt)
+  liegen.
+- Text-/Stil-Bearbeitung im Inspector bleibt weiterhin möglich — die Sperre betrifft
+  ausschließlich Geometrie.
+
+Ein gesperrtes Panel schützt nur sich selbst, nicht automatisch seine zugeordneten
+Kind-Blasen (siehe [Elementtypen](#elementtypen) → Panels) — die bleiben unabhängig
+sperr-/bearbeitbar. Die Sperre wird im gespeicherten Layout nur dann mit abgelegt, wenn
+das Element zuletzt gesperrt war (siehe `locked` in
+[JSON-Format.md](JSON-Format.md#bubble)).
 
 ## Text-Liste
 

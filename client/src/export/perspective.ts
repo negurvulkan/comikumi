@@ -2,6 +2,9 @@ import type { Point, TextAlign, TextDirection, TextGradient, TextOutline } from 
 import { fitHorizontalText } from "./textLayout";
 import { drawVerticalText, fitVerticalText } from "./verticalTypesetting";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects";
+import { pointInQuad } from "../editor/geometry";
+
+export { pointInQuad };
 
 export type Mat3 = [number, number, number, number, number, number, number, number, number];
 
@@ -68,19 +71,6 @@ export function apply(m: Mat3, x: number, y: number): { x: number; y: number } {
   const [a, b, c, d, e, f, g, h, i] = m;
   const w = g * x + h * y + i;
   return { x: (a * x + b * y + c) / w, y: (d * x + e * y + f) / w };
-}
-
-export function pointInQuad(p: Point, q: Point[]): boolean {
-  let inside = false;
-  for (let i = 0, j = q.length - 1; i < q.length; j = i++) {
-    const xi = q[i].x,
-      yi = q[i].y,
-      xj = q[j].x,
-      yj = q[j].y;
-    const intersect = yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
-  }
-  return inside;
 }
 
 function bilinearSample(data: Uint8ClampedArray, w: number, h: number, x: number, y: number): [number, number, number, number] {

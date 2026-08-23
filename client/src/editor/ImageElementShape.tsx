@@ -6,6 +6,7 @@ import { imageFileForLanguage } from "../../../shared/src/layoutSchema";
 import { warpImageIntoQuad } from "../export/perspective";
 import { api } from "../api/client";
 import { useHtmlImage } from "./useHtmlImage";
+import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {
   element: ImageElement;
@@ -52,6 +53,11 @@ export function ImageElementShape({ element, activeLanguage, scale, zoom, select
 
   if (displayCorners.length !== 4) return null;
   const stroke = selected ? "#6c8cff" : undefined;
+  // See BubbleShape.tsx's Props doc comment — role-based readOnly vs. the element's own
+  // `locked` field both disable geometry, but only readOnly hides the lock toggle itself.
+  const geometryDisabled = readOnly || element.locked;
+  const boundsMaxX = Math.max(...displayCorners.map((p) => p.x));
+  const boundsMinY = Math.min(...displayCorners.map((p) => p.y));
 
   function handleLineDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
     const node = e.target;
@@ -85,13 +91,13 @@ export function ImageElementShape({ element, activeLanguage, scale, zoom, select
         stroke={stroke}
         strokeWidth={2}
         fill={selected ? "rgba(255,255,255,0.08)" : undefined}
-        draggable={!readOnly}
+        draggable={!geometryDisabled}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         onDragEnd={handleLineDragEnd}
       />
       {selected &&
-        !readOnly &&
+        !geometryDisabled &&
         displayCorners.map((p, i) => (
           <Circle
             key={i}
@@ -106,6 +112,15 @@ export function ImageElementShape({ element, activeLanguage, scale, zoom, select
             onDragEnd={(e) => handleCornerDragEnd(i, e)}
           />
         ))}
+      {selected && !readOnly && (
+        <LockToggleHandle
+          x={boundsMaxX + 14 * handleScale}
+          y={boundsMinY - 14 * handleScale}
+          scale={handleScale}
+          locked={!!element.locked}
+          onToggle={() => onChange({ locked: element.locked ? undefined : true })}
+        />
+      )}
     </Group>
   );
 }

@@ -11,6 +11,7 @@ import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../expor
 import { getCachedSvgBubbleBoundary } from "../export/svgBubbleGeometry";
 import { projectOntoPerpendicularBow } from "./geometry";
 import { QuadBubbleShape } from "./QuadBubbleShape";
+import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {
   bubble: Bubble;
@@ -48,6 +49,11 @@ export function BubbleShape(props: Props) {
 
 function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, selected, onSelect, onChange, onContextMenu, readOnly }: Props) {
   const handleScale = 1 / zoom;
+  // `readOnly` = role-based restriction (e.g. translator), `bubble.locked` = the user's own
+  // per-object lock — either one disables geometry handles, but the lock TOGGLE icon itself
+  // must stay visible/usable under `locked` (that's how you undo it) and only actually hides
+  // for `readOnly` (a translator shouldn't see/use it at all).
+  const geometryDisabled = readOnly || bubble.locked;
   const groupRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
 
@@ -284,7 +290,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             fill="#6c8cff"
             stroke="#12131a"
             strokeWidth={handleScale}
-            draggable={!readOnly}
+            draggable={!geometryDisabled}
             // Without this, the mousedown/dragstart bubbles up to the
             // (also draggable) parent Group, which then "wins" and drags the
             // whole bubble instead of just this handle — the tail visually
@@ -313,7 +319,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             fill="#4ddd8f"
             stroke="#12131a"
             strokeWidth={handleScale}
-            draggable={!readOnly}
+            draggable={!geometryDisabled}
             onMouseDown={(e) => {
               e.cancelBubble = true;
             }}
@@ -337,7 +343,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             fill="#b06cff"
             stroke="#12131a"
             strokeWidth={handleScale}
-            draggable={!readOnly}
+            draggable={!geometryDisabled}
             onMouseDown={(e) => {
               e.cancelBubble = true;
             }}
@@ -365,7 +371,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
               fill="#ffb84d"
               stroke="#12131a"
               strokeWidth={handleScale}
-              draggable={!readOnly}
+              draggable={!geometryDisabled}
               onMouseDown={(e) => {
                 e.cancelBubble = true;
               }}
@@ -381,8 +387,17 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
               }}
             />
           ))}
+        {selected && !readOnly && (
+          <LockToggleHandle
+            x={w + 14 * handleScale}
+            y={-14 * handleScale}
+            scale={handleScale}
+            locked={!!bubble.locked}
+            onToggle={() => onChange({ locked: bubble.locked ? undefined : true })}
+          />
+        )}
       </Group>
-      {selected && !readOnly && (
+      {selected && !geometryDisabled && (
         <Transformer
           ref={trRef}
           rotateEnabled

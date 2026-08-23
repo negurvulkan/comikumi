@@ -5,6 +5,7 @@ import type { Bubble, Point } from "../../../shared/src/layoutSchema";
 import { resolveBubbleStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { renderPerspectiveText } from "../export/perspective";
+import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {
   bubble: Bubble;
@@ -61,6 +62,11 @@ export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, 
   if (displayCorners.length !== 4) return null;
   const stroke = selected ? "#6c8cff" : undefined;
   const fill = selected ? "rgba(255,255,255,0.55)" : undefined;
+  // See BubbleShape.tsx's Props doc comment — role-based readOnly vs. the bubble's own
+  // `locked` field both disable geometry, but only readOnly hides the lock toggle itself.
+  const geometryDisabled = readOnly || bubble.locked;
+  const boundsMaxX = Math.max(...displayCorners.map((p) => p.x));
+  const boundsMinY = Math.min(...displayCorners.map((p) => p.y));
 
   function handleLineDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
     const node = e.target;
@@ -93,7 +99,7 @@ export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, 
         stroke={stroke}
         strokeWidth={2}
         fill={fill}
-        draggable={!readOnly}
+        draggable={!geometryDisabled}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         onContextMenu={(e) => {
@@ -105,7 +111,7 @@ export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, 
       />
       {warped && <KonvaImage image={warped.canvas} x={warped.x} y={warped.y} listening={false} />}
       {selected &&
-        !readOnly &&
+        !geometryDisabled &&
         displayCorners.map((p, i) => (
           <Circle
             key={i}
@@ -120,6 +126,15 @@ export function QuadBubbleShape({ bubble, scale, zoom, activeLanguage, presets, 
             onDragEnd={(e) => handleCornerDragEnd(i, e)}
           />
         ))}
+      {selected && !readOnly && (
+        <LockToggleHandle
+          x={boundsMaxX + 14 * handleScale}
+          y={boundsMinY - 14 * handleScale}
+          scale={handleScale}
+          locked={!!bubble.locked}
+          onToggle={() => onChange({ locked: bubble.locked ? undefined : true })}
+        />
+      )}
     </Group>
   );
 }

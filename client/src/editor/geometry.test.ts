@@ -1,6 +1,30 @@
 import { describe, it, expect } from "vitest";
 import type { Point } from "../../../shared/src/layoutSchema";
-import { closestPointOnSegment, projectOntoPerpendicularBow } from "./geometry";
+import { bubbleCenter, closestPointOnSegment, pointInQuad, projectOntoPerpendicularBow } from "./geometry";
+
+describe("pointInQuad", () => {
+  const square: Point[] = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 } ];
+
+  it("is true for a point inside the polygon", () => {
+    expect(pointInQuad({ x: 5, y: 5 }, square)).toBe(true);
+  });
+
+  it("is false for a point outside the polygon", () => {
+    expect(pointInQuad({ x: 50, y: 50 }, square)).toBe(false);
+  });
+
+  it("works for an irregular (non-quad) polygon too", () => {
+    const triangle: Point[] = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }];
+    expect(pointInQuad({ x: 5, y: 3 }, triangle)).toBe(true);
+    expect(pointInQuad({ x: 1, y: 9 }, triangle)).toBe(false);
+  });
+});
+
+describe("bubbleCenter", () => {
+  it("returns the center of the base box, ignoring rotation", () => {
+    expect(bubbleCenter({ x: 10, y: 20, width: 30, height: 40 })).toEqual({ x: 25, y: 40 });
+  });
+});
 
 describe("closestPointOnSegment", () => {
   const a: Point = { x: 0, y: 0 };

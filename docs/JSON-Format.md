@@ -22,7 +22,8 @@ Alle Koordinaten/Maße (`x`, `y`, `width`, `height`, `strokeWidthPx`, Punkte in 
   "bubbles": [ /* Bubble[] */ ],
   "images": [ /* ImageElement[] */ ],
   "curvedTexts": [ /* CurvedTextElement[] */ ],
-  "panels": [ /* Panel[] */ ]
+  "panels": [ /* Panel[] */ ],
+  "schemaVersion": 2
 }
 ```
 
@@ -35,6 +36,7 @@ Alle Koordinaten/Maße (`x`, `y`, `width`, `height`, `strokeWidthPx`, Punkte in 
 | `images` | `ImageElement[]` | Frei platzierte, perspektivisch verzerrbare Bilder (z. B. übersetzte Poster) |
 | `curvedTexts` | `CurvedTextElement[]` | Freistehende Titel-/Effekttexte entlang einer Kurve (z. B. Lautmalerei) |
 | `panels` | `Panel[]` | Gezeichnete Panel-Referenzbereiche (reine Editor-Anmerkung, nie im Export) |
+| `schemaVersion` | number | `1` (oder fehlend) = Bubble-Koordinaten sind immer absolut, auch mit gesetztem `panelId`; `2` = ein Bubble mit gesetztem `panelId` ist Kind seines Panels, seine Koordinaten sind relativ zu dessen `origin` (siehe unten). Alte Dateien werden beim ersten Laden automatisch einmalig umgerechnet und auf `2` angehoben (siehe „Migration“ unten) |
 
 ## Bubble
 
@@ -159,11 +161,12 @@ japanische Original. Nur für `shape: "rect"`/`"oval"` relevant (nicht für `"qu
 
 | Feld | Typ | Default | Bedeutung |
 |---|---|---|---|
-| `panelId` | string \| `null` | `null` | ID eines Eintrags aus `panels` dieser Seite — manuell zugewiesen, nicht aus der Geometrie abgeleitet. `null` = keinem Panel zugeordnet. Verweist die ID auf ein gelöschtes Panel, gilt die Blase in Auswertungen/Inspector als unzugeordnet |
+| `panelId` | string \| `null` | `null` | ID eines Eintrags aus `panels` dieser Seite. `null` = keinem Panel zugeordnet, absolute Koordinaten (Standardfall). Ist es gesetzt, ist die Blase **Kind** dieses Panels: `x`/`y`/`corners`/`formOverride[*].x/y` sind relativ zu dessen `origin` (siehe [Panel](#panel) unten) statt absolut. Zuordnung geschieht automatisch beim Panel-Erstellen (Mittelpunkt-in-Polygon-Test, keine bereits zugeordnete Blase wird gestohlen) sowie automatisch beim Trennen, falls die Blase per Drag/Resize aus dem Panel-Umriss herausbewegt wird; nur die Neuzuordnung/Trennung selbst bleibt ein manueller Schritt (Inspector-Dropdown, Rechtsklick-Menü). Verweist die ID auf ein gelöschtes Panel, gilt die Blase als unzugeordnet (ihre Koordinaten sind dann bereits wieder absolut — ein Panel-Löschen entkoppelt seine Kinder statt sie stehen zu lassen) |
 | `characterId` | string \| `null` | `null` | ID eines projektweiten Charakters (siehe [Charaktere](#charakter)). `null` = keinem Charakter zugeordnet, ebenso bei gelöschtem Charakter |
 
-Beide Felder sind rein informativ für die [Berichte](FEATURES.md#berichte) und den
-Rechtsklick-Workflow im Editor — sie beeinflussen weder Rendering noch PNG-Export.
+`characterId` bleibt rein informativ für die [Berichte](FEATURES.md#berichte) — beeinflusst
+weder Rendering noch PNG-Export. `panelId` dagegen wirkt sich seit `schemaVersion: 2` auf die
+Koordinaten selbst aus (siehe oben und [Panel](#panel)).
 
 ### Lettering-Preset-Verknüpfung
 
@@ -180,6 +183,7 @@ Rangfolge: Sprach-Override > Preset-Feld > Basiswert.
 | Feld | Typ | Default | Bedeutung |
 |---|---|---|---|
 | `readingOrderOverride` | number \| fehlt | fehlt | Manuelle Korrektur der Leseposition innerhalb der Gruppe der Blase (ihr Panel, oder „Ohne Panel“) — siehe [Reading-Order](FEATURES.md#reading-order). Fehlt das Feld, gilt die automatische Y-Sortierung. Nur relativ zu den anderen Blasen **derselben Gruppe zum Zeitpunkt der letzten manuellen Korrektur** aussagekräftig; wird beim Ändern von `panelId` automatisch verworfen |
+| `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren (per Schloss-Symbol im Editor umschaltbar, siehe [Sperren](FEATURES.md#sperren)). Wird nur gespeichert, wenn zuletzt gesperrt — kein `false`-Wert in der JSON |
 
 ## ImageElement
 
@@ -192,6 +196,7 @@ ein übersetztes Poster/Schild), unabhängig von Sprechblasen.
 | `corners` | `Point[4]` | – | die 4 Ecken (px, Bildkoordinaten) für die perspektivische Verzerrung, wie bei `quad`-Bubbles |
 | `opacity` | number (0–1) | `1` | Deckkraft |
 | `files` | `Record<Sprachcode, Dateiname>` | `{}` | hochgeladene Bilddatei (unter `server/data/images`) pro Sprache. Fehlt eine Sprache, wird ersatzweise die erste vorhandene Datei angezeigt statt gar nichts (siehe `imageFileForLanguage()`) |
+| `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren — siehe [Sperren](FEATURES.md#sperren). Wird nur gespeichert, wenn zuletzt gesperrt |
 
 ## CurvedTextElement
 
@@ -213,6 +218,7 @@ Volltext-Layoutsystem).
 | `textGradient` | `TextGradient`-Objekt | wie bei Bubble | Optionaler Farbverlauf |
 | `text` | `Record<Sprachcode, string>` | `{}` | Text pro Sprache |
 | `presetId` | string \| `null` | `null` | ID eines projektweiten [`LetteringPreset`](#letteringpreset) — nur dessen Textstil-Teil wird angewendet, kein Blasenhintergrund. Gleiche Rangfolge/Stale-Referenz-Behandlung wie bei `Bubble.presetId` |
+| `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren — siehe [Sperren](FEATURES.md#sperren). Wird nur gespeichert, wenn zuletzt gesperrt |
 
 ### Sprachabhängige Overrides
 
@@ -243,21 +249,43 @@ einzelner Eckpunkte verändert, nicht über Rotations-/Skalierungsgriffe.
 | `points` | `Point[]` (mind. 3) | – | Eckpunkte des Polygons, Bild-px, in Zeichenreihenfolge |
 | `label` | string | `""` | Beschriftung; leer = automatisch „Panel N“ (1-basiert, nach Position im `panels`-Array) — siehe `panelDisplayLabel()` |
 | `color` | string (CSS-Farbe) | `"#6c8cff"` | Rahmen-/Beschriftungsfarbe |
+| `origin` | `Point` | – | Anker, auf den sich die Koordinaten einer Kind-Blase (`Bubble.panelId === id`) beziehen — die Bounding-Box-oben-links-Ecke des Polygons **zum Zeitpunkt der Erstellung**, danach **nicht** mehr live aus `points` neu berechnet. Wird nur mitverschoben, wenn das ganze Panel als Starrkörper bewegt wird (Fläche ziehen, Nudge, Duplizieren) — ein einzelner Eckpunkt-Reshape lässt `origin` unangetastet, damit Kind-Blasen beim reinen Umformen der Kontur nicht mitspringen |
+| `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren — siehe [Sperren](FEATURES.md#sperren). Wird nur gespeichert, wenn zuletzt gesperrt |
 
-Im Editor: die ganze Fläche ziehen verschiebt das Panel, ein einzelner Eckpunkt verformt
-es, Doppelklick auf die Kontur fügt dort einen neuen Punkt ein, Rechtsklick auf einen
-Punkt entfernt ihn (mindestens 3 Punkte bleiben immer erhalten). Ein neu gezeichnetes
-Panel startet als Rechteck (4 Eckpunkte), ist danach aber ein Polygon wie jedes andere.
+Im Editor: die ganze Fläche ziehen verschiebt das Panel (und trägt seine Kind-Blasen mit),
+ein einzelner Eckpunkt verformt nur die Kontur (Kind-Blasen bleiben unbewegt), Doppelklick
+auf die Kontur fügt dort einen neuen Punkt ein, Rechtsklick auf einen Punkt entfernt ihn
+(mindestens 3 Punkte bleiben immer erhalten). Ein neu gezeichnetes Panel startet als
+Rechteck (4 Eckpunkte), ist danach aber ein Polygon wie jedes andere.
 
-Bubbles referenzieren ein Panel manuell über `Bubble.panelId` (siehe oben) — es gibt keine
-automatische Geometrie-Zuordnung.
+**Bubbles als Kinder eines Panels**: eine Blase wird beim Erstellen eines neuen Panels
+automatisch dessen Kind, wenn ihr Mittelpunkt im neuen Polygon liegt und sie noch keinem
+anderen Panel zugeordnet ist (kein „Stehlen“). Wird eine Kind-Blase per Drag/Resize so
+bewegt, dass ihr Mittelpunkt den Panel-Umriss verlässt, wird sie automatisch wieder
+eigenständig (zurück auf absolute Koordinaten, `panelId: null`) — ausgelöst nur bei echter
+Geometrie-Änderung, nicht bei reinen Text-/Stil-Änderungen. Eine manuelle
+(Neu-)Zuordnung/Trennung bleibt weiterhin über das Panel-Dropdown im Inspector bzw. das
+Rechtsklick-Menü möglich. Wird ein Panel gelöscht, werden seine Kind-Blasen nicht
+mitgelöscht, sondern entkoppelt (zurück auf absolute Koordinaten, `panelId: null`) —
+konsistent mit dem „stale Referenz = unzugeordnet“-Prinzip bei gelöschten
+Charakteren/Presets.
 
 **Migration alter Rechteck-Panels**: Seiten, die noch ein Panel im alten Format
 (`x`/`y`/`width`/`height`/`rotation`) enthalten, werden beim Einlesen automatisch in ein
 gleichwertiges 4-Eckpunkte-Polygon umgerechnet (inklusive vorhandener Rotation) — das
 Panel sieht unverändert aus, ist danach aber sofort frei verformbar. Diese Umwandlung
 passiert nur beim Parsen (`PanelSchema`), nicht dauerhaft auf der Festplatte — erst ein
-erneutes Speichern schreibt das neue Format zurück.
+erneutes Speichern schreibt das neue Format zurück. Fehlt `origin` (jedes Panel vor dieser
+Funktion), wird es genauso beim Parsen aus den (ggf. gerade migrierten) `points` abgeleitet.
+
+**Migration auf `schemaVersion: 2`**: Seiten mit bereits vorhandenen `panelId`-Zuordnungen
+aus der Zeit vor dieser Funktion hatten immer absolute Blasen-Koordinaten. Damit sie unter
+der neuen Bedeutung nicht plötzlich falsch (relativ statt absolut) interpretiert werden,
+rechnet ein einmaliges Preprocessing beim ersten Laden (`PageLayoutSchema`, ausgelöst wenn
+`schemaVersion` fehlt oder `< 2` ist) für jede Blase mit gültigem `panelId` ihre bisherigen
+absoluten Koordinaten (`x`/`y`/`corners`/`formOverride[*].x/y`) auf panel-relative um und
+setzt danach `schemaVersion: 2` — optisch bleibt alles exakt an Ort und Stelle. Erst ein
+erneutes Speichern schreibt `schemaVersion: 2` dauerhaft auf die Festplatte.
 
 ## LetteringPreset
 
@@ -394,7 +422,8 @@ type Point = { x: number; y: number };
 - **Rückwärtskompatibel per Design:** Alle neueren Felder (`bubbleStyle`, `fillColor`,
   `strokeColor`, `strokeWidthPx`, `svgFileName`, `tail`, `tailAnchor`, `tailWidth`,
   `tailStyle` + Ketten-Felder, `tailCurve`, `textOutline`, `textGradient`, `formOverride`,
-  alle `*Override`-Felder, `panelId`, `characterId`, `readingOrderOverride`, `presetId`, sowie die Arrays `curvedTexts` und
+  alle `*Override`-Felder, `panelId`, `characterId`, `readingOrderOverride`, `presetId`,
+  `locked`, sowie die Arrays `curvedTexts` und
   `panels` selbst) sind in Zod mit `.default(...)` bzw. `.optional()` deklariert. Ältere
   JSON-Dateien ohne diese Felder werden beim Einlesen automatisch mit den Defaultwerten
   aufgefüllt — keine Migration nötig. Panels haben zusätzlich eine echte

@@ -30,10 +30,14 @@ interface Props {
   glossary: GlossaryEntry[];
   presets: LetteringPreset[];
   onChange: (patch: Partial<Bubble>) => void;
+  /** Panel (re)assignment/detachment — goes through editorStore's reassignBubblePanel so
+   * the bubble's coordinates convert between absolute and panel-relative correctly
+   * (unlike every other field here, this can't be a plain onChange patch). */
+  onReassignPanel: (panelId: string | null) => void;
   onDelete: () => void;
 }
 
-export function BubbleInspector({ bubble, activeLanguage, panels, characters, glossary, presets, onChange, onDelete }: Props) {
+export function BubbleInspector({ bubble, activeLanguage, panels, characters, glossary, presets, onChange, onReassignPanel, onDelete }: Props) {
   const { t } = useTranslation();
   const style = resolveBubbleStyle(bubble, activeLanguage, presets);
   const form = resolveBubbleForm(bubble, activeLanguage, presets);
@@ -250,7 +254,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
           Panel
           <select
             value={bubble.panelId ?? ""}
-            onChange={(e) => onChange({ panelId: e.target.value || null, readingOrderOverride: undefined })}
+            onChange={(e) => onReassignPanel(e.target.value || null)}
           >
             <option value="">{t("editor.contextMenu.noPanel")}</option>
             {panels.map((p, i) => (

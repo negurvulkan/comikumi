@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { v4 as uuid } from "uuid";
 import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, PageLayout, Panel, Point } from "../../../shared/src/layoutSchema";
-import { boxCorners, createBubble, createCurvedTextElement, createImageElement, createPanel } from "../../../shared/src/layoutSchema";
+import { boxCorners, createBubble, createCurvedTextElement, createImageElement, createPanel, offsetBubble } from "../../../shared/src/layoutSchema";
+import { bubbleCenter, pointInQuad } from "../editor/geometry";
 import { api } from "../api/client";
 import i18n from "../i18n";
 import { translateApiError } from "../i18n/translateApiError";
@@ -15,19 +16,6 @@ const MAX_HISTORY = 50;
 // one step instead of one keystroke/pixel at a time.
 const HISTORY_DEBOUNCE_MS = 600;
 
-/** Shifts a bubble's position (and everything position-derived: quad corners, per-language form overrides) by (dx, dy). Deliberately does NOT touch `tail`/`tailAnchor` — those are already LOCAL, box-relative coordinates (see layoutSchema.ts), so they stay correct automatically when the box itself moves. */
-function offsetBubble(b: Bubble, dx: number, dy: number): Bubble {
-  return {
-    ...b,
-    x: b.x + dx,
-    y: b.y + dy,
-    corners: b.corners ? b.corners.map((c) => ({ x: c.x + dx, y: c.y + dy })) : b.corners,
-    formOverride: b.formOverride
-      ? Object.fromEntries(Object.entries(b.formOverride).map(([lang, f]) => [lang, { ...f, x: f.x + dx, y: f.y + dy }]))
-      : b.formOverride,
-  };
-}
-
 function offsetImage(img: ImageElement, dx: number, dy: number): ImageElement {
   return { ...img, corners: img.corners.map((c) => ({ x: c.x + dx, y: c.y + dy })) };
 }
@@ -36,8 +24,11 @@ function offsetCurvedText(el: CurvedTextElement, dx: number, dy: number): Curved
   return { ...el, points: el.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
 }
 
+/** Shifts a whole panel rigidly by (dx, dy) — moves `origin` in lockstep with `points`,
+ * since this is a deliberate whole-panel translate (nudge/duplicate), not a reshape. See
+ * PanelPointsSchema.origin's doc comment for why a vertex-only reshape must never do this. */
 function offsetPanel(p: Panel, dx: number, dy: number): Panel {
-  return { ...p, points: p.points.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })) };
+  return { ...p, points: p.points.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })), origin: { x: p.origin.x + dx, y: p.origin.y + dy } };
 }
 
 interface EditorState {
@@ -76,6 +67,10 @@ interface EditorState {
   addPanel: (points: Point[]) => void;
   updatePanel: (id: string, patch: Partial<Panel>) => void;
   removePanel: (id: string) => void;
+  /** Single choke point for every manual panel (re)assignment/detachment — converts the
+   * bubble's coordinates between absolute and panel-relative as needed so it never visibly
+   * jumps. `newPanelId: null` detaches back to absolute. */
+  reassignBubblePanel: (bubbleId: string, newPanelId: string | null) => void;
   importBubbles: (bubbles: Bubble[]) => void;
   save: () => Promise<void>;
   undo: () => void;
@@ -227,8 +222,31 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const layout = get().layout;
       if (!layout) return;
       pushHistory(false);
+      // A patch touching the bubble's own geometry (drag/resize/rotate) can move a child
+      // bubble's center outside its panel's polygon — auto-detach back to absolute
+      // coordinates in that case (see reassignBubblePanel for the manual equivalent). Text/
+      // style/tail-only patches never touch these fields, so they never trigger this check.
+      const geometryChanged = "x" in patch || "y" in patch || "width" in patch || "height" in patch || "corners" in patch || "rotation" in patch;
       set({
-        layout: { ...layout, bubbles: layout.bubbles.map((b) => (b.id === id ? { ...b, ...patch } : b)) },
+        layout: {
+          ...layout,
+          bubbles: layout.bubbles.map((b) => {
+            if (b.id !== id) return b;
+            // A locked bubble rejects any geometry patch wholesale (drag/resize/rotate
+            // handlers never mix geometry with text/style in one patch, so this is safe) —
+            // the panel auto-detach check below is geometry-dependent too, so it correctly
+            // never runs for a locked bubble either.
+            if (geometryChanged && b.locked) return b;
+            const merged = { ...b, ...patch };
+            if (!geometryChanged || !merged.panelId) return merged;
+            const panel = layout.panels.find((p) => p.id === merged.panelId);
+            if (!panel) return merged; // stale panelId — already treated as unassigned elsewhere
+            const center = bubbleCenter(merged);
+            const absoluteCenter = { x: panel.origin.x + center.x, y: panel.origin.y + center.y };
+            if (pointInQuad(absoluteCenter, panel.points)) return merged;
+            return { ...offsetBubble(merged, panel.origin.x, panel.origin.y), panelId: null };
+          }),
+        },
         dirty: true,
       });
     },
@@ -274,8 +292,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const layout = get().layout;
       if (!layout) return;
       pushHistory(false);
+      // See updateBubble's comment — a locked element rejects a geometry patch wholesale.
+      const geometryChanged = "corners" in patch;
       set({
-        layout: { ...layout, images: layout.images.map((img) => (img.id === id ? { ...img, ...patch } : img)) },
+        layout: {
+          ...layout,
+          images: layout.images.map((img) => (img.id === id ? (geometryChanged && img.locked ? img : { ...img, ...patch }) : img)),
+        },
         dirty: true,
       });
     },
@@ -322,8 +345,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const layout = get().layout;
       if (!layout) return;
       pushHistory(false);
+      // See updateBubble's comment — a locked element rejects a geometry patch wholesale.
+      const geometryChanged = "points" in patch;
       set({
-        layout: { ...layout, curvedTexts: layout.curvedTexts.map((el) => (el.id === id ? { ...el, ...patch } : el)) },
+        layout: {
+          ...layout,
+          curvedTexts: layout.curvedTexts.map((el) => (el.id === id ? (geometryChanged && el.locked ? el : { ...el, ...patch }) : el)),
+        },
         dirty: true,
       });
     },
@@ -344,8 +372,16 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (!layout) return;
       pushHistory(true);
       const panel = createPanel({ id: uuid(), points });
+      // Auto-assign: any bubble not already belonging to another panel whose center falls
+      // inside the new polygon becomes a child (coordinates converted to panel-relative).
+      // Bubbles already assigned elsewhere are left alone — no stealing.
+      const bubbles = layout.bubbles.map((b) => {
+        if (b.panelId) return b;
+        if (!pointInQuad(bubbleCenter(b), panel.points)) return b;
+        return offsetBubble({ ...b, panelId: panel.id }, -panel.origin.x, -panel.origin.y);
+      });
       set({
-        layout: { ...layout, panels: [...layout.panels, panel] },
+        layout: { ...layout, panels: [...layout.panels, panel], bubbles },
         selectedPanelIds: [panel.id],
         selectedBubbleIds: [],
         selectedImageIds: [],
@@ -358,8 +394,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const layout = get().layout;
       if (!layout) return;
       pushHistory(false);
+      // See updateBubble's comment — a locked element rejects a geometry patch wholesale.
+      const geometryChanged = "points" in patch;
       set({
-        layout: { ...layout, panels: layout.panels.map((p) => (p.id === id ? { ...p, ...patch } : p)) },
+        layout: {
+          ...layout,
+          panels: layout.panels.map((p) => (p.id === id ? (geometryChanged && p.locked ? p : { ...p, ...patch }) : p)),
+        },
         dirty: true,
       });
     },
@@ -368,9 +409,33 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const layout = get().layout;
       if (!layout) return;
       pushHistory(true);
+      const panel = layout.panels.find((p) => p.id === id);
+      // Children are detached (converted back to absolute coordinates), not deleted —
+      // same "stale reference = unassigned" convention as deleted Characters/Presets.
+      const bubbles = panel
+        ? layout.bubbles.map((b) => (b.panelId === id ? { ...offsetBubble(b, panel.origin.x, panel.origin.y), panelId: null } : b))
+        : layout.bubbles;
       set({
-        layout: { ...layout, panels: layout.panels.filter((p) => p.id !== id) },
+        layout: { ...layout, panels: layout.panels.filter((p) => p.id !== id), bubbles },
         selectedPanelIds: get().selectedPanelIds.filter((x) => x !== id),
+        dirty: true,
+      });
+    },
+
+    reassignBubblePanel(bubbleId, newPanelId) {
+      const layout = get().layout;
+      if (!layout) return;
+      const bubble = layout.bubbles.find((b) => b.id === bubbleId);
+      if (!bubble || bubble.panelId === newPanelId) return;
+      pushHistory(true);
+      const oldPanel = bubble.panelId ? layout.panels.find((p) => p.id === bubble.panelId) : undefined;
+      const newPanel = newPanelId ? layout.panels.find((p) => p.id === newPanelId) : undefined;
+      let next = bubble;
+      if (oldPanel) next = offsetBubble(next, oldPanel.origin.x, oldPanel.origin.y); // back to absolute
+      if (newPanel) next = offsetBubble(next, -newPanel.origin.x, -newPanel.origin.y); // into new panel-relative
+      next = { ...next, panelId: newPanelId, readingOrderOverride: undefined };
+      set({
+        layout: { ...layout, bubbles: layout.bubbles.map((b) => (b.id === bubbleId ? next : b)) },
         dirty: true,
       });
     },
@@ -426,15 +491,20 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const { selectedBubbleIds, selectedImageIds, selectedCurvedTextIds, selectedPanelIds } = get();
       if (selectedBubbleIds.length + selectedImageIds.length + selectedCurvedTextIds.length + selectedPanelIds.length === 0) return;
       pushHistory(true);
+      // A locked element is kept (and stays selected) even though it was targeted — full
+      // protection (as opposed to just drag/resize) means Delete must leave it alone too.
       set({
         layout: {
           ...layout,
-          bubbles: layout.bubbles.filter((b) => !selectedBubbleIds.includes(b.id)),
-          images: layout.images.filter((img) => !selectedImageIds.includes(img.id)),
-          curvedTexts: layout.curvedTexts.filter((el) => !selectedCurvedTextIds.includes(el.id)),
-          panels: layout.panels.filter((p) => !selectedPanelIds.includes(p.id)),
+          bubbles: layout.bubbles.filter((b) => !selectedBubbleIds.includes(b.id) || b.locked),
+          images: layout.images.filter((img) => !selectedImageIds.includes(img.id) || img.locked),
+          curvedTexts: layout.curvedTexts.filter((el) => !selectedCurvedTextIds.includes(el.id) || el.locked),
+          panels: layout.panels.filter((p) => !selectedPanelIds.includes(p.id) || p.locked),
         },
-        ...clearSelection(),
+        selectedBubbleIds: layout.bubbles.filter((b) => selectedBubbleIds.includes(b.id) && b.locked).map((b) => b.id),
+        selectedImageIds: layout.images.filter((img) => selectedImageIds.includes(img.id) && img.locked).map((img) => img.id),
+        selectedCurvedTextIds: layout.curvedTexts.filter((el) => selectedCurvedTextIds.includes(el.id) && el.locked).map((el) => el.id),
+        selectedPanelIds: layout.panels.filter((p) => selectedPanelIds.includes(p.id) && p.locked).map((p) => p.id),
         dirty: true,
       });
     },
@@ -446,12 +516,31 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (selectedBubbleIds.length + selectedImageIds.length + selectedCurvedTextIds.length + selectedPanelIds.length === 0) return;
       pushHistory(true);
       const OFFSET = 24;
-      const newBubbles = layout.bubbles.filter((b) => selectedBubbleIds.includes(b.id)).map((b) => offsetBubble({ ...b, id: uuid() }, OFFSET, OFFSET));
-      const newImages = layout.images.filter((img) => selectedImageIds.includes(img.id)).map((img) => offsetImage({ ...img, id: uuid() }, OFFSET, OFFSET));
+      // Locked elements are excluded entirely — full protection means they can't be
+      // duplicated either. A bubble whose parent panel is locked (and therefore not
+      // duplicated) falls through to the existing "panel not duplicated" branch below,
+      // no special-casing needed.
+      const selectedPanels = layout.panels.filter((p) => selectedPanelIds.includes(p.id) && !p.locked);
+      const newPanels = selectedPanels.map((p) => offsetPanel({ ...p, id: uuid() }, OFFSET, OFFSET));
+      const panelIdRemap = new Map(selectedPanels.map((p, i) => [p.id, newPanels[i].id]));
+      const newBubbles = layout.bubbles
+        .filter((b) => selectedBubbleIds.includes(b.id) && !b.locked)
+        .map((b) => {
+          const copy = { ...b, id: uuid() };
+          if (b.panelId && panelIdRemap.has(b.panelId)) {
+            // Parent panel duplicated too — the copy stays panel-relative, sitting in the
+            // same spot inside the new panel copy; just repoint it, no coordinate shift
+            // (the panel's own offset already carries it).
+            return { ...copy, panelId: panelIdRemap.get(b.panelId)! };
+          }
+          return offsetBubble(copy, OFFSET, OFFSET);
+        });
+      const newImages = layout.images
+        .filter((img) => selectedImageIds.includes(img.id) && !img.locked)
+        .map((img) => offsetImage({ ...img, id: uuid() }, OFFSET, OFFSET));
       const newCurvedTexts = layout.curvedTexts
-        .filter((el) => selectedCurvedTextIds.includes(el.id))
+        .filter((el) => selectedCurvedTextIds.includes(el.id) && !el.locked)
         .map((el) => offsetCurvedText({ ...el, id: uuid() }, OFFSET, OFFSET));
-      const newPanels = layout.panels.filter((p) => selectedPanelIds.includes(p.id)).map((p) => offsetPanel({ ...p, id: uuid() }, OFFSET, OFFSET));
       set({
         layout: {
           ...layout,
@@ -477,10 +566,17 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set({
         layout: {
           ...layout,
-          bubbles: layout.bubbles.map((b) => (selectedBubbleIds.includes(b.id) ? offsetBubble(b, dx, dy) : b)),
-          images: layout.images.map((img) => (selectedImageIds.includes(img.id) ? offsetImage(img, dx, dy) : img)),
-          curvedTexts: layout.curvedTexts.map((el) => (selectedCurvedTextIds.includes(el.id) ? offsetCurvedText(el, dx, dy) : el)),
-          panels: layout.panels.map((p) => (selectedPanelIds.includes(p.id) ? offsetPanel(p, dx, dy) : p)),
+          // A bubble whose parent panel is ALSO selected is skipped here — the panel's own
+          // origin shift already carries it along (via nested Konva Group transform on
+          // render), so also shifting the bubble's own relative x/y would double-move it.
+          bubbles: layout.bubbles.map((b) =>
+            selectedBubbleIds.includes(b.id) && !b.locked && !(b.panelId && selectedPanelIds.includes(b.panelId))
+              ? offsetBubble(b, dx, dy)
+              : b
+          ),
+          images: layout.images.map((img) => (selectedImageIds.includes(img.id) && !img.locked ? offsetImage(img, dx, dy) : img)),
+          curvedTexts: layout.curvedTexts.map((el) => (selectedCurvedTextIds.includes(el.id) && !el.locked ? offsetCurvedText(el, dx, dy) : el)),
+          panels: layout.panels.map((p) => (selectedPanelIds.includes(p.id) && !p.locked ? offsetPanel(p, dx, dy) : p)),
         },
         dirty: true,
       });

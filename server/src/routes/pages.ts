@@ -69,7 +69,12 @@ pagesRouter.get(
       res.status(404).json({ error: "page_not_found" });
       return;
     }
-    res.sendFile(page.absolutePath);
+    // The auth token in the URL is stable per session, so identical requests for the
+    // same page reuse the browser's HTTP cache — maxAge lets that happen without a
+    // revalidation round-trip each time (real gain when scanRoot is a slow network
+    // share); ETag/Last-Modified (set by res.sendFile by default) still catch actual
+    // edits to the source file.
+    res.sendFile(page.absolutePath, { maxAge: "1h" });
   })
 );
 
@@ -92,7 +97,7 @@ pagesRouter.get(
     try {
       const thumbPath = await getOrCreateThumbnail(page.absolutePath);
       res.type("image/jpeg");
-      res.sendFile(thumbPath);
+      res.sendFile(thumbPath, { maxAge: "1h" });
     } catch (err) {
       res.status(500).json({ error: "thumbnail_generation_failed", details: String(err) });
     }

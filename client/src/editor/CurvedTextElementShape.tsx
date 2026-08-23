@@ -5,6 +5,7 @@ import type { CurvedTextElement, Point } from "../../../shared/src/layoutSchema"
 import { resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { drawCurvedText, fitCurvedText, sampleCurvePolyline } from "../export/curvedText";
+import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {
   element: CurvedTextElement;
@@ -63,6 +64,11 @@ export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, p
   const previewPolyline = useMemo(() => sampleCurvePolyline(livePoints), [livePoints]);
 
   if (displayPoints.length !== 4) return null;
+  // See BubbleShape.tsx's Props doc comment — role-based readOnly vs. the element's own
+  // `locked` field both disable geometry, but only readOnly hides the lock toggle itself.
+  const geometryDisabled = readOnly || element.locked;
+  const boundsMaxX = Math.max(...displayPoints.map((p) => p.x));
+  const boundsMinY = Math.min(...displayPoints.map((p) => p.y));
 
   function handleLineDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
     const node = e.target;
@@ -113,7 +119,7 @@ export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, p
         strokeWidth={2}
         dash={[4, 4]}
         hitStrokeWidth={16}
-        draggable={!readOnly}
+        draggable={!geometryDisabled}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         // Without cancelBubble, the mousedown/dragstart bubbles all the way
@@ -135,7 +141,7 @@ export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, p
         }}
       />
       {selected &&
-        !readOnly &&
+        !geometryDisabled &&
         displayPoints.map((p, i) => (
           <Circle
             key={i}
@@ -162,6 +168,15 @@ export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, p
             }}
           />
         ))}
+      {selected && !readOnly && (
+        <LockToggleHandle
+          x={boundsMaxX + 14 * handleScale}
+          y={boundsMinY - 14 * handleScale}
+          scale={handleScale}
+          locked={!!element.locked}
+          onToggle={() => onChange({ locked: element.locked ? undefined : true })}
+        />
+      )}
     </Group>
   );
 }
