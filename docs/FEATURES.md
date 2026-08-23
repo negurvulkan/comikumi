@@ -360,6 +360,80 @@ Kind-Blasen-Zuordnung, Sperren, Duplizieren, Löschen funktionieren gleich):
 - Ein noch nie verschobenes Cut-Panel sieht optisch identisch zu einem unbearbeiteten
   Panel-Bereich aus (die Loch-Füllung und der Ausschnitt decken sich exakt).
 
+### Drei Inhalts-Zustände eines Cut-Panels
+
+Im Panel-Inspector legt eine einzige Auswahl „Inhalt" fest, was an der aktuellen
+Panel-Position gezeigt wird — die drei Optionen schließen sich gegenseitig aus:
+
+- **„Original-Ausschnitt"** (Standard) — der Inhalt, wie unter „Cut-Panel" oben
+  beschrieben (verschieben, umformen).
+- **„Entfernt (nicht-destruktiv)"** — die Original-Stelle wird nur überdeckt, der Inhalt
+  aber **nirgends** erneut gezeichnet: das Panel verschwindet visuell vollständig, in
+  Vorschau und PNG-Export gleichermaßen. Rein visuell/semantisch und jederzeit durch
+  Zurückstellen auf „Original-Ausschnitt" rückgängig zu machen — Geometrie und
+  zugeordnete Kind-Blasen bleiben vollständig unangetastet. Ein so entferntes Panel gilt
+  aber semantisch als nicht mehr vorhanden für Skript, Berichte und Leserichtung
+  (`groupBubblesByPanel()` in `reportUtils.ts`) — eine ihm zugeordnete Blase erscheint
+  stattdessen in der „Ohne Panel"-Gruppe. Im Panel-Zuordnungs-Dropdown/-Kontextmenü
+  bleibt das Panel weiterhin mit dem Zusatz „(entfernt)" sichtbar.
+- **„Ersetzt durch eigenes Bild"** — siehe nächster Abschnitt.
+
+Unabhängig davon bleibt der bestehende **„Panel löschen"-Button**: er entfernt den
+Panel-Datensatz endgültig aus der Seite und entkoppelt seine Kind-Blasen (zurück auf
+absolute Koordinaten) — nicht rückgängig zu machen außer per Undo. Die „Inhalt"-Auswahl
+betrifft dagegen nie den Datensatz selbst, nur was gerendert wird.
+
+### Panel-Inhalt ersetzen
+
+Statt den Original-Ausschnitt zu verschieben oder zu entfernen, lässt er sich auch durch
+ein **eigenes hochgeladenes Bild** ersetzen — z. B. um einen falschen Bildinhalt
+auszutauschen oder eine Zensur-Auflage zu erfüllen, ohne die ganze Seite neu erstellen zu
+müssen. Im Panel-Inspector unter „Inhalt" → „Ersetzt durch eigenes Bild" auswählen, dann
+über denselben Bild-Auswahl-Dialog wie beim Einfügen eines platzierten Bildes ein Bild
+hochladen oder aus der Bibliothek wählen — pro Sprache einzeln (wie bei platzierten
+Bildern: fehlt für die aktive Sprache ein eigenes Bild, wird ersatzweise irgendeine andere
+zugewiesene Sprache gezeigt, statt leer zu bleiben).
+
+Das Ersatzbild wird auf die Bounding-Box des aktuellen Panel-Polygons gestreckt und auf
+dessen tatsächliche Form geclippt (keine Seitenverhältnis-Erhaltung, keine echte
+4-Punkt-Perspektivverzerrung wie bei platzierten Bildern/Viereck-Blasen — ein
+Panel-Polygon kann beliebig viele Eckpunkte haben, nicht zwingend 4). Optional lässt sich
+zusätzlich ein Rahmen (Farbe + Breite) um das Ersatzbild legen — anders als die
+Panel-Randfarbe (reine Editor-Kontur, nie im Export) wird dieser Rahmen tatsächlich mit
+in den PNG-Export gezeichnet.
+
+### Sprachabhängiges Verhalten
+
+Alles auf dieser Seite Beschriebene — Position/Form, „Inhalt"-Zustand, Loch-Füllung,
+Ersatzbild/Rahmen — lässt sich zusätzlich **pro Sprache** unterschiedlich einstellen,
+über das Häkchen „Eigene Version für „{Sprache}““ im Panel-Inspector (erscheint bei
+jedem Cut-Panel). Damit ist dasselbe Panel gleichzeitig eine unveränderte
+Referenzmarkierung in einer Sprache und ein voll bearbeitetes Cut-Panel in einer
+anderen — **eine einzige Entity** deckt beide Rollen ab, es gibt keinen separaten
+Panel-Typ.
+
+Beispiel: ein Panel bleibt in „ja" (Original) unverändert an Ort und Stelle — reine
+semantische Markierung, keine sichtbare Wirkung. In „de"/„en" ist es dagegen
+verschoben, entfernt oder durch ein eigenes Bild ersetzt (z. B. für eine
+RTL→LTR-Umgestaltung oder eine Zensur-Auflage im Zielmarkt).
+
+- Ohne eigene Version für eine Sprache gilt einfach die Basis (Position/Form/Zustand,
+  wie beim Zeichnen des Panels festgelegt bzw. seither ohne Sprach-Override bearbeitet)
+  — bestehende Cut-Panels aus früheren Arbeitsständen verhalten sich dadurch
+  unverändert für jede Sprache gleich, bis gezielt ein Sprach-Override angelegt wird.
+- Beim Einschalten wird die aktuell angezeigte Version 1:1 in den Sprach-Override
+  übernommen (kein optischer Sprung); beim Ausschalten fällt die Sprache sauber auf die
+  Basis zurück.
+- **Kind-Blasen sind davon unberührt**: ihre Position bleibt immer relativ zum
+  **Basis**-Anker des Panels, unabhängig davon, ob und wie das Panel für die gerade
+  aktive Sprache verschoben ist. Wer eine Blase pro Sprache anders platzieren möchte,
+  tut das weiterhin unabhängig über die Blase selbst (Sprach-Override der Bubble-Form).
+- Ein in einer Sprache „entferntes" Panel (siehe oben) gilt auch nur in **dieser**
+  Sprache als semantisch nicht vorhanden für Skript/Berichte/Leserichtung — in jeder
+  anderen Sprache ohne diesen Override erscheint es dort ganz normal.
+- Sperren (`locked`) gilt bewusst **immer sprachübergreifend** — eine Sperre soll
+  unabhängig davon halten, welche Sprache gerade aktiv ist.
+
 ## Text-Liste
 
 Einklappbare Seitenleiste mit jeder Blase/jedem Kurventext der aktuellen Seite in

@@ -284,6 +284,17 @@ describe("locked — updateBubble/updatePanel/updateImage/updateCurvedText rejec
     expect(useEditorStore.getState().layout!.panels[0].label).toBe("Splash");
   });
 
+  it("updatePanel rejects a languageOverride patch on a locked panel just like a points patch", () => {
+    const panel = { ...createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] }), locked: true };
+    setLayout({ ...seedLayout(), panels: [panel] });
+
+    useEditorStore.getState().updatePanel("p1", {
+      languageOverride: { de: { points: [{ x: 999, y: 999 }, { x: 998, y: 998 }, { x: 997, y: 997 }], origin: { x: 999, y: 999 } } },
+    });
+
+    expect(useEditorStore.getState().layout!.panels[0].languageOverride).toBeUndefined();
+  });
+
   it("updateImage rejects a corners patch on a locked image but allows an opacity patch", () => {
     setLayout(seedLayout());
     useEditorStore.getState().addImage("poster.png", 100, 100, ["de"]);
@@ -384,5 +395,43 @@ describe("duplicateSelected — Cut-Panel", () => {
     // The duplicate's own origin moved by the duplicate OFFSET, so it now differs from
     // cutOrigin — it displays as "moved" content sourced from the same original region.
     expect(duplicate.origin).not.toEqual(duplicate.cut!.cutOrigin);
+  });
+});
+
+describe("nudgeSelected/duplicateSelected — respect a per-language panel override", () => {
+  it("nudgeSelected shifts the active language's override, not the base, when one exists", () => {
+    const panel = {
+      ...createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] }),
+      languageOverride: {
+        de: { points: [{ x: 50, y: 50 }, { x: 60, y: 50 }, { x: 60, y: 60 }], origin: { x: 50, y: 50 } },
+      },
+    };
+    setLayout({ ...seedLayout(), panels: [panel] });
+    useEditorStore.setState({ selectedPanelIds: ["p1"], activeLanguage: "de" });
+
+    useEditorStore.getState().nudgeSelected(5, 5);
+
+    const result = useEditorStore.getState().layout!.panels[0];
+    // Base untouched...
+    expect(result.points).toEqual(panel.points);
+    // ...only the "de" override moved.
+    expect(result.languageOverride!.de.origin).toEqual({ x: 55, y: 55 });
+  });
+
+  it("duplicateSelected shifts the active language's override on the copy, not the base", () => {
+    const panel = {
+      ...createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] }),
+      languageOverride: {
+        de: { points: [{ x: 50, y: 50 }, { x: 60, y: 50 }, { x: 60, y: 60 }], origin: { x: 50, y: 50 } },
+      },
+    };
+    setLayout({ ...seedLayout(), panels: [panel] });
+    useEditorStore.setState({ selectedPanelIds: ["p1"], activeLanguage: "de" });
+
+    useEditorStore.getState().duplicateSelected();
+
+    const copy = useEditorStore.getState().layout!.panels.find((p) => p.id !== "p1")!;
+    expect(copy.points).toEqual(panel.points); // base copied unchanged
+    expect(copy.languageOverride!.de.origin).toEqual({ x: 74, y: 74 }); // 50 + OFFSET(24)
   });
 });

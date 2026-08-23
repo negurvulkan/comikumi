@@ -1,22 +1,25 @@
-import type { Panel, Point } from "../../../shared/src/layoutSchema";
+import type { Point, ResolvedPanel } from "../../../shared/src/layoutSchema";
+import { polygonBounds } from "../../../shared/src/layoutSchema";
 
-/** How far a Cut-Panel has moved since it was cut (0,0 = never moved) — the panel's
- * current `origin` minus its frozen `cutOrigin`. Combined with the panel's *current*
- * `points`, this is all that's needed to derive which region of the original source
- * image is shown here: a whole-panel rigid translate shifts `points` and `origin`
- * together (this delta changes, but `points` minus delta — the source region — stays
- * exactly the same, since both moved by the same amount), while a vertex-only reshape
- * changes `points` without touching `origin` (this delta stays the same, so the derived
- * source region's shape changes to match the reshape one-to-one). */
-export function cutPanelDelta(panel: Panel): Point {
+/** How far a Cut-Panel has moved since it was cut (0,0 = never moved) — the resolved
+ * panel's `origin` minus its frozen `cut.cutOrigin`. Combined with the resolved `points`,
+ * this is all that's needed to derive which region of the original source image is shown
+ * here: a whole-panel rigid translate shifts `points` and `origin` together (this delta
+ * changes, but `points` minus delta — the source region — stays exactly the same, since
+ * both moved by the same amount), while a vertex-only reshape changes `points` without
+ * touching `origin` (this delta stays the same, so the derived source region's shape
+ * changes to match the reshape one-to-one). Callers pass an already-*resolved* panel (see
+ * resolvePanelForLanguage() in layoutSchema.ts) — a whole-panel translate/reshape can
+ * differ per language, but the delta math itself is language-agnostic once resolved. */
+export function cutPanelDelta(panel: ResolvedPanel): Point {
   if (!panel.cut) return { x: 0, y: 0 };
   return { x: panel.origin.x - panel.cut.cutOrigin.x, y: panel.origin.y - panel.cut.cutOrigin.y };
 }
 
 /** The region of the original source image a Cut-Panel's content is drawn from — the
- * panel's current `points`, shifted back by `cutPanelDelta`. Only meaningful when
+ * resolved panel's current `points`, shifted back by `cutPanelDelta`. Only meaningful when
  * `panel.cut` is set. */
-export function cutPanelSourcePolygon(panel: Panel): Point[] {
+export function cutPanelSourcePolygon(panel: ResolvedPanel): Point[] {
   const d = cutPanelDelta(panel);
   return panel.points.map((p) => ({ x: p.x - d.x, y: p.y - d.y }));
 }
@@ -38,14 +41,28 @@ function tracePolygonPath(ctx: CanvasRenderingContext2D, points: Point[]): void 
  * `baseImage`'s natural pixel dimensions (`imageWidth`/`imageHeight`) — callers scale by
  * their own display `scale` factor as needed (see CutPanelContentShape.tsx /
  * renderPageToPng.ts, which apply it before calling this).
+ *
+ * Takes an already-*resolved* panel (see resolvePanelForLanguage() in layoutSchema.ts) —
+ * callers resolve for whichever language is being rendered/exported before calling this,
+ * so the same panel can be a plain untouched marker in one language and a moved/removed/
+ * replaced Cut-Panel in another.
+ *
+ * `replacementImage`, if given (already loaded by the caller — see
+ * cutPanelReplacementFileForLanguage in layoutSchema.ts), takes over step 2 entirely:
+ * instead of redrawing the original cut-out, it stretches the replacement image to the
+ * panel's current bounding box and clips it to the panel's actual (possibly non-quad)
+ * shape, then strokes the optional border on top. `panel.cut.removed` always wins over a
+ * replacement image if both are somehow set (defense against an inconsistent saved
+ * state, even though the inspector UI presents them as one mutually-exclusive choice).
  */
 export function drawCutPanelContent(
   ctx: CanvasRenderingContext2D,
-  panel: Panel,
+  panel: ResolvedPanel,
   baseImage: CanvasImageSource,
   imageWidth: number,
   imageHeight: number,
-  scale: number
+  scale: number,
+  replacementImage?: CanvasImageSource
 ): void {
   if (!panel.cut) return;
   const d = cutPanelDelta(panel);
@@ -57,6 +74,35 @@ export function drawCutPanelContent(
   ctx.fillStyle = panel.cut.holeFill.color;
   ctx.fill();
   ctx.restore();
+
+  // "Removed" (fully deleted, see Panel.cut.removed's doc comment): the hole-fill above
+  // is the entire visual result — nothing gets redrawn anywhere, so the panel simply
+  // disappears from the page instead of reappearing at its current position.
+  if (panel.cut.removed) return;
+
+  if (panel.cut.replacement && replacementImage) {
+    const bounds = polygonBounds(panel.points);
+    ctx.save();
+    tracePolygonPath(ctx, scaledPoints);
+    ctx.clip();
+    ctx.drawImage(
+      replacementImage,
+      bounds.minX * scale,
+      bounds.minY * scale,
+      (bounds.maxX - bounds.minX) * scale,
+      (bounds.maxY - bounds.minY) * scale
+    );
+    ctx.restore();
+    if (panel.cut.replacement.border) {
+      ctx.save();
+      tracePolygonPath(ctx, scaledPoints);
+      ctx.lineWidth = panel.cut.replacement.border.widthPx * scale;
+      ctx.strokeStyle = panel.cut.replacement.border.color;
+      ctx.stroke();
+      ctx.restore();
+    }
+    return;
+  }
 
   ctx.save();
   tracePolygonPath(ctx, scaledPoints);

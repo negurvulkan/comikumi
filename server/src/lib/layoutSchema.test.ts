@@ -13,6 +13,8 @@ import {
   createCurvedTextElement,
   createImageElement,
   createEmptyLayout,
+  cutPanelReplacementFileForLanguage,
+  resolvePanelForLanguage,
 } from "../../../shared/src/layoutSchema.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
 
@@ -215,6 +217,120 @@ describe("Panel.cut field", () => {
     });
     expect(panel.cut).toEqual({ cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#abcdef" } });
     expect(JSON.parse(JSON.stringify(panel))).toHaveProperty("cut.holeFill.color", "#abcdef");
+  });
+
+  it("cut.removed is undefined by default and omitted from JSON, round-trips true", () => {
+    const panel = createPanel({
+      id: "p1",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#abcdef" } },
+    });
+    expect(panel.cut!.removed).toBeUndefined();
+    expect(JSON.parse(JSON.stringify(panel)).cut).not.toHaveProperty("removed");
+
+    const removedPanel = createPanel({
+      id: "p2",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#abcdef" }, removed: true },
+    });
+    expect(removedPanel.cut!.removed).toBe(true);
+    expect(JSON.parse(JSON.stringify(removedPanel))).toHaveProperty("cut.removed", true);
+  });
+
+  it("round-trips cut.replacement's files/border, omitted when absent", () => {
+    const plain = createPanel({
+      id: "p1",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#abcdef" } },
+    });
+    expect(plain.cut!.replacement).toBeUndefined();
+
+    const replaced = createPanel({
+      id: "p2",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      cut: {
+        cutOrigin: { x: 0, y: 0 },
+        holeFill: { mode: "auto", color: "#abcdef" },
+        replacement: { files: { de: "poster_de.png", ja: "poster_ja.png" }, border: { color: "#000000", widthPx: 4 } },
+      },
+    });
+    expect(replaced.cut!.replacement).toEqual({
+      files: { de: "poster_de.png", ja: "poster_ja.png" },
+      border: { color: "#000000", widthPx: 4 },
+    });
+    expect(JSON.parse(JSON.stringify(replaced))).toHaveProperty("cut.replacement.files.ja", "poster_ja.png");
+  });
+});
+
+describe("cutPanelReplacementFileForLanguage", () => {
+  function panelWithReplacementFiles(files: Record<string, string>) {
+    return createPanel({
+      id: "p1",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#fff" }, replacement: { files } },
+    });
+  }
+
+  it("returns undefined when there's no cut/replacement/files at all", () => {
+    const plain = createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    expect(cutPanelReplacementFileForLanguage(plain.cut, "de")).toBeUndefined();
+    expect(cutPanelReplacementFileForLanguage(panelWithReplacementFiles({}).cut, "de")).toBeUndefined();
+  });
+
+  it("returns the file for the requested language when present", () => {
+    const panel = panelWithReplacementFiles({ de: "de.png", ja: "ja.png" });
+    expect(cutPanelReplacementFileForLanguage(panel.cut, "de")).toBe("de.png");
+  });
+
+  it("falls back to any other assigned language's file, same convention as imageFileForLanguage", () => {
+    const panel = panelWithReplacementFiles({ ja: "ja.png" });
+    expect(cutPanelReplacementFileForLanguage(panel.cut, "de")).toBe("ja.png");
+  });
+});
+
+describe("resolvePanelForLanguage", () => {
+  it("falls back to the base points/origin/cut when there's no override for the language", () => {
+    const panel = createPanel({
+      id: "p1",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#fff" } },
+    });
+    expect(resolvePanelForLanguage(panel, "ja")).toEqual({ points: panel.points, origin: panel.origin, cut: panel.cut });
+  });
+
+  it("returns the language override's full bundle (points/origin/cut) when one exists, ignoring the base entirely", () => {
+    const panel = createPanel({
+      id: "p1",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      // Base: a plain marker, no cut at all — e.g. the original "ja" behavior.
+      languageOverride: {
+        de: {
+          points: [{ x: 100, y: 100 }, { x: 110, y: 100 }, { x: 110, y: 110 }],
+          origin: { x: 100, y: 100 },
+          cut: { cutOrigin: { x: 100, y: 100 }, holeFill: { mode: "auto", color: "#000" }, removed: true },
+        },
+      },
+    });
+    expect(resolvePanelForLanguage(panel, "de")).toEqual({
+      points: [{ x: 100, y: 100 }, { x: 110, y: 100 }, { x: 110, y: 110 }],
+      origin: { x: 100, y: 100 },
+      cut: { cutOrigin: { x: 100, y: 100 }, holeFill: { mode: "auto", color: "#000" }, removed: true },
+    });
+    // A language without an override still sees the untouched base — no cut at all.
+    expect(resolvePanelForLanguage(panel, "ja").cut).toBeUndefined();
+  });
+
+  it("supports a geometry-only override (no cut) — a language can just be repositioned without becoming a Cut-Panel", () => {
+    const panel = createPanel({
+      id: "p1",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      languageOverride: {
+        fr: { points: [{ x: 5, y: 5 }, { x: 15, y: 5 }, { x: 15, y: 15 }], origin: { x: 5, y: 5 } },
+      },
+    });
+    const resolved = resolvePanelForLanguage(panel, "fr");
+    expect(resolved.origin).toEqual({ x: 5, y: 5 });
+    expect(resolved.cut).toBeUndefined();
   });
 });
 

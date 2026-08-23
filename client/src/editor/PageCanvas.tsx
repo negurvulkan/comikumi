@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Stage, Layer, Image as KonvaImage, Rect, Ellipse, Group } from "react-konva";
 import Konva from "konva";
 import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, Panel, Point } from "../../../shared/src/layoutSchema";
-import { boxCorners, panelDisplayLabel } from "../../../shared/src/layoutSchema";
+import { boxCorners, panelDisplayLabel, resolvePanelForLanguage } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { useHtmlImage } from "./useHtmlImage";
@@ -295,7 +295,7 @@ export function PageCanvas({
               onClick: () => onReassignPanel(bubble.id, null),
             },
             ...panels.map((p, i) => ({
-              label: panelDisplayLabel(p, i),
+              label: panelDisplayLabel(p, i) + (resolvePanelForLanguage(p, activeLanguage).cut?.removed ? ` ${t("editor.panelInspector.removedSuffix")}` : ""),
               selected: bubble.panelId === p.id,
               onClick: () => onReassignPanel(bubble.id, p.id),
             })),
@@ -387,7 +387,7 @@ export function PageCanvas({
           {image && <KonvaImage image={image} width={displayWidth} height={displayHeight} />}
           {image &&
             panels
-              .filter((p) => p.cut)
+              .filter((p) => resolvePanelForLanguage(p, activeLanguage).cut)
               .map((panel) => (
                 <CutPanelContentShape
                   key={`cut-${panel.id}`}
@@ -396,6 +396,7 @@ export function PageCanvas({
                   scale={scale}
                   imageWidth={imageWidth}
                   imageHeight={imageHeight}
+                  activeLanguage={activeLanguage}
                 />
               ))}
           {panels.map((panel, index) => (
@@ -405,6 +406,7 @@ export function PageCanvas({
               index={index}
               scale={scale}
               zoom={zoom}
+              activeLanguage={activeLanguage}
               selected={selectedPanelIds.includes(panel.id)}
               onSelect={(additive) => onSelectPanel(panel.id, additive)}
               onChange={(patch) => onChangePanel(panel.id, patch)}

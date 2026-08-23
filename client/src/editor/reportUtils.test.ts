@@ -113,6 +113,38 @@ describe("groupBubblesByPanel", () => {
     expect(groups.map((g) => g.label)).toEqual(["Panel 1"]);
   });
 
+  it("excludes a Cut-Panel marked cut.removed entirely — its bubble falls to 'Ohne Panel' with panelId unchanged", () => {
+    const removedPanel = { ...panel("p2", 200), cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto" as const, color: "#fff" }, removed: true } };
+    const b = bubble("b-removed", 210, { panelId: "p2" });
+    const groups = groupBubblesByPanel([b], [removedPanel], "de");
+
+    expect(groups.map((g) => g.panelId)).toEqual([null]);
+    expect(groups[0].bubbles.map((x) => x.id)).toEqual(["b-removed"]);
+    // Structurally untouched — still points at the removed panel, not detached/rewritten.
+    expect(b.panelId).toBe("p2");
+  });
+
+  it("a panel removed only via a language override stays visible in other languages, but not the overridden one", () => {
+    const base = panel("p1", 0);
+    const removedInDe = {
+      ...base,
+      languageOverride: {
+        de: {
+          points: base.points,
+          origin: base.origin,
+          cut: { cutOrigin: base.origin, holeFill: { mode: "auto" as const, color: "#fff" }, removed: true },
+        },
+      },
+    };
+    const b = bubble("b1", 10, { panelId: "p1" });
+
+    const jaGroups = groupBubblesByPanel([b], [removedInDe], "ja");
+    expect(jaGroups.map((g) => g.panelId)).toEqual(["p1"]);
+
+    const deGroups = groupBubblesByPanel([b], [removedInDe], "de");
+    expect(deGroups.map((g) => g.panelId)).toEqual([null]);
+  });
+
   it("orders two panels at roughly the same height (overlapping Y) by X, per readingDirection", () => {
     const pLeft = panel("p-left", 0, 0, "Left");
     const pRight = panel("p-right", 5, 300, "Right");
@@ -139,8 +171,14 @@ describe("charactersByPanel", () => {
     const p1 = panel("p1", 0);
     const p2 = panel("p2", 200);
     const bubbles = [bubble("b1", 10, { panelId: "p1", characterId: "c1" })];
-    const result = charactersByPanel(bubbles, [p1, p2], characters);
+    const result = charactersByPanel(bubbles, [p1, p2], characters, "de");
     expect(result).toEqual([{ label: "Panel 1", characterNames: ["Kei"] }]);
+  });
+
+  it("excludes a Cut-Panel marked cut.removed even if it has assigned characters", () => {
+    const removedPanel = { ...panel("p1", 0), cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto" as const, color: "#fff" }, removed: true } };
+    const bubbles = [bubble("b1", 10, { panelId: "p1", characterId: "c1" })];
+    expect(charactersByPanel(bubbles, [removedPanel], characters, "de")).toEqual([]);
   });
 });
 

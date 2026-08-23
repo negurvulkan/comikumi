@@ -555,6 +555,7 @@ export function Editor() {
             <PanelInspector
               panel={selectedPanel}
               index={selectedPanelIndex}
+              activeLanguage={activeLanguage}
               onChange={(patch) => store.updatePanel(selectedPanel.id, patch)}
               onDelete={() => store.removePanel(selectedPanel.id)}
             />

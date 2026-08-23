@@ -1,5 +1,12 @@
 import type { Bubble, BubbleForm, PageLayout, Panel, Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
-import { imageFileForLanguage, resolveBubbleForm, resolveBubbleStyle, resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
+import {
+  cutPanelReplacementFileForLanguage,
+  imageFileForLanguage,
+  resolveBubbleForm,
+  resolveBubbleStyle,
+  resolveCurvedTextStyle,
+  resolvePanelForLanguage,
+} from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { paddingRatioFor, fitHorizontalText } from "./textLayout";
 import { drawVerticalText, fitVerticalText } from "./verticalTypesetting";
@@ -97,12 +104,36 @@ export async function renderPageToPng(
 
   ctx.drawImage(baseImage, 0, 0, layout.imageWidth, layout.imageHeight);
 
+  // Cut-Panel replacement images (if any) must be loaded before the synchronous draw
+  // loop below — same preload-then-draw shape as the SVG bubble contours further down,
+  // since drawCutPanelContent() itself stays fully synchronous.
+  // Resolved once per panel for the language being exported — the same panel can be a
+  // plain untouched marker in one language and a moved/removed/replaced Cut-Panel in
+  // another (see Panel.languageOverride's doc comment / resolvePanelForLanguage()).
+  const resolvedPanels = layout.panels.map((panel) => resolvePanelForLanguage(panel, languageCode));
+
+  const replacementImages = new Map<string, HTMLImageElement>();
+  if (loadPlacedImage) {
+    const replacementFileNames = new Set<string>();
+    for (const resolved of resolvedPanels) {
+      const fileName = cutPanelReplacementFileForLanguage(resolved.cut, languageCode);
+      if (fileName) replacementFileNames.add(fileName);
+    }
+    await Promise.all(
+      [...replacementFileNames].map(async (fileName) => {
+        replacementImages.set(fileName, await loadPlacedImage(fileName));
+      })
+    );
+  }
+
   // Cut-Panels: patch the vacated original spot, then draw the detached content at its
   // current (possibly moved/reshaped) position — see cutPanel.ts. Runs before placed
   // images/bubbles/curved texts so those still layer normally on top. A no-op draw for
   // any Panel without `.cut` (see drawCutPanelContent's early return).
-  for (const panel of layout.panels) {
-    drawCutPanelContent(ctx, panel, baseImage, layout.imageWidth, layout.imageHeight, 1);
+  for (const resolved of resolvedPanels) {
+    const replacementFileName = cutPanelReplacementFileForLanguage(resolved.cut, languageCode);
+    const replacementImage = replacementFileName ? replacementImages.get(replacementFileName) : undefined;
+    drawCutPanelContent(ctx, resolved, baseImage, layout.imageWidth, layout.imageHeight, 1, replacementImage);
   }
 
   // SVG bubble contours are parsed asynchronously and cached (see

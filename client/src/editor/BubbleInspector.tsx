@@ -12,7 +12,14 @@ import type {
   TextGradient,
   TextOutline,
 } from "../../../shared/src/layoutSchema";
-import { boxCorners, panelDisplayLabel, resolveBubbleForm, resolveBubbleStyle, resolveEffectiveTailStyle } from "../../../shared/src/layoutSchema";
+import {
+  boxCorners,
+  panelDisplayLabel,
+  resolveBubbleForm,
+  resolveBubbleStyle,
+  resolveEffectiveTailStyle,
+  resolvePanelForLanguage,
+} from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
@@ -260,6 +267,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
             {panels.map((p, i) => (
               <option key={p.id} value={p.id}>
                 {panelDisplayLabel(p, i)}
+                {resolvePanelForLanguage(p, activeLanguage).cut?.removed ? ` ${t("editor.panelInspector.removedSuffix")}` : ""}
               </option>
             ))}
           </select>

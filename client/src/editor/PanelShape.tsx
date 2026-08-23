@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Circle, Group, Line, Text } from "react-konva";
 import Konva from "konva";
-import type { Panel, Point } from "../../../shared/src/layoutSchema";
-import { panelDisplayLabel, polygonBounds } from "../../../shared/src/layoutSchema";
+import type { Panel, PanelCut, Point } from "../../../shared/src/layoutSchema";
+import { panelDisplayLabel, polygonBounds, resolvePanelForLanguage } from "../../../shared/src/layoutSchema";
 import { closestPointOnSegment } from "./geometry";
 import { LockToggleHandle } from "./LockToggleHandle";
 
@@ -12,6 +12,11 @@ interface Props {
   scale: number;
   /** Current interactive Stage zoom — see BubbleShape.tsx's Props doc comment (vertex handle radii are divided by this so they stay a constant screen size). */
   zoom: number;
+  /** Which language's geometry/cut state to show and edit — see Panel.languageOverride's
+   * doc comment. Writes go into the base fields unless an override already exists for
+   * this language (see commitPanel below), same "opt in per language" pattern as
+   * BubbleShape.tsx's formOverride handling. */
+  activeLanguage: string;
   selected: boolean;
   onSelect: (additive: boolean) => void;
   onChange: (patch: Partial<Panel>) => void;
@@ -32,16 +37,32 @@ interface Props {
  * right-click on a vertex offers to remove it (down to a minimum of 3 points). Mirrors
  * QuadBubbleShape.tsx's transform-free Line+Circle-corners pattern, generalized from a
  * fixed 4 corners to any N ≥ 3. */
-export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onChange, onContextMenu, onVertexContextMenu, readOnly }: Props) {
+export function PanelShape({ panel, index, scale, zoom, activeLanguage, selected, onSelect, onChange, onContextMenu, onVertexContextMenu, readOnly }: Props) {
   const handleScale = 1 / zoom;
-  const displayPoints = panel.points.map((p) => ({ x: p.x * scale, y: p.y * scale }));
+  // Resolved for the active language — the same panel can be a plain untouched marker in
+  // one language and a moved/reshaped/cut one in another (see Panel.languageOverride).
+  const resolved = resolvePanelForLanguage(panel, activeLanguage);
+  const hasLanguageOverride = !!panel.languageOverride?.[activeLanguage];
+  const displayPoints = resolved.points.map((p) => ({ x: p.x * scale, y: p.y * scale }));
   const [livePoints, setLivePoints] = useState(displayPoints);
-  useEffect(() => setLivePoints(displayPoints), [panel.points, scale]);
+  useEffect(() => setLivePoints(displayPoints), [resolved.points, scale]);
 
-  const bounds = polygonBounds(panel.points);
+  const bounds = polygonBounds(resolved.points);
   // See BubbleShape.tsx's Props doc comment — role-based readOnly vs. the panel's own
   // `locked` field both disable geometry, but only readOnly hides the lock toggle itself.
+  // `locked` is deliberately base-wide (not per-language), see its schema doc comment.
   const geometryDisabled = readOnly || panel.locked;
+
+  // Writes into the active language's override if one already exists (merged with the
+  // resolved current state so untouched fields survive), otherwise straight into the
+  // base fields — same "opt in per language" pattern as BubbleShape.tsx's commitForm.
+  function commitPanel(patch: Partial<{ points: Point[]; origin: Point; cut: PanelCut | undefined }>) {
+    if (hasLanguageOverride) {
+      onChange({ languageOverride: { ...panel.languageOverride, [activeLanguage]: { ...resolved, ...patch } } });
+    } else {
+      onChange(patch);
+    }
+  }
 
   function handleLineDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
     const node = e.target;
@@ -49,12 +70,15 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
     const dy = node.y() / scale;
     node.position({ x: 0, y: 0 });
     // A whole-panel drag is a rigid translate — origin must move by the same (dx, dy) as
-    // points, or child bubbles (rendered in a Group anchored at origin) would visually
-    // detach from the panel outline. A vertex-only reshape (handleVertexDragEnd below)
-    // deliberately never touches origin — see PanelPointsSchema.origin's doc comment.
-    onChange({
-      points: panel.points.map((p) => ({ x: p.x + dx, y: p.y + dy })),
-      origin: { x: panel.origin.x + dx, y: panel.origin.y + dy },
+    // points, or child bubbles (rendered in a Group anchored at the BASE origin) would
+    // visually detach from the panel outline. A vertex-only reshape (handleVertexDragEnd
+    // below) deliberately never touches origin — see PanelPointsSchema.origin's doc
+    // comment. Note: child-bubble anchoring always uses the base origin regardless of a
+    // language override (see Panel.languageOverride's doc comment) — only this panel's
+    // own displayed content moves per-language.
+    commitPanel({
+      points: resolved.points.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+      origin: { x: resolved.origin.x + dx, y: resolved.origin.y + dy },
     });
   }
 
@@ -64,10 +88,10 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
   }
 
   function handleVertexDragEnd(i: number, e: Konva.KonvaEventObject<DragEvent>) {
-    const next: Point[] = panel.points.map((p, idx) =>
+    const next: Point[] = resolved.points.map((p, idx) =>
       idx === i ? { x: e.target.x() / scale, y: e.target.y() / scale } : p
     );
-    onChange({ points: next });
+    commitPanel({ points: next });
   }
 
   function handleLineDblClick(e: Konva.KonvaEventObject<MouseEvent>) {
@@ -87,9 +111,9 @@ export function PanelShape({ panel, index, scale, zoom, selected, onSelect, onCh
       }
     }
     const newPoint: Point = { x: pos.x / scale, y: pos.y / scale };
-    const next = [...panel.points];
+    const next = [...resolved.points];
     next.splice(bestEdge + 1, 0, newPoint);
-    onChange({ points: next });
+    commitPanel({ points: next });
   }
 
   return (

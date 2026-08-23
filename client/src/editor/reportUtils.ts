@@ -1,5 +1,5 @@
 import type { Bubble, Panel } from "../../../shared/src/layoutSchema";
-import { panelDisplayLabel, polygonBounds, resolveBubbleForm } from "../../../shared/src/layoutSchema";
+import { panelDisplayLabel, polygonBounds, resolveBubbleForm, resolvePanelForLanguage } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 
 export const NO_CHARACTER_LABEL = "– kein Charakter –";
@@ -75,10 +75,17 @@ export function sortBubblesByPosition(bubbles: Bubble[], language: string, readi
     .map((x) => x.b);
 }
 
-function sortPanelsByPosition(panels: Panel[], readingDirection: ReadingDirection = "rtl"): { panel: Panel; index: number }[] {
+/** Sorts panels by their position *for the given language* (a Cut-Panel may be moved
+ * only for certain languages — see Panel.languageOverride's doc comment) — resolves
+ * each panel's points before computing bounds. */
+function sortPanelsByPosition(
+  panels: Panel[],
+  languageCode: string,
+  readingDirection: ReadingDirection = "rtl"
+): { panel: Panel; index: number }[] {
   return sortByRowsAndDirection(
     panels.map((panel, index) => ({ panel, index })),
-    ({ panel }) => polygonBounds(panel.points),
+    ({ panel }) => polygonBounds(resolvePanelForLanguage(panel, languageCode).points),
     readingDirection
   );
 }
@@ -87,6 +94,19 @@ function sortPanelsByPosition(panels: Panel[], readingDirection: ReadingDirectio
  * actually exists — a deleted panel leaves stale ids behind on old bubbles. */
 function isAssignedTo(bubble: Bubble, panelId: string, panels: Panel[]): boolean {
   return bubble.panelId === panelId && panels.some((p) => p.id === panelId);
+}
+
+/** Panels that "exist" for script/report/reading-order purposes, *for the given
+ * language* — a Cut-Panel marked `cut.removed` for this language (resolved via
+ * resolvePanelForLanguage — removal itself can be language-specific, see
+ * Panel.languageOverride's doc comment) stays fully intact structurally (geometry,
+ * child-bubble assignment, undoable any time) but is treated here exactly like a deleted
+ * panel: filtered out before grouping, so bubbles assigned to it fall through to
+ * isAssignedTo()'s existing stale-reference fallback (the "Ohne Panel" bucket) with no
+ * new code path needed. A panel removed only in "de" still appears normally in "ja"
+ * groups/reports/script. */
+function existingPanels(panels: Panel[], languageCode: string): Panel[] {
+  return panels.filter((p) => !resolvePanelForLanguage(p, languageCode).cut?.removed);
 }
 
 export interface BubbleGroup {
@@ -106,16 +126,17 @@ export function groupBubblesByPanel(
   language: string,
   readingDirection: ReadingDirection = "rtl"
 ): BubbleGroup[] {
-  const groups: BubbleGroup[] = sortPanelsByPosition(panels, readingDirection).map(({ panel, index }) => ({
+  const effectivePanels = existingPanels(panels, language);
+  const groups: BubbleGroup[] = sortPanelsByPosition(effectivePanels, language, readingDirection).map(({ panel, index }) => ({
     label: panelDisplayLabel(panel, index),
     panelId: panel.id,
     bubbles: sortBubblesByPosition(
-      bubbles.filter((b) => isAssignedTo(b, panel.id, panels)),
+      bubbles.filter((b) => isAssignedTo(b, panel.id, effectivePanels)),
       language,
       readingDirection
     ),
   }));
-  const assignedIds = new Set(panels.map((p) => p.id));
+  const assignedIds = new Set(effectivePanels.map((p) => p.id));
   const unassigned = sortBubblesByPosition(
     bubbles.filter((b) => !b.panelId || !assignedIds.has(b.panelId)),
     language,
@@ -143,13 +164,15 @@ export function charactersByPanel(
   bubbles: Bubble[],
   panels: Panel[],
   characters: Character[],
+  languageCode: string,
   readingDirection: ReadingDirection = "rtl"
 ): CharacterPanelGroup[] {
-  return sortPanelsByPosition(panels, readingDirection)
+  const effectivePanels = existingPanels(panels, languageCode);
+  return sortPanelsByPosition(effectivePanels, languageCode, readingDirection)
     .map(({ panel, index }) => ({
       label: panelDisplayLabel(panel, index),
       characterNames: uniqueCharacterNames(
-        bubbles.filter((b) => isAssignedTo(b, panel.id, panels)),
+        bubbles.filter((b) => isAssignedTo(b, panel.id, effectivePanels)),
         characters
       ),
     }))

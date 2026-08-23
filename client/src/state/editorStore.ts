@@ -26,8 +26,26 @@ function offsetCurvedText(el: CurvedTextElement, dx: number, dy: number): Curved
 
 /** Shifts a whole panel rigidly by (dx, dy) — moves `origin` in lockstep with `points`,
  * since this is a deliberate whole-panel translate (nudge/duplicate), not a reshape. See
- * PanelPointsSchema.origin's doc comment for why a vertex-only reshape must never do this. */
-function offsetPanel(p: Panel, dx: number, dy: number): Panel {
+ * PanelPointsSchema.origin's doc comment for why a vertex-only reshape must never do
+ * this. If a `languageOverride` already exists for `languageCode`, shifts THAT entry's
+ * points/origin instead of the base fields — same "opt in per language" pattern as
+ * PanelShape.tsx's commitPanel, so nudging/duplicating a panel currently showing a
+ * language-specific position moves that position, not the (possibly different) base one. */
+function offsetPanel(p: Panel, dx: number, dy: number, languageCode: string): Panel {
+  const override = p.languageOverride?.[languageCode];
+  if (override) {
+    return {
+      ...p,
+      languageOverride: {
+        ...p.languageOverride,
+        [languageCode]: {
+          ...override,
+          points: override.points.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })),
+          origin: { x: override.origin.x + dx, y: override.origin.y + dy },
+        },
+      },
+    };
+  }
   return { ...p, points: p.points.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })), origin: { x: p.origin.x + dx, y: p.origin.y + dy } };
 }
 
@@ -401,7 +419,10 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (!layout) return;
       pushHistory(false);
       // See updateBubble's comment — a locked element rejects a geometry patch wholesale.
-      const geometryChanged = "points" in patch;
+      // `languageOverride` is included too — a per-language move/reshape (see
+      // PanelShape.tsx's commitPanel) is still a geometry change and must be blocked the
+      // same as a base `points` patch.
+      const geometryChanged = "points" in patch || "languageOverride" in patch;
       set({
         layout: {
           ...layout,
@@ -518,7 +539,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     duplicateSelected() {
       const layout = get().layout;
       if (!layout) return;
-      const { selectedBubbleIds, selectedImageIds, selectedCurvedTextIds, selectedPanelIds } = get();
+      const { selectedBubbleIds, selectedImageIds, selectedCurvedTextIds, selectedPanelIds, activeLanguage } = get();
       if (selectedBubbleIds.length + selectedImageIds.length + selectedCurvedTextIds.length + selectedPanelIds.length === 0) return;
       pushHistory(true);
       const OFFSET = 24;
@@ -527,7 +548,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       // duplicated) falls through to the existing "panel not duplicated" branch below,
       // no special-casing needed.
       const selectedPanels = layout.panels.filter((p) => selectedPanelIds.includes(p.id) && !p.locked);
-      const newPanels = selectedPanels.map((p) => offsetPanel({ ...p, id: uuid() }, OFFSET, OFFSET));
+      const newPanels = selectedPanels.map((p) => offsetPanel({ ...p, id: uuid() }, OFFSET, OFFSET, activeLanguage));
       const panelIdRemap = new Map(selectedPanels.map((p, i) => [p.id, newPanels[i].id]));
       const newBubbles = layout.bubbles
         .filter((b) => selectedBubbleIds.includes(b.id) && !b.locked)
@@ -566,7 +587,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     nudgeSelected(dx, dy) {
       const layout = get().layout;
       if (!layout) return;
-      const { selectedBubbleIds, selectedImageIds, selectedCurvedTextIds, selectedPanelIds } = get();
+      const { selectedBubbleIds, selectedImageIds, selectedCurvedTextIds, selectedPanelIds, activeLanguage } = get();
       if (selectedBubbleIds.length + selectedImageIds.length + selectedCurvedTextIds.length + selectedPanelIds.length === 0) return;
       pushHistory(false);
       set({
@@ -582,7 +603,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
           ),
           images: layout.images.map((img) => (selectedImageIds.includes(img.id) && !img.locked ? offsetImage(img, dx, dy) : img)),
           curvedTexts: layout.curvedTexts.map((el) => (selectedCurvedTextIds.includes(el.id) && !el.locked ? offsetCurvedText(el, dx, dy) : el)),
-          panels: layout.panels.map((p) => (selectedPanelIds.includes(p.id) && !p.locked ? offsetPanel(p, dx, dy) : p)),
+          panels: layout.panels.map((p) => (selectedPanelIds.includes(p.id) && !p.locked ? offsetPanel(p, dx, dy, activeLanguage) : p)),
         },
         dirty: true,
       });

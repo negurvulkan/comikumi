@@ -399,6 +399,48 @@ function rotatedBoxCorners(x: number, y: number, width: number, height: number, 
  * the shape is reformed by dragging/adding/removing individual vertices instead of via
  * rotate/scale handles.
  */
+/** Cut-Panel behavior bundle — see PanelPointsSchema.cut's doc comment for the full
+ * explanation. Extracted as a named schema so it can be reused both as a panel's base
+ * cut state and inside a per-language `languageOverride` entry (see below). */
+export const PanelCutSchema = z.object({
+  cutOrigin: PointSchema,
+  holeFill: z.object({
+    mode: z.enum(["auto", "manual"]).default("auto"),
+    /** Concrete hex color — always set, even in "auto" mode (sampled once from the
+     * surrounding area at cut time, see holeFillColor.ts). Rendering only ever reads
+     * this stored value, never re-samples live, so the editor preview and the PNG
+     * export can never disagree. */
+    color: z.string(),
+  }),
+  /** When true: the content is only ever painted over at its original spot (the
+   * hole-fill), never redrawn anywhere — the panel is effectively removed from the
+   * page. Structurally the panel record (geometry, child-bubble assignment) is
+   * completely untouched and this is reversible any time by unchecking it — no file
+   * or pixel is ever permanently changed. Counts as semantically absent for anything
+   * that turns `layout.panels` into groups (script, reports, reading order) — see
+   * existingPanels() in reportUtils.ts. Optional instead of `.default(false)`, same
+   * reasoning as Bubble.locked: only stored when last set. */
+  removed: z.boolean().optional(),
+  /** Shows an uploaded replacement image instead of the original cut-out content —
+   * same per-language file-map convention as ImageElement.files/imageFileForLanguage
+   * (see cutPanelReplacementFileForLanguage below). Mutually exclusive with `removed`
+   * in the UI (PanelInspector.tsx presents one three-way choice), but `removed` always
+   * wins if both somehow end up set — see drawCutPanelContent() in cutPanel.ts. No
+   * true 4-corner perspective warp (unlike ImageElement/quad bubbles): a Panel polygon
+   * can have any number of vertices, not just 4, so a homography isn't well-defined —
+   * the replacement image is stretched to the polygon's bounding box instead, then
+   * clipped to its actual (possibly non-quad) shape. */
+  replacement: z
+    .object({
+      files: z.record(z.string(), z.string()).default({}),
+      /** Only drawn when a replacement image is actually shown — unlike `Panel.color`
+       * (pure editor outline, never exported), this border is rendered into the PNG. */
+      border: z.object({ color: z.string(), widthPx: z.number().positive() }).optional(),
+    })
+    .optional(),
+});
+export type PanelCut = z.infer<typeof PanelCutSchema>;
+
 export const PanelPointsSchema = z.object({
   id: z.string(),
   points: z.array(PointSchema).min(3),
@@ -414,10 +456,13 @@ export const PanelPointsSchema = z.object({
    * every read instead, reshaping a corner that happens to be the bounding box's min
    * corner would silently drag every child bubble along with it, which is surprising:
    * reshaping the outline should never move its contents, only a deliberate move should.
+   * Always the BASE anchor — unaffected by `languageOverride` (child-bubble coordinates
+   * stay relative to this regardless of which language is active).
    */
   origin: PointSchema,
   /** See Bubble.locked's doc comment — same semantics, same reason for `.optional()`
-   * instead of `.default(false)`. */
+   * instead of `.default(false)`. Deliberately base-wide, not per-language — a lock
+   * should hold regardless of which language happens to be active. */
   locked: z.boolean().optional(),
   /** Only set when this Panel is a "Cut-Panel" (see FEATURES.md#cut-panel) — its content
    * is visually detached from the page's `_empty` source image and can be repositioned.
@@ -427,19 +472,31 @@ export const PanelPointsSchema = z.object({
    * independently on a vertex reshape) is enough to derive, at any time, exactly which
    * region of the original source image is shown here — see cutPanelDelta() in
    * client/src/export/cutPanel.ts, shared by the live editor preview and the PNG export.
-   * No second polygon or persisted cropped asset is stored. */
-  cut: z
-    .object({
-      cutOrigin: PointSchema,
-      holeFill: z.object({
-        mode: z.enum(["auto", "manual"]).default("auto"),
-        /** Concrete hex color — always set, even in "auto" mode (sampled once from the
-         * surrounding area at cut time, see holeFillColor.ts). Rendering only ever reads
-         * this stored value, never re-samples live, so the editor preview and the PNG
-         * export can never disagree. */
-        color: z.string(),
-      }),
-    })
+   * No second polygon or persisted cropped asset is stored. This is the BASE/fallback
+   * used for any language with no `languageOverride` entry — see resolvePanelForLanguage(). */
+  cut: PanelCutSchema.optional(),
+  /**
+   * Same "full bundle replaces base, falls back to base when absent" pattern as
+   * Bubble.formOverride — a language entry here replaces `points`+`origin`+`cut`
+   * completely for that language; a language with no entry behaves exactly like the
+   * base (see resolvePanelForLanguage() below). This is what lets the SAME panel be a
+   * plain, untouched reference marker in "ja" (the base, no cut) while being
+   * moved/removed/replaced in "de"/"en" (an override with its own `cut`) — one entity
+   * for both roles, per language. Deliberately does NOT affect Bubble.panelId
+   * coordinates, which always stay relative to the BASE `origin` above regardless of
+   * which language is active — translators reposition bubbles per language
+   * independently if needed, so the parent-child math doesn't need to become
+   * language-aware too.
+   */
+  languageOverride: z
+    .record(
+      z.string(),
+      z.object({
+        points: z.array(PointSchema).min(3),
+        origin: PointSchema,
+        cut: PanelCutSchema.optional(),
+      })
+    )
     .optional(),
 });
 
@@ -483,6 +540,37 @@ export function createPanel(partial: Partial<Panel> & Pick<Panel, "id" | "points
  * derived from its position in the page's panels array (1-based, reading/creation order). */
 export function panelDisplayLabel(panel: Panel, index: number): string {
   return panel.label.trim() || `Panel ${index + 1}`;
+}
+
+/** Same per-language fallback convention as imageFileForLanguage() (falls back to
+ * whichever language does have a file, rather than showing nothing) — for a Cut-Panel's
+ * replacement image. Takes an already-*resolved* cut (see resolvePanelForLanguage() —
+ * callers resolve the panel for the active language first, so a language with no active
+ * cut at all — e.g. an untouched "ja" original — correctly shows no replacement rather
+ * than falling back to some other language's file). Undefined when there's no
+ * `cut.replacement` at all, or it has no files yet. */
+export function cutPanelReplacementFileForLanguage(cut: PanelCut | undefined, languageCode: string): string | undefined {
+  const files = cut?.replacement?.files;
+  if (!files) return undefined;
+  return files[languageCode] ?? Object.values(files)[0];
+}
+
+/** A panel's effective points/origin/cut for a given language — mirrors
+ * resolveBubbleForm()'s precedence: a `languageOverride` entry for this language replaces
+ * the whole bundle, otherwise the panel's base fields apply. This is the single place
+ * every renderer/UI component should go through instead of reading
+ * `panel.points`/`panel.origin`/`panel.cut` directly, so "which language is active"
+ * always resolves consistently. Does NOT affect Bubble.panelId's coordinate anchor,
+ * which always uses the base `origin` (see Panel.languageOverride's doc comment). */
+export interface ResolvedPanel {
+  points: Point[];
+  origin: Point;
+  cut?: PanelCut;
+}
+export function resolvePanelForLanguage(panel: Panel, languageCode: string): ResolvedPanel {
+  const override = panel.languageOverride?.[languageCode];
+  if (override) return { points: override.points, origin: override.origin, cut: override.cut };
+  return { points: panel.points, origin: panel.origin, cut: panel.cut };
 }
 
 /** Axis-aligned bounding box of a polygon — used for panel label placement and
