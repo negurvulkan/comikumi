@@ -251,6 +251,7 @@ einzelner Eckpunkte verändert, nicht über Rotations-/Skalierungsgriffe.
 | `color` | string (CSS-Farbe) | `"#6c8cff"` | Rahmen-/Beschriftungsfarbe |
 | `origin` | `Point` | – | Anker, auf den sich die Koordinaten einer Kind-Blase (`Bubble.panelId === id`) beziehen — die Bounding-Box-oben-links-Ecke des Polygons **zum Zeitpunkt der Erstellung**, danach **nicht** mehr live aus `points` neu berechnet. Wird nur mitverschoben, wenn das ganze Panel als Starrkörper bewegt wird (Fläche ziehen, Nudge, Duplizieren) — ein einzelner Eckpunkt-Reshape lässt `origin` unangetastet, damit Kind-Blasen beim reinen Umformen der Kontur nicht mitspringen |
 | `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren — siehe [Sperren](FEATURES.md#sperren). Wird nur gespeichert, wenn zuletzt gesperrt |
+| `cut` | Objekt \| fehlt | fehlt | Nur gesetzt, wenn dieses Panel ein „Cut-Panel“ ist — siehe [Cut-Panel](FEATURES.md#cut-panel). `{ cutOrigin: Point, holeFill: { mode: "auto" \| "manual", color: string } }`. `cutOrigin` ist `origin`s Wert zum Zeitpunkt des Ausschneidens, danach nie mehr verändert — die Differenz zum aktuellen `origin` plus die aktuellen `points` legen jederzeit fest, welcher Bereich der `_empty`-Quelldatei hier gezeigt wird (siehe `cutPanelDelta()` in `client/src/export/cutPanel.ts`). `holeFill.color` ist immer ein konkreter Hex-Wert, auch im „auto“-Modus (einmalig beim Ausschneiden aus der Umgebung abgetastet) |
 
 Im Editor: die ganze Fläche ziehen verschiebt das Panel (und trägt seine Kind-Blasen mit),
 ein einzelner Eckpunkt verformt nur die Kontur (Kind-Blasen bleiben unbewegt), Doppelklick
@@ -423,7 +424,7 @@ type Point = { x: number; y: number };
   `strokeColor`, `strokeWidthPx`, `svgFileName`, `tail`, `tailAnchor`, `tailWidth`,
   `tailStyle` + Ketten-Felder, `tailCurve`, `textOutline`, `textGradient`, `formOverride`,
   alle `*Override`-Felder, `panelId`, `characterId`, `readingOrderOverride`, `presetId`,
-  `locked`, sowie die Arrays `curvedTexts` und
+  `locked`, `cut`, sowie die Arrays `curvedTexts` und
   `panels` selbst) sind in Zod mit `.default(...)` bzw. `.optional()` deklariert. Ältere
   JSON-Dateien ohne diese Felder werden beim Einlesen automatisch mit den Defaultwerten
   aufgefüllt — keine Migration nötig. Panels haben zusätzlich eine echte

@@ -8,6 +8,7 @@ import { drawBubbleBackground } from "./bubbleBackground";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects";
 import { drawCurvedText, fitCurvedText } from "./curvedText";
 import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary } from "./svgBubbleGeometry";
+import { drawCutPanelContent } from "./cutPanel";
 
 /** A child bubble's x/y/corners are relative to its parent panel's origin (see
  * PanelPointsSchema.origin) — unlike the live Konva canvas, this is a plain 2D-context
@@ -95,6 +96,14 @@ export async function renderPageToPng(
   if (!ctx) throw new Error("2D-Canvas-Kontext konnte nicht erstellt werden");
 
   ctx.drawImage(baseImage, 0, 0, layout.imageWidth, layout.imageHeight);
+
+  // Cut-Panels: patch the vacated original spot, then draw the detached content at its
+  // current (possibly moved/reshaped) position — see cutPanel.ts. Runs before placed
+  // images/bubbles/curved texts so those still layer normally on top. A no-op draw for
+  // any Panel without `.cut` (see drawCutPanelContent's early return).
+  for (const panel of layout.panels) {
+    drawCutPanelContent(ctx, panel, baseImage, layout.imageWidth, layout.imageHeight, 1);
+  }
 
   // SVG bubble contours are parsed asynchronously and cached (see
   // svgBubbleGeometry.ts) — every distinct file referenced by this layout

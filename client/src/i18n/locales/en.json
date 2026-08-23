@@ -367,6 +367,11 @@
       "labelLabel": "Label",
       "labelPlaceholder": "Panel {{index}}",
       "dragHint": "Drag the area to move, individual points to reshape. Double-click the edge to add a point, right-click a point to remove it (at least 3 points remain). Editor marker only — does not appear in the PNG export.",
+      "holeFillModeLabel": "Fill for the vacated spot",
+      "holeFillModeAuto": "Automatic",
+      "holeFillModeManual": "Manual",
+      "holeFillColorLabel": "Fill color",
+      "cutPanelHint": "Cut-Panel: its content is detached from the original page. Moving it carries the content along; the vacated spot is covered with the fill color. Reshaping a corner adjusts the cut region.",
       "deletePanel": "Delete panel"
     },
     "multiSelect": {
@@ -423,6 +428,7 @@
       "rect": "Rectangle",
       "quadPerspective": "Quad (perspective)",
       "panelRefRegion": "Panel (reference region)",
+      "cutPanel": "Cut-Panel (detach & move content)",
       "textsThisPage": "Texts on this page"
     },
     "contextMenu": {

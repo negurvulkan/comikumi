@@ -504,6 +504,10 @@ export function Editor() {
               store.addPanel(points);
               setDrawTool(null);
             }}
+            onCreateCutPanel={(points, holeFillColor) => {
+              store.addPanel(points, holeFillColor);
+              setDrawTool(null);
+            }}
             onReassignPanel={(bubbleId, panelId) => store.reassignBubblePanel(bubbleId, panelId)}
             onDeselectAll={store.deselectAll}
             onDuplicateSelected={() => store.duplicateSelected()}

@@ -367,6 +367,11 @@
       "labelLabel": "Étiquette",
       "labelPlaceholder": "Case {{index}}",
       "dragHint": "Faites glisser la zone pour déplacer, les points individuels pour déformer. Double-cliquez sur le bord pour ajouter un point, clic droit sur un point pour le supprimer (au moins 3 points restent). Repère d'édition uniquement — n'apparaît pas dans l'export PNG.",
+      "holeFillModeLabel": "Remplissage de l'ancien emplacement",
+      "holeFillModeAuto": "Automatique",
+      "holeFillModeManual": "Manuel",
+      "holeFillColorLabel": "Couleur de remplissage",
+      "cutPanelHint": "Case découpée : son contenu est détaché de la page originale. Le déplacer emporte le contenu ; l'emplacement laissé vacant est recouvert par la couleur de remplissage. Reformer un coin ajuste la découpe.",
       "deletePanel": "Supprimer la case"
     },
     "multiSelect": {
@@ -423,6 +428,7 @@
       "rect": "Rectangle",
       "quadPerspective": "Quadrilatère (perspective)",
       "panelRefRegion": "Case (zone de référence)",
+      "cutPanel": "Case découpée (détacher et déplacer le contenu)",
       "textsThisPage": "Textes de cette page"
     },
     "contextMenu": {

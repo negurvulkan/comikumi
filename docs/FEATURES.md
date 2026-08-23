@@ -16,6 +16,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Editor — Canvas-Grundlagen](#editor--canvas-grundlagen)
 - [Elementtypen](#elementtypen)
 - [Sperren](#sperren)
+- [Cut-Panel](#cut-panel)
 - [Text-Liste](#text-liste)
 - [Reading-Order](#reading-order)
 - [Glossar](#glossar)
@@ -335,6 +336,29 @@ Kind-Blasen (siehe [Elementtypen](#elementtypen) → Panels) — die bleiben una
 sperr-/bearbeitbar. Die Sperre wird im gespeicherten Layout nur dann mit abgelegt, wenn
 das Element zuletzt gesperrt war (siehe `locked` in
 [JSON-Format.md](JSON-Format.md#bubble)).
+
+## Cut-Panel
+
+Eine Alternative zum normalen [Panel](#elementtypen): mit dem Cut-Panel-Werkzeug wird ein
+Rechteck über einen Bereich der Original-Seite (`_empty`-Quelldatei) gezogen — der Inhalt
+dieses Bereichs wird dadurch visuell von der Seite gelöst und lässt sich danach frei
+verschieben. Typische Anwendungsfälle: ein Panel für eine RTL→LTR-Umgestaltung an eine
+andere Stelle der Seite bringen, oder ein leicht verrutschtes Panel korrigieren — ganz
+ohne externes Grafikprogramm.
+
+Verhalten (ansonsten identisch zu einem normalen Panel — Beschriftung, Rahmenfarbe,
+Kind-Blasen-Zuordnung, Sperren, Duplizieren, Löschen funktionieren gleich):
+
+- **Die ganze Fläche verschieben** trägt den losgelösten Inhalt mit an die neue Position.
+  Die verlassene Original-Stelle wird mit einer Fläche überdeckt — automatisch aus der
+  Umgebung abgetastet, oder im Panel-Inspector manuell wählbar. Das ist **nicht
+  destruktiv**: die `_empty`-Quelldatei selbst bleibt unverändert, die Überdeckung
+  passiert nur beim Rendern (Vorschau wie PNG-Export).
+- **Einen einzelnen Eckpunkt verformen** korrigiert die Kontur, ohne das Panel zu
+  verschieben — der angezeigte Ausschnitt aus der Originalseite passt sich dabei
+  automatisch an die neue Form an.
+- Ein noch nie verschobenes Cut-Panel sieht optisch identisch zu einem unbearbeiteten
+  Panel-Bereich aus (die Loch-Füllung und der Ausschnitt decken sich exakt).
 
 ## Text-Liste
 

@@ -367,6 +367,11 @@
       "labelLabel": "Etiqueta",
       "labelPlaceholder": "Viñeta {{index}}",
       "dragHint": "Arrastra el área para mover, los puntos individuales para deformar. Doble clic en el borde añade un punto, clic derecho en un punto lo elimina (quedan al menos 3 puntos). Solo una marca del editor — no aparece en la exportación PNG.",
+      "holeFillModeLabel": "Relleno del hueco dejado",
+      "holeFillModeAuto": "Automático",
+      "holeFillModeManual": "Manual",
+      "holeFillColorLabel": "Color de relleno",
+      "cutPanelHint": "Viñeta recortada: su contenido está separado de la página original. Moverla arrastra el contenido consigo; el hueco dejado se cubre con el color de relleno. Reformar una esquina ajusta el recorte.",
       "deletePanel": "Eliminar viñeta"
     },
     "multiSelect": {
@@ -423,6 +428,7 @@
       "rect": "Rectángulo",
       "quadPerspective": "Cuadrilátero (perspectiva)",
       "panelRefRegion": "Viñeta (zona de referencia)",
+      "cutPanel": "Viñeta recortada (separar y mover contenido)",
       "textsThisPage": "Textos de esta página"
     },
     "contextMenu": {

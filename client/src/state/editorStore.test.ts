@@ -354,3 +354,35 @@ describe("locked — removeSelected/duplicateSelected/nudgeSelected skip locked 
     expect(useEditorStore.getState().layout!.bubbles[0]).toMatchObject({ x: 10, y: 10 });
   });
 });
+
+describe("addPanel — Cut-Panel creation", () => {
+  it("marks the new panel as a Cut-Panel with cutOrigin equal to its own origin, when a hole-fill color is passed", () => {
+    useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }], "#abcdef");
+
+    const panel = useEditorStore.getState().layout!.panels[0];
+    expect(panel.cut).toEqual({ cutOrigin: panel.origin, holeFill: { mode: "auto", color: "#abcdef" } });
+  });
+
+  it("creates a plain (non-cut) panel when no color is passed", () => {
+    useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }]);
+
+    expect(useEditorStore.getState().layout!.panels[0].cut).toBeUndefined();
+  });
+});
+
+describe("duplicateSelected — Cut-Panel", () => {
+  it("copies cut.cutOrigin unchanged onto the duplicate, so it shows the same source content at its new position", () => {
+    useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }], "#abcdef");
+    const original = useEditorStore.getState().layout!.panels[0];
+    useEditorStore.setState({ selectedPanelIds: [original.id] });
+
+    useEditorStore.getState().duplicateSelected();
+
+    const duplicate = useEditorStore.getState().layout!.panels.find((p) => p.id !== original.id)!;
+    expect(duplicate.cut!.cutOrigin).toEqual(original.cut!.cutOrigin);
+    expect(duplicate.cut!.holeFill).toEqual(original.cut!.holeFill);
+    // The duplicate's own origin moved by the duplicate OFFSET, so it now differs from
+    // cutOrigin — it displays as "moved" content sourced from the same original region.
+    expect(duplicate.origin).not.toEqual(duplicate.cut!.cutOrigin);
+  });
+});

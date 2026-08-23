@@ -419,6 +419,28 @@ export const PanelPointsSchema = z.object({
   /** See Bubble.locked's doc comment — same semantics, same reason for `.optional()`
    * instead of `.default(false)`. */
   locked: z.boolean().optional(),
+  /** Only set when this Panel is a "Cut-Panel" (see FEATURES.md#cut-panel) — its content
+   * is visually detached from the page's `_empty` source image and can be repositioned.
+   * `cutOrigin` is `origin`'s value at the moment of cutting, never updated afterward; the
+   * difference between it and the panel's *current* `origin` ("how far has it been moved
+   * since cutting") together with the panel's *current* `points` (which change
+   * independently on a vertex reshape) is enough to derive, at any time, exactly which
+   * region of the original source image is shown here — see cutPanelDelta() in
+   * client/src/export/cutPanel.ts, shared by the live editor preview and the PNG export.
+   * No second polygon or persisted cropped asset is stored. */
+  cut: z
+    .object({
+      cutOrigin: PointSchema,
+      holeFill: z.object({
+        mode: z.enum(["auto", "manual"]).default("auto"),
+        /** Concrete hex color — always set, even in "auto" mode (sampled once from the
+         * surrounding area at cut time, see holeFillColor.ts). Rendering only ever reads
+         * this stored value, never re-samples live, so the editor preview and the PNG
+         * export can never disagree. */
+        color: z.string(),
+      }),
+    })
+    .optional(),
 });
 
 /** Bounding-box top-left of a polygon — the natural, deterministic default for a new

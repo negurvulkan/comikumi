@@ -367,6 +367,11 @@
       "labelLabel": "Bezeichnung",
       "labelPlaceholder": "Panel {{index}}",
       "dragHint": "Fläche ziehen zum Verschieben, einzelne Punkte zum Verformen. Doppelklick auf den Rand fügt einen Punkt hinzu, Rechtsklick auf einen Punkt entfernt ihn (mind. 3 Punkte bleiben). Nur eine Editor-Markierung — erscheint nicht im PNG-Export.",
+      "holeFillModeLabel": "Füllung der alten Stelle",
+      "holeFillModeAuto": "Automatisch",
+      "holeFillModeManual": "Manuell",
+      "holeFillColorLabel": "Füllfarbe",
+      "cutPanelHint": "Cut-Panel: der Inhalt ist aus der Originalseite gelöst. Verschieben trägt ihn mit, die alte Stelle wird mit der Füllfarbe überdeckt. Ein Eckpunkt-Reshape passt den Ausschnitt an.",
       "deletePanel": "Panel löschen"
     },
     "multiSelect": {
@@ -423,6 +428,7 @@
       "rect": "Rechteck",
       "quadPerspective": "Raute (Perspektive)",
       "panelRefRegion": "Panel (Referenzbereich)",
+      "cutPanel": "Cut-Panel (Inhalt lösen & verschieben)",
       "textsThisPage": "Texte dieser Seite"
     },
     "contextMenu": {

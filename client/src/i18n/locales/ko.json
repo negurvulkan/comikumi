@@ -364,6 +364,11 @@
       "labelLabel": "라벨",
       "labelPlaceholder": "패널 {{index}}",
       "dragHint": "영역을 드래그하면 이동, 개별 점을 드래그하면 모양을 변형합니다. 가장자리를 더블클릭하면 점이 추가되고, 점을 우클릭하면 제거됩니다 (최소 3개 점 유지). 편집기 표시일 뿐 — PNG 내보내기에는 나타나지 않습니다.",
+      "holeFillModeLabel": "원래 자리 채우기",
+      "holeFillModeAuto": "자동",
+      "holeFillModeManual": "수동",
+      "holeFillColorLabel": "채우기 색상",
+      "cutPanelHint": "컷 패널: 내용이 원본 페이지에서 분리되어 있습니다. 이동하면 내용도 함께 이동하며, 비워진 자리는 채우기 색상으로 덮입니다. 모서리를 조정하면 잘라낸 영역도 함께 조정됩니다.",
       "deletePanel": "패널 삭제"
     },
     "multiSelect": {
@@ -415,6 +420,7 @@
       "rect": "사각형",
       "quadPerspective": "사각형 (원근)",
       "panelRefRegion": "패널 (참조 영역)",
+      "cutPanel": "컷 패널 (내용 분리 및 이동)",
       "textsThisPage": "이 페이지의 텍스트"
     },
     "contextMenu": {

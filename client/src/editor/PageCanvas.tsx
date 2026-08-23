@@ -12,6 +12,8 @@ import { BubbleShape } from "./BubbleShape";
 import { ImageElementShape } from "./ImageElementShape";
 import { CurvedTextElementShape } from "./CurvedTextElementShape";
 import { PanelShape } from "./PanelShape";
+import { CutPanelContentShape } from "./CutPanelContentShape";
+import { sampleAverageColor } from "./holeFillColor";
 import { ContextMenu, type ContextMenuEntry } from "./ContextMenu";
 import type { DrawTool } from "./ToolStrip";
 
@@ -62,6 +64,11 @@ interface Props {
   onSelectPanel: (id: string | null, additive?: boolean) => void;
   onChangePanel: (id: string, patch: Partial<Panel>) => void;
   onCreatePanel: (points: Point[]) => void;
+  /** Same rectangle-drag gesture as onCreatePanel, but marks the new panel as a
+   * Cut-Panel — `holeFillColor` is the auto-sampled fill color for its vacated original
+   * spot (see holeFillColor.ts), computed here since this component already has the
+   * loaded source image. */
+  onCreateCutPanel: (points: Point[], holeFillColor: string) => void;
   /** Manual (re)assignment/detachment from the right-click "Panel zuweisen" submenu —
    * goes through editorStore's reassignBubblePanel so the bubble's coordinates convert
    * between absolute and panel-relative correctly (never a raw panelId patch). */
@@ -105,6 +112,7 @@ export function PageCanvas({
   onSelectPanel,
   onChangePanel,
   onCreatePanel,
+  onCreateCutPanel,
   onReassignPanel,
   onDeselectAll,
   onDuplicateSelected,
@@ -216,8 +224,20 @@ export function PageCanvas({
     if (!tool || !box) return;
     if (box.width > 5 && box.height > 5) {
       const scaledBox = { x: box.x / scale, y: box.y / scale, width: box.width / scale, height: box.height / scale };
-      if (tool === "panel") onCreatePanel(boxCorners(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height));
-      else onCreate(tool, scaledBox);
+      if (tool === "panel") {
+        onCreatePanel(boxCorners(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height));
+      } else if (tool === "cut-panel") {
+        const bounds = {
+          minX: scaledBox.x,
+          minY: scaledBox.y,
+          maxX: scaledBox.x + scaledBox.width,
+          maxY: scaledBox.y + scaledBox.height,
+        };
+        const holeFillColor = image ? sampleAverageColor(image, bounds) : "#ffffff";
+        onCreateCutPanel(boxCorners(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height), holeFillColor);
+      } else {
+        onCreate(tool, scaledBox);
+      }
     }
   }
 
@@ -365,6 +385,19 @@ export function PageCanvas({
         >
         <Layer ref={layerRef}>
           {image && <KonvaImage image={image} width={displayWidth} height={displayHeight} />}
+          {image &&
+            panels
+              .filter((p) => p.cut)
+              .map((panel) => (
+                <CutPanelContentShape
+                  key={`cut-${panel.id}`}
+                  panel={panel}
+                  image={image}
+                  scale={scale}
+                  imageWidth={imageWidth}
+                  imageHeight={imageHeight}
+                />
+              ))}
           {panels.map((panel, index) => (
             <PanelShape
               key={panel.id}

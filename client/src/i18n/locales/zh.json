@@ -364,6 +364,11 @@
       "labelLabel": "标签",
       "labelPlaceholder": "分格 {{index}}",
       "dragHint": "拖动区域可移动，拖动单个点可变形。双击边缘可添加点，右键点击某点可删除它（至少保留3个点）。仅为编辑器标记——不会出现在PNG导出中。",
+      "holeFillModeLabel": "原位置的填充",
+      "holeFillModeAuto": "自动",
+      "holeFillModeManual": "手动",
+      "holeFillColorLabel": "填充颜色",
+      "cutPanelHint": "切割分格：其内容已从原始页面中分离。移动时内容随之移动，留下的位置将用填充颜色覆盖。调整角点会相应调整切割区域。",
       "deletePanel": "删除分格"
     },
     "multiSelect": {
@@ -415,6 +420,7 @@
       "rect": "矩形",
       "quadPerspective": "四边形（透视）",
       "panelRefRegion": "分格（参考区域）",
+      "cutPanel": "切割分格（分离并移动内容）",
       "textsThisPage": "本页文字"
     },
     "contextMenu": {

@@ -200,6 +200,24 @@ describe("createBubble", () => {
   });
 });
 
+describe("Panel.cut field", () => {
+  it("is undefined for a plain (non-cut) panel and omitted from JSON", () => {
+    const panel = createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    expect(panel.cut).toBeUndefined();
+    expect(JSON.parse(JSON.stringify(panel))).not.toHaveProperty("cut");
+  });
+
+  it("round-trips a Cut-Panel's cutOrigin/holeFill", () => {
+    const panel = createPanel({
+      id: "p1",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#abcdef" } },
+    });
+    expect(panel.cut).toEqual({ cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#abcdef" } });
+    expect(JSON.parse(JSON.stringify(panel))).toHaveProperty("cut.holeFill.color", "#abcdef");
+  });
+});
+
 describe("locked field", () => {
   it("is undefined (not stored) for a fresh bubble/panel", () => {
     const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });

@@ -364,6 +364,11 @@
       "labelLabel": "ラベル",
       "labelPlaceholder": "パネル {{index}}",
       "dragHint": "領域をドラッグして移動、個々の点をドラッグして変形します。辺をダブルクリックすると点を追加、点を右クリックすると削除します（最低3点は残ります）。エディタ上の目印のみで、PNG書き出しには表示されません。",
+      "holeFillModeLabel": "元の位置の塗りつぶし",
+      "holeFillModeAuto": "自動",
+      "holeFillModeManual": "手動",
+      "holeFillColorLabel": "塗りつぶし色",
+      "cutPanelHint": "カットパネル：内容は元のページから切り離されています。移動すると内容も一緒に動き、空いた場所は塗りつぶし色で覆われます。角を調整すると切り取り範囲も合わせて調整されます。",
       "deletePanel": "パネルを削除"
     },
     "multiSelect": {
@@ -415,6 +420,7 @@
       "rect": "四角形",
       "quadPerspective": "四辺形（遠近）",
       "panelRefRegion": "パネル（参照領域）",
+      "cutPanel": "カットパネル（内容を切り離して移動）",
       "textsThisPage": "このページのテキスト"
     },
     "contextMenu": {
