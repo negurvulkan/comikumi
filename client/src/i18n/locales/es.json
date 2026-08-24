@@ -111,7 +111,9 @@
     "setup_already_completed": "La configuración inicial ya se completó — inicia sesión en su lugar.",
     "username_already_exists": "Ese nombre de usuario ya está en uso.",
     "cannot_delete_own_account": "No puedes eliminar tu propia cuenta.",
-    "user_not_found": "No se encontró ninguna cuenta con ese nombre de usuario."
+    "user_not_found": "No se encontró ninguna cuenta con ese nombre de usuario.",
+    "demo_page_limit_reached": "Límite de la demo alcanzado: máx. {{max}} páginas (actualmente {{current}}). Prueba la versión completa para un uso ilimitado.",
+    "demo_not_seeded": "La demo aún no está lista — inténtalo de nuevo en un momento."
   },
   "login": {
     "heading": "Iniciar sesión",
@@ -634,5 +636,14 @@
     "unlink": "Desvincular",
     "linkedWithPage": "Vinculada con la página {{page}}",
     "insertIntoBubble": "Insertar en el bocadillo"
+  },
+  "demo": {
+    "emailGate": {
+      "heading": "¿Te gusta la demo?",
+      "hint": "Deja tu correo electrónico si quieres recibir novedades sobre ComiKumi — totalmente opcional.",
+      "placeholder": "tu@ejemplo.com",
+      "skip": "Omitir",
+      "submit": "Avisarme"
+    }
   }
 }

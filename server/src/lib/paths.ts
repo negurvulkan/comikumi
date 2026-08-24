@@ -1,10 +1,29 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** .../comikumi/server/src/lib -> .../comikumi/server */
-const SERVER_ROOT = path.resolve(__dirname, "..", "..");
+/** Walks up from this file's own directory until it finds the server package's own
+ * package.json — robust against the two different depths this file actually runs
+ * from: `server/src/lib` in dev (tsx, running .ts directly, 2 levels up) vs.
+ * `server/dist/server/src/lib` when compiled (tsc has no explicit rootDir, so it
+ * infers one spanning both server/src and shared/src, nesting the output one level
+ * deeper — see server/tsconfig.json), which a fixed "resolve(__dirname, '..', '..')"
+ * silently got wrong (resolved into server/dist/server instead of server/), breaking
+ * every SERVER_ROOT-relative default (demo-seed/, server/data/) in the compiled/
+ * Docker build specifically. */
+function findServerRoot(startDir: string): string {
+  let dir = startDir;
+  while (!fs.existsSync(path.join(dir, "package.json"))) {
+    const parent = path.dirname(dir);
+    if (parent === dir) throw new Error(`Could not locate server/package.json above ${startDir}`);
+    dir = parent;
+  }
+  return dir;
+}
+
+export const SERVER_ROOT = findServerRoot(__dirname);
 
 /**
  * Base directory for the shared/global "data" folder (fonts/images/bubble-svgs/
@@ -14,7 +33,7 @@ const SERVER_ROOT = path.resolve(__dirname, "..", "..");
  * server/data. Must be set (via a test's env stub) before this module is first
  * imported in a process, since the constants below are computed once at module load.
  */
-const DATA_DIR = process.env.LETTERING_DATA_DIR ?? path.join(SERVER_ROOT, "data");
+export const DATA_DIR = process.env.LETTERING_DATA_DIR ?? path.join(SERVER_ROOT, "data");
 
 /**
  * First-run fallback for ProjectSettings.scanRoot, derived from the

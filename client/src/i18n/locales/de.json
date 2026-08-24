@@ -152,7 +152,9 @@
     "cannot_delete_own_account": "Du kannst dein eigenes Konto nicht löschen.",
     "cannot_remove_last_system_admin": "Der letzte Systemadministrator kann nicht gelöscht oder degradiert werden.",
     "cannot_demote_own_account": "Du kannst dir nicht selbst die Systemadministrator-Rechte entziehen.",
-    "user_not_found": "Kein Konto mit diesem Benutzernamen gefunden."
+    "user_not_found": "Kein Konto mit diesem Benutzernamen gefunden.",
+    "demo_page_limit_reached": "Demo-Limit erreicht: max. {{max}} Seiten (aktuell {{current}}). Für unbegrenzte Nutzung die Vollversion ausprobieren.",
+    "demo_not_seeded": "Die Demo ist noch nicht bereit — bitte gleich noch einmal versuchen."
   },
   "managers": {
     "characters": {
@@ -689,6 +691,15 @@
     "roleUpdatedSuccess": "Rolle wurde erfolgreich aktualisiert.",
     "memberRemovedSuccess": "Mitglied wurde erfolgreich aus dem Projekt entfernt.",
     "passwordChangedSuccess": "Passwort wurde erfolgreich geändert."
+  },
+  "demo": {
+    "emailGate": {
+      "heading": "Gefällt dir die Demo?",
+      "hint": "Hinterlasse deine E-Mail-Adresse, wenn du über Neuigkeiten zu ComiKumi informiert werden möchtest — völlig optional.",
+      "placeholder": "du@beispiel.de",
+      "skip": "Überspringen",
+      "submit": "Benachrichtigen"
+    }
   }
 }
 

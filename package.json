@@ -8,7 +8,9 @@
     "postinstall": "npm --prefix server install && npm --prefix client install",
     "dev": "concurrently -k -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "build": "npm --prefix server run build && npm --prefix client run build",
-    "test": "npm --prefix server run test && npm --prefix client run test"
+    "test": "npm --prefix server run test && npm --prefix client run test",
+    "broker:dev": "npm --prefix broker run dev",
+    "broker:build": "npm --prefix broker run build"
   },
   "dependencies": {
     "zod": "^4.4.3"

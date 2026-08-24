@@ -21,7 +21,12 @@ export async function authFetch(input: string, init?: RequestInit): Promise<Resp
   const token = getAuthToken();
   const headers = new Headers(init?.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(input, { ...init, headers });
+  // Lets the browser attach a same-site session-routing cookie on cross-origin (but
+  // same-site) calls to a split-deployment API host — e.g. the public demo's
+  // broker (see broker/), which routes each visitor to their own container via a
+  // cookie rather than anything the app itself sends. A harmless no-op for the
+  // normal same-origin/Electron packaging, which uses no cookies at all.
+  const res = await fetch(input, { ...init, headers, credentials: "include" });
   if (res.status === 401 && !input.includes("/api/auth/login") && !input.includes("/api/auth/setup")) {
     clearAuthToken();
     if (!location.hash.startsWith("#/login") && !location.hash.startsWith("#/setup")) {

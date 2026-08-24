@@ -111,7 +111,9 @@
     "setup_already_completed": "セットアップは既に完了しています。代わりにログインしてください。",
     "username_already_exists": "そのユーザー名は既に使用されています。",
     "cannot_delete_own_account": "自分自身のアカウントは削除できません。",
-    "user_not_found": "そのユーザー名のアカウントが見つかりません。"
+    "user_not_found": "そのユーザー名のアカウントが見つかりません。",
+    "demo_page_limit_reached": "デモの上限に達しました：最大{{max}}ページ(現在{{current}}ページ)。制限なくご利用いただくには製品版をお試しください。",
+    "demo_not_seeded": "デモの準備がまだ完了していません。しばらくしてからもう一度お試しください。"
   },
   "login": {
     "heading": "ログイン",
@@ -625,5 +627,14 @@
     "unlink": "関連付けを解除",
     "linkedWithPage": "ページ {{page}} と関連付け済み",
     "insertIntoBubble": "吹き出しに挿入"
+  },
+  "demo": {
+    "emailGate": {
+      "heading": "デモはいかがですか?",
+      "hint": "ComiKumiの最新情報を受け取りたい場合はメールアドレスをご入力ください(任意です)。",
+      "placeholder": "you@example.com",
+      "skip": "スキップ",
+      "submit": "通知を受け取る"
+    }
   }
 }

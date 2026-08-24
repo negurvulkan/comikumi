@@ -9,6 +9,7 @@ import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
 import { readSettings } from "../lib/projectStore.js";
 import { moveToTrash } from "../lib/trash.js";
+import { DEMO_MAX_PAGES, exceedsDemoPageCap } from "../lib/demoMode.js";
 
 export const pagesRouter = Router();
 
@@ -143,6 +144,12 @@ pagesRouter.post(
       } catch {
         // malformed overwrite field -> treat as "no overwrites requested"
       }
+    }
+
+    const existingPages = await listPages(volume);
+    if (exceedsDemoPageCap(existingPages.length, files.length)) {
+      res.status(400).json({ error: "demo_page_limit_reached", params: { max: String(DEMO_MAX_PAGES), current: String(existingPages.length) } });
+      return;
     }
 
     for (const file of files) {

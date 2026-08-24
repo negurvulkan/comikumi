@@ -1,9 +1,10 @@
 import { createApp } from "./app.js";
 import { readSettings, getActiveScanRootForTrash } from "./lib/projectStore.js";
 import { purgeExpiredTrash } from "./lib/trash.js";
+import { seedDemoDataIfNeeded } from "./lib/demoMode.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
-const app = createApp();
+const app = createApp({ staticDir: process.env.CLIENT_DIST_DIR ?? null });
 
 // Automates the "system administrator" cleanup role the trash folder implies: without
 // this, deleted pages would accumulate in scanRoot's _trash forever. Runs against
@@ -21,6 +22,8 @@ async function purgeActiveProjectTrash(): Promise<void> {
     console.error("Papierkorb-Bereinigung fehlgeschlagen:", err);
   }
 }
+
+await seedDemoDataIfNeeded();
 
 app.listen(PORT, async () => {
   console.log(`ComiKumi server läuft auf http://localhost:${PORT}`);

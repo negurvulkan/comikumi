@@ -16,7 +16,7 @@ describe("GET /api/auth/setup-status", () => {
   it("reports hasAnyUsers: true — setupTestEnv() already created a system-admin test account", async () => {
     const res = await request(app).get("/api/auth/setup-status");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ hasAnyUsers: true });
+    expect(res.body).toEqual({ hasAnyUsers: true, demoMode: false });
   });
 });
 

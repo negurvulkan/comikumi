@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import path from "node:path";
 import cors from "cors";
 import { volumesRouter } from "./routes/volumes.js";
 import { pagesRouter } from "./routes/pages.js";
@@ -16,22 +17,40 @@ import { settingsRouter } from "./routes/settings.js";
 import { projectRouter } from "./routes/project.js";
 import { browseRouter } from "./routes/browse.js";
 import { authRouter } from "./routes/auth.js";
+import { demoRouter, demoRateLimiter } from "./routes/demo.js";
 import { requireAuth, requireProjectRole, requireSystemAdmin } from "./lib/auth.js";
 import { readSettings, NoActiveProjectError } from "./lib/projectStore.js";
 import { asyncHandler } from "./lib/asyncHandler.js";
+import { DEMO_MODE } from "./lib/demoMode.js";
+
+export interface CreateAppOptions {
+  /** Absolute path to the built client SPA (client/dist) — when set, the app serves
+   * it as static files with an index.html fallback for any non-/api route, so a
+   * single process can be both API and web server (used by the demo Docker image and
+   * Electron's packaged build). Omit to run API-only, e.g. behind Vite's dev proxy. */
+  staticDir?: string | null;
+}
 
 /** Builds the Express app (routers + error middleware) without binding a port —
  * split out of index.ts so tests can mount it via supertest(createApp()) without
  * starting a real server. index.ts is the only caller that also calls .listen(). */
-export function createApp(): Express {
+export function createApp(options: CreateAppOptions = {}): Express {
   const app = express();
 
-  app.use(cors());
+  // origin: true reflects the request's Origin header instead of "*" — required
+  // because authFetch.ts sends credentials: "include", and browsers reject a
+  // wildcard Access-Control-Allow-Origin on credentialed requests.
+  app.use(cors({ origin: true, credentials: true }));
   app.use(express.json({ limit: "5mb" }));
 
   // Public — /login and /setup must work before the client has a token; /me and the
   // /users management routes gate themselves internally (see routes/auth.ts).
   app.use("/api/auth", authRouter);
+  // Only mounted at all when DEMO_MODE is on — unmounted (not just gated) in every
+  // other deployment, so the "hand out a token with no credentials" endpoint doesn't
+  // exist as an attack surface outside a demo container. Rate-limited since both of
+  // its routes are, by design, reachable with no auth at all.
+  if (DEMO_MODE) app.use("/api/demo", demoRateLimiter, demoRouter);
 
   // Baseline for every project-scoped router: must be authenticated AND at least a
   // "viewer" member of the currently active project (system admins bypass, see
@@ -73,6 +92,18 @@ export function createApp(): Express {
       }
     })
   );
+
+  if (options.staticDir) {
+    const staticDir = options.staticDir;
+    app.use(express.static(staticDir));
+    // SPA fallback: anything not already matched by an /api/* route or a static file
+    // gets index.html so client-side (hash) routing works on a hard refresh/direct
+    // link. The negative lookahead keeps a typo'd/removed API route 404ing normally
+    // instead of silently serving HTML.
+    app.get(/^(?!\/api\/).*/, (_req, res) => {
+      res.sendFile(path.join(staticDir, "index.html"));
+    });
+  }
 
   // Catches everything asyncHandler forwards via next(err) — every route handler
   // in this app is wrapped in asyncHandler, so a rejected promise/thrown error
