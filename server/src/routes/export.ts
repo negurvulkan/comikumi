@@ -4,8 +4,9 @@ import path from "node:path";
 import multer from "multer";
 import sharp from "sharp";
 import { findVolume, listPages } from "../lib/projectScanner.js";
-import { languageFolderName } from "../lib/paths.js";
+import { languageFolderName, isSafeFileName, isSafeFolderPath } from "../lib/paths.js";
 import { readPresets, readSettings } from "../lib/projectStore.js";
+import { ZipArchive } from "archiver";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
 import { PageLayoutSchema } from "../../../shared/src/layoutSchema.js";
@@ -218,3 +219,217 @@ exportRouter.post(
     res.json({ ok: true, path: path.relative(volume.parentDir, file) });
   })
 );
+
+exportRouter.get(
+  "/:id/exports",
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const settings = await readSettings();
+    const parentDir = volume.parentDir;
+    const bookFolderName = volume.bookFolderName;
+
+    let siblingEntries: import("node:fs").Dirent[] = [];
+    try {
+      siblingEntries = await fs.readdir(parentDir, { withFileTypes: true });
+    } catch {
+      // ignore
+    }
+
+    const exportFolders = siblingEntries.filter(
+      (e) =>
+        e.isDirectory() &&
+        e.name.startsWith(`${bookFolderName}_`) &&
+        !e.name.endsWith(settings.emptySuffix) &&
+        !e.name.endsWith(settings.letteringSuffix)
+    );
+
+    const result: any[] = [];
+    for (const folder of exportFolders) {
+      const folderSuffix = folder.name.slice(bookFolderName.length + 1);
+      const dirPath = path.join(parentDir, folder.name);
+      let fileEntries: import("node:fs").Dirent[] = [];
+      try {
+        fileEntries = await fs.readdir(dirPath, { withFileTypes: true });
+      } catch {
+        // ignore
+      }
+
+      const files: any[] = [];
+      for (const fe of fileEntries) {
+        if (!fe.isFile()) continue;
+        const filePath = path.join(dirPath, fe.name);
+        let stat: import("node:fs").Stats;
+        try {
+          stat = await fs.stat(filePath);
+        } catch {
+          continue;
+        }
+        const ext = path.extname(fe.name).toLowerCase();
+        const page = path.basename(fe.name, ext);
+        files.push({
+          name: fe.name,
+          page,
+          extension: ext,
+          size: stat.size,
+          mtime: stat.mtime.toISOString(),
+          url: `/api/volumes/${encodeURIComponent(volume.id)}/exports/${encodeURIComponent(folderSuffix)}/${encodeURIComponent(fe.name)}`
+        });
+      }
+
+      result.push({
+        folderSuffix,
+        folderName: folder.name,
+        files
+      });
+    }
+
+    res.json({
+      exportFolderTemplate: settings.exportFolderTemplate,
+      exports: result
+    });
+  })
+);
+
+exportRouter.get(
+  "/:id/exports/:folderSuffix/zip",
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const folderSuffix = req.params.folderSuffix;
+    if (!isSafeFolderPath(folderSuffix)) {
+      res.status(400).json({ error: "invalid_folder_suffix" });
+      return;
+    }
+    const settings = await readSettings();
+    const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
+
+    let entries: import("node:fs").Dirent[] = [];
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      res.status(404).json({ error: "export_directory_not_found" });
+      return;
+    }
+    const files = entries.filter((e) => e.isFile());
+    if (files.length === 0) {
+      res.status(404).json({ error: "no_exported_files_found" });
+      return;
+    }
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${volume.bookFolderName}_${folderSuffix}_exports.zip"`);
+
+    const archive = new ZipArchive({ zlib: { level: 9 } });
+    archive.on("error", (err: Error) => {
+      if (!res.headersSent) {
+        res.status(500).end(String(err));
+      }
+    });
+    archive.pipe(res);
+    for (const file of files) {
+      archive.file(path.join(dir, file.name), { name: file.name });
+    }
+    await archive.finalize();
+  })
+);
+
+exportRouter.get(
+  "/:id/exports/:folderSuffix/:fileName",
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const { folderSuffix, fileName } = req.params;
+    if (!isSafeFolderPath(folderSuffix) || !isSafeFileName(fileName)) {
+      res.status(400).json({ error: "invalid_path_parameters" });
+      return;
+    }
+    const settings = await readSettings();
+    const file = path.join(
+      volume.parentDir,
+      languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate),
+      fileName
+    );
+
+    try {
+      await fs.access(file);
+    } catch {
+      res.status(404).json({ error: "exported_file_not_found" });
+      return;
+    }
+
+    if (req.query.download === "true") {
+      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    }
+    res.sendFile(file);
+  })
+);
+
+exportRouter.delete(
+  "/:id/exports/:folderSuffix/:fileName",
+  requireLetterer,
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const { folderSuffix, fileName } = req.params;
+    if (!isSafeFolderPath(folderSuffix) || !isSafeFileName(fileName)) {
+      res.status(400).json({ error: "invalid_path_parameters" });
+      return;
+    }
+    const settings = await readSettings();
+    const file = path.join(
+      volume.parentDir,
+      languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate),
+      fileName
+    );
+
+    try {
+      await fs.unlink(file);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "file_deletion_failed", details: String(err) });
+    }
+  })
+);
+
+exportRouter.delete(
+  "/:id/exports/:folderSuffix",
+  requireLetterer,
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const { folderSuffix } = req.params;
+    if (!isSafeFolderPath(folderSuffix)) {
+      res.status(400).json({ error: "invalid_folder_suffix" });
+      return;
+    }
+    const settings = await readSettings();
+    const dir = path.join(
+      volume.parentDir,
+      languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate)
+    );
+
+    try {
+      await fs.rm(dir, { recursive: true, force: true });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "folder_deletion_failed", details: String(err) });
+    }
+  })
+);
+

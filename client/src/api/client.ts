@@ -295,6 +295,44 @@ export const api = {
     );
   },
 
+  listExports: (volumeId: string) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports`)).then((r) =>
+      json<{
+        exportFolderTemplate: string;
+        exports: {
+          folderSuffix: string;
+          folderName: string;
+          files: {
+            name: string;
+            page: string;
+            extension: string;
+            size: number;
+            mtime: string;
+            url: string;
+          }[];
+        }[];
+      }>(r)
+    ),
+
+  exportFileUrl: (volumeId: string, folderSuffix: string, fileName: string) =>
+    authUrl(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/${encodeURIComponent(fileName)}`)),
+
+  exportFileDownloadUrl: (volumeId: string, folderSuffix: string, fileName: string) =>
+    authUrl(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/${encodeURIComponent(fileName)}?download=true`)),
+
+  exportFolderZipUrl: (volumeId: string, folderSuffix: string) =>
+    authUrl(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/zip`)),
+
+  deleteExportFile: (volumeId: string, folderSuffix: string, fileName: string) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/${encodeURIComponent(fileName)}`), {
+      method: "DELETE",
+    }).then((r) => json<{ ok: true }>(r)),
+
+  deleteExportFolder: (volumeId: string, folderSuffix: string) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}`), {
+      method: "DELETE",
+    }).then((r) => json<{ ok: true }>(r)),
+
   listImages: (folder = "") =>
     authFetch(apiUrl(`/api/images${folderQuery(folder)}`)).then((r) => json<AssetListing<ImageEntry>>(r)).then(withListingApiUrls),
 

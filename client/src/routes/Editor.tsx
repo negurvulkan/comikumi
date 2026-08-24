@@ -288,6 +288,11 @@ export function Editor() {
           disabled: languages.length === 0 || !hasAtLeast("letterer"),
         },
         { type: "action", label: "JSON", onClick: handleDownloadJson, disabled: !hasAtLeast("letterer") },
+        {
+          type: "action",
+          label: t("pageGrid.menuExportViewer") || "Export-Viewer",
+          onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/exports`),
+        },
         { type: "separator" },
         { type: "action", label: t("editor.editorRoute.showReport"), onClick: () => setShowReport(true) },
         { type: "separator" },

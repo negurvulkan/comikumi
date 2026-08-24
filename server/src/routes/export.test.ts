@@ -208,3 +208,128 @@ describe("POST /:id/export-psd", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("Export-Viewer Routes", () => {
+  let translatorApi: ReturnType<typeof authedAgent>;
+
+  beforeAll(async () => {
+    const { createUser } = await import("../lib/authStore.js");
+    try {
+      await createUser("translator-user", "pw", false);
+    } catch {
+      // already exists
+    }
+    const loginRes = await api.post("/api/auth/login").send({ username: "translator-user", password: "pw" });
+    const translatorToken = loginRes.body.token as string;
+    await api.post("/api/project/members").send({ username: "translator-user", role: "translator" });
+    translatorApi = authedAgent(app, translatorToken);
+
+    // Create a dummy exported file so we have something to list/download/delete
+    const dir = path.join(env.scanRoot, "Volume_01", "volume_01_german");
+    await fs.rm(dir, { recursive: true, force: true });
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, "page_01.png"), "dummy png content");
+    await fs.writeFile(path.join(dir, "page_01.pdf"), "dummy pdf content");
+  });
+
+  describe("GET /api/volumes/:id/exports", () => {
+    it("returns all exported folders and files under the volume", async () => {
+      const res = await api.get(`/api/volumes/${VOLUME_ID}/exports`);
+      expect(res.status).toBe(200);
+      expect(res.body.exports).toBeInstanceOf(Array);
+      
+      const germanExport = res.body.exports.find((e: any) => e.folderSuffix === "german");
+      expect(germanExport).toBeDefined();
+      expect(germanExport.files).toHaveLength(2);
+      
+      const pngFile = germanExport.files.find((f: any) => f.extension === ".png");
+      expect(pngFile).toBeDefined();
+      expect(pngFile.name).toBe("page_01.png");
+      expect(pngFile.size).toBe("dummy png content".length);
+    });
+
+    it("allows a translator (viewer) to list exports", async () => {
+      const res = await translatorApi.get(`/api/volumes/${VOLUME_ID}/exports`);
+      expect(res.status).toBe(200);
+      expect(res.body.exports).toBeDefined();
+    });
+  });
+
+  describe("GET /api/volumes/:id/exports/:folderSuffix/:fileName", () => {
+    it("serves the requested file with correct content", async () => {
+      const res = await api.get(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png`);
+      expect(res.status).toBe(200);
+      expect(res.body.toString()).toBe("dummy png content");
+    });
+
+    it("sets attachment header when download=true is passed", async () => {
+      const res = await api.get(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png?download=true`);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-disposition"]).toContain('attachment; filename="page_01.png"');
+    });
+
+    it("allows a translator to download/serve the file", async () => {
+      const res = await translatorApi.get(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png`);
+      expect(res.status).toBe(200);
+    });
+
+    it("404s for non-existing files", async () => {
+      const res = await api.get(`/api/volumes/${VOLUME_ID}/exports/german/non-existent.png`);
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("GET /api/volumes/:id/exports/:folderSuffix/zip", () => {
+    it("packs the export folder files into a ZIP archive", async () => {
+      const res = await api
+        .get(`/api/volumes/${VOLUME_ID}/exports/german/zip`)
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toBe("application/zip");
+      expect(res.headers["content-disposition"]).toContain('attachment; filename="volume_01_german_exports.zip"');
+      expect(Buffer.isBuffer(res.body)).toBe(true);
+      expect((res.body as Buffer).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("DELETE /api/volumes/:id/exports/:folderSuffix/:fileName", () => {
+    it("blocks a translator from deleting files", async () => {
+      const res = await translatorApi.delete(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png`);
+      expect(res.status).toBe(403);
+    });
+
+    it("allows a letterer (admin) to delete files", async () => {
+      const res = await api.delete(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png`);
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+
+      // Verify it's actually deleted
+      const check = await api.get(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png`);
+      expect(check.status).toBe(404);
+    });
+  });
+
+  describe("DELETE /api/volumes/:id/exports/:folderSuffix", () => {
+    it("blocks a translator from deleting export folder", async () => {
+      const res = await translatorApi.delete(`/api/volumes/${VOLUME_ID}/exports/german`);
+      expect(res.status).toBe(403);
+    });
+
+    it("allows a letterer (admin) to delete the export folder", async () => {
+      const res = await api.delete(`/api/volumes/${VOLUME_ID}/exports/german`);
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+
+      // Verify the folder does not exist anymore
+      const check = await api.get(`/api/volumes/${VOLUME_ID}/exports`);
+      expect(check.status).toBe(200);
+      const germanExport = check.body.exports.find((e: any) => e.folderSuffix === "german");
+      expect(germanExport).toBeUndefined();
+    });
+  });
+});

@@ -13,6 +13,7 @@ import { ProjectWizard } from "./routes/ProjectWizard";
 import { Login } from "./routes/Login";
 import { Setup } from "./routes/Setup";
 import { AdminDashboard } from "./routes/AdminDashboard";
+import { ExportViewer } from "./routes/ExportViewer";
 import "./index.css";
 
 const router = createHashRouter([
@@ -29,6 +30,7 @@ const router = createHashRouter([
       { path: "admin", element: <AdminDashboard /> },
       { path: "volumes/:volumeId", element: <PageGrid /> },
       { path: "volumes/:volumeId/script", element: <ScriptEditor /> },
+      { path: "volumes/:volumeId/exports", element: <ExportViewer /> },
       { path: "volumes/:volumeId/pages/:page", element: <Editor /> },
     ],
   },

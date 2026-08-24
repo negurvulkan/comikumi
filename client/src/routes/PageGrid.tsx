@@ -221,6 +221,11 @@ export function PageGrid() {
           disabled: languages.length === 0 || !hasAtLeast("letterer"),
         },
         { type: "action", label: t("pageGrid.menuExportAllZip"), onClick: handleExportZip, disabled: busy || !hasAtLeast("letterer") },
+        {
+          type: "action",
+          label: t("pageGrid.menuExportViewer") || "Export-Viewer",
+          onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/exports`),
+        },
         { type: "separator" },
         { type: "action", label: t("pageGrid.menuVolumeReport"), onClick: () => setShowVolumeReport(true) },
         { type: "separator" },
