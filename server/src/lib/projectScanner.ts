@@ -15,7 +15,7 @@ export interface VolumeInfo {
   existingLanguageFolders: string[];
 }
 
-const IGNORED_DIR_NAMES = new Set(["node_modules", ".git"]);
+const IGNORED_DIR_NAMES = new Set(["node_modules", ".git", "_trash"]);
 
 async function findEmptyDirs(dir: string, depth: number, emptySuffix: string, results: string[]): Promise<void> {
   if (depth < 0) return;
