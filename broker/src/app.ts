@@ -7,6 +7,13 @@ import { proxy } from "./proxy.js";
 export function createApp(): Express {
   const app = express();
 
+  // The broker only ever accepts connections from Plesk's nginx on 127.0.0.1 (see
+  // index.ts's loopback-only listen) — trusting that one hop's X-Forwarded-For lets
+  // req.ip resolve to the real visitor IP instead of nginx's own loopback address.
+  // Needed for getOrCreateSessionForIp()'s per-visitor request coalescing to actually
+  // distinguish visitors instead of treating every request as coming from 127.0.0.1.
+  app.set("trust proxy", "loopback");
+
   // Exact origin + credentials (never a wildcard — required for the session cookie to
   // be usable at all) — the `cors` package answers OPTIONS preflight itself and never
   // calls next(), so preflights never reach sessionMiddleware/Docker below.

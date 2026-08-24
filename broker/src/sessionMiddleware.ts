@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { parse, serialize } from "cookie";
 import { config } from "./config.js";
-import { getSession, touch, createSession, SessionCapacityError } from "./sessionManager.js";
+import { getSession, touch, getOrCreateSessionForIp, SessionCapacityError } from "./sessionManager.js";
 
 declare global {
   namespace Express {
@@ -26,7 +26,10 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
     touch(session);
   } else {
     try {
-      session = await createSession();
+      // Coalesced per-IP — a single page load fires several parallel API calls before
+      // any of them can receive this response's Set-Cookie, so without this every one
+      // of those would otherwise start (and be billed for) its own container.
+      session = await getOrCreateSessionForIp(req.ip ?? "unknown");
     } catch (err) {
       if (err instanceof SessionCapacityError) {
         res.status(503).json({ error: "demo_at_capacity" });

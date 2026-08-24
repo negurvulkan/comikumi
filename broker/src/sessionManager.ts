@@ -14,6 +14,36 @@ export class SessionCapacityError extends Error {
 
 const sessions = new Map<string, Session>();
 
+/** In-flight (not-yet-registered-in `sessions`) container creations — counted
+ * separately so the capacity check in createSession() accounts for creations still
+ * awaiting Docker/health-check, not just already-finished ones. Without this, several
+ * concurrent no-cookie requests (e.g. a single cold page load fires half a dozen API
+ * calls in parallel, all before any of them can receive a Set-Cookie response) would
+ * each read `sessions.size` as still low and all slip past the check at once. */
+let pendingCreations = 0;
+
+/** Coalesces concurrent no-cookie requests from the same visitor into a single
+ * createSession() call — the other piece of the same race: even with the atomic
+ * capacity check above, a page load's several parallel first-contact requests would
+ * otherwise each start (and get billed for) their own container for what is actually
+ * one visitor. Keyed by IP (see app.ts's trust-proxy setting for why req.ip is
+ * reliable here); different visitors' concurrent first requests still get independent
+ * sessions. */
+const pendingByIp = new Map<string, Promise<Session>>();
+
+export async function getOrCreateSessionForIp(ip: string): Promise<Session> {
+  const existing = pendingByIp.get(ip);
+  if (existing) return existing;
+  const creation = createSession();
+  pendingByIp.set(ip, creation);
+  creation
+    .finally(() => {
+      if (pendingByIp.get(ip) === creation) pendingByIp.delete(ip);
+    })
+    .catch(() => {});
+  return creation;
+}
+
 /** Pure — kept separate from any Docker/timer state so it's trivially unit-testable. */
 export function isIdle(session: Session, now: number, idleTimeoutMs: number): boolean {
   return now - session.lastAccess > idleTimeoutMs;
@@ -48,48 +78,55 @@ async function waitForHealthy(hostPort: string): Promise<void> {
  * mount (destroying the container discards everything), memory/CPU/pids capped so one
  * visitor can't starve the box. Waits for the container's own health check before
  * returning, so the broker never proxies into a still-booting container. */
-export async function createSession(): Promise<Session> {
-  if (sessions.size >= config.maxConcurrentSessions) {
+async function createSession(): Promise<Session> {
+  // Reserve a slot synchronously (before any await) so the check-then-create isn't a
+  // race across concurrent calls — see pendingCreations' doc comment above.
+  if (sessions.size + pendingCreations >= config.maxConcurrentSessions) {
     throw new SessionCapacityError();
   }
-
-  const id = randomUUID();
-  const containerName = `comikumi-demo-${id}`;
-  const env = ["CLIENT_DIST_DIR="];
-  if (config.demoMaxPages !== null) env.push(`DEMO_MAX_PAGES=${config.demoMaxPages}`);
-
-  const container = await docker.createContainer({
-    Image: config.demoImage,
-    name: containerName,
-    Env: env,
-    Labels: { [DEMO_LABEL]: "true" },
-    ExposedPorts: { "3001/tcp": {} },
-    HostConfig: {
-      Memory: config.containerMemoryMb * 1024 * 1024,
-      MemorySwap: config.containerMemoryMb * 1024 * 1024,
-      NanoCpus: config.containerCpus * 1e9,
-      PidsLimit: config.containerPidsLimit,
-      AutoRemove: true,
-      PortBindings: { "3001/tcp": [{ HostIp: "127.0.0.1", HostPort: "" }] },
-    },
-  });
+  pendingCreations++;
 
   try {
-    await container.start();
-    const info = await container.inspect();
-    const hostPort = info.NetworkSettings.Ports["3001/tcp"]?.[0]?.HostPort;
-    if (!hostPort) throw new Error("Container started but was not assigned a host port");
+    const id = randomUUID();
+    const containerName = `comikumi-demo-${id}`;
+    const env = ["CLIENT_DIST_DIR="];
+    if (config.demoMaxPages !== null) env.push(`DEMO_MAX_PAGES=${config.demoMaxPages}`);
 
-    await waitForHealthy(hostPort);
+    const container = await docker.createContainer({
+      Image: config.demoImage,
+      name: containerName,
+      Env: env,
+      Labels: { [DEMO_LABEL]: "true" },
+      ExposedPorts: { "3001/tcp": {} },
+      HostConfig: {
+        Memory: config.containerMemoryMb * 1024 * 1024,
+        MemorySwap: config.containerMemoryMb * 1024 * 1024,
+        NanoCpus: config.containerCpus * 1e9,
+        PidsLimit: config.containerPidsLimit,
+        AutoRemove: true,
+        PortBindings: { "3001/tcp": [{ HostIp: "127.0.0.1", HostPort: "" }] },
+      },
+    });
 
-    const session: Session = { id, containerId: container.id, containerName, hostPort, lastAccess: Date.now() };
-    sessions.set(id, session);
-    return session;
-  } catch (err) {
-    // Best-effort — AutoRemove only fires on a clean stop, not if we bail out here
-    // while it's still starting.
-    await container.remove({ force: true }).catch(() => {});
-    throw err;
+    try {
+      await container.start();
+      const info = await container.inspect();
+      const hostPort = info.NetworkSettings.Ports["3001/tcp"]?.[0]?.HostPort;
+      if (!hostPort) throw new Error("Container started but was not assigned a host port");
+
+      await waitForHealthy(hostPort);
+
+      const session: Session = { id, containerId: container.id, containerName, hostPort, lastAccess: Date.now() };
+      sessions.set(id, session);
+      return session;
+    } catch (err) {
+      // Best-effort — AutoRemove only fires on a clean stop, not if we bail out here
+      // while it's still starting.
+      await container.remove({ force: true }).catch(() => {});
+      throw err;
+    }
+  } finally {
+    pendingCreations--;
   }
 }
 
