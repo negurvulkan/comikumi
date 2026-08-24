@@ -8,6 +8,7 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import { api, type VolumeSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useProject } from "../state/ProjectContext";
+import { useSession } from "../state/SessionContext";
 import { useProjectRole } from "../state/useProjectRole";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuGroup } from "../editor/MenuBar";
@@ -22,6 +23,7 @@ import { PageIcon, PanelToolIcon, BubbleToolIcon } from "../editor/Icons";
 export function VolumeList() {
   const { t } = useTranslation();
   const { project } = useProject();
+  const { demoMode } = useSession();
   const { hasAtLeast, myRole } = useProjectRole();
   const navigate = useNavigate();
   const [volumes, setVolumes] = useState<VolumeSummary[] | null>(null);
@@ -70,7 +72,8 @@ export function VolumeList() {
       key: "projekt",
       label: t("menu.project"),
       entries: [
-        { type: "action", label: t("menu.switch"), onClick: () => navigate("/project") },
+        // A demo container only ever has the one seeded project — nothing to switch to.
+        ...(demoMode ? [] : [{ type: "action" as const, label: t("menu.switch"), onClick: () => navigate("/project") }]),
         { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },

@@ -14,6 +14,7 @@ import {
 } from "../lib/authStore.js";
 import { requireAuth, requireSystemAdmin } from "../lib/auth.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { DEMO_MODE } from "../lib/demoMode.js";
 
 export const authRouter = Router();
 
@@ -81,11 +82,12 @@ authRouter.get(
 );
 
 /** Public (no auth required) — the client's very first request, before it knows
- * whether to show /login or /setup. */
+ * whether to show /login or /setup. `demoMode` lets SessionContext.tsx skip both
+ * screens entirely and fetch an auto-issued token from /api/demo/token instead. */
 authRouter.get(
   "/setup-status",
   asyncHandler(async (_req, res) => {
-    res.json({ hasAnyUsers: await hasAnyUsers() });
+    res.json({ hasAnyUsers: await hasAnyUsers(), demoMode: DEMO_MODE });
   })
 );
 

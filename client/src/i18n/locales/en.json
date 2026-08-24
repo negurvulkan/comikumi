@@ -152,7 +152,9 @@
     "cannot_delete_own_account": "You can't delete your own account.",
     "cannot_remove_last_system_admin": "The last system administrator cannot be deleted or demoted.",
     "cannot_demote_own_account": "You cannot demote your own system administrator privilege.",
-    "user_not_found": "No account with that username was found."
+    "user_not_found": "No account with that username was found.",
+    "demo_page_limit_reached": "Demo limit reached: max. {{max}} pages (currently {{current}}). Try the full version for unlimited pages.",
+    "demo_not_seeded": "The demo isn't ready yet — please try again in a moment."
   },
   "managers": {
     "characters": {
@@ -408,6 +410,7 @@
       "holeFillModeAuto": "Automatic",
       "holeFillModeManual": "Manual",
       "holeFillColorLabel": "Fill color",
+      "flipHorizontalLabel": "Flip horizontally",
       "contentModeLabel": "Content",
       "contentModeOriginal": "Original cut-out",
       "contentModeRemoved": "Removed (non-destructive)",
@@ -498,6 +501,7 @@
       "noCharacter": "– no character –",
       "assignPreset": "Assign preset",
       "noPreset": "– no preset –",
+      "flipHorizontal": "Flip horizontally",
       "duplicate": "Duplicate",
       "removePoint": "Remove point",
       "setAngleFixPrevious": "Set angle (keep previous point fixed)",
@@ -689,6 +693,15 @@
     "roleUpdatedSuccess": "Role updated successfully.",
     "memberRemovedSuccess": "Member removed from the project successfully.",
     "passwordChangedSuccess": "Password changed successfully."
+  },
+  "demo": {
+    "emailGate": {
+      "heading": "Enjoying the demo?",
+      "hint": "Leave your email if you'd like updates about ComiKumi — totally optional.",
+      "placeholder": "you@example.com",
+      "skip": "Skip",
+      "submit": "Notify me"
+    }
   }
 }
 

@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
-import jwt from "jsonwebtoken";
+import jwt, { type SignOptions } from "jsonwebtoken";
 import { UserAccountListSchema, type UserAccount, type PublicUser } from "../../../shared/src/users.js";
 import { USERS_FILE, AUTH_SECRET_FILE } from "./paths.js";
 
 const SCRYPT_KEYLEN = 64;
-const TOKEN_EXPIRY = "30d";
+const TOKEN_EXPIRY: NonNullable<SignOptions["expiresIn"]> = "30d";
 
 export function toPublicUser(user: UserAccount): PublicUser {
   const { passwordHash: _passwordHash, ...rest } = user;
@@ -156,10 +156,16 @@ export interface AuthTokenPayload {
   isSystemAdmin: boolean;
 }
 
-export async function signToken(user: UserAccount): Promise<string> {
+/** `expiresIn` defaults to the normal 30-day session but can be shortened for
+ * tokens with a narrower purpose (e.g. demo.ts's auto-issued demo-user token, kept
+ * short-lived since it's handed out with no credentials at all). */
+export async function signToken(
+  user: UserAccount,
+  expiresIn: NonNullable<SignOptions["expiresIn"]> = TOKEN_EXPIRY
+): Promise<string> {
   const secret = await getOrCreateAuthSecret();
   const payload: AuthTokenPayload = { sub: user.id, username: user.username, isSystemAdmin: user.isSystemAdmin };
-  return jwt.sign(payload, secret, { expiresIn: TOKEN_EXPIRY });
+  return jwt.sign(payload, secret, { expiresIn });
 }
 
 /** Returns null for any invalid/expired/missing token rather than throwing — callers

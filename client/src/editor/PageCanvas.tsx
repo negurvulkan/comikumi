@@ -318,10 +318,36 @@ export function PageCanvas({
       ];
     }
     const panel = panels.find((p) => p.id === contextMenu.id);
+    const resolvedCut = panel ? resolvePanelForLanguage(panel, activeLanguage).cut : undefined;
     return [
+      ...(resolvedCut
+        ? [
+            {
+              type: "action" as const,
+              label: `${resolvedCut.flipHorizontal ? "✓ " : ""}${t("editor.contextMenu.flipHorizontal")}`,
+              onClick: () => toggleCutFlip(panel!),
+              disabled: panel?.locked,
+            },
+          ]
+        : []),
       { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected, disabled: panel?.locked },
       { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected, disabled: panel?.locked },
     ];
+  }
+
+  /** Toggles a Cut-Panel's horizontal-flip, scoped to the active language — same "write
+   * into the language override if one exists, otherwise the shared base" rule
+   * PanelInspector.tsx's commitPanel uses, kept in sync here since the context menu
+   * writes straight through onChangePanel instead of going through the inspector. */
+  function toggleCutFlip(panel: Panel) {
+    const resolved = resolvePanelForLanguage(panel, activeLanguage);
+    if (!resolved.cut) return;
+    const cut = { ...resolved.cut, flipHorizontal: !resolved.cut.flipHorizontal || undefined };
+    if (panel.languageOverride?.[activeLanguage]) {
+      onChangePanel(panel.id, { languageOverride: { ...panel.languageOverride, [activeLanguage]: { ...resolved, cut } } });
+    } else {
+      onChangePanel(panel.id, { cut });
+    }
   }
 
   /** Right-click menu for a single polygon vertex (a Panel point or a Quad-Bubble

@@ -111,7 +111,9 @@
     "setup_already_completed": "La configuration initiale est déjà terminée — veuillez vous connecter à la place.",
     "username_already_exists": "Ce nom d'utilisateur est déjà pris.",
     "cannot_delete_own_account": "Vous ne pouvez pas supprimer votre propre compte.",
-    "user_not_found": "Aucun compte avec ce nom d'utilisateur n'a été trouvé."
+    "user_not_found": "Aucun compte avec ce nom d'utilisateur n'a été trouvé.",
+    "demo_page_limit_reached": "Limite de la démo atteinte : max. {{max}} pages (actuellement {{current}}). Essayez la version complète pour un usage illimité.",
+    "demo_not_seeded": "La démo n'est pas encore prête — veuillez réessayer dans un instant."
   },
   "login": {
     "heading": "Connexion",
@@ -405,6 +407,7 @@
       "holeFillModeAuto": "Automatique",
       "holeFillModeManual": "Manuel",
       "holeFillColorLabel": "Couleur de remplissage",
+      "flipHorizontalLabel": "Retourner horizontalement",
       "contentModeLabel": "Contenu",
       "contentModeOriginal": "Découpe originale",
       "contentModeRemoved": "Supprimé (non destructif)",
@@ -495,6 +498,7 @@
       "noCharacter": "– aucun personnage –",
       "assignPreset": "Assigner un préréglage",
       "noPreset": "– aucun préréglage –",
+      "flipHorizontal": "Retourner horizontalement",
       "duplicate": "Dupliquer",
       "removePoint": "Supprimer le point",
       "setAngleFixPrevious": "Définir l'angle (fixer le point précédent)",
@@ -634,5 +638,14 @@
     "unlink": "Dissocier",
     "linkedWithPage": "Associée à la page {{page}}",
     "insertIntoBubble": "Insérer dans la bulle"
+  },
+  "demo": {
+    "emailGate": {
+      "heading": "Vous aimez la démo ?",
+      "hint": "Laissez votre e-mail si vous souhaitez être informé des nouveautés de ComiKumi — entièrement facultatif.",
+      "placeholder": "vous@exemple.com",
+      "skip": "Passer",
+      "submit": "M'informer"
+    }
   }
 }

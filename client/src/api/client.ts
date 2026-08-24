@@ -588,7 +588,20 @@ export const api = {
 
   // --- Auth / roles ---
 
-  getSetupStatus: () => authFetch(apiUrl("/api/auth/setup-status")).then((r) => json<{ hasAnyUsers: boolean }>(r)),
+  getSetupStatus: () => authFetch(apiUrl("/api/auth/setup-status")).then((r) => json<{ hasAnyUsers: boolean; demoMode: boolean }>(r)),
+
+  /** Auto-issued token for the seeded demo account — only reachable when the server
+   * reports demoMode: true (see getSetupStatus()/SessionContext.tsx). */
+  getDemoToken: () => authFetch(apiUrl("/api/demo/token")).then((r) => json<{ token: string; user: PublicUser }>(r)),
+
+  /** Optional lead-capture gate — always resolves (server never fails this request
+   * on purpose), so callers can fire-and-forget it. */
+  submitDemoEmail: (email: string) =>
+    authFetch(apiUrl("/api/demo/email"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }).then((r) => json<{ ok: true }>(r)),
 
   setupAccount: (username: string, password: string) =>
     authFetch(apiUrl("/api/auth/setup"), {

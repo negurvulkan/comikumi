@@ -3,11 +3,15 @@ import { useTranslation } from "react-i18next";
 import { ProjectProvider, useProject } from "./state/ProjectContext";
 import { SessionProvider, useSession } from "./state/SessionContext";
 import { LanguageSwitcher } from "./editor/LanguageSwitcher";
+import { EmailGateModal } from "./demo/EmailGateModal";
 
 function HeaderProjectLink() {
   const { project } = useProject();
+  const { demoMode } = useSession();
   const { t } = useTranslation();
-  if (!project) return null;
+  // A demo container only ever has the one seeded project — the switcher link has
+  // nowhere useful to go.
+  if (!project || demoMode) return null;
   return (
     <Link to="/project" style={{ fontSize: 12, color: "var(--text-muted)" }} title={t("appShell.switchProject")}>
       {t("appShell.projectLabel", { name: project.name })}
@@ -39,6 +43,7 @@ export default function App() {
 
   return (
     <SessionProvider>
+      <EmailGateModal />
       <ProjectProvider>
         <div className="app-shell">
           <header className="app-header" style={{ display: "flex", alignItems: "center", gap: 16 }}>
