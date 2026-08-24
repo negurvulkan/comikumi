@@ -24,7 +24,9 @@ export function pageHasTranslation(layout: PageLayout, languageCode: string): bo
 function loadHtmlImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    // See useHtmlImage.ts's doc comment — "use-credentials" instead of "anonymous" so
+    // the demo broker's session-routing cookie is sent on this cross-origin load too.
+    img.crossOrigin = "use-credentials";
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = url;
