@@ -410,6 +410,11 @@ export function PageCanvas({
           {image &&
             panels
               .filter((p) => resolvePanelForLanguage(p, activeLanguage).cut)
+              // Stable-sort selected panels to the end so a panel being dragged into a
+              // swap renders above whichever Cut-Panel content it's currently overlapping,
+              // instead of staying stuck at its fixed array index in the Layer's paint order.
+              .slice()
+              .sort((a, b) => Number(selectedPanelIds.includes(a.id)) - Number(selectedPanelIds.includes(b.id)))
               .map((panel) => (
                 <CutPanelContentShape
                   key={`cut-${panel.id}`}
