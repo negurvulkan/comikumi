@@ -116,6 +116,15 @@ export function PanelInspector({ panel, index, activeLanguage, onChange, onDelet
               onChange={(e) => commitPanel({ cut: { ...resolved.cut!, holeFill: { ...resolved.cut!.holeFill, color: e.target.value } } })}
             />
           </label>
+          <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={!!resolved.cut!.flipHorizontal}
+              onChange={(e) => commitPanel({ cut: { ...resolved.cut!, flipHorizontal: e.target.checked || undefined } })}
+            />
+            {t("editor.panelInspector.flipHorizontalLabel")}
+          </label>
+
           <label>
             {t("editor.panelInspector.contentModeLabel")}
             <select

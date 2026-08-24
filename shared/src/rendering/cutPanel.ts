@@ -80,11 +80,22 @@ export function drawCutPanelContent(
   // disappears from the page instead of reappearing at its current position.
   if (panel.cut.removed) return;
 
+  // Mirrors around the panel's own bounding-box center, applied after clipping so the
+  // outline itself stays put — only the pixels drawn inside it flip left-right.
+  const bounds = polygonBounds(panel.points);
+  const mirrorCenterX = ((bounds.minX + bounds.maxX) / 2) * scale;
+  function applyFlipIfNeeded(): void {
+    if (!panel.cut!.flipHorizontal) return;
+    ctx.translate(mirrorCenterX, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-mirrorCenterX, 0);
+  }
+
   if (panel.cut.replacement && replacementImage) {
-    const bounds = polygonBounds(panel.points);
     ctx.save();
     tracePolygonPath(ctx, scaledPoints);
     ctx.clip();
+    applyFlipIfNeeded();
     ctx.drawImage(
       replacementImage,
       bounds.minX * scale,
@@ -107,6 +118,7 @@ export function drawCutPanelContent(
   ctx.save();
   tracePolygonPath(ctx, scaledPoints);
   ctx.clip();
+  applyFlipIfNeeded();
   ctx.drawImage(baseImage, d.x * scale, d.y * scale, imageWidth * scale, imageHeight * scale);
   ctx.restore();
 }

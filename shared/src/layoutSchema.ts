@@ -421,6 +421,13 @@ export const PanelCutSchema = z.object({
    * existingPanels() in reportUtils.ts. Optional instead of `.default(false)`, same
    * reasoning as Bubble.locked: only stored when last set. */
   removed: z.boolean().optional(),
+  /** Mirrors the panel's content left-right (around its own bounding-box center) before
+   * drawing it — original cut-out or replacement image alike. Lives on the cut bundle (not
+   * a separate per-panel field) so it naturally inherits the same per-language scoping as
+   * everything else here: flipping only the "de" version while "ja" keeps showing the
+   * original orientation is exactly a `languageOverride` entry with `flipHorizontal: true`.
+   * Optional instead of `.default(false)`, same reasoning as `removed`. */
+  flipHorizontal: z.boolean().optional(),
   /** Shows an uploaded replacement image instead of the original cut-out content —
    * same per-language file-map convention as ImageElement.files/imageFileForLanguage
    * (see cutPanelReplacementFileForLanguage below). Mutually exclusive with `removed`
