@@ -402,6 +402,17 @@ export function PageCanvas({
     return entries;
   }
 
+  // Every Cut-Panel on the page, resolved for the active language — rendered as two full
+  // passes below (see CutPanelContentShape.tsx's doc comment): first every panel's "hole"
+  // phase, only then every panel's "foreground" phase, so a swap between two Cut-Panels
+  // can never have a later panel's vacated-spot fill erase an earlier panel's
+  // already-drawn content sitting in that same spot.
+  const cutPanels = panels.filter((p) => resolvePanelForLanguage(p, activeLanguage).cut);
+  // Stable-sort selected panels to the end of the foreground pass so a panel being
+  // dragged into a swap renders above whichever Cut-Panel content it's currently
+  // overlapping, instead of staying stuck at its fixed array index in the paint order.
+  const cutPanelsForeground = [...cutPanels].sort((a, b) => Number(selectedPanelIds.includes(a.id)) - Number(selectedPanelIds.includes(b.id)));
+
   return (
     <div className="canvas-panel">
       <div className="canvas-titlebar">
@@ -434,24 +445,31 @@ export function PageCanvas({
         <Layer ref={layerRef}>
           {image && <KonvaImage image={image} width={displayWidth} height={displayHeight} />}
           {image &&
-            panels
-              .filter((p) => resolvePanelForLanguage(p, activeLanguage).cut)
-              // Stable-sort selected panels to the end so a panel being dragged into a
-              // swap renders above whichever Cut-Panel content it's currently overlapping,
-              // instead of staying stuck at its fixed array index in the Layer's paint order.
-              .slice()
-              .sort((a, b) => Number(selectedPanelIds.includes(a.id)) - Number(selectedPanelIds.includes(b.id)))
-              .map((panel) => (
-                <CutPanelContentShape
-                  key={`cut-${panel.id}`}
-                  panel={panel}
-                  image={image}
-                  scale={scale}
-                  imageWidth={imageWidth}
-                  imageHeight={imageHeight}
-                  activeLanguage={activeLanguage}
-                />
-              ))}
+            cutPanels.map((panel) => (
+              <CutPanelContentShape
+                key={`cut-hole-${panel.id}`}
+                panel={panel}
+                image={image}
+                scale={scale}
+                imageWidth={imageWidth}
+                imageHeight={imageHeight}
+                activeLanguage={activeLanguage}
+                phase="hole"
+              />
+            ))}
+          {image &&
+            cutPanelsForeground.map((panel) => (
+              <CutPanelContentShape
+                key={`cut-fg-${panel.id}`}
+                panel={panel}
+                image={image}
+                scale={scale}
+                imageWidth={imageWidth}
+                imageHeight={imageHeight}
+                activeLanguage={activeLanguage}
+                phase="foreground"
+              />
+            ))}
           {panels.map((panel, index) => (
             <PanelShape
               key={panel.id}

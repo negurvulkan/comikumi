@@ -15,7 +15,7 @@ import { drawBubbleBackground } from "../../../shared/src/rendering/bubbleBackgr
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects";
 import { drawCurvedText, fitCurvedText } from "../../../shared/src/rendering/curvedText";
 import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary } from "./svgBubbleGeometry";
-import { drawCutPanelContent } from "../../../shared/src/rendering/cutPanel";
+import { drawCutPanelForeground, fillCutPanelHole } from "../../../shared/src/rendering/cutPanel";
 
 /** A child bubble's x/y/corners are relative to its parent panel's origin (see
  * PanelPointsSchema.origin) — unlike the live Konva canvas, this is a plain 2D-context
@@ -126,14 +126,18 @@ export async function renderPageToPng(
     );
   }
 
-  // Cut-Panels: patch the vacated original spot, then draw the detached content at its
-  // current (possibly moved/reshaped) position — see cutPanel.ts. Runs before placed
-  // images/bubbles/curved texts so those still layer normally on top. A no-op draw for
-  // any Panel without `.cut` (see drawCutPanelContent's early return).
+  // Cut-Panels: patch every vacated original spot FIRST, then draw every panel's
+  // detached content — see drawCutPanelForeground's doc comment for why this must be two
+  // full passes rather than fill-then-draw interleaved per panel (a swap between two
+  // Cut-Panels lands one's vacated spot exactly where the other's content now sits; doing
+  // fill+draw per panel would let a later panel's hole-fill erase an earlier panel's
+  // already-drawn content there). Runs before placed images/bubbles/curved texts so those
+  // still layer normally on top. A no-op for any Panel without `.cut`.
+  for (const resolved of resolvedPanels) fillCutPanelHole(ctx, resolved, 1);
   for (const resolved of resolvedPanels) {
     const replacementFileName = cutPanelReplacementFileForLanguage(resolved.cut, languageCode);
     const replacementImage = replacementFileName ? replacementImages.get(replacementFileName) : undefined;
-    drawCutPanelContent(ctx, resolved, baseImage, layout.imageWidth, layout.imageHeight, 1, replacementImage);
+    drawCutPanelForeground(ctx, resolved, baseImage, layout.imageWidth, layout.imageHeight, 1, replacementImage);
   }
 
   // SVG bubble contours are parsed asynchronously and cached (see

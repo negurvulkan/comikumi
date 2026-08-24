@@ -31,16 +31,38 @@ function tracePolygonPath(ctx: CanvasRenderingContext2D, points: Point[]): void 
 }
 
 /**
- * Draws a Cut-Panel's content at its current position: fills the vacated original spot
- * with the stored hole-fill color, then draws the whole source image shifted by
- * `cutPanelDelta`, clipped to the panel's current outline — landing exactly the
- * originally-cut pixels at the panel's current (possibly moved/reshaped) position. Always
- * runs both steps unconditionally, even for a never-moved panel (the redraw then exactly
- * re-covers the fill with the same content it just painted over — harmless, and avoids a
- * "has it moved" special case). All coordinates are expected in the SAME space as
- * `baseImage`'s natural pixel dimensions (`imageWidth`/`imageHeight`) — callers scale by
- * their own display `scale` factor as needed (see CutPanelContentShape.tsx /
- * renderPageToPng.ts / pageRaster.ts, which apply it before calling this).
+ * Fills a Cut-Panel's VACATED spot (its source region — see cutPanelSourcePolygon) with
+ * the stored hole-fill color. Split out from the content draw below so a caller handling
+ * MULTIPLE Cut-Panels can run this for every panel first, before drawing any of their
+ * foreground content (see drawCutPanelForeground's doc comment for why that ordering
+ * matters). A no-op for a plain (non-cut) panel.
+ */
+export function fillCutPanelHole(ctx: CanvasRenderingContext2D, panel: ResolvedPanel, scale: number): void {
+  if (!panel.cut) return;
+  const sourcePolygon = cutPanelSourcePolygon(panel).map((p) => ({ x: p.x * scale, y: p.y * scale }));
+  ctx.save();
+  tracePolygonPath(ctx, sourcePolygon);
+  ctx.fillStyle = panel.cut.holeFill.color;
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * Draws a Cut-Panel's detached content (original cut-out or replacement image) at its
+ * current position — the whole source image shifted by `cutPanelDelta`, clipped to the
+ * panel's current outline, landing exactly the originally-cut pixels at the panel's
+ * current (possibly moved/reshaped) position. Does NOT fill the vacated spot — see
+ * fillCutPanelHole above, which callers must run for every Cut-Panel FIRST, before this
+ * for any of them: when two panels swap positions, panel A's vacated spot lands exactly
+ * where panel B's content now sits (and vice versa), so interleaving fill-then-draw
+ * per panel (the two functions' one combined predecessor, drawCutPanelContent, did
+ * exactly that) would have a later panel's hole-fill silently erase an earlier panel's
+ * already-drawn content sitting in that same spot. Two full passes across all panels —
+ * every hole filled, only then every foreground drawn — makes the result order-independent.
+ * All coordinates are expected in the SAME space as `baseImage`'s natural pixel dimensions
+ * (`imageWidth`/`imageHeight`) — callers scale by their own display `scale` factor as
+ * needed (see CutPanelContentShape.tsx / renderPageToPng.ts / pageRaster.ts, which apply
+ * it before calling this).
  *
  * Takes an already-*resolved* panel (see resolvePanelForLanguage() in layoutSchema.ts) —
  * callers resolve for whichever language is being rendered/exported before calling this,
@@ -48,14 +70,17 @@ function tracePolygonPath(ctx: CanvasRenderingContext2D, points: Point[]): void 
  * replaced Cut-Panel in another.
  *
  * `replacementImage`, if given (already loaded by the caller — see
- * cutPanelReplacementFileForLanguage in layoutSchema.ts), takes over step 2 entirely:
- * instead of redrawing the original cut-out, it stretches the replacement image to the
- * panel's current bounding box and clips it to the panel's actual (possibly non-quad)
- * shape, then strokes the optional border on top. `panel.cut.removed` always wins over a
- * replacement image if both are somehow set (defense against an inconsistent saved
- * state, even though the inspector UI presents them as one mutually-exclusive choice).
+ * cutPanelReplacementFileForLanguage in layoutSchema.ts), takes over entirely: instead of
+ * redrawing the original cut-out, it stretches the replacement image to the panel's
+ * current bounding box and clips it to the panel's actual (possibly non-quad) shape, then
+ * strokes the optional border on top. `panel.cut.removed` always wins over a replacement
+ * image if both are somehow set (defense against an inconsistent saved state, even though
+ * the inspector UI presents them as one mutually-exclusive choice) — draws nothing at all
+ * in that case (the hole-fill from the paired fillCutPanelHole() call is the entire
+ * visual result, so the panel simply disappears from the page instead of reappearing at
+ * its current position).
  */
-export function drawCutPanelContent(
+export function drawCutPanelForeground(
   ctx: CanvasRenderingContext2D,
   panel: ResolvedPanel,
   baseImage: CanvasImageSource,
@@ -64,21 +89,9 @@ export function drawCutPanelContent(
   scale: number,
   replacementImage?: CanvasImageSource
 ): void {
-  if (!panel.cut) return;
+  if (!panel.cut || panel.cut.removed) return;
   const d = cutPanelDelta(panel);
   const scaledPoints = panel.points.map((p) => ({ x: p.x * scale, y: p.y * scale }));
-  const sourcePolygon = cutPanelSourcePolygon(panel).map((p) => ({ x: p.x * scale, y: p.y * scale }));
-
-  ctx.save();
-  tracePolygonPath(ctx, sourcePolygon);
-  ctx.fillStyle = panel.cut.holeFill.color;
-  ctx.fill();
-  ctx.restore();
-
-  // "Removed" (fully deleted, see Panel.cut.removed's doc comment): the hole-fill above
-  // is the entire visual result — nothing gets redrawn anywhere, so the panel simply
-  // disappears from the page instead of reappearing at its current position.
-  if (panel.cut.removed) return;
 
   // Mirrors around the panel's own bounding-box center, applied after clipping so the
   // outline itself stays put — only the pixels drawn inside it flip left-right.
@@ -121,4 +134,26 @@ export function drawCutPanelContent(
   applyFlipIfNeeded();
   ctx.drawImage(baseImage, d.x * scale, d.y * scale, imageWidth * scale, imageHeight * scale);
   ctx.restore();
+}
+
+/**
+ * Convenience wrapper for the single-panel case (fill then draw, same as this file's two
+ * split functions run back to back) — used by call sites that only ever render ONE
+ * Cut-Panel at a time (e.g. this file's own unit tests). A caller rendering a whole
+ * page's worth of Cut-Panels should NOT use this — see drawCutPanelForeground's doc
+ * comment for why a multi-panel caller needs two full passes (fillCutPanelHole for every
+ * panel, only then drawCutPanelForeground for every panel) instead of interleaving fill
+ * and draw per panel the way this wrapper does.
+ */
+export function drawCutPanelContent(
+  ctx: CanvasRenderingContext2D,
+  panel: ResolvedPanel,
+  baseImage: CanvasImageSource,
+  imageWidth: number,
+  imageHeight: number,
+  scale: number,
+  replacementImage?: CanvasImageSource
+): void {
+  fillCutPanelHole(ctx, panel, scale);
+  drawCutPanelForeground(ctx, panel, baseImage, imageWidth, imageHeight, scale, replacementImage);
 }

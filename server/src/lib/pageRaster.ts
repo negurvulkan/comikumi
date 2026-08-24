@@ -13,7 +13,7 @@ import { setCanvasFactory, type CanvasLike } from "../../../shared/src/rendering
 import { paddingRatioFor, fitHorizontalText } from "../../../shared/src/rendering/textLayout.js";
 import { drawVerticalText, fitVerticalText } from "../../../shared/src/rendering/verticalTypesetting.js";
 import { drawBubbleBackground } from "../../../shared/src/rendering/bubbleBackground.js";
-import { drawCutPanelContent } from "../../../shared/src/rendering/cutPanel.js";
+import { drawCutPanelForeground, fillCutPanelHole } from "../../../shared/src/rendering/cutPanel.js";
 import { warpImageIntoQuad, renderPerspectiveText } from "../../../shared/src/rendering/perspective.js";
 import { fitCurvedText, drawCurvedText } from "../../../shared/src/rendering/curvedText.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects.js";
@@ -99,10 +99,14 @@ export async function drawCutPanelsAndImages(
     })
   );
 
+  // Two full passes (fill every vacated hole, only then draw every panel's content) —
+  // see drawCutPanelForeground's doc comment for why a swap between two Cut-Panels needs
+  // this instead of fill-then-draw interleaved per panel.
+  for (const resolved of resolvedPanels) fillCutPanelHole(ctx, resolved, 1);
   for (const resolved of resolvedPanels) {
     const replacementFileName = cutPanelReplacementFileForLanguage(resolved.cut, languageCode);
     const replacementImage = replacementFileName ? replacementImages.get(replacementFileName) : undefined;
-    drawCutPanelContent(
+    drawCutPanelForeground(
       ctx,
       resolved,
       baseImage as unknown as CanvasImageSource,

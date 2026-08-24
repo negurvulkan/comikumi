@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { createPanel } from "../../../../shared/src/layoutSchema.js";
-import { cutPanelDelta, cutPanelSourcePolygon, drawCutPanelContent } from "../../../../shared/src/rendering/cutPanel.js";
+import {
+  cutPanelDelta,
+  cutPanelSourcePolygon,
+  drawCutPanelContent,
+  drawCutPanelForeground,
+  fillCutPanelHole,
+} from "../../../../shared/src/rendering/cutPanel.js";
 
 /** Minimal CanvasRenderingContext2D stand-in that only records which calls happened —
  * drawCutPanelContent never reads back geometry, just issues path/fill/clip/drawImage
@@ -154,5 +160,31 @@ describe("drawCutPanelContent", () => {
 
     expect(ctx.calls.filter((c) => c === "fill")).toHaveLength(1);
     expect(ctx.calls.filter((c) => c === "drawImage")).toHaveLength(0);
+  });
+});
+
+describe("multi-panel rendering order (swap regression)", () => {
+  const image = {} as unknown as CanvasImageSource;
+
+  it("never lets a later panel's hole-fill land after an earlier panel's content draw — every fill precedes every draw", () => {
+    // Two Cut-Panels that have swapped positions: A's current spot is exactly B's
+    // vacated (source) spot, and vice versa — the scenario where interleaving
+    // fill-then-draw per panel (drawCutPanelContent's old, now-removed all-in-one
+    // behavior for a multi-panel caller) would have panel B's hole-fill silently paint
+    // over panel A's already-drawn content sitting in that same spot.
+    const panelA = cutPanel([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }], { x: 50, y: 0 }); // moved from (50,0) to (0,0)
+    const panelB = cutPanel([{ x: 50, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 10 }], { x: -50, y: 0 }); // moved from (0,0) to (50,0)
+    const ctx = fakeCtx();
+
+    // The correct multi-panel call pattern: every hole filled first, only then every
+    // panel's foreground drawn (see PageCanvas.tsx / renderPageToPng.ts / pageRaster.ts).
+    for (const p of [panelA, panelB]) fillCutPanelHole(ctx, p, 1);
+    for (const p of [panelA, panelB]) drawCutPanelForeground(ctx, p, image, 100, 100, 1);
+
+    const lastFillIndex = ctx.calls.lastIndexOf("fill");
+    const firstDrawIndex = ctx.calls.indexOf("drawImage");
+    expect(ctx.calls.filter((c) => c === "fill")).toHaveLength(2);
+    expect(ctx.calls.filter((c) => c === "drawImage")).toHaveLength(2);
+    expect(lastFillIndex).toBeLessThan(firstDrawIndex);
   });
 });
