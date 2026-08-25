@@ -669,7 +669,14 @@
     "noTranslations": "（暂无翻译）",
     "noLinkedScript": "此页面未关联脚本。",
     "scriptPageFallback": "脚本页面",
-    "scriptPanelLabel": "分格 {{index}}"
+    "scriptPanelLabel": "分格 {{index}}",
+    "viewModeSingle": "单页",
+    "viewModeSingleShort": "1",
+    "viewModeSpread": "跨页",
+    "viewModeCompare": "比较页面…",
+    "comparePickerTitle": "比较页面",
+    "comparePickerHint": "最多选择 {{max}} 个页面并排显示。",
+    "comparePickerConfirm_other": "比较 {{count}} 个页面"
   },
   "demo": {
     "emailGate": {

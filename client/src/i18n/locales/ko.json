@@ -669,7 +669,14 @@
     "noTranslations": "(아직 번역 없음)",
     "noLinkedScript": "이 페이지에 연결된 대본이 없습니다.",
     "scriptPageFallback": "대본 페이지",
-    "scriptPanelLabel": "패널 {{index}}"
+    "scriptPanelLabel": "패널 {{index}}",
+    "viewModeSingle": "단일 페이지",
+    "viewModeSingleShort": "1",
+    "viewModeSpread": "두 페이지 보기",
+    "viewModeCompare": "페이지 비교…",
+    "comparePickerTitle": "페이지 비교",
+    "comparePickerHint": "나란히 볼 페이지를 최대 {{max}}개까지 선택하세요.",
+    "comparePickerConfirm_other": "{{count}}개 페이지 비교"
   },
   "demo": {
     "emailGate": {

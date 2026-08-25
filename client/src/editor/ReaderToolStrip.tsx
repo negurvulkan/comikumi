@@ -1,11 +1,26 @@
 import { useTranslation } from "react-i18next";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { DrawTool } from "./ToolStrip";
-import { CommentPinToolIcon, CommentBoxToolIcon, CommentFreehandToolIcon, CommentsPanelToolIcon, ChevronLeftIcon, ChevronRightIcon } from "./Icons";
+import {
+  CommentPinToolIcon,
+  CommentBoxToolIcon,
+  CommentFreehandToolIcon,
+  CommentsPanelToolIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  SpreadViewIcon,
+  ComparePagesIcon,
+} from "./Icons";
 
 /** Only ever the three comment-marker tools in the Reader — no geometry tools exist
  * here at all (see ToolStrip.tsx's full DrawTool union for the editor's superset). */
 export type ReaderDrawTool = Extract<DrawTool, "comment-pin" | "comment-box" | "comment-freehand">;
+
+/** "single" = the routed page alone (the original/default Reader view). "spread" =
+ * that page auto-paired with its logical neighbor, reading-direction ordered. "compare"
+ * = an arbitrary, manually picked set of up to 4 pages (see ReaderComparePicker.tsx) —
+ * has no "current page" concept, so page-flip navigation is disabled while active. */
+export type ReaderViewMode = "single" | "spread" | "compare";
 
 interface Props {
   drawTool: ReaderDrawTool | null;
@@ -22,6 +37,15 @@ interface Props {
   onNextPage: () => void;
   canGoPrev: boolean;
   canGoNext: boolean;
+  viewMode: ReaderViewMode;
+  /** Switches directly to "single" or "spread" — "compare" is never set this way, see
+   * onOpenComparePicker (there's no such thing as "just" compare mode without first
+   * picking which pages). */
+  onSetViewMode: (mode: "single" | "spread") => void;
+  /** Always opens the picker — both to enter compare mode fresh and to adjust an
+   * already-active comparison's page set (Reader.tsx passes the current selection in
+   * either case). */
+  onOpenComparePicker: () => void;
 }
 
 /** Slim toolbar for the read-only QC Reader — the three comment tools ToolStrip.tsx
@@ -46,6 +70,9 @@ export function ReaderToolStrip({
   onNextPage,
   canGoPrev,
   canGoNext,
+  viewMode,
+  onSetViewMode,
+  onOpenComparePicker,
 }: Props) {
   const { t } = useTranslation();
   const forwardIsLeft = readingDirection === "rtl";
@@ -53,8 +80,10 @@ export function ReaderToolStrip({
   const BackIcon = forwardIsLeft ? ChevronRightIcon : ChevronLeftIcon;
   const onForward = onNextPage;
   const onBack = onPrevPage;
-  const canForward = canGoNext;
-  const canBack = canGoPrev;
+  // "compare" has no single current page to step from — navigation is meaningless
+  // there, not just temporarily unavailable.
+  const canForward = viewMode !== "compare" && canGoNext;
+  const canBack = viewMode !== "compare" && canGoPrev;
 
   return (
     <div className="toolstrip">
@@ -63,6 +92,28 @@ export function ReaderToolStrip({
       </button>
       <button className="tool-btn" onClick={onForward} disabled={!canForward} title={t("reader.nextPage")}>
         <ForwardIcon />
+      </button>
+      <span className="toolstrip-sep" />
+      <button
+        className={`tool-btn${viewMode === "single" ? " active" : ""}`}
+        onClick={() => onSetViewMode("single")}
+        title={t("reader.viewModeSingle")}
+      >
+        {t("reader.viewModeSingleShort")}
+      </button>
+      <button
+        className={`tool-btn${viewMode === "spread" ? " active" : ""}`}
+        onClick={() => onSetViewMode("spread")}
+        title={t("reader.viewModeSpread")}
+      >
+        <SpreadViewIcon />
+      </button>
+      <button
+        className={`tool-btn${viewMode === "compare" ? " active" : ""}`}
+        onClick={onOpenComparePicker}
+        title={t("reader.viewModeCompare")}
+      >
+        <ComparePagesIcon />
       </button>
       <span className="toolstrip-sep" />
       <button

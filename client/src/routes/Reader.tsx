@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import type { PageLayout } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
@@ -10,9 +9,9 @@ import type { Comment, CommentTarget } from "../../../shared/src/comments";
 import type { ProjectRole } from "../../../shared/src/users";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { api, type PageSummary } from "../api/client";
-import { PageCanvas } from "../editor/PageCanvas";
-import { ReaderToolStrip, type ReaderDrawTool } from "../editor/ReaderToolStrip";
-import { ReaderPanelStrip } from "../editor/ReaderPanelStrip";
+import { ReaderPageCell } from "../editor/ReaderPageCell";
+import { ReaderToolStrip, type ReaderDrawTool, type ReaderViewMode } from "../editor/ReaderToolStrip";
+import { ReaderComparePicker } from "../editor/ReaderComparePicker";
 import { ReaderInfoPanel } from "../editor/ReaderInfoPanel";
 import { CommentsPanel } from "../editor/CommentsPanel";
 import { CommentThread } from "../editor/CommentThread";
@@ -28,7 +27,9 @@ import { ensureSvgBubbleBoundaryLoaded, isSvgBubbleBoundaryCached } from "../exp
  * identical constant/reasoning. */
 const SIDEBAR_TRIGGERED_THREAD_POSITION = { x: 260, y: 120 };
 
-type CommentThreadState = { mode: "create"; x: number; y: number; target: CommentTarget } | { mode: "view"; x: number; y: number; commentId: string };
+type CommentThreadState =
+  | { mode: "create"; x: number; y: number; page: string; target: CommentTarget }
+  | { mode: "view"; x: number; y: number; commentId: string };
 
 /** Read-only QC/review screen — a comfortable page-by-page viewer with free zoom/pan,
  * zoom-to-panel, comment tools, and access to characters/glossary/script, but none of
@@ -36,9 +37,14 @@ type CommentThreadState = { mode: "create"; x: number; y: number; target: Commen
  * plain api.* calls into local state instead of useEditorStore, which carries a dirty/
  * undo/autosave model that has no purpose here (this screen never writes layout data).
  * The comment wiring below mirrors Editor.tsx's block closely on purpose — same
- * feature, same server contract, just a second place it's wired up. */
+ * feature, same server contract, just a second place it's wired up.
+ *
+ * Shows 1–4 pages at once depending on `viewMode` (ReaderPageCell.tsx is the
+ * per-page unit, each with its own independent selection/zoom-target state) —
+ * "single" (just the routed page), "spread" (that page auto-paired with its logical
+ * neighbor, reading-direction ordered), or "compare" (an arbitrary manually-picked set,
+ * see ReaderComparePicker.tsx). */
 export function Reader() {
-  const { t } = useTranslation();
   const { volumeId = "", page = "" } = useParams();
   const navigate = useNavigate();
   const { project } = useProject();
@@ -46,7 +52,7 @@ export function Reader() {
   const { hasAtLeast } = useProjectRole();
   const readingDirection = project?.readingDirection ?? "rtl";
 
-  const [layout, setLayout] = useState<PageLayout | null>(null);
+  const [layouts, setLayouts] = useState<Record<string, PageLayout>>({});
   const [pages, setPages] = useState<PageSummary[]>([]);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -57,14 +63,12 @@ export function Reader() {
   const [drawTool, setDrawTool] = useState<ReaderDrawTool | null>(null);
   const [showCommentsPanel, setShowCommentsPanel] = useState(false);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
+  const [viewMode, setViewMode] = useState<ReaderViewMode>("single");
+  const [comparePages, setComparePages] = useState<string[]>([]);
+  const [showComparePicker, setShowComparePicker] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [mentionableMembers, setMentionableMembers] = useState<MentionableMember[]>([]);
   const [commentThreadState, setCommentThreadState] = useState<CommentThreadState | null>(null);
-  const [focusRequest, setFocusRequest] = useState<{ panelId: string; requestId: number } | null>(null);
-  const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
-  const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
-  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
-  const [selectedCurvedTextId, setSelectedCurvedTextId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   // Bubbles first paint with a browser fallback font; bumping this once the real
   // uploaded fonts finish loading force-remounts them with the correct glyphs — same
@@ -77,16 +81,58 @@ export function Reader() {
     ensureFontsLoaded().then(() => setFontsVersion((v) => v + 1));
   }, []);
 
-  // Same SVG-contour-bubble preload as Editor.tsx — a sceneFunc can't await, so this
-  // loads/caches every SVG file this page's bubbles reference before the canvas draws
-  // them, then force-remounts (fontsVersion, reused for both purposes there too).
+  const pageIndex = pages.findIndex((p) => p.page === page);
+
+  // Which pages to actually show right now — the one piece every view mode differs on.
+  const displayedPages: string[] =
+    viewMode === "compare"
+      ? comparePages
+      : viewMode === "spread"
+        ? (() => {
+            const partner = pageIndex >= 0 && pageIndex < pages.length - 1 ? pages[pageIndex + 1].page : null;
+            if (!partner) return [page];
+            // `page` is always the earlier-read of the pair (its neighbor comes later
+            // in the array) — rtl reads right-to-left, so it goes on the right (second
+            // in this left-to-right-rendered array); ltr puts it on the left (first).
+            return readingDirection === "rtl" ? [partner, page] : [page, partner];
+          })()
+        : [page];
+
+  // Same "fetch whatever's missing, cache the rest" shape as
+  // TranslatorContextPanel.tsx's neighborCache — only re-runs when the actual page SET
+  // changes (a stable joined-string key), not on every render (displayedPages above is
+  // a fresh array each time). Also warms the cache for whichever page(s) a forward/back
+  // flip would land on next (one "step" away in either direction — 2 pages in spread
+  // mode, matching stepPage()'s own step size) even though they're not rendered yet, so
+  // by the time the reviewer actually flips, the fetch has usually already finished and
+  // ReaderPageCell.tsx's own loading placeholder never has to show at all.
   useEffect(() => {
-    if (!layout) return;
+    const step = viewMode === "spread" ? 2 : 1;
+    // Nothing to prefetch in "compare" mode — there's no "next"/"previous" page to
+    // step to, just the manually picked set already in displayedPages.
+    const prefetch =
+      viewMode === "compare" ? [] : [pageIndex - step, pageIndex + step].map((idx) => pages[idx]?.page).filter((p): p is string => !!p);
+    const toFetch = [...new Set([...displayedPages, ...prefetch])].filter((p) => !(p in layouts));
+    if (toFetch.length === 0) return;
+    toFetch.forEach((p) => {
+      api.getLayout(volumeId, p).then((l) => setLayouts((prev) => ({ ...prev, [p]: l })));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedPages.join("|"), volumeId, pageIndex, viewMode, pages.length]);
+
+  // SVG-contour-bubble preload, same as Editor.tsx — a sceneFunc can't await, so every
+  // currently-displayed page's referenced SVG files get loaded/cached up front, then
+  // force-remount (fontsVersion, reused for both purposes there too).
+  useEffect(() => {
     const fileNames = new Set<string>();
-    for (const bubble of layout.bubbles) {
-      if (bubble.svgFileName) fileNames.add(bubble.svgFileName);
-      for (const override of Object.values(bubble.formOverride ?? {})) {
-        if (override.svgFileName) fileNames.add(override.svgFileName);
+    for (const p of displayedPages) {
+      const layout = layouts[p];
+      if (!layout) continue;
+      for (const bubble of layout.bubbles) {
+        if (bubble.svgFileName) fileNames.add(bubble.svgFileName);
+        for (const override of Object.values(bubble.formOverride ?? {})) {
+          if (override.svgFileName) fileNames.add(override.svgFileName);
+        }
       }
     }
     const uncached = [...fileNames].filter((fileName) => !isSvgBubbleBoundaryCached(fileName));
@@ -94,12 +140,8 @@ export function Reader() {
     Promise.all(uncached.map((fileName) => ensureSvgBubbleBoundaryLoaded(fileName))).then(() => {
       setFontsVersion((v) => v + 1);
     });
-  }, [layout]);
-
-  useEffect(() => {
-    setLayout(null);
-    api.getLayout(volumeId, page).then(setLayout);
-  }, [volumeId, page]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedPages.join("|"), layouts]);
 
   useEffect(() => {
     api.listPages(volumeId).then(setPages);
@@ -153,25 +195,22 @@ export function Reader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comments, searchParams]);
 
-  // A fresh page is a fresh view — no leftover selection/zoom-target/draw-tool from
-  // whatever was previously being looked at.
-  useEffect(() => {
-    setSelectedBubbleId(null);
-    setSelectedPanelId(null);
-    setSelectedImageId(null);
-    setSelectedCurvedTextId(null);
-    setFocusRequest(null);
-    setDrawTool(null);
-  }, [page]);
-
-  const pageIndex = pages.findIndex((p) => p.page === page);
-  const prevPage = pageIndex > 0 ? pages[pageIndex - 1].page : null;
-  const nextPage = pageIndex >= 0 && pageIndex < pages.length - 1 ? pages[pageIndex + 1].page : null;
-
   function goToPage(target: string | null) {
     if (!target) return;
     navigate(`/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(target)}`);
   }
+
+  // "compare" has no single "current page" to step from — navigation is meaningless
+  // there, not just temporarily unavailable (ReaderToolStrip.tsx disables the buttons
+  // accordingly, this guards the keyboard shortcut the same way).
+  function stepPage(direction: 1 | -1) {
+    if (viewMode === "compare" || pageIndex === -1) return;
+    const step = viewMode === "spread" ? 2 : 1;
+    const targetIdx = Math.min(pages.length - 1, Math.max(0, pageIndex + direction * step));
+    if (targetIdx !== pageIndex) goToPage(pages[targetIdx].page);
+  }
+  const canGoNext = viewMode !== "compare" && pageIndex >= 0 && pageIndex < pages.length - 1;
+  const canGoPrev = viewMode !== "compare" && pageIndex > 0;
 
   // Keyboard page-flip — which arrow key means "forward" depends on the project's
   // reading direction, same convention a physical/manga-app reader uses (rtl: flip
@@ -181,16 +220,16 @@ export function Reader() {
       if (e.target instanceof HTMLElement && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
       const forwardKey = readingDirection === "rtl" ? "ArrowLeft" : "ArrowRight";
       const backKey = readingDirection === "rtl" ? "ArrowRight" : "ArrowLeft";
-      if (e.key === forwardKey) goToPage(nextPage);
-      else if (e.key === backKey) goToPage(prevPage);
+      if (e.key === forwardKey) stepPage(1);
+      else if (e.key === backKey) stepPage(-1);
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readingDirection, nextPage, prevPage, volumeId]);
+  }, [readingDirection, viewMode, pageIndex, pages]);
 
-  function handleRequestCreateComment(target: CommentTarget, clientX: number, clientY: number) {
-    setCommentThreadState({ mode: "create", x: clientX, y: clientY, target });
+  function handleRequestCreateComment(commentPage: string, target: CommentTarget, clientX: number, clientY: number) {
+    setCommentThreadState({ mode: "create", x: clientX, y: clientY, page: commentPage, target });
   }
 
   function handleSelectComment(commentId: string, clientX: number, clientY: number) {
@@ -198,7 +237,7 @@ export function Reader() {
   }
 
   function handleSelectCommentFromPanel(comment: Comment) {
-    if (comment.page !== page) {
+    if (!displayedPages.includes(comment.page)) {
       navigate(`/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(comment.page)}?comment=${encodeURIComponent(comment.id)}`);
       return;
     }
@@ -209,7 +248,7 @@ export function Reader() {
     if (!commentThreadState || commentThreadState.mode !== "create") return;
     setDrawTool(null);
     setCommentThreadState(null);
-    await api.createComment(volumeId, { page, target: commentThreadState.target, ...fields });
+    await api.createComment(volumeId, { page: commentThreadState.page, target: commentThreadState.target, ...fields });
     refetchComments();
   }
 
@@ -231,9 +270,13 @@ export function Reader() {
 
   const usernamesById: Record<string, string> = Object.fromEntries(mentionableMembers.map((m) => [m.userId, m.username]));
   const canDeleteAnyComment = hasAtLeast("admin");
-  const pageComments = comments.filter((c) => c.page === page);
 
-  if (!layout) return <p>{t("editor.editorRoute.loadingPage")}</p>;
+  // Deliberately NOT gated on `layouts[page]` being ready — that used to swap out the
+  // ENTIRE screen (toolbar, sidebars, everything) for a bare loading message on every
+  // single page flip, since a freshly-navigated-to page's layout is rarely cached yet.
+  // Each ReaderPageCell already renders its own small loading placeholder while ITS
+  // page's layout is in flight, which is all that's actually missing — the rest of the
+  // UI (toolbar, comments/info sidebars) needs no layout data at all to render.
 
   return (
     <div className="page">
@@ -255,10 +298,13 @@ export function Reader() {
           activeLanguage={activeLanguage}
           onChangeLanguage={setActiveLanguage}
           readingDirection={readingDirection}
-          onPrevPage={() => goToPage(prevPage)}
-          onNextPage={() => goToPage(nextPage)}
-          canGoPrev={!!prevPage}
-          canGoNext={!!nextPage}
+          onPrevPage={() => stepPage(-1)}
+          onNextPage={() => stepPage(1)}
+          canGoPrev={canGoPrev}
+          canGoNext={canGoNext}
+          viewMode={viewMode}
+          onSetViewMode={setViewMode}
+          onOpenComparePicker={() => setShowComparePicker(true)}
         />
         <CommentsPanel
           open={showCommentsPanel}
@@ -267,7 +313,9 @@ export function Reader() {
           currentUserId={user?.id ?? ""}
           usernamesById={usernamesById}
           onSelectComment={handleSelectCommentFromPanel}
-          onCreatePageComment={() => setCommentThreadState({ mode: "create", ...SIDEBAR_TRIGGERED_THREAD_POSITION, target: { kind: "page" } })}
+          onCreatePageComment={() =>
+            setCommentThreadState({ mode: "create", ...SIDEBAR_TRIGGERED_THREAD_POSITION, page, target: { kind: "page" } })
+          }
           onClose={() => setShowCommentsPanel(false)}
         />
         <ReaderInfoPanel
@@ -279,74 +327,39 @@ export function Reader() {
           languages={languages}
           onClose={() => setShowInfoPanel(false)}
         />
-        <div style={{ display: "flex", flexDirection: "column", flex: "1 1 auto", minWidth: 0, minHeight: 0 }}>
-          <PageCanvas
-            // Keyed on `page` so PageCanvas's own internal zoom/pan state resets on
-            // every page flip instead of carrying over — unlike the Editor (where you
-            // typically dwell on one page and an occasional cross-page jump keeping
-            // your zoom is a minor thing), this Reader's whole point is comfortable
-            // page-by-page flipping; keeping a leftover zoomed-in rectangle from the
-            // previous page would show an unrelated crop of the new one.
-            key={page}
-            projectName={project?.name}
-            volumeId={volumeId}
-            page={page}
-            imageUrl={api.pageImageUrl(volumeId, page)}
-            imageWidth={layout.imageWidth}
-            imageHeight={layout.imageHeight}
-            bubbles={layout.bubbles}
-            images={layout.images}
-            curvedTexts={layout.curvedTexts}
-            panels={layout.panels}
-            characters={characters}
-            presets={presets}
-            selectedIds={selectedBubbleId ? [selectedBubbleId] : []}
-            selectedImageIds={selectedImageId ? [selectedImageId] : []}
-            selectedCurvedTextIds={selectedCurvedTextId ? [selectedCurvedTextId] : []}
-            selectedPanelIds={selectedPanelId ? [selectedPanelId] : []}
-            activeLanguage={activeLanguage}
-            fontsVersion={fontsVersion}
-            drawTool={drawTool}
-            readOnly
-            onSelect={setSelectedBubbleId}
-            onChange={() => {}}
-            onCreate={() => {}}
-            onSelectImage={setSelectedImageId}
-            onChangeImage={() => {}}
-            onSelectCurvedText={setSelectedCurvedTextId}
-            onChangeCurvedText={() => {}}
-            onSelectPanel={setSelectedPanelId}
-            onChangePanel={() => {}}
-            onCreatePanel={() => {}}
-            onReassignPanel={() => {}}
-            onDeselectAll={() => {
-              setSelectedBubbleId(null);
-              setSelectedPanelId(null);
-              setSelectedImageId(null);
-              setSelectedCurvedTextId(null);
-            }}
-            onDuplicateSelected={() => {}}
-            onDeleteSelected={() => {}}
-            comments={pageComments}
-            selectedCommentId={commentThreadState?.mode === "view" ? commentThreadState.commentId : null}
-            onRequestCreateComment={handleRequestCreateComment}
-            onSelectComment={handleSelectComment}
-            focusRequest={focusRequest}
-          />
-          <ReaderPanelStrip
-            imageUrl={api.pageImageUrl(volumeId, page)}
-            panels={layout.panels}
-            bubbles={layout.bubbles}
-            activeLanguage={activeLanguage}
-            readingDirection={readingDirection}
-            selectedPanelId={selectedPanelId}
-            onFocusPanel={(panelId) => {
-              setSelectedPanelId(panelId);
-              setFocusRequest((prev) => ({ panelId, requestId: (prev?.requestId ?? 0) + 1 }));
-            }}
-          />
+        <div className={`reader-page-grid${displayedPages.length >= 3 ? " grid" : ""}`}>
+          {displayedPages.map((p) => (
+            <ReaderPageCell
+              key={p}
+              volumeId={volumeId}
+              page={p}
+              layout={layouts[p] ?? null}
+              characters={characters}
+              presets={presets}
+              activeLanguage={activeLanguage}
+              fontsVersion={fontsVersion}
+              drawTool={drawTool}
+              readingDirection={readingDirection}
+              comments={comments.filter((c) => c.page === p)}
+              selectedCommentId={commentThreadState?.mode === "view" ? commentThreadState.commentId : null}
+              onRequestCreateComment={handleRequestCreateComment}
+              onSelectComment={handleSelectComment}
+            />
+          ))}
         </div>
       </div>
+      {showComparePicker && (
+        <ReaderComparePicker
+          volumeId={volumeId}
+          initialSelection={comparePages}
+          onConfirm={(selected) => {
+            setComparePages(selected);
+            setViewMode("compare");
+            setShowComparePicker(false);
+          }}
+          onClose={() => setShowComparePicker(false)}
+        />
+      )}
       {commentThreadState?.mode === "create" && (
         <CommentThread
           mode="create"

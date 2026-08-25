@@ -678,7 +678,15 @@
     "noTranslations": "(pas encore de traductions)",
     "noLinkedScript": "Aucun script lié à cette page.",
     "scriptPageFallback": "Page de script",
-    "scriptPanelLabel": "Case {{index}}"
+    "scriptPanelLabel": "Case {{index}}",
+    "viewModeSingle": "Page unique",
+    "viewModeSingleShort": "1",
+    "viewModeSpread": "Double page",
+    "viewModeCompare": "Comparer des pages…",
+    "comparePickerTitle": "Comparer des pages",
+    "comparePickerHint": "Choisissez jusqu'à {{max}} pages à afficher côte à côte.",
+    "comparePickerConfirm_one": "Comparer {{count}} page",
+    "comparePickerConfirm_other": "Comparer {{count}} pages"
   },
   "demo": {
     "emailGate": {

@@ -669,7 +669,14 @@
     "noTranslations": "（まだ翻訳がありません）",
     "noLinkedScript": "このページに紐づく台本がありません。",
     "scriptPageFallback": "台本ページ",
-    "scriptPanelLabel": "コマ {{index}}"
+    "scriptPanelLabel": "コマ {{index}}",
+    "viewModeSingle": "単ページ",
+    "viewModeSingleShort": "1",
+    "viewModeSpread": "見開き",
+    "viewModeCompare": "ページを比較…",
+    "comparePickerTitle": "ページを比較",
+    "comparePickerHint": "並べて表示するページを最大{{max}}ページまで選んでください。",
+    "comparePickerConfirm_other": "{{count}}ページを比較"
   },
   "demo": {
     "emailGate": {

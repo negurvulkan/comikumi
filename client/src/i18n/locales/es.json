@@ -678,7 +678,15 @@
     "noTranslations": "(sin traducciones todavía)",
     "noLinkedScript": "No hay guion vinculado a esta página.",
     "scriptPageFallback": "Página de guion",
-    "scriptPanelLabel": "Viñeta {{index}}"
+    "scriptPanelLabel": "Viñeta {{index}}",
+    "viewModeSingle": "Página única",
+    "viewModeSingleShort": "1",
+    "viewModeSpread": "Doble página",
+    "viewModeCompare": "Comparar páginas…",
+    "comparePickerTitle": "Comparar páginas",
+    "comparePickerHint": "Elige hasta {{max}} páginas para verlas una junto a otra.",
+    "comparePickerConfirm_one": "Comparar {{count}} página",
+    "comparePickerConfirm_other": "Comparar {{count}} páginas"
   },
   "demo": {
     "emailGate": {

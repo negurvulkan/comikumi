@@ -449,6 +449,14 @@ body {
 .canvas-panel {
   display: flex;
   flex-direction: column;
+  /* No-op wherever the parent is a CSS Grid (Editor.tsx's .editor-layout — grid items
+     stretch to fill their cell by default regardless of this), but load-bearing
+     wherever the parent is a flex column instead (Reader.tsx's .reader-page-cell): a
+     flex child doesn't grow to fill leftover space on its own without this, which used
+     to leave ReaderPanelStrip.tsx's strip floating short of the actual bottom edge
+     with dead space below it, instead of the canvas claiming that space and the strip
+     sitting flush at the bottom. */
+  flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
 }
@@ -1201,6 +1209,42 @@ button.active {
   background: var(--bg-inset, rgba(255, 255, 255, 0.06));
   font-size: 11px;
   color: var(--accent);
+}
+
+/* Wraps 1–4 ReaderPageCell.tsx instances (Reader.tsx) — single/spread view (1–2 pages)
+   lays out as a flex row so each cell simply splits the available width evenly; compare
+   view with 3–4 pages switches to a 2×2 grid instead (see the .grid modifier) so four
+   pages don't get squeezed into one unreadably narrow row. */
+.reader-page-grid {
+  flex: 1 1 auto;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  gap: 4px;
+}
+
+.reader-page-grid.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.reader-page-cell {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+}
+
+.reader-page-cell:first-child {
+  border-left: none;
+}
+
+.reader-page-cell-loading {
+  align-items: center;
+  justify-content: center;
 }
 
 /* Panel-thumbnail jump strip along the bottom of the Reader (ReaderPanelStrip.tsx) —

@@ -681,7 +681,15 @@
     "noTranslations": "(noch keine Übersetzungen)",
     "noLinkedScript": "Kein Skript mit dieser Seite verknüpft.",
     "scriptPageFallback": "Skript-Seite",
-    "scriptPanelLabel": "Panel {{index}}"
+    "scriptPanelLabel": "Panel {{index}}",
+    "viewModeSingle": "Einzelseite",
+    "viewModeSingleShort": "1",
+    "viewModeSpread": "Doppelseite",
+    "viewModeCompare": "Seiten vergleichen…",
+    "comparePickerTitle": "Seiten vergleichen",
+    "comparePickerHint": "Bis zu {{max}} Seiten auswählen, um sie nebeneinander anzuzeigen.",
+    "comparePickerConfirm_one": "{{count}} Seite vergleichen",
+    "comparePickerConfirm_other": "{{count}} Seiten vergleichen"
   },
   "exportViewer": {
     "title": "Export-Viewer",
