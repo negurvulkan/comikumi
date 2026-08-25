@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
@@ -26,6 +26,7 @@ export function VolumeList() {
   const { demoMode } = useSession();
   const { hasAtLeast, myRole } = useProjectRole();
   const navigate = useNavigate();
+  const { projectId } = useParams<{ projectId: string }>();
   const [volumes, setVolumes] = useState<VolumeSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [emptySuffix, setEmptySuffix] = useState("_empty");
@@ -127,7 +128,7 @@ export function VolumeList() {
           <div className="page-scroll" style={{ padding: 16, flex: "1 1 auto" }}>
             <div className="card-grid">
               {volumes.map((v) => (
-                <Link key={v.id} to={`/volumes/${encodeURIComponent(v.id)}`} className="card">
+                <Link key={v.id} to={`/p/${encodeURIComponent(projectId!)}/volumes/${encodeURIComponent(v.id)}`} className="card">
                   {v.firstPage ? (
                     <img src={api.pageThumbnailUrl(v.id, v.firstPage)} alt="" className="volume-card-preview" loading="lazy" />
                   ) : (

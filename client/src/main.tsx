@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
 import "./i18n";
 import App from "./App";
 import { VolumeList } from "./routes/VolumeList";
@@ -22,18 +22,29 @@ const router = createHashRouter([
     path: "/",
     element: <App />,
     children: [
-      { index: true, element: <VolumeList /> },
+      { index: true, element: <Navigate to="/project" replace /> },
       { path: "login", element: <Login /> },
       { path: "setup", element: <Setup /> },
       { path: "project", element: <ProjectSwitcher /> },
       { path: "project/new", element: <ProjectWizard /> },
-      { path: "settings", element: <Settings /> },
       { path: "admin", element: <AdminDashboard /> },
-      { path: "volumes/:volumeId", element: <PageGrid /> },
-      { path: "volumes/:volumeId/script", element: <ScriptEditor /> },
-      { path: "volumes/:volumeId/exports", element: <ExportViewer /> },
-      { path: "volumes/:volumeId/pages/:page", element: <Editor /> },
-      { path: "volumes/:volumeId/read/:page", element: <Reader /> },
+      {
+        // No element — React Router renders an implicit <Outlet/> for a layout route
+        // with children and no element of its own. The actual project-context wiring
+        // (ambient id + fetched project data) lives in App.tsx's ProjectProvider,
+        // which wraps the whole shell (header included), not just this subtree — see
+        // ProjectContext.tsx's doc comment for why.
+        path: "p/:projectId",
+        children: [
+          { index: true, element: <VolumeList /> },
+          { path: "settings", element: <Settings /> },
+          { path: "volumes/:volumeId", element: <PageGrid /> },
+          { path: "volumes/:volumeId/script", element: <ScriptEditor /> },
+          { path: "volumes/:volumeId/exports", element: <ExportViewer /> },
+          { path: "volumes/:volumeId/pages/:page", element: <Editor /> },
+          { path: "volumes/:volumeId/read/:page", element: <Reader /> },
+        ],
+      },
     ],
   },
 ]);

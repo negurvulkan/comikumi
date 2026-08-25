@@ -45,8 +45,9 @@ type CommentThreadState =
  * neighbor, reading-direction ordered), or "compare" (an arbitrary manually-picked set,
  * see ReaderComparePicker.tsx). */
 export function Reader() {
-  const { volumeId = "", page = "" } = useParams();
+  const { volumeId = "", page = "", projectId = "" } = useParams();
   const navigate = useNavigate();
+  const pBase = `/p/${encodeURIComponent(projectId)}`;
   const { project } = useProject();
   const { user } = useSession();
   const { hasAtLeast } = useProjectRole();
@@ -197,7 +198,7 @@ export function Reader() {
 
   function goToPage(target: string | null) {
     if (!target) return;
-    navigate(`/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(target)}`);
+    navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(target)}`);
   }
 
   // "compare" has no single "current page" to step from — navigation is meaningless
@@ -238,7 +239,7 @@ export function Reader() {
 
   function handleSelectCommentFromPanel(comment: Comment) {
     if (!displayedPages.includes(comment.page)) {
-      navigate(`/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(comment.page)}?comment=${encodeURIComponent(comment.id)}`);
+      navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(comment.page)}?comment=${encodeURIComponent(comment.id)}`);
       return;
     }
     setCommentThreadState({ mode: "view", ...SIDEBAR_TRIGGERED_THREAD_POSITION, commentId: comment.id });

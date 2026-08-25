@@ -12,8 +12,8 @@ const requireAdmin = requireProjectRole("admin");
 
 languagesRouter.get(
   "/",
-  asyncHandler(async (_req, res) => {
-    res.json(await readLanguages());
+  asyncHandler(async (req, res) => {
+    res.json(await readLanguages(req.activeProject));
   })
 );
 
@@ -26,7 +26,7 @@ languagesRouter.post(
       res.status(400).json({ error: "invalid_language", details: parsed.error.flatten() });
       return;
     }
-    const languages = await readLanguages();
+    const languages = await readLanguages(req.activeProject);
     if (languages.some((l) => l.code === parsed.data.code)) {
       res.status(409).json({ error: "language_code_exists", params: { code: parsed.data.code } });
       return;
@@ -36,7 +36,7 @@ languagesRouter.post(
       return;
     }
     const next = [...languages, parsed.data];
-    await writeLanguages(next);
+    await writeLanguages(next, req.activeProject);
     res.status(201).json(next);
   })
 );
@@ -50,7 +50,7 @@ languagesRouter.put(
       res.status(400).json({ error: "invalid_language", details: parsed.error.flatten() });
       return;
     }
-    const languages = await readLanguages();
+    const languages = await readLanguages(req.activeProject);
     const idx = languages.findIndex((l) => l.code === req.params.code);
     if (idx === -1) {
       res.status(404).json({ error: "language_not_found" });
@@ -64,7 +64,7 @@ languagesRouter.put(
     }
     const next = [...languages];
     next[idx] = parsed.data;
-    await writeLanguages(next);
+    await writeLanguages(next, req.activeProject);
     res.json(next);
   })
 );
@@ -73,13 +73,13 @@ languagesRouter.delete(
   "/:code",
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const languages = await readLanguages();
+    const languages = await readLanguages(req.activeProject);
     const next = languages.filter((l) => l.code !== req.params.code);
     if (next.length === languages.length) {
       res.status(404).json({ error: "language_not_found" });
       return;
     }
-    await writeLanguages(next);
+    await writeLanguages(next, req.activeProject);
     res.json(next);
   })
 );

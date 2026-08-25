@@ -14,7 +14,8 @@ import { useProject } from "../state/ProjectContext";
 
 export function ScriptEditor() {
   const { t } = useTranslation();
-  const { volumeId = "" } = useParams();
+  const { volumeId = "", projectId = "" } = useParams();
+  const pBase = `/p/${encodeURIComponent(projectId)}`;
   const { project } = useProject();
   const [doc, setDoc] = useState<ScriptDocument | null>(null);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
@@ -127,7 +128,7 @@ export function ScriptEditor() {
   return (
     <div className="page">
       <div className="canvas-titlebar">
-        <Link to={`/volumes/${encodeURIComponent(volumeId)}`}>{t("script.backToPages")}</Link>
+        <Link to={`${pBase}/volumes/${encodeURIComponent(volumeId)}`}>{t("script.backToPages")}</Link>
         <span className="canvas-titlebar-name">{t("script.title")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
       </div>

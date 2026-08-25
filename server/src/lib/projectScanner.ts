@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { readSettings } from "./projectStore.js";
+import { readSettings, type ActiveProject } from "./projectStore.js";
 
 export interface VolumeInfo {
   /** Stable id derived from the path relative to 04_Comic_Production, e.g. "Volume_01/volume_01" */
@@ -64,8 +64,8 @@ export function invalidateVolumesCache(): void {
   volumesCache = null;
 }
 
-export async function scanVolumes(): Promise<VolumeInfo[]> {
-  const settings = await readSettings();
+export async function scanVolumes(ctx?: ActiveProject): Promise<VolumeInfo[]> {
+  const settings = await readSettings(ctx);
   const cacheKey = `${settings.scanRoot}|${settings.emptySuffix}`;
   if (volumesCache && volumesCache.key === cacheKey && volumesCache.expiresAt > Date.now()) {
     return volumesCache.volumes;
@@ -102,8 +102,8 @@ export async function scanVolumes(): Promise<VolumeInfo[]> {
   return volumes;
 }
 
-export async function findVolume(id: string): Promise<VolumeInfo | undefined> {
-  const volumes = await scanVolumes();
+export async function findVolume(id: string, ctx?: ActiveProject): Promise<VolumeInfo | undefined> {
+  const volumes = await scanVolumes(ctx);
   return volumes.find((v) => v.id === id);
 }
 

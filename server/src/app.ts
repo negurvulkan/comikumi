@@ -20,7 +20,8 @@ import { browseRouter } from "./routes/browse.js";
 import { authRouter } from "./routes/auth.js";
 import { demoRouter, demoRateLimiter } from "./routes/demo.js";
 import { requireAuth, requireProjectRole, requireSystemAdmin } from "./lib/auth.js";
-import { readSettings, NoActiveProjectError } from "./lib/projectStore.js";
+import { resolveProjectParam, requireProjectRoleScoped } from "./lib/projectContext.js";
+import { readSettings, NoActiveProjectError, ProjectNotFoundError } from "./lib/projectStore.js";
 import { asyncHandler } from "./lib/asyncHandler.js";
 import { DEMO_MODE } from "./lib/demoMode.js";
 
@@ -76,6 +77,60 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/glossary", requireAuth, requireViewer, glossaryRouter);
   app.use("/api/presets", requireAuth, requireViewer, presetsRouter);
   app.use("/api/settings", requireAuth, requireViewer, settingsRouter);
+
+  // Project-scoped routes (see docs/FEATURES.md's Mehrbenutzerbetrieb section) — same
+  // router files as the legacy `/api/...` mounts above (their handlers thread
+  // `req.activeProject` through to projectStore.ts's readX/writeX functions when it's
+  // set), reachable in parallel under an explicit `:projectId` instead of the one
+  // implicit server-wide active project. Every content router is now migrated (phase 2);
+  // only the project-switcher (`/api/project`) and server-wide filesystem browsing stay
+  // singleton-only — they operate on project *files*, not "the currently open one".
+  const requireViewerScoped = requireProjectRoleScoped("viewer");
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, volumesRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pagesRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, layoutRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, exportRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, scriptRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, commentsRouter);
+  app.use("/api/p/:projectId/fonts", requireAuth, resolveProjectParam, requireViewerScoped, fontsRouter);
+  app.use("/api/p/:projectId/images", requireAuth, resolveProjectParam, requireViewerScoped, imagesRouter);
+  app.use("/api/p/:projectId/bubble-svgs", requireAuth, resolveProjectParam, requireViewerScoped, bubbleSvgsRouter);
+  app.use("/api/p/:projectId/languages", requireAuth, resolveProjectParam, requireViewerScoped, languagesRouter);
+  app.use("/api/p/:projectId/characters", requireAuth, resolveProjectParam, requireViewerScoped, charactersRouter);
+  app.use("/api/p/:projectId/glossary", requireAuth, resolveProjectParam, requireViewerScoped, glossaryRouter);
+  app.use("/api/p/:projectId/presets", requireAuth, resolveProjectParam, requireViewerScoped, presetsRouter);
+  app.use("/api/p/:projectId/settings", requireAuth, resolveProjectParam, requireViewerScoped, settingsRouter);
+
+  // Bootstrap info for a project-scoped client session (client/src/state/
+  // ProjectContext.tsx) — the scoped equivalent of GET /api/project/current below, but
+  // resolved from an explicit :projectId instead of the legacy singleton. Needed
+  // whenever the client (re-)enters a `/p/:projectId/...` URL without already knowing
+  // the project's data (bookmark, reload) — right after /project/open or /project/new
+  // the response already carries the same shape, so this is only the *first* load.
+  app.get(
+    "/api/p/:projectId",
+    requireAuth,
+    resolveProjectParam,
+    requireViewerScoped,
+    asyncHandler(async (req, res) => {
+      const project = req.activeProject!;
+      let myRole: string = "none";
+      if (req.user?.isSystemAdmin) {
+        myRole = "system-admin";
+      } else {
+        myRole = project.data.members.find((m) => m.userId === req.user?.sub)?.role ?? "none";
+      }
+      res.json({
+        filePath: project.filePath,
+        id: project.id,
+        name: project.data.name,
+        readingDirection: project.data.readingDirection,
+        coverImagePath: project.data.coverImagePath,
+        myRole,
+      });
+    })
+  );
+
   // Project-switcher-level, not project-content — its own routes self-gate per-route
   // (requireSystemAdmin for most, a bespoke membership check for /open), see routes/project.ts.
   app.use("/api/project", requireAuth, projectRouter);
@@ -119,6 +174,12 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     if (err instanceof NoActiveProjectError) {
       res.status(409).json({ error: "no_active_project" });
+      return;
+    }
+    // Defense-in-depth — resolveProjectParam already catches this itself and 404s
+    // directly, this only matters if some other code path ever throws it uncaught.
+    if (err instanceof ProjectNotFoundError) {
+      res.status(404).json({ error: "project_not_found" });
       return;
     }
     console.error(err);

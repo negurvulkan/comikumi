@@ -18,8 +18,8 @@ async function pathExists(p: string): Promise<boolean> {
 
 settingsRouter.get(
   "/",
-  asyncHandler(async (_req, res) => {
-    const settings = await readSettings();
+  asyncHandler(async (req, res) => {
+    const settings = await readSettings(req.activeProject);
     res.json({
       ...settings,
       scanRootExists: await pathExists(settings.scanRoot),
@@ -38,7 +38,7 @@ settingsRouter.put(
       res.status(400).json({ error: "invalid_settings", details: parsed.error.flatten() });
       return;
     }
-    await writeSettings(parsed.data);
+    await writeSettings(parsed.data, req.activeProject);
     res.json({
       ...parsed.data,
       scanRootExists: await pathExists(parsed.data.scanRoot),

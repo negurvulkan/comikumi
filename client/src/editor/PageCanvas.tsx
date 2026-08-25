@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Stage, Layer, Image as KonvaImage, Rect, Ellipse, Group, Line } from "react-konva";
 import Konva from "konva";
@@ -143,6 +143,7 @@ export function PageCanvas({
   focusRequest,
 }: Props) {
   const { t } = useTranslation();
+  const { projectId = "" } = useParams();
   const image = useHtmlImage(imageUrl);
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; kind: "bubble" | "panel"; id: string } | null>(null);
@@ -529,7 +530,7 @@ export function PageCanvas({
       <div className="canvas-titlebar">
         <span className="canvas-titlebar-name">{page}</span>
         <Link
-          to={`/volumes/${encodeURIComponent(volumeId)}`}
+          to={`/p/${encodeURIComponent(projectId)}/volumes/${encodeURIComponent(volumeId)}`}
           className="canvas-titlebar-path canvas-titlebar-link"
           title={t("editor.breadcrumbBackToPages")}
         >

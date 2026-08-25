@@ -16,8 +16,8 @@ const CharacterInputSchema = z.object({
 
 charactersRouter.get(
   "/",
-  asyncHandler(async (_req, res) => {
-    res.json(await readCharacters());
+  asyncHandler(async (req, res) => {
+    res.json(await readCharacters(req.activeProject));
   })
 );
 
@@ -30,9 +30,9 @@ charactersRouter.post(
       res.status(400).json({ error: "invalid_character", details: parsed.error.flatten() });
       return;
     }
-    const characters = await readCharacters();
+    const characters = await readCharacters(req.activeProject);
     const next = [...characters, { id: randomUUID(), ...parsed.data }];
-    await writeCharacters(next);
+    await writeCharacters(next, req.activeProject);
     res.status(201).json(next);
   })
 );
@@ -46,7 +46,7 @@ charactersRouter.put(
       res.status(400).json({ error: "invalid_character", details: parsed.error.flatten() });
       return;
     }
-    const characters = await readCharacters();
+    const characters = await readCharacters(req.activeProject);
     const idx = characters.findIndex((c) => c.id === req.params.id);
     if (idx === -1) {
       res.status(404).json({ error: "character_not_found" });
@@ -54,7 +54,7 @@ charactersRouter.put(
     }
     const next = [...characters];
     next[idx] = { id: req.params.id, ...parsed.data };
-    await writeCharacters(next);
+    await writeCharacters(next, req.activeProject);
     res.json(next);
   })
 );
@@ -63,13 +63,13 @@ charactersRouter.delete(
   "/:id",
   requireLetterer,
   asyncHandler(async (req, res) => {
-    const characters = await readCharacters();
+    const characters = await readCharacters(req.activeProject);
     const next = characters.filter((c) => c.id !== req.params.id);
     if (next.length === characters.length) {
       res.status(404).json({ error: "character_not_found" });
       return;
     }
-    await writeCharacters(next);
+    await writeCharacters(next, req.activeProject);
     res.json(next);
   })
 );

@@ -16,8 +16,8 @@ const GlossaryInputSchema = z.object({
 
 glossaryRouter.get(
   "/",
-  asyncHandler(async (_req, res) => {
-    res.json(await readGlossary());
+  asyncHandler(async (req, res) => {
+    res.json(await readGlossary(req.activeProject));
   })
 );
 
@@ -30,9 +30,9 @@ glossaryRouter.post(
       res.status(400).json({ error: "invalid_glossary_entry", details: parsed.error.flatten() });
       return;
     }
-    const entries = await readGlossary();
+    const entries = await readGlossary(req.activeProject);
     const next = [...entries, { id: randomUUID(), ...parsed.data }];
-    await writeGlossary(next);
+    await writeGlossary(next, req.activeProject);
     res.status(201).json(next);
   })
 );
@@ -46,7 +46,7 @@ glossaryRouter.put(
       res.status(400).json({ error: "invalid_glossary_entry", details: parsed.error.flatten() });
       return;
     }
-    const entries = await readGlossary();
+    const entries = await readGlossary(req.activeProject);
     const idx = entries.findIndex((e) => e.id === req.params.id);
     if (idx === -1) {
       res.status(404).json({ error: "glossary_entry_not_found" });
@@ -54,7 +54,7 @@ glossaryRouter.put(
     }
     const next = [...entries];
     next[idx] = { id: req.params.id, ...parsed.data };
-    await writeGlossary(next);
+    await writeGlossary(next, req.activeProject);
     res.json(next);
   })
 );
@@ -63,13 +63,13 @@ glossaryRouter.delete(
   "/:id",
   requireTranslator,
   asyncHandler(async (req, res) => {
-    const entries = await readGlossary();
+    const entries = await readGlossary(req.activeProject);
     const next = entries.filter((e) => e.id !== req.params.id);
     if (next.length === entries.length) {
       res.status(404).json({ error: "glossary_entry_not_found" });
       return;
     }
-    await writeGlossary(next);
+    await writeGlossary(next, req.activeProject);
     res.json(next);
   })
 );

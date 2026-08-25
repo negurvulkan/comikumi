@@ -52,8 +52,9 @@ type CommentThreadState = { mode: "create"; x: number; y: number; target: Commen
 
 export function Editor() {
   const { t } = useTranslation();
-  const { volumeId = "", page = "" } = useParams();
+  const { volumeId = "", page = "", projectId = "" } = useParams();
   const navigate = useNavigate();
+  const pBase = `/p/${encodeURIComponent(projectId)}`;
   const { project } = useProject();
   const readingDirection = project?.readingDirection ?? "rtl";
   const { myRole, hasAtLeast } = useProjectRole();
@@ -329,7 +330,7 @@ export function Editor() {
 
   function handleSelectCommentFromPanel(comment: Comment) {
     if (comment.page !== page) {
-      navigate(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(comment.page)}?comment=${encodeURIComponent(comment.id)}`);
+      navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(comment.page)}?comment=${encodeURIComponent(comment.id)}`);
       return;
     }
     setCommentThreadState({ mode: "view", ...SIDEBAR_TRIGGERED_THREAD_POSITION, commentId: comment.id });
@@ -384,12 +385,12 @@ export function Editor() {
         {
           type: "action",
           label: t("pageGrid.menuExportViewer") || "Export-Viewer",
-          onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/exports`),
+          onClick: () => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/exports`),
         },
         { type: "separator" },
         { type: "action", label: t("editor.editorRoute.showReport"), onClick: () => setShowReport(true) },
         { type: "separator" },
-        { type: "action", label: t("common.close"), onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}`) },
+        { type: "action", label: t("common.close"), onClick: () => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}`) },
       ],
     },
     {
@@ -417,7 +418,7 @@ export function Editor() {
         {
           type: "action",
           label: t("script.menuEntry"),
-          onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/script`),
+          onClick: () => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/script`),
           disabled: !hasAtLeast("letterer"),
         },
         { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },

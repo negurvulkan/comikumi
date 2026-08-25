@@ -8,7 +8,7 @@ import { imageSizeFromFile } from "image-size/fromFile";
 import { PageLayoutSchema, createEmptyLayout, type PageLayout } from "../../../shared/src/layoutSchema.js";
 import { findVolume, listPages } from "../lib/projectScanner.js";
 import { letteringFolderName } from "../lib/paths.js";
-import { readSettings } from "../lib/projectStore.js";
+import { readSettings, type ActiveProject } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole, resolveCallerProjectRole } from "../lib/auth.js";
 import { computeEtag, NEW_DOCUMENT_ETAG } from "../lib/etag.js";
@@ -40,10 +40,10 @@ function isTextOnlyChange(prev: PageLayout, next: PageLayout): boolean {
 /** Resolves a page's layout JSON path — exported for pages.ts's thumbnail route, which
  * needs to know whether (and where) a saved layout exists to decide whether the
  * thumbnail should reflect it (see thumbnails.ts's doc comment). */
-export async function layoutPathFor(volumeId: string, page: string) {
-  const volume = await findVolume(volumeId);
+export async function layoutPathFor(volumeId: string, page: string, ctx?: ActiveProject) {
+  const volume = await findVolume(volumeId, ctx);
   if (!volume) return undefined;
-  const settings = await readSettings();
+  const settings = await readSettings(ctx);
   const dir = path.join(volume.parentDir, letteringFolderName(volume.bookFolderName, settings.letteringSuffix));
   return { volume, dir, file: path.join(dir, `${page}.json`) };
 }
@@ -51,7 +51,7 @@ export async function layoutPathFor(volumeId: string, page: string) {
 layoutRouter.get(
   "/:id/pages/:page/layout",
   asyncHandler(async (req, res) => {
-    const resolved = await layoutPathFor(req.params.id, req.params.page);
+    const resolved = await layoutPathFor(req.params.id, req.params.page, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -81,7 +81,7 @@ layoutRouter.put(
   "/:id/pages/:page/layout",
   requireTranslator,
   asyncHandler(async (req, res) => {
-    const resolved = await layoutPathFor(req.params.id, req.params.page);
+    const resolved = await layoutPathFor(req.params.id, req.params.page, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -144,12 +144,12 @@ layoutRouter.put(
 layoutRouter.get(
   "/:id/layouts/export-zip",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, letteringFolderName(volume.bookFolderName, settings.letteringSuffix));
     let files: string[] = [];
     try {
@@ -182,12 +182,12 @@ layoutRouter.get(
 layoutRouter.get(
   "/:id/reports",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, letteringFolderName(volume.bookFolderName, settings.letteringSuffix));
     let files: string[] = [];
     try {
@@ -217,7 +217,7 @@ layoutRouter.post(
   requireLetterer,
   upload.single("zip"),
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -235,7 +235,7 @@ layoutRouter.post(
       return;
     }
 
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, letteringFolderName(volume.bookFolderName, settings.letteringSuffix));
     await fs.mkdir(dir, { recursive: true });
 

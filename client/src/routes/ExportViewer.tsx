@@ -32,8 +32,9 @@ const CBZ_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
 export function ExportViewer() {
   const { t } = useTranslation();
-  const { volumeId = "" } = useParams();
+  const { volumeId = "", projectId = "" } = useParams();
   const navigate = useNavigate();
+  const pBase = `/p/${encodeURIComponent(projectId)}`;
   const { project } = useProject();
   const { hasAtLeast } = useProjectRole();
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
@@ -169,11 +170,11 @@ export function ExportViewer() {
       
       {/* Titlebar / Breadcrumbs */}
       <div className="canvas-titlebar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Link to={`/volumes/${encodeURIComponent(volumeId)}`} className="canvas-titlebar-link" style={{ textDecoration: "none" }}>
+        <Link to={`${pBase}/volumes/${encodeURIComponent(volumeId)}`} className="canvas-titlebar-link" style={{ textDecoration: "none" }}>
           <span className="canvas-titlebar-name">{t("exportViewer.title")}</span>
           <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
         </Link>
-        <button type="button" onClick={() => navigate(`/volumes/${encodeURIComponent(volumeId)}`)}>
+        <button type="button" onClick={() => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}`)}>
           {t("common.close")}
         </button>
       </div>
@@ -218,7 +219,7 @@ export function ExportViewer() {
             <div style={{ margin: "auto", textAlign: "center", maxWidth: 400 }}>
               <h3 style={{ marginBottom: 8 }}>{t("exportViewer.noExportsTitle")}</h3>
               <p className="hint" style={{ marginBottom: 16 }}>{t("exportViewer.noExportsDesc")}</p>
-              <Link to={`/volumes/${encodeURIComponent(volumeId)}`} className="button" style={{ display: "inline-block", textDecoration: "none" }}>
+              <Link to={`${pBase}/volumes/${encodeURIComponent(volumeId)}`} className="button" style={{ display: "inline-block", textDecoration: "none" }}>
                 {t("script.backToPages")}
               </Link>
             </div>

@@ -17,8 +17,8 @@ const PresetInputSchema = z.object({
 
 presetsRouter.get(
   "/",
-  asyncHandler(async (_req, res) => {
-    res.json(await readPresets());
+  asyncHandler(async (req, res) => {
+    res.json(await readPresets(req.activeProject));
   })
 );
 
@@ -31,9 +31,9 @@ presetsRouter.post(
       res.status(400).json({ error: "invalid_preset", details: parsed.error.flatten() });
       return;
     }
-    const presets = await readPresets();
+    const presets = await readPresets(req.activeProject);
     const next = [...presets, { id: randomUUID(), ...parsed.data }];
-    await writePresets(next);
+    await writePresets(next, req.activeProject);
     res.status(201).json(next);
   })
 );
@@ -47,7 +47,7 @@ presetsRouter.put(
       res.status(400).json({ error: "invalid_preset", details: parsed.error.flatten() });
       return;
     }
-    const presets = await readPresets();
+    const presets = await readPresets(req.activeProject);
     const idx = presets.findIndex((p) => p.id === req.params.id);
     if (idx === -1) {
       res.status(404).json({ error: "preset_not_found" });
@@ -55,7 +55,7 @@ presetsRouter.put(
     }
     const next = [...presets];
     next[idx] = { id: req.params.id, ...parsed.data };
-    await writePresets(next);
+    await writePresets(next, req.activeProject);
     res.json(next);
   })
 );
@@ -64,13 +64,13 @@ presetsRouter.delete(
   "/:id",
   requireLetterer,
   asyncHandler(async (req, res) => {
-    const presets = await readPresets();
+    const presets = await readPresets(req.activeProject);
     const next = presets.filter((p) => p.id !== req.params.id);
     if (next.length === presets.length) {
       res.status(404).json({ error: "preset_not_found" });
       return;
     }
-    await writePresets(next);
+    await writePresets(next, req.activeProject);
     res.json(next);
   })
 );

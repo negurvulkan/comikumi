@@ -118,10 +118,9 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 
 ## Mehrbenutzerbetrieb
 
-ComiKumi läuft als ein einziger Server-Prozess mit genau einem aktiven Projekt im
-Speicher (kein Multi-Projekt-Hosting, s. u.) — mehrere gleichzeitig verbundene Personen
-sind aber der Normalfall (Studio-Netzwerk oder gemeinsamer Server), daher drei gezielte
-Absicherungen gegen stille Datenverluste:
+Mehrere gleichzeitig verbundene Personen sind der Normalfall (Studio-Netzwerk oder
+gemeinsamer Server), daher drei gezielte Absicherungen gegen stille Datenverluste, plus
+(neu) ein erster Schritt Richtung echter Mehrprojekt-Parallelität:
 
 - **Optimistische Konflikterkennung beim Seiten-Speichern**: Der Editor merkt sich
   einen ETag (Inhalts-Hash) der zuletzt geladenen/gespeicherten Version einer Seite und
@@ -144,10 +143,44 @@ Absicherungen gegen stille Datenverluste:
   nach ("{Namen} war(en) kürzlich aktiv — trotzdem wechseln?") statt sofort zu
   schalten; Bestätigen wechselt trotzdem.
 
-**Bewusst außerhalb**: echte Mehrprojekt-Parallelität (mehrere Projekte gleichzeitig
-aktiv, pro Sitzung getrennt) und Konflikt-Erkennung für die selteneren
-Verwaltungslisten (Einstellungen/Sprachen/Charaktere/Glossar/Presets/Mitglieder — dort
-nur der Schreib-Mutex, kein ETag-Dialog) bleiben offen; siehe
+- **Mehrprojekt-Zugriff, Phase 1+2 (serverseitig)**: Bisher lief der ganze Server mit
+  genau einem aktiven Projekt im Speicher (ein globaler Singleton) — jeder Wechsel
+  betraf zwangsläufig alle verbundenen Personen. Jedes Projekt bekommt jetzt eine
+  stabile ID (`ProjectFile.id`, für Altprojekte beim ersten Laden einmalig vergeben und
+  zurückgeschrieben), und der Server hält bis zu acht Projekte gleichzeitig in einem
+  gedeckelten Cache (`server/src/lib/projectStore.ts`). Für **jeden** Inhalts-Router
+  (Bände, Seiten, Layout, Export, Skript, Kommentare, Fonts/Bilder/SVGs, Sprachen,
+  Charaktere, Glossar, Presets, Einstellungen) gibt es zusätzlich zu den bestehenden
+  Routen neue, projekt-gescopte Routen unter `/api/p/:projectId/...`
+  (`server/src/lib/projectContext.ts`) — zwei Anfragen mit unterschiedlicher
+  `:projectId` sehen dadurch nachweislich unterschiedliche Projekte, unabhängig von der
+  Reihenfolge.
+- **Mehrprojekt-Zugriff, Phase 3 (Client-Umbau)**: Der Client kennt jetzt selbst ein
+  Projekt in der URL — das komplette Bände-/Seiten-/Editor-/Skript-/Export-/Reader-
+  Routenschema hängt unter `/p/:projectId/...` (`client/src/main.tsx`), statt implizit
+  "das eine offene Projekt" zu meinen. Welches Projekt ein Browser-**Tab** gerade zeigt,
+  ist ein reiner In-Memory-Wert pro Tab (`client/src/api/projectScope.ts`, bewusst nicht
+  in `localStorage` wie der Auth-Token — sonst könnten zwei Tabs nie zwei verschiedene
+  Projekte offen halten), gesetzt synchron beim Rendern von `ProjectProvider`
+  (`client/src/state/ProjectContext.tsx`, wrappt weiterhin die ganze App-Hülle inkl.
+  Kopfzeile) aus dem `:projectId`-Segment der aktuellen URL. Alle projekt-bezogenen
+  `api.*`-Methoden (`client/src/api/client.ts`) gehen über einen `projectApiUrl()`-
+  Helfer, der automatisch auf die gescopte Route umschreibt, mit ungescoptem
+  `/api/...`-Fallback als Sicherheitsnetz. Ergebnis: zwei Browser-Tabs können jetzt
+  wirklich zwei unterschiedliche Projekte gleichzeitig offen und in Bearbeitung haben,
+  ohne sich gegenseitig zu beeinflussen — manuell mit zwei echten Tabs gegen einen
+  laufenden Server verifiziert (inkl. Reload mitten in einer `/p/:id/volumes/...`-URL
+  über die neue Bootstrap-Route `GET /api/p/:projectId`, und dem `/` → `/project`-
+  Redirect für den Fall ganz ohne Projekt in der URL).
+
+**Bewusst außerhalb (bisher)**: das Abschalten der ungescopten Legacy-Routen (Phase 4)
+— bleiben als Sicherheitsnetz bestehen, bis sich der Client-Umbau in der Praxis bewährt
+hat. Der Projekt-Umschalter selbst (`/api/project`, Anlegen/Öffnen/Archivieren/
+Mitgliederverwaltung — operiert ohnehin auf Projekt*dateien*, nicht "dem gerade offenen
+Projekt") sowie die serverweite Dateisystem-Suche bleiben bewusst Singleton-only, das
+betrifft kein einzelnes Projekt. Konflikt-Erkennung für die selteneren
+Verwaltungslisten (Einstellungen/Sprachen/Charaktere/Glossar/Presets/Mitgliederliste —
+dort nur der Schreib-Mutex, kein ETag-Dialog) bleibt ebenfalls offen; siehe
 `docs/Professional-Workflow-Gaps.md`.
 
 ## UI-Sprache

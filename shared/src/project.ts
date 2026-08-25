@@ -14,6 +14,14 @@ import { ProjectMemberListSchema } from "./users.js";
  * data directory — that's what makes projects portable/switchable.
  */
 export const ProjectFileSchema = ProjectSettingsSchema.extend({
+  /** Stable identifier used to address this project in project-scoped API routes
+   * (`/api/p/:projectId/...`, see server/src/lib/projectContext.ts) — a dedicated ID
+   * instead of the file path itself, since a path is neither URL-safe nor something you
+   * want to expose/guess. Optional at the schema level so older project files without
+   * one still validate; server/src/lib/projectStore.ts assigns one on first load and
+   * writes it back (same "migrate on load" pattern as the legacy settings/languages
+   * migration). */
+  id: z.string().min(1).optional(),
   name: z.string().min(1),
   languages: LanguageListSchema.default(DEFAULT_LANGUAGES),
   /** Recurring cast, referenced by Bubble.characterId — see characters.ts. */

@@ -50,8 +50,9 @@ function blankPagePngFile(width: number, height: number, fileName: string): Prom
 
 export function PageGrid() {
   const { t } = useTranslation();
-  const { volumeId = "" } = useParams();
+  const { volumeId = "", projectId = "" } = useParams();
   const navigate = useNavigate();
+  const pBase = `/p/${encodeURIComponent(projectId)}`;
   const { project } = useProject();
   const { hasAtLeast } = useProjectRole();
   const [pages, setPages] = useState<PageSummary[] | null>(null);
@@ -169,7 +170,7 @@ export function PageGrid() {
       const name = nextPageName(currentPages);
       const file = await blankPagePngFile(width, height, name);
       await api.uploadPages(volumeId, [file]);
-      navigate(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(name)}`);
+      navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(name)}`);
     } catch (e) {
       setMessage(t("pageGrid.uploadErrorPrefix", { message: translateApiError(e, t) }));
       setBusy(false);
@@ -225,18 +226,19 @@ export function PageGrid() {
         {
           type: "action",
           label: t("pageGrid.menuExportViewer") || "Export-Viewer",
-          onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/exports`),
+          onClick: () => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/exports`),
         },
         { type: "separator" },
         { type: "action", label: t("pageGrid.menuVolumeReport"), onClick: () => setShowVolumeReport(true) },
         {
           type: "action",
           label: t("reader.menuEntry"),
-          onClick: () => pages && pages.length > 0 && navigate(`/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(pages[0].page)}`),
+          onClick: () =>
+            pages && pages.length > 0 && navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(pages[0].page)}`),
           disabled: !pages || pages.length === 0,
         },
         { type: "separator" },
-        { type: "action", label: t("pageGrid.menuBackToVolumes"), onClick: () => navigate("/") },
+        { type: "action", label: t("pageGrid.menuBackToVolumes"), onClick: () => navigate(pBase) },
       ],
     },
     {
@@ -250,7 +252,7 @@ export function PageGrid() {
         {
           type: "action",
           label: t("script.menuEntry"),
-          onClick: () => navigate(`/volumes/${encodeURIComponent(volumeId)}/script`),
+          onClick: () => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/script`),
           disabled: !hasAtLeast("letterer"),
         },
         { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },
@@ -276,7 +278,7 @@ export function PageGrid() {
         style={{ display: "none" }}
       />
       {confirmDialog}
-      <Link to="/" className="canvas-titlebar canvas-titlebar-link" title={t("pageGrid.breadcrumbBackToVolumes")}>
+      <Link to={pBase} className="canvas-titlebar canvas-titlebar-link" title={t("pageGrid.breadcrumbBackToVolumes")}>
         <span className="canvas-titlebar-name">{t("pageGrid.titlebarPages")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
       </Link>
@@ -342,12 +344,12 @@ export function PageGrid() {
         <div className="card-grid">
           {pages.map((p) => (
             <div key={p.page} className="card-wrap">
-              <Link to={`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`} className="card">
+              <Link to={`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`} className="card">
                 <img src={api.pageThumbnailUrl(volumeId, p.page)} alt={p.page} loading="lazy" />
                 <div className="label">{p.page}</div>
               </Link>
               <Link
-                to={`/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
+                to={`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
                 className="card-read-btn"
                 title={t("reader.menuEntry")}
               >

@@ -61,8 +61,9 @@ async function statsFor(
 
 volumesRouter.get(
   "/",
-  asyncHandler(async (_req, res) => {
-    const [volumes, languages, settings] = await Promise.all([scanVolumes(), readLanguages(), readSettings()]);
+  asyncHandler(async (req, res) => {
+    const ctx = req.activeProject;
+    const [volumes, languages, settings] = await Promise.all([scanVolumes(ctx), readLanguages(ctx), readSettings(ctx)]);
     const results = await Promise.all(
       volumes.map(async (v) => ({
         id: v.id,

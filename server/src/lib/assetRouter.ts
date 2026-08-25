@@ -84,7 +84,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
       }
       if (foldersEnabled) for (const name of await listSubfolders(globalFolderDir)) subfolders.add(name);
 
-      const projectDir = await getActiveProjectAssetDir(kind);
+      const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
       if (projectDir) {
         const projectFolderDir = path.join(projectDir, folder);
         for (const fileName of await listDir(projectFolderDir, allowedExt)) {
@@ -130,7 +130,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
 
       // Project folder wins on a same-named collision, matching GET / above — try it
       // first (if configured) and only fall back to the global dir on ENOENT.
-      const projectDir = await getActiveProjectAssetDir(kind);
+      const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
       if (projectDir) {
         try {
           await fs.access(path.join(projectDir, folder, fileName));
@@ -163,7 +163,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
         res.status(400).json({ error: "unsupported_file_type", params: { kind } });
         return;
       }
-      const projectDir = await getActiveProjectAssetDir(kind);
+      const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
       const targetDir = path.join(projectDir ?? globalDir, folder);
       await fs.mkdir(targetDir, { recursive: true });
       const safeName = req.file.originalname.replace(/[^\w.\- ]/g, "_");
@@ -185,7 +185,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
           res.status(400).json({ error: "invalid_folder" });
           return;
         }
-        const projectDir = await getActiveProjectAssetDir(kind);
+        const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
         await fs.mkdir(path.join(projectDir ?? globalDir, folder), { recursive: true });
         res.json({ ok: true, folder });
       })
@@ -200,7 +200,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
           res.status(400).json({ error: "invalid_folder" });
           return;
         }
-        const projectDir = await getActiveProjectAssetDir(kind);
+        const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
         const bases = [globalDir, ...(projectDir ? [projectDir] : [])];
         const dirs = bases.map((base) => path.join(base, folder));
 
@@ -238,7 +238,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
           res.status(400).json({ error: "invalid_folder" });
           return;
         }
-        const projectDir = await getActiveProjectAssetDir(kind);
+        const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
         const bases = [...(projectDir ? [projectDir] : []), globalDir]; // project takes priority, matching GET /file lookup order
         for (const base of bases) {
           const src = path.join(base, fromFolder, fileName);

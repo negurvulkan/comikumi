@@ -32,7 +32,7 @@ exportRouter.post(
   requireLetterer,
   upload.single("png"),
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -42,7 +42,7 @@ exportRouter.post(
       res.status(400).json({ error: "export_fields_required" });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
     await fs.mkdir(dir, { recursive: true });
     const file = path.join(dir, `${page}.png`);
@@ -63,7 +63,7 @@ exportRouter.post(
   requireLetterer,
   upload.single("png"),
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -91,7 +91,7 @@ exportRouter.post(
       res.status(400).json({ error: "print_export_failed", params: { reason: (err as Error).message } });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
     await fs.mkdir(dir, { recursive: true });
     const file = path.join(dir, `${page}.tiff`);
@@ -113,7 +113,7 @@ exportRouter.post(
   "/:id/export-vector-pdf",
   requireLetterer,
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -140,7 +140,7 @@ exportRouter.post(
       return;
     }
 
-    const presets = await readPresets();
+    const presets = await readPresets(req.activeProject);
     let result: { bytes: Buffer; pdfxStamped: boolean };
     try {
       result = await buildVectorPdfPage({
@@ -156,7 +156,7 @@ exportRouter.post(
       return;
     }
 
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
     await fs.mkdir(dir, { recursive: true });
     const file = path.join(dir, `${page}.pdf`);
@@ -175,7 +175,7 @@ exportRouter.post(
   "/:id/export-psd",
   requireLetterer,
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -201,7 +201,7 @@ exportRouter.post(
       return;
     }
 
-    const presets = await readPresets();
+    const presets = await readPresets(req.activeProject);
     let bytes: Buffer;
     try {
       bytes = await buildLayeredPsd({
@@ -216,7 +216,7 @@ exportRouter.post(
       return;
     }
 
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
     await fs.mkdir(dir, { recursive: true });
     const file = path.join(dir, `${page}.psd`);
@@ -228,12 +228,12 @@ exportRouter.post(
 exportRouter.get(
   "/:id/exports",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const parentDir = volume.parentDir;
     const bookFolderName = volume.bookFolderName;
 
@@ -302,7 +302,7 @@ exportRouter.get(
 exportRouter.get(
   "/:id/exports/:folderSuffix/zip",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -312,7 +312,7 @@ exportRouter.get(
       res.status(400).json({ error: "invalid_folder_suffix" });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
 
     let entries: import("node:fs").Dirent[] = [];
@@ -414,7 +414,7 @@ function buildComicInfoXml(metadata: CbzMetadata, title: string, pageCount: numb
 exportRouter.post(
   "/:id/exports/:folderSuffix/cbz",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -431,7 +431,7 @@ exportRouter.post(
     }
     const metadata = parsed.data;
 
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
 
     let entries: import("node:fs").Dirent[] = [];
@@ -455,7 +455,7 @@ exportRouter.post(
       return;
     }
 
-    const projectInfo = await getCurrentProjectInfo();
+    const projectInfo = await getCurrentProjectInfo(req.activeProject);
     const manga =
       metadata.manga && metadata.manga !== "Unknown"
         ? metadata.manga
@@ -487,7 +487,7 @@ exportRouter.post(
 exportRouter.get(
   "/:id/exports/:folderSuffix/:fileName",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -497,7 +497,7 @@ exportRouter.get(
       res.status(400).json({ error: "invalid_path_parameters" });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const file = path.join(
       volume.parentDir,
       languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate),
@@ -522,7 +522,7 @@ exportRouter.delete(
   "/:id/exports/:folderSuffix/:fileName",
   requireLetterer,
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -532,7 +532,7 @@ exportRouter.delete(
       res.status(400).json({ error: "invalid_path_parameters" });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const file = path.join(
       volume.parentDir,
       languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate),
@@ -552,7 +552,7 @@ exportRouter.delete(
   "/:id/exports/:folderSuffix",
   requireLetterer,
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -562,7 +562,7 @@ exportRouter.delete(
       res.status(400).json({ error: "invalid_folder_suffix" });
       return;
     }
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     const dir = path.join(
       volume.parentDir,
       languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate)

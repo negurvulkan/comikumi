@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { ProjectFileSchema, type ProjectFile } from "../../../shared/src/project.js";
 import { ProjectSettingsSchema, type ProjectSettings } from "../../../shared/src/settings.js";
@@ -21,7 +22,18 @@ export class NoActiveProjectError extends Error {
   }
 }
 
-interface ActiveProject {
+/** Thrown by getOrLoadProjectById() for a project id that isn't in the index (never
+ * registered, or the app-state.json entry was lost) — routes/lib/projectContext.ts
+ * turns this into a 404, same "unknown id" shape as every other resource lookup. */
+export class ProjectNotFoundError extends Error {
+  constructor() {
+    super("No project is registered under this id.");
+    this.name = "ProjectNotFoundError";
+  }
+}
+
+export interface ActiveProject {
+  id: string;
   filePath: string;
   data: ProjectFile;
 }
@@ -34,22 +46,66 @@ const AppStateSchema = z.object({
    * outright, unlike removeRecentProject/deleteProjectFile. Additive field: old
    * app-state.json files without it simply default to an empty archive. */
   archivedProjectFiles: z.array(z.string()).default([]),
+  /** Project id -> file path, so a project-scoped request (`/api/p/:projectId/...`,
+   * see projectContext.ts) can find a project's file without scanning every known
+   * project file. Populated whenever a project is created/opened/loaded — see
+   * registerProjectId(). Additive field, old app-state.json files default to {}. */
+  projectIndex: z.record(z.string(), z.string()).default({}),
 });
 type AppState = z.infer<typeof AppStateSchema>;
 
-let active: ActiveProject | null = null;
+/**
+ * Multiple projects can be loaded in memory at once (see getOrLoadProjectById(), used
+ * by the project-scoped `/api/p/:projectId/...` routes) — this replaced a single
+ * `active` singleton. `legacyActiveId`, when set, is exactly what `active` used to mean:
+ * "the one implicit project" every un-scoped route (still the majority of routes as of
+ * this writing — see docs/FEATURES.md's Mehrbenutzerbetrieb section) reads and writes
+ * through getActiveProject(). Capped so a server that gets pointed at many different
+ * projects over a long uptime doesn't accumulate them forever; the legacy-active entry
+ * is never evicted, since un-scoped routes require it to always be resolvable once
+ * initialized, exactly like before.
+ */
+const projectCache = new Map<string, ActiveProject>();
+let legacyActiveId: string | null = null;
+const MAX_CACHED_PROJECTS = 8;
+
 // Resolves once the startup migration/auto-open attempt has run, so concurrent
 // early requests all await the same attempt instead of racing each other.
 let initPromise: Promise<void> | null = null;
 
-/** Test-only escape hatch: clears the in-memory active-project singleton (and the
- * memoized init attempt) so a test file's later cases don't see state left behind by
- * earlier ones. Vitest's default per-file module isolation already gives each test
- * file a fresh copy of this module, but this exists as an explicit safety net for
- * tests that intentionally open/create multiple projects within the same file. */
+/** Test-only escape hatch: clears the in-memory project cache (and the memoized init
+ * attempt) so a test file's later cases don't see state left behind by earlier ones.
+ * Vitest's default per-file module isolation already gives each test file a fresh copy
+ * of this module, but this exists as an explicit safety net for tests that
+ * intentionally open/create multiple projects within the same file. */
 export function resetActiveProjectForTests(): void {
-  active = null;
+  projectCache.clear();
+  legacyActiveId = null;
   initPromise = null;
+}
+
+function legacyActive(): ActiveProject | null {
+  return legacyActiveId ? (projectCache.get(legacyActiveId) ?? null) : null;
+}
+
+/** Inserts/refreshes a cache entry and bumps it to most-recently-used (Map iteration
+ * order = insertion order, so delete+re-set is enough to move an existing key to the
+ * end) — then evicts the least-recently-used entry if over the cap, skipping
+ * `legacyActiveId` (see the cache's own doc comment for why that one's never evicted). */
+function touchCache(entry: ActiveProject): void {
+  projectCache.delete(entry.id);
+  projectCache.set(entry.id, entry);
+  while (projectCache.size > MAX_CACHED_PROJECTS) {
+    let victim: string | undefined;
+    for (const key of projectCache.keys()) {
+      if (key !== legacyActiveId) {
+        victim = key;
+        break;
+      }
+    }
+    if (!victim) break; // everything left is the legacy-active entry — nothing safe to evict
+    projectCache.delete(victim);
+  }
 }
 
 async function readAppState(): Promise<AppState> {
@@ -72,6 +128,15 @@ async function rememberRecent(filePath: string): Promise<void> {
   await writeAppState({ ...state, lastOpenedProjectFile: filePath, recentProjectFiles });
 }
 
+/** Records where a project id's file lives, so getOrLoadProjectById() can find it later
+ * without scanning every known project. Idempotent no-op write avoidance: skips the
+ * write entirely when the index already has the correct entry. */
+async function registerProjectId(id: string, filePath: string): Promise<void> {
+  const state = await readAppState();
+  if (state.projectIndex[id] === filePath) return;
+  await writeAppState({ ...state, projectIndex: { ...state.projectIndex, [id]: filePath } });
+}
+
 async function readProjectFile(filePath: string): Promise<ProjectFile> {
   const raw = await fs.readFile(filePath, "utf-8");
   return ProjectFileSchema.parse(JSON.parse(raw));
@@ -80,6 +145,20 @@ async function readProjectFile(filePath: string): Promise<ProjectFile> {
 async function writeProjectFile(filePath: string, data: ProjectFile): Promise<void> {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
+}
+
+/** Reads a project file, assigning it a fresh id (and writing that back) if it doesn't
+ * have one yet — the migrate-on-load path for every project file that existed before
+ * the `id` field did, mirroring migrateLegacyProject()'s "upgrade in place" approach for
+ * the pre-multi-project settings.json/languages.json layout. Also registers the
+ * (possibly newly assigned) id in the app-state index. */
+async function loadProjectWithId(filePath: string): Promise<ActiveProject> {
+  const loaded = await readProjectFile(filePath);
+  const id = loaded.id ?? randomUUID();
+  const data: ProjectFile = loaded.id ? loaded : { ...loaded, id };
+  if (!loaded.id) await writeProjectFile(filePath, data);
+  await registerProjectId(id, filePath);
+  return { id, filePath, data };
 }
 
 /** One-time migration for checkouts still on the pre-multi-project layout:
@@ -101,27 +180,33 @@ async function migrateLegacyProject(): Promise<ActiveProject | null> {
   } catch {
     // no legacy languages.json — keep defaults
   }
-  const data = ProjectFileSchema.parse({ ...legacySettings, name: "Migriertes Projekt", languages });
+  const data = ProjectFileSchema.parse({ ...legacySettings, id: randomUUID(), name: "Migriertes Projekt", languages });
   await writeProjectFile(LEGACY_PROJECT_FILE, data);
+  await registerProjectId(data.id!, LEGACY_PROJECT_FILE);
   await rememberRecent(LEGACY_PROJECT_FILE);
-  return { filePath: LEGACY_PROJECT_FILE, data };
+  return { id: data.id!, filePath: LEGACY_PROJECT_FILE, data };
 }
 
 async function ensureInitialized(): Promise<void> {
-  if (active) return;
+  if (legacyActive()) return;
   if (!initPromise) {
     initPromise = (async () => {
       const state = await readAppState();
       if (state.lastOpenedProjectFile) {
         try {
-          const data = await readProjectFile(state.lastOpenedProjectFile);
-          active = { filePath: state.lastOpenedProjectFile, data };
+          const entry = await loadProjectWithId(state.lastOpenedProjectFile);
+          legacyActiveId = entry.id;
+          touchCache(entry);
           return;
         } catch {
           // file moved/deleted/corrupted — fall through to migration/empty
         }
       }
-      active = await migrateLegacyProject();
+      const migrated = await migrateLegacyProject();
+      if (migrated) {
+        legacyActiveId = migrated.id;
+        touchCache(migrated);
+      }
     })();
   }
   await initPromise;
@@ -129,40 +214,68 @@ async function ensureInitialized(): Promise<void> {
 
 async function getActiveProject(): Promise<ActiveProject> {
   await ensureInitialized();
-  if (!active) throw new NoActiveProjectError();
-  return active;
+  const project = legacyActive();
+  if (!project) throw new NoActiveProjectError();
+  return project;
 }
 
-export async function getCurrentProjectInfo(): Promise<{
+/** Resolves (loading from disk and caching if not already cached) the project
+ * registered under `id` — the entry point for every project-scoped route
+ * (`/api/p/:projectId/...`, see lib/projectContext.ts). Throws ProjectNotFoundError for
+ * an id with no index entry. Does NOT change legacyActiveId — scoped access never
+ * affects what the un-scoped legacy routes see. */
+export async function getOrLoadProjectById(id: string): Promise<ActiveProject> {
+  const cached = projectCache.get(id);
+  if (cached) {
+    touchCache(cached);
+    return cached;
+  }
+  const state = await readAppState();
+  const filePath = state.projectIndex[id];
+  if (!filePath) throw new ProjectNotFoundError();
+  const entry = await loadProjectWithId(filePath);
+  touchCache(entry);
+  return entry;
+}
+
+export async function getCurrentProjectInfo(ctx?: ActiveProject): Promise<{
   filePath: string;
+  id: string;
   name: string;
   readingDirection: "ltr" | "rtl";
   coverImagePath: string;
 } | null> {
+  if (ctx) {
+    return { filePath: ctx.filePath, id: ctx.id, name: ctx.data.name, readingDirection: ctx.data.readingDirection, coverImagePath: ctx.data.coverImagePath };
+  }
   await ensureInitialized();
-  return active
-    ? { filePath: active.filePath, name: active.data.name, readingDirection: active.data.readingDirection, coverImagePath: active.data.coverImagePath }
+  const project = legacyActive();
+  return project
+    ? { filePath: project.filePath, id: project.id, name: project.data.name, readingDirection: project.data.readingDirection, coverImagePath: project.data.coverImagePath }
     : null;
 }
 
 /** Resolved project-specific asset subfolder for the given kind, or null if no project
  * is open or it hasn't configured an assetsDir — callers fall back to the global dir in
- * that case. Reads `active` directly (non-throwing) rather than via getActiveProject()
- * so the asset routers keep working with no project open at all, exactly like today. */
-export async function getActiveProjectAssetDir(kind: "fonts" | "images" | "bubble-svgs"): Promise<string | null> {
-  await ensureInitialized();
-  if (!active || !active.data.assetsDir) return null;
-  return path.join(active.data.assetsDir, kind);
+ * that case. Reads the legacy-active entry directly (non-throwing) rather than via
+ * getActiveProject() so the asset routers keep working with no project open at all,
+ * exactly like today. */
+export async function getActiveProjectAssetDir(kind: "fonts" | "images" | "bubble-svgs", ctx?: ActiveProject): Promise<string | null> {
+  if (!ctx) await ensureInitialized();
+  const project = ctx ?? legacyActive();
+  if (!project || !project.data.assetsDir) return null;
+  return path.join(project.data.assetsDir, kind);
 }
 
 /** Non-throwing scanRoot + retention lookup for the background trash-purge sweep in
  * index.ts — that sweep runs on a timer with no request/route context, so it must
  * tolerate "no project open" (returns null) instead of catching NoActiveProjectError
- * at every call site, mirroring getActiveProjectAssetDir()'s direct `active` read. */
+ * at every call site, mirroring getActiveProjectAssetDir()'s direct read. */
 export async function getActiveScanRootForTrash(): Promise<{ scanRoot: string; trashRetentionDays: number } | null> {
   await ensureInitialized();
-  if (!active) return null;
-  return { scanRoot: active.data.scanRoot, trashRetentionDays: active.data.trashRetentionDays };
+  const project = legacyActive();
+  if (!project) return null;
+  return { scanRoot: project.data.scanRoot, trashRetentionDays: project.data.trashRetentionDays };
 }
 
 /** Resolved thumbnail-cache folder: the explicit `thumbnailsDir` setting if configured,
@@ -172,9 +285,10 @@ export async function getActiveScanRootForTrash(): Promise<{ scanRoot: string; t
  * every project gets its own by default, whether or not assetsDir is set. */
 export async function getThumbnailsDir(globalFallback: string): Promise<string> {
   await ensureInitialized();
-  if (!active) return globalFallback;
-  if (active.data.thumbnailsDir) return active.data.thumbnailsDir;
-  return path.join(path.dirname(active.filePath), "thumbnails");
+  const project = legacyActive();
+  if (!project) return globalFallback;
+  if (project.data.thumbnailsDir) return project.data.thumbnailsDir;
+  return path.join(path.dirname(project.filePath), "thumbnails");
 }
 
 export interface ListedProject {
@@ -250,10 +364,11 @@ export async function deleteProjectFile(filePath: string): Promise<void> {
 }
 
 export async function openProject(filePath: string): Promise<ProjectFile> {
-  const data = await readProjectFile(filePath);
-  active = { filePath, data };
+  const entry = await loadProjectWithId(filePath);
+  legacyActiveId = entry.id;
+  touchCache(entry);
   await rememberRecent(filePath);
-  return data;
+  return entry.data;
 }
 
 export interface CreateProjectInit {
@@ -276,6 +391,7 @@ export async function createProject(filePath: string, init: CreateProjectInit): 
     await fs.mkdir(init.scanRoot, { recursive: true });
   }
   const data = ProjectFileSchema.parse({
+    id: randomUUID(),
     name: init.name,
     scanRoot: init.scanRoot,
     ...(init.emptySuffix !== undefined && { emptySuffix: init.emptySuffix }),
@@ -286,16 +402,24 @@ export async function createProject(filePath: string, init: CreateProjectInit): 
     languages: init.languages ?? DEFAULT_LANGUAGES,
   });
   await writeProjectFile(filePath, data);
-  active = { filePath, data };
+  await registerProjectId(data.id!, filePath);
+  const entry: ActiveProject = { id: data.id!, filePath, data };
+  legacyActiveId = entry.id;
+  touchCache(entry);
   await rememberRecent(filePath);
   return data;
 }
 
 // --- Signature-compatible drop-in replacements for the old settingsStore/languagesStore,
-// so routes/settings.ts and routes/languages.ts don't need to change at all. ---
+// so routes/settings.ts and routes/languages.ts don't need to change at all. Every
+// function below takes an optional trailing `ctx` — pass a project resolved by
+// lib/projectContext.ts's resolveProjectParam (req.activeProject) from an already-
+// migrated, project-scoped route; omit it (every not-yet-migrated route, unchanged) to
+// keep reading/writing through the legacy singleton, exactly like before. See
+// docs/FEATURES.md's Mehrbenutzerbetrieb section and the multi-project rollout plan. ---
 
-export async function readSettings(): Promise<ProjectSettings> {
-  const { data } = await getActiveProject();
+export async function readSettings(ctx?: ActiveProject): Promise<ProjectSettings> {
+  const { data } = ctx ?? (await getActiveProject());
   const {
     scanRoot,
     assetsDir,
@@ -330,8 +454,8 @@ export async function readSettings(): Promise<ProjectSettings> {
   };
 }
 
-export async function writeSettings(settings: ProjectSettings): Promise<void> {
-  const project = await getActiveProject();
+export async function writeSettings(settings: ProjectSettings, ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
   // Locked per project file, not just the write call — closes the window where two
   // concurrent writers to *any* of this project's fields (settings/languages/
   // characters/glossary/presets/members, all sharing the same underlying file) could
@@ -342,65 +466,65 @@ export async function writeSettings(settings: ProjectSettings): Promise<void> {
   });
 }
 
-export async function readLanguages(): Promise<LanguageDef[]> {
-  const { data } = await getActiveProject();
+export async function readLanguages(ctx?: ActiveProject): Promise<LanguageDef[]> {
+  const { data } = ctx ?? (await getActiveProject());
   return data.languages;
 }
 
-export async function writeLanguages(languages: LanguageDef[]): Promise<void> {
-  const project = await getActiveProject();
+export async function writeLanguages(languages: LanguageDef[], ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
   await withFileLock(project.filePath, async () => {
     project.data = { ...project.data, languages };
     await writeProjectFile(project.filePath, project.data);
   });
 }
 
-export async function readCharacters(): Promise<Character[]> {
-  const { data } = await getActiveProject();
+export async function readCharacters(ctx?: ActiveProject): Promise<Character[]> {
+  const { data } = ctx ?? (await getActiveProject());
   return data.characters;
 }
 
-export async function writeCharacters(characters: Character[]): Promise<void> {
-  const project = await getActiveProject();
+export async function writeCharacters(characters: Character[], ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
   await withFileLock(project.filePath, async () => {
     project.data = { ...project.data, characters };
     await writeProjectFile(project.filePath, project.data);
   });
 }
 
-export async function readGlossary(): Promise<GlossaryEntry[]> {
-  const { data } = await getActiveProject();
+export async function readGlossary(ctx?: ActiveProject): Promise<GlossaryEntry[]> {
+  const { data } = ctx ?? (await getActiveProject());
   return data.glossary;
 }
 
-export async function writeGlossary(glossary: GlossaryEntry[]): Promise<void> {
-  const project = await getActiveProject();
+export async function writeGlossary(glossary: GlossaryEntry[], ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
   await withFileLock(project.filePath, async () => {
     project.data = { ...project.data, glossary };
     await writeProjectFile(project.filePath, project.data);
   });
 }
 
-export async function readPresets(): Promise<LetteringPreset[]> {
-  const { data } = await getActiveProject();
+export async function readPresets(ctx?: ActiveProject): Promise<LetteringPreset[]> {
+  const { data } = ctx ?? (await getActiveProject());
   return data.presets;
 }
 
-export async function writePresets(presets: LetteringPreset[]): Promise<void> {
-  const project = await getActiveProject();
+export async function writePresets(presets: LetteringPreset[], ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
   await withFileLock(project.filePath, async () => {
     project.data = { ...project.data, presets };
     await writeProjectFile(project.filePath, project.data);
   });
 }
 
-export async function readMembers(): Promise<ProjectMember[]> {
-  const { data } = await getActiveProject();
+export async function readMembers(ctx?: ActiveProject): Promise<ProjectMember[]> {
+  const { data } = ctx ?? (await getActiveProject());
   return data.members;
 }
 
-export async function writeMembers(members: ProjectMember[]): Promise<void> {
-  const project = await getActiveProject();
+export async function writeMembers(members: ProjectMember[], ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
   await withFileLock(project.filePath, async () => {
     project.data = { ...project.data, members };
     await writeProjectFile(project.filePath, project.data);
@@ -417,19 +541,21 @@ export async function writeMembersByPath(filePath: string, members: ProjectMembe
     const data = await readProjectFile(filePath);
     data.members = members;
     await writeProjectFile(filePath, data);
-    if (active && active.filePath === filePath) {
-      active.data.members = members;
+    // Keep any cached copy of this exact project (legacy-active or not) consistent —
+    // mirrors the old single-singleton "if this is the active one, update it too".
+    for (const entry of projectCache.values()) {
+      if (entry.filePath === filePath) entry.data.members = members;
     }
   });
 }
-
 
 /** Non-throwing variant of readMembers() for server/src/lib/auth.ts's
  * requireProjectRole() — a missing active project should 404/409 further down the
  * request (e.g. an unknown volume id), not be swallowed here as "no members". */
 export async function getActiveProjectMembers(): Promise<ProjectMember[] | null> {
   await ensureInitialized();
-  return active ? active.data.members : null;
+  const project = legacyActive();
+  return project ? project.data.members : null;
 }
 
 /** Reads a project file's `members` list WITHOUT making it the active project — used by

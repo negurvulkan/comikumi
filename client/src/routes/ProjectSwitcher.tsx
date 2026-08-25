@@ -116,7 +116,7 @@ export function ProjectSwitcher() {
         return;
       }
       invalidateFontsCache();
-      navigate("/");
+      navigate(`/p/${encodeURIComponent(result.id!)}`);
     } catch (e) {
       setError(translateApiError(e, t));
     } finally {

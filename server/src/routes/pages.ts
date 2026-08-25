@@ -51,7 +51,7 @@ async function readDims(absolutePath: string): Promise<{ width: number; height: 
 pagesRouter.get(
   "/:id/pages",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -70,7 +70,7 @@ pagesRouter.get(
 pagesRouter.get(
   "/:id/pages/:page/image",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -95,7 +95,7 @@ pagesRouter.get(
 pagesRouter.get(
   "/:id/pages/:page/thumbnail",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -107,8 +107,8 @@ pagesRouter.get(
       return;
     }
     try {
-      const resolved = await layoutPathFor(req.params.id, req.params.page);
-      const languages = await readLanguages();
+      const resolved = await layoutPathFor(req.params.id, req.params.page, req.activeProject);
+      const languages = await readLanguages(req.activeProject);
       const languageCode = languages[0]?.code ?? "de";
       const thumbPath = await getOrCreateThumbnail(page.absolutePath, resolved?.file, languageCode);
       res.type("image/jpeg");
@@ -130,7 +130,7 @@ pagesRouter.post(
   requireProjectRole("letterer"),
   upload.array("pages", 50),
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -189,7 +189,7 @@ pagesRouter.delete(
   "/:id/pages/:page",
   requireProjectRole("letterer"),
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -206,7 +206,7 @@ pagesRouter.delete(
     // Never permanently deletes the source image itself either — it moves into
     // scanRoot's trash folder (see lib/trash.ts) so it stays recoverable until an
     // automatic sweep (index.ts) purges it after the configured retention period.
-    const settings = await readSettings();
+    const settings = await readSettings(req.activeProject);
     await moveToTrash(page.absolutePath, settings.scanRoot);
     res.json({ ok: true });
   })

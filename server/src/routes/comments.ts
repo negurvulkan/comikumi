@@ -7,7 +7,7 @@ import { CommentDocumentSchema, CommentTargetSchema, type CommentDocument } from
 import { ProjectRoleSchema, type ProjectRole } from "../../../shared/src/users.js";
 import { findVolume } from "../lib/projectScanner.js";
 import { commentsFileName } from "../lib/paths.js";
-import { readSettings, readMembers } from "../lib/projectStore.js";
+import { readSettings, readMembers, type ActiveProject } from "../lib/projectStore.js";
 import { listUsers } from "../lib/authStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { resolveCallerProjectRole } from "../lib/auth.js";
@@ -26,10 +26,10 @@ export const commentsRouter = Router();
  * inline below to the comment's own author or a project admin.
  */
 
-async function commentsFileFor(volumeId: string) {
-  const volume = await findVolume(volumeId);
+async function commentsFileFor(volumeId: string, ctx?: ActiveProject) {
+  const volume = await findVolume(volumeId, ctx);
   if (!volume) return undefined;
-  const settings = await readSettings();
+  const settings = await readSettings(ctx);
   return { volume, file: path.join(volume.parentDir, commentsFileName(volume.bookFolderName, settings.commentsSuffix)) };
 }
 
@@ -97,11 +97,12 @@ async function notifyMentions(opts: {
   mentionedUserIds: string[];
   mentionedRoles: ProjectRole[];
   body: string;
+  ctx?: ActiveProject;
 }): Promise<void> {
-  const { volumeId, page, commentId, authorId, mentionedUserIds, mentionedRoles, body } = opts;
+  const { volumeId, page, commentId, authorId, mentionedUserIds, mentionedRoles, body, ctx } = opts;
   if (mentionedUserIds.length === 0 && mentionedRoles.length === 0) return;
 
-  const [members, users] = await Promise.all([readMembers(), listUsers()]);
+  const [members, users] = await Promise.all([readMembers(ctx), listUsers()]);
   const usersById = new Map(users.map((u) => [u.id, u]));
 
   const targetIds = new Set(mentionedUserIds);
@@ -130,7 +131,7 @@ async function notifyMentions(opts: {
 commentsRouter.get(
   "/:id/comments",
   asyncHandler(async (req, res) => {
-    const resolved = await commentsFileFor(req.params.id);
+    const resolved = await commentsFileFor(req.params.id, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -149,12 +150,12 @@ commentsRouter.get(
 commentsRouter.get(
   "/:id/comments/mentionable-members",
   asyncHandler(async (req, res) => {
-    const volume = await findVolume(req.params.id);
+    const volume = await findVolume(req.params.id, req.activeProject);
     if (!volume) {
       res.status(404).json({ error: "volume_not_found" });
       return;
     }
-    const [members, users] = await Promise.all([readMembers(), listUsers()]);
+    const [members, users] = await Promise.all([readMembers(req.activeProject), listUsers()]);
     const usersById = new Map(users.map((u) => [u.id, u]));
     res.json(
       members
@@ -167,7 +168,7 @@ commentsRouter.get(
 commentsRouter.post(
   "/:id/comments",
   asyncHandler(async (req, res) => {
-    const resolved = await commentsFileFor(req.params.id);
+    const resolved = await commentsFileFor(req.params.id, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -194,6 +195,7 @@ commentsRouter.post(
         mentionedUserIds: comment.mentionedUserIds,
         mentionedRoles: comment.mentionedRoles,
         body: comment.body,
+        ctx: req.activeProject,
       }).catch((err) => console.error("[comments] notifyMentions failed:", err));
       return { comments: [...doc.comments, comment] };
     });
@@ -203,7 +205,7 @@ commentsRouter.post(
 commentsRouter.post(
   "/:id/comments/:commentId/replies",
   asyncHandler(async (req, res) => {
-    const resolved = await commentsFileFor(req.params.id);
+    const resolved = await commentsFileFor(req.params.id, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -231,6 +233,7 @@ commentsRouter.post(
         mentionedUserIds: reply.mentionedUserIds,
         mentionedRoles: reply.mentionedRoles,
         body: reply.body,
+        ctx: req.activeProject,
       }).catch((err) => console.error("[comments] notifyMentions failed:", err));
       return { comments };
     });
@@ -240,7 +243,7 @@ commentsRouter.post(
 commentsRouter.patch(
   "/:id/comments/:commentId",
   asyncHandler(async (req, res) => {
-    const resolved = await commentsFileFor(req.params.id);
+    const resolved = await commentsFileFor(req.params.id, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -267,7 +270,7 @@ commentsRouter.patch(
 commentsRouter.delete(
   "/:id/comments/:commentId",
   asyncHandler(async (req, res) => {
-    const resolved = await commentsFileFor(req.params.id);
+    const resolved = await commentsFileFor(req.params.id, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;

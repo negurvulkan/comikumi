@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Bubble, PageLayout, Panel } from "../../../shared/src/layoutSchema";
 import { panelDisplayLabel } from "../../../shared/src/layoutSchema";
@@ -87,6 +87,7 @@ export function TranslatorContextPanel({
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { projectId = "" } = useParams();
   const resize = useResizableSidebarWidth();
   const [panelLanguage, setPanelLanguage] = useState(languages[0]?.code ?? "de");
   const [pages, setPages] = useState<PageSummary[] | null>(null);
@@ -159,7 +160,7 @@ export function TranslatorContextPanel({
 
   function goToNeighbor(n: ResolvedNeighbor) {
     if (n.page === page) onSelectBubble(n.bubble.id);
-    else navigate(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(n.page)}`);
+    else navigate(`/p/${encodeURIComponent(projectId)}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(n.page)}`);
   }
 
   const speaker = mode === "bubble" && current ? characters.find((c) => c.id === current.characterId) : undefined;

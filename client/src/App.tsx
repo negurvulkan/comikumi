@@ -19,6 +19,13 @@ function HeaderProjectLink() {
   );
 }
 
+function HeaderSettingsLink() {
+  const { project } = useProject();
+  const { t } = useTranslation();
+  if (!project) return null;
+  return <Link to={`/p/${encodeURIComponent(project.id)}/settings`}>{t("appShell.settings")}</Link>;
+}
+
 function HeaderSessionInfo() {
   const { user, logout } = useSession();
   const { t } = useTranslation();
@@ -34,12 +41,12 @@ function HeaderSessionInfo() {
 }
 
 export default function App() {
-  const { t } = useTranslation();
   // Screens with their own menu bar (volume list, page overview, editor, project
   // switcher) carry a "Projekt > Einstellungen" entry there instead — showing it
   // here too would be a redundant second entry point and break the cohesive look.
   const { pathname } = useLocation();
-  const hasOwnMenuBar = pathname === "/" || pathname === "/project" || pathname.startsWith("/volumes/");
+  const hasOwnMenuBar =
+    pathname === "/project" || /^\/p\/[^/]+\/?$/.test(pathname) || /^\/p\/[^/]+\/volumes\//.test(pathname);
 
   return (
     <SessionProvider>
@@ -47,12 +54,12 @@ export default function App() {
       <ProjectProvider>
         <div className="app-shell">
           <header className="app-header" style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Link to="/" className="app-title">
+            <Link to="/project" className="app-title">
               <img src="/brand/comikumi_logo_col_dark_h_tr.png" alt="ComiKumi" className="app-logo" />
             </Link>
             <HeaderProjectLink />
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-              {!hasOwnMenuBar && <Link to="/settings">{t("appShell.settings")}</Link>}
+              {!hasOwnMenuBar && <HeaderSettingsLink />}
               <LanguageSwitcher />
               <HeaderSessionInfo />
             </div>

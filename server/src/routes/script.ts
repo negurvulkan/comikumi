@@ -4,7 +4,7 @@ import path from "node:path";
 import { ScriptDocumentSchema } from "../../../shared/src/script.js";
 import { findVolume } from "../lib/projectScanner.js";
 import { scriptFileName } from "../lib/paths.js";
-import { readSettings } from "../lib/projectStore.js";
+import { readSettings, type ActiveProject } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
 import { computeEtag, NEW_DOCUMENT_ETAG } from "../lib/etag.js";
@@ -12,17 +12,17 @@ import { withFileLock } from "../lib/fileLock.js";
 
 export const scriptRouter = Router();
 
-async function scriptFileFor(volumeId: string) {
-  const volume = await findVolume(volumeId);
+async function scriptFileFor(volumeId: string, ctx?: ActiveProject) {
+  const volume = await findVolume(volumeId, ctx);
   if (!volume) return undefined;
-  const settings = await readSettings();
+  const settings = await readSettings(ctx);
   return { volume, file: path.join(volume.parentDir, scriptFileName(volume.bookFolderName, settings.scriptSuffix)) };
 }
 
 scriptRouter.get(
   "/:id/script",
   asyncHandler(async (req, res) => {
-    const resolved = await scriptFileFor(req.params.id);
+    const resolved = await scriptFileFor(req.params.id, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;
@@ -44,7 +44,7 @@ scriptRouter.put(
   "/:id/script",
   requireProjectRole("letterer"),
   asyncHandler(async (req, res) => {
-    const resolved = await scriptFileFor(req.params.id);
+    const resolved = await scriptFileFor(req.params.id, req.activeProject);
     if (!resolved) {
       res.status(404).json({ error: "volume_not_found" });
       return;
