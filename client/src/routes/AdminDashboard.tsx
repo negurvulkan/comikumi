@@ -35,6 +35,7 @@ export function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<PublicUser | null>(null);
   const [selectedUserPassword, setSelectedUserPassword] = useState("");
   const [selectedUserIsAdmin, setSelectedUserIsAdmin] = useState(false);
+  const [selectedUserEmail, setSelectedUserEmail] = useState("");
 
   // Projects & Members State
   const [projects, setProjects] = useState<AdminProject[] | null>(null);
@@ -49,6 +50,12 @@ export function AdminDashboard() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [ownEmail, setOwnEmail] = useState(me?.email ?? "");
+  // `me` from useSession() loads asynchronously (a round-trip to /api/auth/me) and is
+  // still null on this component's very first render — sync once it actually arrives,
+  // same reasoning as every other "seed local state from an async prop" spot in this
+  // file (e.g. handleEditUserSelect for selectedUser).
+  useEffect(() => setOwnEmail(me?.email ?? ""), [me]);
 
   // Common State
   const [error, setError] = useState<string | null>(null);
@@ -131,6 +138,7 @@ export function AdminDashboard() {
     setSelectedUser(u);
     setSelectedUserPassword("");
     setSelectedUserIsAdmin(u.isSystemAdmin);
+    setSelectedUserEmail(u.email ?? "");
     setError(null);
     setSuccessMsg(null);
   };
@@ -142,9 +150,10 @@ export function AdminDashboard() {
     setSuccessMsg(null);
     setBusy(true);
     try {
-      const updates: { password?: string; isSystemAdmin?: boolean } = {};
+      const updates: { password?: string; isSystemAdmin?: boolean; email?: string | null } = {};
       if (selectedUserPassword) updates.password = selectedUserPassword;
       if (selectedUser.id !== me?.id) updates.isSystemAdmin = selectedUserIsAdmin;
+      if (selectedUserEmail.trim() !== (selectedUser.email ?? "")) updates.email = selectedUserEmail.trim() || null;
 
       await api.updateUser(selectedUser.id, updates);
       setSelectedUserPassword("");
@@ -239,6 +248,21 @@ export function AdminDashboard() {
   };
 
   // --- Profile Actions ---
+  const handleUpdateOwnEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+    setBusy(true);
+    try {
+      await api.updateOwnEmail(ownEmail.trim() || null);
+      setSuccessMsg(t("admin.emailUpdatedSuccess"));
+    } catch (err) {
+      setError(translateApiError(err, t));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword || !newPassword || !confirmPassword) return;
@@ -401,6 +425,15 @@ export function AdminDashboard() {
               {selectedUser ? (
                 <form onSubmit={handleUpdateUser} className="inspector" style={{ margin: 0, padding: 0, border: "none" }}>
                   <p style={{ margin: "0 0 12px", fontWeight: 600 }}>{t("admin.editUserTitle", { name: selectedUser.username })}</p>
+                  <label>
+                    {t("users.emailLabel")}
+                    <input
+                      type="email"
+                      placeholder={t("users.emailPlaceholder")}
+                      value={selectedUserEmail}
+                      onChange={(e) => setSelectedUserEmail(e.target.value)}
+                    />
+                  </label>
                   <label>
                     {t("users.passwordLabel")}
                     <input
@@ -636,7 +669,24 @@ export function AdminDashboard() {
 
         {/* Tab 3: My Profile */}
         {activeTab === "profile" && (
-          <div style={{ padding: 24, maxWidth: 360, margin: "0 auto" }}>
+          <div style={{ padding: 24, maxWidth: 360, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
+            <form onSubmit={handleUpdateOwnEmail} className="inspector" style={{ margin: 0, padding: 0, border: "none" }}>
+              <p style={{ margin: "0 0 16px", fontWeight: 600, fontSize: 15 }}>{t("admin.profileEmailTitle")}</p>
+              <p className="hint" style={{ margin: "0 0 12px" }}>{t("admin.profileEmailHint")}</p>
+              <label>
+                {t("users.emailLabel")}
+                <input
+                  type="email"
+                  placeholder={t("users.emailPlaceholder")}
+                  value={ownEmail}
+                  onChange={(e) => setOwnEmail(e.target.value)}
+                  disabled={busy}
+                />
+              </label>
+              <button type="submit" className="primary" disabled={busy} style={{ marginTop: 16 }}>
+                {t("common.save")}
+              </button>
+            </form>
             <form onSubmit={handleChangePassword} className="inspector" style={{ margin: 0, padding: 0, border: "none" }}>
               <p style={{ margin: "0 0 16px", fontWeight: 600, fontSize: 15 }}>{t("admin.profileChangePasswordTitle")}</p>
               

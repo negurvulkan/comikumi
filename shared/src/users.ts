@@ -42,6 +42,11 @@ export const UserAccountSchema = z.object({
    * müsste, bevor er irgendetwas sehen könnte). */
   isSystemAdmin: z.boolean().default(false),
   createdAt: z.string(),
+  /** Optional — only used to send @-mention notifications (see server/src/lib/mailer.ts).
+   * A user with no email set still gets mentioned normally, just without an email; no
+   * account requires one. `.optional()` (not `.default("")`) so JSON.stringify drops the
+   * key entirely when unset, same convention as Bubble.locked. */
+  email: z.string().trim().email().optional(),
 });
 export type UserAccount = z.infer<typeof UserAccountSchema>;
 export const UserAccountListSchema = z.array(UserAccountSchema);

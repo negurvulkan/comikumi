@@ -19,6 +19,7 @@ import { PresetManager } from "../editor/PresetManager";
 import { VolumeReportModal } from "../editor/VolumeReportModal";
 import { NewBlankPageDialog } from "../editor/NewBlankPageDialog";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
+import { ReadIcon } from "../editor/Icons";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
 import { nextPageName } from "./pageNaming";
@@ -228,6 +229,12 @@ export function PageGrid() {
         },
         { type: "separator" },
         { type: "action", label: t("pageGrid.menuVolumeReport"), onClick: () => setShowVolumeReport(true) },
+        {
+          type: "action",
+          label: t("reader.menuEntry"),
+          onClick: () => pages && pages.length > 0 && navigate(`/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(pages[0].page)}`),
+          disabled: !pages || pages.length === 0,
+        },
         { type: "separator" },
         { type: "action", label: t("pageGrid.menuBackToVolumes"), onClick: () => navigate("/") },
       ],
@@ -338,6 +345,13 @@ export function PageGrid() {
               <Link to={`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`} className="card">
                 <img src={api.pageThumbnailUrl(volumeId, p.page)} alt={p.page} loading="lazy" />
                 <div className="label">{p.page}</div>
+              </Link>
+              <Link
+                to={`/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
+                className="card-read-btn"
+                title={t("reader.menuEntry")}
+              >
+                <ReadIcon />
               </Link>
               {hasAtLeast("letterer") && (
                 <button

@@ -96,7 +96,10 @@ export async function deleteUser(id: string): Promise<PublicUser[]> {
 
 export async function updateUser(
   id: string,
-  updates: { password?: string; isSystemAdmin?: boolean }
+  // `email: null` clears it (JSON has no "delete this field" signal otherwise);
+  // `undefined`/omitted leaves it untouched — same distinction PATCH-style updates
+  // need everywhere else in this codebase.
+  updates: { password?: string; isSystemAdmin?: boolean; email?: string | null }
 ): Promise<UserAccount> {
   const users = await readUsersRaw();
   const index = users.findIndex((u) => u.id === id);
@@ -117,6 +120,10 @@ export async function updateUser(
   }
   if (updates.isSystemAdmin !== undefined) {
     user.isSystemAdmin = updates.isSystemAdmin;
+  }
+  if (updates.email !== undefined) {
+    if (updates.email === null) delete user.email;
+    else user.email = updates.email;
   }
 
   await writeUsersRaw(users);

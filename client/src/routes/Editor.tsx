@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { PageLayoutSchema, originFromPoints } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import type { Comment, CommentTarget } from "../../../shared/src/comments";
+import type { ProjectRole } from "../../../shared/src/users";
 import { useEditorStore } from "../state/editorStore";
 import { PageCanvas } from "../editor/PageCanvas";
 import { BubbleInspector } from "../editor/BubbleInspector";
@@ -17,6 +19,9 @@ import { ExportPanel } from "../editor/ExportPanel";
 import { TextListPanel } from "../editor/TextListPanel";
 import { TranslatorContextPanel } from "../editor/TranslatorContextPanel";
 import { ScriptSidebar } from "../editor/ScriptSidebar";
+import { CommentsPanel } from "../editor/CommentsPanel";
+import { CommentThread } from "../editor/CommentThread";
+import type { MentionableMember } from "../editor/MentionInput";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuGroup } from "../editor/MenuBar";
 import { ToolStrip, type DrawTool } from "../editor/ToolStrip";
@@ -34,6 +39,15 @@ import { ensureFontsLoaded } from "../editor/fontLoader";
 import { ensureSvgBubbleBoundaryLoaded, isSvgBubbleBoundaryCached } from "../export/svgBubbleGeometry";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
+import { useSession } from "../state/SessionContext";
+
+/** Where the CommentThread popover opens when triggered from somewhere that has no
+ * natural click position (CommentsPanel's list rows, its "+" new-page-comment button,
+ * or a `?comment=` deep link that just navigated in) — roughly under the tool strip's
+ * comment-panel toggle, a reasonable fixed anchor since there's no marker to point at. */
+const SIDEBAR_TRIGGERED_THREAD_POSITION = { x: 260, y: 120 };
+
+type CommentThreadState = { mode: "create"; x: number; y: number; target: CommentTarget } | { mode: "view"; x: number; y: number; commentId: string };
 
 export function Editor() {
   const { t } = useTranslation();
@@ -81,6 +95,15 @@ export function Editor() {
   const [fontsVersion, setFontsVersion] = useState(0);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
   const [autosave, setAutosave] = useState<{ enabled: boolean; intervalSeconds: number } | null>(null);
+  const [showCommentsPanel, setShowCommentsPanel] = useState(false);
+  // Whole volume's comments (not just this page) — CommentsPanel needs the full list for
+  // its "all open comments in this volume" view; PageCanvas gets a page-filtered slice
+  // of this same state below, so markers and the sidebar can never disagree.
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [mentionableMembers, setMentionableMembers] = useState<MentionableMember[]>([]);
+  const [commentThreadState, setCommentThreadState] = useState<CommentThreadState | null>(null);
+  const { user } = useSession();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     store.loadPage(volumeId, page);
@@ -106,6 +129,32 @@ export function Editor() {
   useEffect(() => {
     api.listPresets().then(setPresets);
   }, []);
+
+  function refetchComments() {
+    api.getComments(volumeId).then((doc) => setComments(doc.comments));
+  }
+  useEffect(refetchComments, [volumeId]);
+
+  useEffect(() => {
+    api.getMentionableMembers(volumeId).then(setMentionableMembers);
+  }, [volumeId]);
+
+  // Deep-link support: a comment-mention email (Phase C) or a CommentsPanel row for a
+  // comment on a DIFFERENT page both navigate here with "?comment=<id>" — once that
+  // comment shows up in the freshly-fetched list, open its thread and clear the param
+  // so it doesn't reopen on every subsequent render/refetch.
+  useEffect(() => {
+    const commentId = searchParams.get("comment");
+    if (!commentId) return;
+    const comment = comments.find((c) => c.id === commentId);
+    if (!comment) return;
+    setShowCommentsPanel(true);
+    setCommentThreadState({ mode: "view", ...SIDEBAR_TRIGGERED_THREAD_POSITION, commentId });
+    const next = new URLSearchParams(searchParams);
+    next.delete("comment");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comments, searchParams]);
 
   // Re-read whenever the Settings modal closes, so a just-changed autosave
   // interval/toggle takes effect immediately without needing a page reload.
@@ -266,6 +315,49 @@ export function Editor() {
     }
   }
 
+  const usernamesById: Record<string, string> = Object.fromEntries(mentionableMembers.map((m) => [m.userId, m.username]));
+  const canDeleteAnyComment = hasAtLeast("admin");
+
+  function handleRequestCreateComment(target: CommentTarget, clientX: number, clientY: number) {
+    setCommentThreadState({ mode: "create", x: clientX, y: clientY, target });
+  }
+
+  function handleSelectComment(commentId: string, clientX: number, clientY: number) {
+    setCommentThreadState({ mode: "view", x: clientX, y: clientY, commentId });
+  }
+
+  function handleSelectCommentFromPanel(comment: Comment) {
+    if (comment.page !== page) {
+      navigate(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(comment.page)}?comment=${encodeURIComponent(comment.id)}`);
+      return;
+    }
+    setCommentThreadState({ mode: "view", ...SIDEBAR_TRIGGERED_THREAD_POSITION, commentId: comment.id });
+  }
+
+  async function handleSubmitNewComment(fields: { body: string; mentionedUserIds: string[]; mentionedRoles: ProjectRole[] }) {
+    if (!commentThreadState || commentThreadState.mode !== "create") return;
+    setDrawTool(null);
+    setCommentThreadState(null);
+    await api.createComment(volumeId, { page, target: commentThreadState.target, ...fields });
+    refetchComments();
+  }
+
+  async function handleReplyToComment(commentId: string, fields: { body: string; mentionedUserIds: string[]; mentionedRoles: ProjectRole[] }) {
+    await api.replyToComment(volumeId, commentId, fields);
+    refetchComments();
+  }
+
+  async function handleToggleCommentResolved(comment: Comment) {
+    await api.setCommentResolved(volumeId, comment.id, !comment.resolved);
+    refetchComments();
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    setCommentThreadState(null);
+    await api.deleteComment(volumeId, commentId);
+    refetchComments();
+  }
+
   if (loading) return <p>{t("editor.editorRoute.loadingPage")}</p>;
   if (error) return <div className="error-banner">{error}</div>;
   if (!layout) return null;
@@ -412,6 +504,7 @@ export function Editor() {
             setShowTextPanel((v) => !v);
             setShowContextPanel(false);
             setShowScriptPanel(false);
+            setShowCommentsPanel(false);
           }}
           textPanelDisabled={languages.length === 0}
           contextPanelOpen={showContextPanel}
@@ -419,12 +512,21 @@ export function Editor() {
             setShowContextPanel((v) => !v);
             setShowTextPanel(false);
             setShowScriptPanel(false);
+            setShowCommentsPanel(false);
           }}
           scriptPanelOpen={showScriptPanel}
           onToggleScriptPanel={() => {
             setShowScriptPanel((v) => !v);
             setShowTextPanel(false);
             setShowContextPanel(false);
+            setShowCommentsPanel(false);
+          }}
+          commentsPanelOpen={showCommentsPanel}
+          onToggleCommentsPanel={() => {
+            setShowCommentsPanel((v) => !v);
+            setShowTextPanel(false);
+            setShowContextPanel(false);
+            setShowScriptPanel(false);
           }}
           imageWidth={layout.imageWidth}
           imageHeight={layout.imageHeight}
@@ -481,6 +583,16 @@ export function Editor() {
           }
           onClose={() => setShowScriptPanel(false)}
         />
+        <CommentsPanel
+          open={showCommentsPanel}
+          comments={comments}
+          currentPage={page}
+          currentUserId={user?.id ?? ""}
+          usernamesById={usernamesById}
+          onSelectComment={handleSelectCommentFromPanel}
+          onCreatePageComment={() => setCommentThreadState({ mode: "create", ...SIDEBAR_TRIGGERED_THREAD_POSITION, target: { kind: "page" } })}
+          onClose={() => setShowCommentsPanel(false)}
+        />
         <LanguageStrip languages={languages} active={activeLanguage} onChange={store.setActiveLanguage} onLanguagesChange={setLanguages} />
         <div className="editor-layout">
           <PageCanvas
@@ -524,6 +636,10 @@ export function Editor() {
             onDeselectAll={store.deselectAll}
             onDuplicateSelected={() => store.duplicateSelected()}
             onDeleteSelected={() => store.removeSelected()}
+            comments={comments.filter((c) => c.page === page)}
+            selectedCommentId={commentThreadState?.mode === "view" ? commentThreadState.commentId : null}
+            onRequestCreateComment={handleRequestCreateComment}
+            onSelectComment={handleSelectComment}
           />
           {selectedCount > 1 ? (
             <MultiSelectInspector
@@ -580,6 +696,37 @@ export function Editor() {
           )}
         </div>
       </div>
+      {commentThreadState?.mode === "create" && (
+        <CommentThread
+          mode="create"
+          x={commentThreadState.x}
+          y={commentThreadState.y}
+          target={commentThreadState.target}
+          mentionableMembers={mentionableMembers}
+          onSubmit={handleSubmitNewComment}
+          onCancel={() => setCommentThreadState(null)}
+        />
+      )}
+      {commentThreadState?.mode === "view" &&
+        (() => {
+          const comment = comments.find((c) => c.id === commentThreadState.commentId);
+          if (!comment) return null;
+          return (
+            <CommentThread
+              mode="view"
+              x={commentThreadState.x}
+              y={commentThreadState.y}
+              comment={comment}
+              mentionableMembers={mentionableMembers}
+              usernamesById={usernamesById}
+              canDelete={canDeleteAnyComment || comment.authorId === user?.id}
+              onReply={(fields) => handleReplyToComment(comment.id, fields)}
+              onToggleResolved={() => handleToggleCommentResolved(comment)}
+              onDelete={() => handleDeleteComment(comment.id)}
+              onClose={() => setCommentThreadState(null)}
+            />
+          );
+        })()}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "
 import type { ProjectSettings } from "../../../shared/src/settings";
 import type { ProjectFile } from "../../../shared/src/project";
 import type { ScriptDocument } from "../../../shared/src/script";
+import type { Comment, CommentDocument, CommentTarget } from "../../../shared/src/comments";
 import type { ProjectRole, PublicUser } from "../../../shared/src/users";
 import { apiUrl } from "./apiBase";
 import { authFetch, authUrl } from "./authFetch";
@@ -222,6 +223,54 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(doc),
     }).then((r) => json<{ ok: true }>(r)),
+
+  /** Whole volume's comments, or just one page's if `page` is given (server-side
+   * `?page=` filter — see server/src/routes/comments.ts). */
+  getComments: (volumeId: string, page?: string) =>
+    authFetch(
+      apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/comments${page ? `?page=${encodeURIComponent(page)}` : ""}`)
+    ).then((r) => json<CommentDocument>(r)),
+
+  createComment: (
+    volumeId: string,
+    input: { page: string; target: CommentTarget; body: string; mentionedUserIds?: string[]; mentionedRoles?: ProjectRole[] }
+  ) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/comments`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }).then((r) => json<Comment>(r)),
+
+  replyToComment: (
+    volumeId: string,
+    commentId: string,
+    input: { body: string; mentionedUserIds?: string[]; mentionedRoles?: ProjectRole[] }
+  ) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/comments/${encodeURIComponent(commentId)}/replies`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }).then((r) => json<Comment>(r)),
+
+  setCommentResolved: (volumeId: string, commentId: string, resolved: boolean) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/comments/${encodeURIComponent(commentId)}`), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resolved }),
+    }).then((r) => json<Comment>(r)),
+
+  deleteComment: (volumeId: string, commentId: string) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/comments/${encodeURIComponent(commentId)}`), {
+      method: "DELETE",
+    }).then((r) => json<{ ok: true }>(r)),
+
+  /** {userId, username} for every project member — for the @-mention picker. Deliberately
+   * NOT the same as the admin-only project-members endpoint (see comments.ts's own doc
+   * comment) — any commenter can call this. */
+  getMentionableMembers: (volumeId: string) =>
+    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/comments/mentionable-members`)).then((r) =>
+      json<{ userId: string; username: string }[]>(r)
+    ),
 
   listFonts: () => authFetch(apiUrl("/api/fonts")).then((r) => json<FontEntry[]>(r)).then(withApiUrls),
 
@@ -630,7 +679,7 @@ export const api = {
 
   deleteUser: (id: string) => authFetch(apiUrl(`/api/auth/users/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<PublicUser[]>(r)),
 
-  updateUser: (id: string, data: { password?: string; isSystemAdmin?: boolean }) =>
+  updateUser: (id: string, data: { password?: string; isSystemAdmin?: boolean; email?: string | null }) =>
     authFetch(apiUrl(`/api/auth/users/${encodeURIComponent(id)}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -643,6 +692,16 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ currentPassword, newPassword }),
     }).then((r) => json<{ ok: true }>(r)),
+
+  /** Self-service — sets/clears (email: null) the logged-in user's own email, no
+   * system-admin rights needed. Used for @-mention notifications (server/src/lib/
+   * mailer.ts) — see PATCH /api/auth/me's own doc comment. */
+  updateOwnEmail: (email: string | null) =>
+    authFetch(apiUrl("/api/auth/me"), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }).then((r) => json<PublicUser>(r)),
 
   listProjectsForAdmin: () =>
     authFetch(apiUrl("/api/project/list")).then((r) =>

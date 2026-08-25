@@ -48,6 +48,8 @@
     "title": "Konten",
     "usernameLabel": "Benutzername",
     "passwordLabel": "Passwort",
+    "emailLabel": "E-Mail",
+    "emailPlaceholder": "für Benachrichtigungen bei @-Erwähnungen",
     "systemAdminLabel": "Systemadministrator",
     "addButton": "Konto anlegen",
     "removeButton": "Löschen",
@@ -495,7 +497,28 @@
         "2x2": "2×2-Raster",
         "2x3": "2×3-Raster"
       },
-      "textsThisPage": "Texte dieser Seite"
+      "textsThisPage": "Texte dieser Seite",
+      "commentPin": "Kommentar (Pin)",
+      "commentBox": "Kommentar (Markierungsbox)",
+      "commentFreehand": "Kommentar (Freihand-Markup)"
+    },
+    "commentsPanel": {
+      "title": "Review-Kommentare",
+      "newPageComment": "+ Neuer Seitenkommentar",
+      "filterAll": "Alle",
+      "filterOpen": "Offen",
+      "filterMentionsMe": "Erwähnt mich",
+      "empty": "Noch keine Kommentare.",
+      "resolvedBadge": "erledigt"
+    },
+    "commentThread": {
+      "newTitle": "Neuer Kommentar",
+      "bodyPlaceholder": "Kommentar hinterlassen … @ tippen, um jemanden zu erwähnen",
+      "replyPlaceholder": "Antworten … @ tippen, um jemanden zu erwähnen",
+      "submit": "Kommentieren",
+      "reply": "Antworten",
+      "resolve": "Als erledigt markieren",
+      "reopen": "Wieder öffnen"
     },
     "contextMenu": {
       "assignPanel": "Panel zuweisen",
@@ -645,6 +668,21 @@
     "linkedWithPage": "Verknüpft mit Seite {{page}}",
     "insertIntoBubble": "In Blase einfügen"
   },
+  "reader": {
+    "menuEntry": "Lesen / Review",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "panelsLabel": "Panels:",
+    "jumpToPanel": "Zoom auf {{label}}",
+    "infoPanelTitle": "Charaktere, Glossar & Skript",
+    "infoPanelShort": "Info",
+    "noCharacters": "Noch keine Charaktere.",
+    "noGlossary": "Noch keine Glossar-Einträge.",
+    "noTranslations": "(noch keine Übersetzungen)",
+    "noLinkedScript": "Kein Skript mit dieser Seite verknüpft.",
+    "scriptPageFallback": "Skript-Seite",
+    "scriptPanelLabel": "Panel {{index}}"
+  },
   "exportViewer": {
     "title": "Export-Viewer",
     "breadcrumb": "Exporte",
@@ -684,6 +722,9 @@
     "editUserTitle": "Konto bearbeiten: {{name}}",
     "selectProjectHint": "Wähle links ein Projekt aus, um dessen Mitglieder zu verwalten.",
     "inviteUsernamePlaceholder": "z. B. Aiko",
+    "profileEmailTitle": "E-Mail",
+    "profileEmailHint": "Wird verwendet, um dich zu benachrichtigen, wenn dich jemand in einem Review-Kommentar @-erwähnt. Optional.",
+    "emailUpdatedSuccess": "E-Mail erfolgreich aktualisiert.",
     "profileChangePasswordTitle": "Passwort ändern",
     "currentPasswordLabel": "Aktuelles Passwort",
     "newPasswordLabel": "Neues Passwort",

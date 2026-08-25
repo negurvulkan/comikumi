@@ -212,5 +212,59 @@ describe("Users management (requireSystemAdmin)", () => {
     // Clean up
     await request(app).delete(`/api/auth/users/${userId}`).set("Authorization", `Bearer ${env.token}`);
   });
+
+  it("lets a system admin set and clear another user's email (Phase C: @-mention notifications)", async () => {
+    const create = await request(app)
+      .post("/api/auth/users")
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ username: "email-target", password: "pw" });
+    const userId = create.body.id as string;
+
+    const setEmail = await request(app)
+      .patch(`/api/auth/users/${userId}`)
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ email: "target@example.com" });
+    expect(setEmail.status).toBe(200);
+    expect(setEmail.body.email).toBe("target@example.com");
+
+    const rejectsInvalid = await request(app)
+      .patch(`/api/auth/users/${userId}`)
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ email: "not-an-email" });
+    expect(rejectsInvalid.status).toBe(400);
+
+    const clearEmail = await request(app)
+      .patch(`/api/auth/users/${userId}`)
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ email: null });
+    expect(clearEmail.status).toBe(200);
+    expect(clearEmail.body).not.toHaveProperty("email");
+
+    await request(app).delete(`/api/auth/users/${userId}`).set("Authorization", `Bearer ${env.token}`);
+  });
+});
+
+describe("PATCH /api/auth/me", () => {
+  it("401s without a token", async () => {
+    const res = await request(app).patch("/api/auth/me").send({ email: "x@example.com" });
+    expect(res.status).toBe(401);
+  });
+
+  it("lets the logged-in user set their own email without system-admin rights", async () => {
+    const create = await request(app)
+      .post("/api/auth/users")
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ username: "self-service-email", password: "pw" });
+    const userId = create.body.id as string;
+    const loginRes = await request(app).post("/api/auth/login").send({ username: "self-service-email", password: "pw" });
+    const userToken = loginRes.body.token as string;
+
+    const patch = await request(app).patch("/api/auth/me").set("Authorization", `Bearer ${userToken}`).send({ email: "self@example.com" });
+    expect(patch.status).toBe(200);
+    expect(patch.body.email).toBe("self@example.com");
+    expect(patch.body.id).toBe(userId);
+
+    await request(app).delete(`/api/auth/users/${userId}`).set("Authorization", `Bearer ${env.token}`);
+  });
 });
 

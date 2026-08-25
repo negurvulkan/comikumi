@@ -48,6 +48,8 @@
     "title": "Accounts",
     "usernameLabel": "Username",
     "passwordLabel": "Password",
+    "emailLabel": "Email",
+    "emailPlaceholder": "for @-mention notifications",
     "systemAdminLabel": "System administrator",
     "addButton": "Create account",
     "removeButton": "Delete",
@@ -495,7 +497,28 @@
         "2x2": "2×2 grid",
         "2x3": "2×3 grid"
       },
-      "textsThisPage": "Texts on this page"
+      "textsThisPage": "Texts on this page",
+      "commentPin": "Comment (pin)",
+      "commentBox": "Comment (box)",
+      "commentFreehand": "Comment (freehand markup)"
+    },
+    "commentsPanel": {
+      "title": "Review comments",
+      "newPageComment": "+ New page comment",
+      "filterAll": "All",
+      "filterOpen": "Open",
+      "filterMentionsMe": "Mentions me",
+      "empty": "No comments yet.",
+      "resolvedBadge": "resolved"
+    },
+    "commentThread": {
+      "newTitle": "New comment",
+      "bodyPlaceholder": "Leave a comment… type @ to mention someone",
+      "replyPlaceholder": "Reply… type @ to mention someone",
+      "submit": "Comment",
+      "reply": "Reply",
+      "resolve": "Mark resolved",
+      "reopen": "Reopen"
     },
     "contextMenu": {
       "assignPanel": "Assign panel",
@@ -645,6 +668,21 @@
     "linkedWithPage": "Linked with page {{page}}",
     "insertIntoBubble": "Insert into bubble"
   },
+  "reader": {
+    "menuEntry": "Read / Review",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "panelsLabel": "Panels:",
+    "jumpToPanel": "Zoom to {{label}}",
+    "infoPanelTitle": "Characters, glossary & script",
+    "infoPanelShort": "Info",
+    "noCharacters": "No characters yet.",
+    "noGlossary": "No glossary entries yet.",
+    "noTranslations": "(no translations yet)",
+    "noLinkedScript": "No script linked to this page.",
+    "scriptPageFallback": "Script page",
+    "scriptPanelLabel": "Panel {{index}}"
+  },
   "exportViewer": {
     "title": "Export Viewer",
     "breadcrumb": "Exports",
@@ -684,6 +722,9 @@
     "editUserTitle": "Edit Account: {{name}}",
     "selectProjectHint": "Select a project on the left to manage its members.",
     "inviteUsernamePlaceholder": "e.g. Aiko",
+    "profileEmailTitle": "Email",
+    "profileEmailHint": "Used to notify you when someone @-mentions you in a review comment. Optional.",
+    "emailUpdatedSuccess": "Email updated successfully.",
     "profileChangePasswordTitle": "Change Password",
     "currentPasswordLabel": "Current Password",
     "newPasswordLabel": "New Password",

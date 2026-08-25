@@ -13,6 +13,7 @@ import { charactersRouter } from "./routes/characters.js";
 import { glossaryRouter } from "./routes/glossary.js";
 import { presetsRouter } from "./routes/presets.js";
 import { scriptRouter } from "./routes/script.js";
+import { commentsRouter } from "./routes/comments.js";
 import { settingsRouter } from "./routes/settings.js";
 import { projectRouter } from "./routes/project.js";
 import { browseRouter } from "./routes/browse.js";
@@ -63,6 +64,10 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/volumes", requireAuth, requireViewer, layoutRouter);
   app.use("/api/volumes", requireAuth, requireViewer, exportRouter);
   app.use("/api/volumes", requireAuth, requireViewer, scriptRouter);
+  // No stricter per-route role needed inside commentsRouter itself — every project
+  // member (viewer and up) is allowed to read/write comments (see comments.ts's own
+  // doc comment); the router-mount baseline above is the only gate required.
+  app.use("/api/volumes", requireAuth, requireViewer, commentsRouter);
   app.use("/api/fonts", requireAuth, requireViewer, fontsRouter);
   app.use("/api/images", requireAuth, requireViewer, imagesRouter);
   app.use("/api/bubble-svgs", requireAuth, requireViewer, bubbleSvgsRouter);

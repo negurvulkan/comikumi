@@ -142,6 +142,8 @@
     "title": "Comptes",
     "usernameLabel": "Nom d'utilisateur",
     "passwordLabel": "Mot de passe",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "pour les notifications de mention @",
     "systemAdminLabel": "Administrateur système",
     "addButton": "Créer un compte",
     "removeButton": "Supprimer",
@@ -492,7 +494,28 @@
         "2x2": "Grille 2×2",
         "2x3": "Grille 2×3"
       },
-      "textsThisPage": "Textes de cette page"
+      "textsThisPage": "Textes de cette page",
+      "commentPin": "Commentaire (épingle)",
+      "commentBox": "Commentaire (zone)",
+      "commentFreehand": "Commentaire (annotation à main levée)"
+    },
+    "commentsPanel": {
+      "title": "Commentaires de relecture",
+      "newPageComment": "+ Nouveau commentaire de page",
+      "filterAll": "Tous",
+      "filterOpen": "Ouverts",
+      "filterMentionsMe": "Me mentionne",
+      "empty": "Aucun commentaire pour l'instant.",
+      "resolvedBadge": "résolu"
+    },
+    "commentThread": {
+      "newTitle": "Nouveau commentaire",
+      "bodyPlaceholder": "Laisser un commentaire… tapez @ pour mentionner quelqu'un",
+      "replyPlaceholder": "Répondre… tapez @ pour mentionner quelqu'un",
+      "submit": "Commenter",
+      "reply": "Répondre",
+      "resolve": "Marquer comme résolu",
+      "reopen": "Rouvrir"
     },
     "contextMenu": {
       "assignPanel": "Assigner une case",
@@ -641,6 +664,21 @@
     "unlink": "Dissocier",
     "linkedWithPage": "Associée à la page {{page}}",
     "insertIntoBubble": "Insérer dans la bulle"
+  },
+  "reader": {
+    "menuEntry": "Lecture / Relecture",
+    "previousPage": "Page précédente",
+    "nextPage": "Page suivante",
+    "panelsLabel": "Cases :",
+    "jumpToPanel": "Zoomer sur {{label}}",
+    "infoPanelTitle": "Personnages, glossaire & script",
+    "infoPanelShort": "Infos",
+    "noCharacters": "Aucun personnage pour l'instant.",
+    "noGlossary": "Aucune entrée de glossaire pour l'instant.",
+    "noTranslations": "(pas encore de traductions)",
+    "noLinkedScript": "Aucun script lié à cette page.",
+    "scriptPageFallback": "Page de script",
+    "scriptPanelLabel": "Case {{index}}"
   },
   "demo": {
     "emailGate": {

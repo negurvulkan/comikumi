@@ -11,15 +11,20 @@ import {
   GlobeToolIcon,
   ContextToolIcon,
   ScriptToolIcon,
+  CommentPinToolIcon,
+  CommentBoxToolIcon,
+  CommentFreehandToolIcon,
+  CommentsPanelToolIcon,
 } from "./Icons";
 
-/** What the canvas is currently armed to draw — bubble shapes, or a Panel reference
- * region. Every panel starts as a plain reference marker; its optional Cut-Panel
- * behavior (detach/move/remove/replace content — see PanelShape.tsx/PanelInspector.tsx)
- * is activated afterward from the inspector, not via a separate draw tool, since Panel
- * and Cut-Panel are the same entity. Not a BubbleShapeKind itself since Panels aren't
- * bubbles. */
-export type DrawTool = BubbleShapeKind | "panel";
+/** What the canvas is currently armed to draw — bubble shapes, a Panel reference
+ * region, or one of the three review-comment marker kinds (see
+ * shared/src/comments.ts's CommentTargetSchema). Every panel starts as a plain
+ * reference marker; its optional Cut-Panel behavior (detach/move/remove/replace
+ * content — see PanelShape.tsx/PanelInspector.tsx) is activated afterward from the
+ * inspector, not via a separate draw tool, since Panel and Cut-Panel are the same
+ * entity. Not a BubbleShapeKind itself since Panels aren't bubbles. */
+export type DrawTool = BubbleShapeKind | "panel" | "comment-pin" | "comment-box" | "comment-freehand";
 
 interface Props {
   drawTool: DrawTool | null;
@@ -39,6 +44,8 @@ interface Props {
   onToggleContextPanel: () => void;
   scriptPanelOpen: boolean;
   onToggleScriptPanel: () => void;
+  commentsPanelOpen: boolean;
+  onToggleCommentsPanel: () => void;
   imageWidth: number;
   imageHeight: number;
   onCreatePanelGrid: (rects: Point[][]) => void;
@@ -60,6 +67,8 @@ export function ToolStrip({
   onToggleContextPanel,
   scriptPanelOpen,
   onToggleScriptPanel,
+  commentsPanelOpen,
+  onToggleCommentsPanel,
   imageWidth,
   imageHeight,
   onCreatePanelGrid,
@@ -109,6 +118,39 @@ export function ToolStrip({
         onCreate={onCreatePanelGrid}
         disabled={creationDisabled}
       />
+      <span className="toolstrip-sep" />
+      {/* Comment tools are deliberately NOT gated by creationDisabled — that flag is
+          specifically about lettering geometry (see its own doc comment above); leaving
+          feedback is a different permission axis every project role (down to "viewer")
+          is allowed to use, see comments.ts's own doc comment server-side. */}
+      <button
+        className={`tool-btn${drawTool === "comment-pin" ? " active" : ""}`}
+        onClick={() => onSetDrawTool(drawTool === "comment-pin" ? null : "comment-pin")}
+        title={t("editor.toolStrip.commentPin")}
+      >
+        <CommentPinToolIcon />
+      </button>
+      <button
+        className={`tool-btn${drawTool === "comment-box" ? " active" : ""}`}
+        onClick={() => onSetDrawTool(drawTool === "comment-box" ? null : "comment-box")}
+        title={t("editor.toolStrip.commentBox")}
+      >
+        <CommentBoxToolIcon />
+      </button>
+      <button
+        className={`tool-btn${drawTool === "comment-freehand" ? " active" : ""}`}
+        onClick={() => onSetDrawTool(drawTool === "comment-freehand" ? null : "comment-freehand")}
+        title={t("editor.toolStrip.commentFreehand")}
+      >
+        <CommentFreehandToolIcon />
+      </button>
+      <button
+        className={`tool-btn${commentsPanelOpen ? " active" : ""}`}
+        onClick={onToggleCommentsPanel}
+        title={t("editor.commentsPanel.title")}
+      >
+        <CommentsPanelToolIcon />
+      </button>
       <span className="toolstrip-sep" />
       <button
         className={`tool-btn${textPanelOpen ? " active" : ""}`}

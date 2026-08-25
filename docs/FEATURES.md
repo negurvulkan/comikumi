@@ -22,6 +22,8 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Glossar](#glossar)
 - [Kontextansicht](#kontextansicht)
 - [Skript-Editor & Skript-Sidebar](#skript-editor--skript-sidebar)
+- [Review-Kommentare](#review-kommentare)
+- [Read/Review-Oberfläche](#readreview-oberfläche)
 - [Berichte](#berichte)
 - [Export & Import](#export--import)
 - [Schriftarten](#schriftarten)
@@ -85,7 +87,10 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
   `scrypt` gehasht, kein Klartext, keine native Abhängigkeit). Beim allerersten Start
   (noch keine Konten vorhanden) zeigt die App statt eines Logins einen
   Ersteinrichtungs-Bildschirm — das dort angelegte Konto wird automatisch
-  Systemadministrator.
+  Systemadministrator. Optionale **E-Mail-Adresse** pro Konto (selbst unter "Mein
+  Konto" setzbar, oder von einem Systemadministrator) — wird ausschließlich für
+  [@-Erwähnungs-Benachrichtigungen](#review-kommentare) verwendet, nirgends sonst
+  gebraucht.
 - **Anmeldung**: JWT-Bearer-Token (`Authorization`-Header), im Browser in
   `localStorage` gespeichert, 30 Tage gültig. Funktioniert unverändert, wenn Client
   und Server auf getrennten Origins laufen (siehe die konfigurierbare API-Basis-URL).
@@ -608,6 +613,61 @@ lassen sich aus Blasendaten nicht ableiten und bleiben leer, zum Nachtragen von 
 - Beide Wege ändern nur den Arbeitsspeicher-Zustand — wie überall im Skript-Bereich muss
   anschließend bewusst "Speichern" geklickt werden, damit es auf der Platte landet.
 
+## Review-Kommentare
+
+Eigenständiges, pro Band gespeichertes JSON-Dokument (`<Band><commentsSuffix>.json`,
+Suffix in den Einstellungen konfigurierbar, Standard `_comments` — gleiches Muster wie
+das Skript-Dokument), unabhängig vom Seiten-Layout — Kommentieren löst nie den
+Übersetzer-Diff-Guard aus und "alle offenen Kommentare im Band" ist ein einzelner
+Request. Jedes Projekt-Mitglied ab "Betrachter" darf lesen und kommentieren — Review/QC
+ist kein eigenes Rollen-Konzept, sondern genau das, was "Betrachter" ohnehin schon
+bedeutet, plus Kommentar-Schreibrecht.
+
+- **Drei Markierungsarten** plus ein allgemeiner Seitenkommentar ohne Ortsbezug: **Pin**
+  (Klick), **Box** (Ziehen, wie das Panel-Werkzeug) und **Freihand** (ein
+  zusammenhängender Kritzel-Strich, z. B. zum Einkreisen/Unterstreichen einer Stelle).
+  Marker sind nach dem Anlegen nicht mehr verschiebbar — nur Farbe/Deckkraft ändern sich
+  je nach Status (offen = kräftig, erledigt = gedimmt).
+- **Threads**: jeder Kommentar hat Antworten, einen Erledigt/Wiedereröffnen-Umschalter
+  und lässt sich vom Autor oder einem Projekt-Admin löschen.
+- **@-Erwähnungen** einzelner Accounts (Autocomplete über eine eigene, nicht
+  Admin-beschränkte `mentionable-members`-Route) oder ganzer Projekt-Rollen (Betrachter/
+  Übersetzer/Letterer/Admin — zur Sendezeit gegen die aktuelle Mitgliederliste
+  aufgelöst, nie als Snapshot gespeichert). Löst, sofern die erwähnte Person eine
+  E-Mail-Adresse hinterlegt hat, eine Benachrichtigungs-Mail mit Deep-Link zurück in den
+  Editor aus (`server/src/lib/mailer.ts`, SMTP komplett optional konfiguriert — ohne
+  `SMTP_HOST` bleibt es bei der In-App-Markierung, kein Fehler).
+- **Sidebar**: alle Kommentare des Bands (nicht nur der aktuellen Seite), filterbar nach
+  offen/erledigt/"erwähnt mich", springt seitenübergreifend per `?comment=`-Deep-Link
+  (derselbe Mechanismus wie die E-Mail-Links).
+
+## Read/Review-Oberfläche
+
+Eigener, schlanker Lese-Screen (`/volumes/:id/read/:page`, Einstiegspunkte: "Lesen"-Icon
+auf jeder Seiten-Karte sowie ein Menüeintrag in der Seitenübersicht) für QC-/Review-
+Personen, die einen Band einfach nur bequem durchsehen wollen — ohne Werkzeugleiste,
+Inspektoren oder Undo/Speichern-Mechanik des vollen Editors. Technisch dieselbe
+Canvas-Engine wie der Editor (`PageCanvas.tsx` im `readOnly`-Modus), nur mit eigenem
+Datenladen direkt über die API statt über den Editor-Store, da hier nie Layout-Daten
+geschrieben werden.
+
+- **Frei zoomen/verschieben** wie im Editor, zusätzlich **Zoom auf ein bestimmtes
+  Panel**: ein Streifen anklickbarer Panel-Miniaturen unten am Bildschirmrand, in
+  Lesereihenfolge sortiert (dieselbe Sortierung wie Berichte/Skript-Sidebar) — Klick
+  zoomt die Ansicht exakt auf dieses Panel.
+- **Seiten vor/zurück** — Pfeiltasten und Buttons, deren Richtung sich nach der
+  eingestellten Leserichtung richtet (bei "rtl" blättert man nach links vor, wie ein
+  echter Manga-Reader). Die tatsächliche Seiten-Reihenfolge bleibt unverändert, nur
+  welche Taste "vorwärts" bedeutet, dreht sich um.
+- **Charaktere, Glossar und Skript** in einem einzigen Info-Panel, alle rein lesend
+  (keine Bearbeitungsformulare wie in den vollen Verwaltungsdialogen — ein
+  Betrachter-Konto dürfte deren Schreib-Endpunkte ohnehin nicht aufrufen). Glossar-
+  Einträge zeigen alle hinterlegten Sprachen auf einmal; das verlinkte Skript hat einen
+  eigenen Sprachumschalter.
+- **Kommentar-Werkzeuge** (Pin/Box/Freihand, siehe [Review-Kommentare](#review-kommentare))
+  sind immer direkt in der Werkzeugleiste sichtbar — jederzeit eine Anmerkung machen,
+  ohne einen zusätzlichen Klick.
+
 ## Berichte
 
 - **Seiten-Bericht**: Vier live berechnete Ansichten für die aktuell geöffnete Seite —
@@ -734,6 +794,7 @@ Duplizieren versetzt Kopien um 24 px, damit sie nicht exakt auf dem Original lie
 | `volumes.ts` | Erkannte Bände auflisten, inkl. vorhandener Sprachordner |
 | `pages.ts` | Seiten eines Bandes auflisten, Vollbild + zwischengespeichertes Vorschaubild ausliefern |
 | `layout.ts` | Seiten-Layout lesen/speichern (legt bei Bedarf ein leeres an), Band-weiter ZIP-Export/-Import, `/reports` für den Band-Bericht |
+| `comments.ts` | CRUD für [Review-Kommentare](#review-kommentare) (granulare Mutations-Routen statt Ganzdokument-PUT), `mentionable-members` für den @-Picker |
 | `export.ts` | Hochgeladenes PNG entgegennehmen und im Export-Ordner ablegen |
 | `languages.ts` | CRUD für die Sprachliste des Projekts, mit Konfliktprüfung auf doppelte Codes/Suffixe |
 | `characters.ts` | CRUD für die Charakterliste des Projekts |

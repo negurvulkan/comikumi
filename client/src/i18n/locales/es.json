@@ -142,6 +142,8 @@
     "title": "Cuentas",
     "usernameLabel": "Nombre de usuario",
     "passwordLabel": "Contraseña",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "para notificaciones de menciones @",
     "systemAdminLabel": "Administrador del sistema",
     "addButton": "Crear cuenta",
     "removeButton": "Eliminar",
@@ -492,7 +494,28 @@
         "2x2": "Cuadrícula 2×2",
         "2x3": "Cuadrícula 2×3"
       },
-      "textsThisPage": "Textos de esta página"
+      "textsThisPage": "Textos de esta página",
+      "commentPin": "Comentario (pin)",
+      "commentBox": "Comentario (caja)",
+      "commentFreehand": "Comentario (marcado a mano alzada)"
+    },
+    "commentsPanel": {
+      "title": "Comentarios de revisión",
+      "newPageComment": "+ Nuevo comentario de página",
+      "filterAll": "Todos",
+      "filterOpen": "Abiertos",
+      "filterMentionsMe": "Me menciona",
+      "empty": "Aún no hay comentarios.",
+      "resolvedBadge": "resuelto"
+    },
+    "commentThread": {
+      "newTitle": "Nuevo comentario",
+      "bodyPlaceholder": "Dejar un comentario… escribe @ para mencionar a alguien",
+      "replyPlaceholder": "Responder… escribe @ para mencionar a alguien",
+      "submit": "Comentar",
+      "reply": "Responder",
+      "resolve": "Marcar como resuelto",
+      "reopen": "Reabrir"
     },
     "contextMenu": {
       "assignPanel": "Asignar viñeta",
@@ -641,6 +664,21 @@
     "unlink": "Desvincular",
     "linkedWithPage": "Vinculada con la página {{page}}",
     "insertIntoBubble": "Insertar en el bocadillo"
+  },
+  "reader": {
+    "menuEntry": "Lectura / Revisión",
+    "previousPage": "Página anterior",
+    "nextPage": "Página siguiente",
+    "panelsLabel": "Viñetas:",
+    "jumpToPanel": "Ampliar {{label}}",
+    "infoPanelTitle": "Personajes, glosario y guion",
+    "infoPanelShort": "Info",
+    "noCharacters": "Todavía no hay personajes.",
+    "noGlossary": "Todavía no hay entradas de glosario.",
+    "noTranslations": "(sin traducciones todavía)",
+    "noLinkedScript": "No hay guion vinculado a esta página.",
+    "scriptPageFallback": "Página de guion",
+    "scriptPanelLabel": "Viñeta {{index}}"
   },
   "demo": {
     "emailGate": {

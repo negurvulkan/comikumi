@@ -20,6 +20,7 @@ describe("ProjectSettingsSchema", () => {
       emptySuffix: "_empty",
       letteringSuffix: "_lettering",
       scriptSuffix: "_script",
+      commentsSuffix: "_comments",
       exportFolderTemplate: "{book}_{folderSuffix}",
       description: "",
       coverImagePath: "",

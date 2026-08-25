@@ -142,6 +142,8 @@
     "title": "アカウント",
     "usernameLabel": "ユーザー名",
     "passwordLabel": "パスワード",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "@メンション通知用",
     "systemAdminLabel": "システム管理者",
     "addButton": "アカウントを作成",
     "removeButton": "削除",
@@ -484,7 +486,28 @@
         "2x2": "2×2グリッド",
         "2x3": "2×3グリッド"
       },
-      "textsThisPage": "このページのテキスト"
+      "textsThisPage": "このページのテキスト",
+      "commentPin": "コメント（ピン）",
+      "commentBox": "コメント（枠）",
+      "commentFreehand": "コメント（フリーハンド）"
+    },
+    "commentsPanel": {
+      "title": "レビューコメント",
+      "newPageComment": "+ 新しいページコメント",
+      "filterAll": "すべて",
+      "filterOpen": "未対応",
+      "filterMentionsMe": "自分宛て",
+      "empty": "まだコメントはありません。",
+      "resolvedBadge": "対応済み"
+    },
+    "commentThread": {
+      "newTitle": "新しいコメント",
+      "bodyPlaceholder": "コメントを残す…「@」で誰かをメンション",
+      "replyPlaceholder": "返信する…「@」で誰かをメンション",
+      "submit": "コメントする",
+      "reply": "返信",
+      "resolve": "対応済みにする",
+      "reopen": "再オープン"
     },
     "contextMenu": {
       "assignPanel": "パネルを割り当て",
@@ -632,6 +655,21 @@
     "unlink": "関連付けを解除",
     "linkedWithPage": "ページ {{page}} と関連付け済み",
     "insertIntoBubble": "吹き出しに挿入"
+  },
+  "reader": {
+    "menuEntry": "読む / レビュー",
+    "previousPage": "前のページ",
+    "nextPage": "次のページ",
+    "panelsLabel": "コマ:",
+    "jumpToPanel": "{{label}}にズーム",
+    "infoPanelTitle": "キャラクター・用語集・台本",
+    "infoPanelShort": "情報",
+    "noCharacters": "まだキャラクターがいません。",
+    "noGlossary": "まだ用語集の項目がありません。",
+    "noTranslations": "（まだ翻訳がありません）",
+    "noLinkedScript": "このページに紐づく台本がありません。",
+    "scriptPageFallback": "台本ページ",
+    "scriptPanelLabel": "コマ {{index}}"
   },
   "demo": {
     "emailGate": {

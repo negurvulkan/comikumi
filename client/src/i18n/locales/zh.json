@@ -142,6 +142,8 @@
     "title": "账户",
     "usernameLabel": "用户名",
     "passwordLabel": "密码",
+    "emailLabel": "电子邮箱",
+    "emailPlaceholder": "用于 @ 提及通知",
     "systemAdminLabel": "系统管理员",
     "addButton": "创建账户",
     "removeButton": "删除",
@@ -484,7 +486,28 @@
         "2x2": "2×2 网格",
         "2x3": "2×3 网格"
       },
-      "textsThisPage": "本页文字"
+      "textsThisPage": "本页文字",
+      "commentPin": "评论（图钉）",
+      "commentBox": "评论（框选）",
+      "commentFreehand": "评论（手绘标记）"
+    },
+    "commentsPanel": {
+      "title": "审阅评论",
+      "newPageComment": "+ 新建页面评论",
+      "filterAll": "全部",
+      "filterOpen": "未解决",
+      "filterMentionsMe": "提及我",
+      "empty": "暂无评论。",
+      "resolvedBadge": "已解决"
+    },
+    "commentThread": {
+      "newTitle": "新评论",
+      "bodyPlaceholder": "留下评论…输入 @ 以提及某人",
+      "replyPlaceholder": "回复…输入 @ 以提及某人",
+      "submit": "评论",
+      "reply": "回复",
+      "resolve": "标记为已解决",
+      "reopen": "重新打开"
     },
     "contextMenu": {
       "assignPanel": "分配分格",
@@ -632,6 +655,21 @@
     "unlink": "取消关联",
     "linkedWithPage": "已与第 {{page}} 页关联",
     "insertIntoBubble": "插入到气泡"
+  },
+  "reader": {
+    "menuEntry": "阅读 / 审阅",
+    "previousPage": "上一页",
+    "nextPage": "下一页",
+    "panelsLabel": "分格：",
+    "jumpToPanel": "缩放到{{label}}",
+    "infoPanelTitle": "角色、术语表与脚本",
+    "infoPanelShort": "信息",
+    "noCharacters": "暂无角色。",
+    "noGlossary": "暂无术语表条目。",
+    "noTranslations": "（暂无翻译）",
+    "noLinkedScript": "此页面未关联脚本。",
+    "scriptPageFallback": "脚本页面",
+    "scriptPanelLabel": "分格 {{index}}"
   },
   "demo": {
     "emailGate": {

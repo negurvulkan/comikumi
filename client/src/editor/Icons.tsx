@@ -130,6 +130,101 @@ export function PageIcon() {
   );
 }
 
+export function CommentPinToolIcon() {
+  return (
+    <svg {...common}>
+      <path d="M10 17.5 C 10 17.5, 15.5 11.7, 15.5 8 C 15.5 4.6, 13 2.5, 10 2.5 C 7 2.5, 4.5 4.6, 4.5 8 C 4.5 11.7, 10 17.5, 10 17.5 Z" />
+      <circle cx="10" cy="8" r="1.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function CommentBoxToolIcon() {
+  return (
+    <svg {...common} strokeDasharray="3 2">
+      <rect x="3" y="4" width="14" height="12" rx="1.5" />
+    </svg>
+  );
+}
+
+export function CommentFreehandToolIcon() {
+  return (
+    <svg {...common}>
+      <path d="M3 14 C 5 6, 9 4, 11 9 C 12.5 12.5, 15 6, 17 12" />
+    </svg>
+  );
+}
+
+export function CommentsPanelToolIcon() {
+  return (
+    <svg {...common}>
+      <path d="M3 4 H17 V13 H8.5 L5 16.5 V13 H3 Z" />
+      <path d="M6.5 7.5 H13.5 M6.5 10 H11" />
+    </svg>
+  );
+}
+
+/** Two side-by-side rectangles — "spread" (double-page) view toggle in
+ * ReaderToolStrip.tsx. */
+export function SpreadViewIcon() {
+  return (
+    <svg {...common}>
+      <rect x="2" y="4" width="7" height="12" rx="1" />
+      <rect x="11" y="4" width="7" height="12" rx="1" />
+    </svg>
+  );
+}
+
+/** Two overlapping/staggered rectangles — "compare arbitrary pages" picker trigger in
+ * ReaderToolStrip.tsx, deliberately distinct from SpreadViewIcon's aligned pair so the
+ * two aren't visually confusable at a glance. */
+export function ComparePagesIcon() {
+  return (
+    <svg {...common}>
+      <rect x="2" y="6" width="10" height="11" rx="1" />
+      <rect x="8" y="2" width="10" height="11" rx="1" fill="var(--bg-elevated, #1a1b22)" />
+    </svg>
+  );
+}
+
+export function ChevronLeftIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.5 4 L6.5 10 L12.5 16" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7.5 4 L13.5 10 L7.5 16" />
+    </svg>
+  );
+}
+
+/** Reader-only icons — a book with a magnifier (open-to-read entry point on
+ * PageGrid.tsx's page cards) and a target-crosshair (zoom-to-panel affordance in
+ * ReaderPanelStrip.tsx). */
+export function ReadIcon() {
+  return (
+    <svg {...common}>
+      <path d="M3.5 3.5 C 6 2.5, 8.5 2.5, 10 3.5 C 11.5 2.5, 14 2.5, 16.5 3.5 V 15.5 C 14 14.5, 11.5 14.5, 10 15.5 C 8.5 14.5, 6 14.5, 3.5 15.5 Z" />
+      <path d="M10 3.5 V 15.5" />
+    </svg>
+  );
+}
+
+export function FocusTargetIcon() {
+  return (
+    <svg {...common}>
+      <circle cx="10" cy="10" r="6.5" />
+      <circle cx="10" cy="10" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M10 1.5 V4.5 M10 15.5 V18.5 M1.5 10 H4.5 M15.5 10 H18.5" />
+    </svg>
+  );
+}
+
 export function ChevronDownIcon() {
   return (
     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

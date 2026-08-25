@@ -24,6 +24,9 @@ export const ProjectSettingsSchema = z.object({
   /** Suffix for the per-volume script-planning JSON file (see shared/src/script.ts),
    * e.g. "volume_01" + "_script" -> "volume_01_script.json". */
   scriptSuffix: z.string().min(1).default("_script"),
+  /** Suffix for the per-volume review-comments JSON file (see shared/src/comments.ts),
+   * e.g. "volume_01" + "_comments" -> "volume_01_comments.json". */
+  commentsSuffix: z.string().min(1).default("_comments"),
   /** Export folder name template; {book} and {folderSuffix} get interpolated. */
   exportFolderTemplate: z.string().min(1).default("{book}_{folderSuffix}"),
   /** Free-text notes about the project, editable in the Settings dialog. */

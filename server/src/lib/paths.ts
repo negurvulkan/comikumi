@@ -88,6 +88,12 @@ export function scriptFileName(bookFolderName: string, scriptSuffix: string): st
   return `${bookFolderName}${scriptSuffix}.json`;
 }
 
+/** e.g. "volume_01" + "_comments" -> "volume_01_comments.json" — same single-JSON-per-
+ * volume convention as scriptFileName(), see shared/src/comments.ts. */
+export function commentsFileName(bookFolderName: string, commentsSuffix: string): string {
+  return `${bookFolderName}${commentsSuffix}.json`;
+}
+
 /** Rejects any single-segment file name that could escape its storage directory
  * (path separators, "..", or ".") — used by every "/file/:fileName" route before
  * joining it onto a fixed storage dir, so a request can't read arbitrary files

@@ -81,6 +81,30 @@ authRouter.get(
   })
 );
 
+const UpdateOwnProfileSchema = z.object({
+  email: z.string().trim().email().nullable().optional(),
+});
+
+/** Self-service — unlike PATCH /users/:id (requireSystemAdmin, can edit anyone), this
+ * lets the logged-in user set/clear their OWN email without needing admin rights, so a
+ * system admin doesn't have to know and enter every teammate's address by hand for
+ * @-mention notifications to work (see server/src/lib/mailer.ts). Deliberately only
+ * `email` for now — password changes already have their own dedicated
+ * /change-password route (which additionally verifies the current password). */
+authRouter.patch(
+  "/me",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = UpdateOwnProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    const user = await updateUser(req.user!.sub, parsed.data);
+    res.json(toPublicUser(user));
+  })
+);
+
 /** Public (no auth required) — the client's very first request, before it knows
  * whether to show /login or /setup. `demoMode` lets SessionContext.tsx skip both
  * screens entirely and fetch an auto-issued token from /api/demo/token instead. */
@@ -145,6 +169,7 @@ authRouter.delete(
 const UpdateUserSchema = z.object({
   password: z.string().min(1).optional(),
   isSystemAdmin: z.boolean().optional(),
+  email: z.string().trim().email().nullable().optional(),
 });
 
 authRouter.patch(

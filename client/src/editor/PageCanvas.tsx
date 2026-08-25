@@ -1,21 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Stage, Layer, Image as KonvaImage, Rect, Ellipse, Group } from "react-konva";
+import { Stage, Layer, Image as KonvaImage, Rect, Ellipse, Group, Line } from "react-konva";
 import Konva from "konva";
 import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, Panel, Point } from "../../../shared/src/layoutSchema";
-import { boxCorners, panelDisplayLabel, resolvePanelForLanguage } from "../../../shared/src/layoutSchema";
+import { boxCorners, panelDisplayLabel, polygonBounds, resolvePanelForLanguage } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import type { Comment, CommentTarget } from "../../../shared/src/comments";
 import { useHtmlImage } from "./useHtmlImage";
 import { BubbleShape } from "./BubbleShape";
 import { ImageElementShape } from "./ImageElementShape";
 import { CurvedTextElementShape } from "./CurvedTextElementShape";
 import { PanelShape } from "./PanelShape";
 import { CutPanelContentShape } from "./CutPanelContentShape";
+import { CommentMarkerShape } from "./CommentMarkerShape";
 import { ContextMenu, type ContextMenuEntry } from "./ContextMenu";
 import { setVertexAngle } from "./geometry";
 import type { DrawTool } from "./ToolStrip";
+
+/** Color/width new freehand comment strokes are created with — a comment's markup
+ * isn't user-customizable per-stroke (unlike Cut-Panel replacement borders), so one
+ * fixed, clearly-a-QC-annotation red is enough. */
+const FREEHAND_COMMENT_COLOR = "#ff5a5a";
+const FREEHAND_COMMENT_WIDTH_PX = 4;
 
 // Konva 9 only fires pointer* events by default (no legacy mouse* aliases),
 // but this whole editor is built on onMouseDown/onClick/onDragEnd etc. Force
@@ -74,6 +82,23 @@ interface Props {
    * Delete) but scoped to exactly the one element that was right-clicked. */
   onDuplicateSelected: () => void;
   onDeleteSelected: () => void;
+  /** This page's review comments only (Editor.tsx already filters the volume-wide list —
+   * see CommentsPanel.tsx, which shows the unfiltered volume list instead). */
+  comments: Comment[];
+  selectedCommentId: string | null;
+  /** Fired once a comment-pin/box/freehand tool finishes placing a target — Editor.tsx
+   * owns the actual CommentThread popover (position: fixed, so it doesn't need to be a
+   * DOM child of the canvas) and opens it in "create" mode at (clientX, clientY). */
+  onRequestCreateComment: (target: CommentTarget, clientX: number, clientY: number) => void;
+  /** Fired when an existing marker (CommentMarkerShape) is clicked — opens/selects its
+   * thread the same way, at the click's screen position. */
+  onSelectComment: (commentId: string, clientX: number, clientY: number) => void;
+  /** Programmatic "zoom to fit this panel" request — used by Reader.tsx's panel strip
+   * (ReaderPanelStrip.tsx) to jump straight to a specific panel instead of the usual
+   * scroll/manual-zoom. `requestId` must change (a simple incrementing counter is
+   * enough) for a repeat click on the SAME panel to reliably re-trigger the effect —
+   * object identity alone doesn't help if a caller happens to reuse the same object. */
+  focusRequest?: { panelId: string; requestId: number } | null;
 }
 
 export function PageCanvas({
@@ -111,6 +136,11 @@ export function PageCanvas({
   onDeselectAll,
   onDuplicateSelected,
   onDeleteSelected,
+  comments,
+  selectedCommentId,
+  onRequestCreateComment,
+  onSelectComment,
+  focusRequest,
 }: Props) {
   const { t } = useTranslation();
   const image = useHtmlImage(imageUrl);
@@ -167,6 +197,11 @@ export function PageCanvas({
   const startPos = useRef<{ x: number; y: number } | null>(null);
   const currentPos = useRef<{ x: number; y: number } | null>(null);
   const activeDrawTool = useRef<DrawTool | null>(null);
+  // The "comment-freehand" tool needs every point along the drag (a full stroke path),
+  // not just a start/current bounding box like every other draw tool — collected the
+  // same ref-not-state way as startPos/currentPos above, for the same reason.
+  const freehandPoints = useRef<{ x: number; y: number }[]>([]);
+  const [freehandDraft, setFreehandDraft] = useState<{ x: number; y: number }[] | null>(null);
 
   function boxFromRefs() {
     if (!startPos.current || !currentPos.current) return null;
@@ -200,6 +235,10 @@ export function PageCanvas({
     startPos.current = pos;
     currentPos.current = pos;
     setDraft({ x: pos.x, y: pos.y, width: 0, height: 0 });
+    if (drawTool === "comment-freehand") {
+      freehandPoints.current = [pos];
+      setFreehandDraft(freehandPoints.current);
+    }
   }
 
   function handleMouseMove() {
@@ -208,16 +247,54 @@ export function PageCanvas({
     if (!pos) return;
     currentPos.current = pos;
     setDraft(boxFromRefs());
+    if (activeDrawTool.current === "comment-freehand") {
+      freehandPoints.current = [...freehandPoints.current, pos];
+      setFreehandDraft(freehandPoints.current);
+    }
   }
 
-  function handleMouseUp() {
+  function handleMouseUp(e: Konva.KonvaEventObject<MouseEvent>) {
     const tool = activeDrawTool.current;
     const box = boxFromRefs();
+    const strokePoints = freehandPoints.current;
     startPos.current = null;
     currentPos.current = null;
     activeDrawTool.current = null;
+    freehandPoints.current = [];
     setDraft(null);
-    if (!tool || !box) return;
+    setFreehandDraft(null);
+    if (!tool) return;
+
+    // The three comment tools each finish placement by opening the "create" popover
+    // (Editor.tsx owns it) instead of creating the layout element directly — a
+    // comment needs body text (and optionally mentions) before it's worth persisting.
+    if (tool === "comment-pin") {
+      if (!box) return;
+      onRequestCreateComment({ kind: "pin", point: { x: box.x / scale, y: box.y / scale } }, e.evt.clientX, e.evt.clientY);
+      return;
+    }
+    if (tool === "comment-box") {
+      if (!box || box.width <= 5 || box.height <= 5) return;
+      const scaledBox = { x: box.x / scale, y: box.y / scale, width: box.width / scale, height: box.height / scale };
+      onRequestCreateComment(
+        { kind: "box", points: boxCorners(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height) },
+        e.evt.clientX,
+        e.evt.clientY
+      );
+      return;
+    }
+    if (tool === "comment-freehand") {
+      if (strokePoints.length < 2) return;
+      const stroke = strokePoints.map((p) => ({ x: p.x / scale, y: p.y / scale }));
+      onRequestCreateComment(
+        { kind: "freehand", strokes: [stroke], color: FREEHAND_COMMENT_COLOR, strokeWidthPx: FREEHAND_COMMENT_WIDTH_PX },
+        e.evt.clientX,
+        e.evt.clientY
+      );
+      return;
+    }
+
+    if (!box) return;
     if (box.width > 5 && box.height > 5) {
       const scaledBox = { x: box.x / scale, y: box.y / scale, width: box.width / scale, height: box.height / scale };
       if (tool === "panel") {
@@ -240,6 +317,40 @@ export function PageCanvas({
     setZoom(clamped);
     setPanOffset({ x: newStageX - newCenter.x, y: newStageY - newCenter.y });
   }
+
+  // Same padding/fit idea as PanelCropPreview.tsx's baseScale, generalized from a fixed
+  // square `size` to this Stage's actual (possibly non-square, resizable) viewport.
+  const FOCUS_PANEL_PADDING = 0.85;
+
+  /** Zooms/pans so `panel`'s bounding box fills most of the viewport, centered —
+   * see Reader.tsx's panel strip. Reuses the same zoom/pan state zoomAt() already
+   * drives, just anchored on an image-space box center instead of a screen pointer. */
+  function focusOnPanel(panel: Panel) {
+    const bounds = polygonBounds(resolvePanelForLanguage(panel, activeLanguage).points);
+    const boxWidth = Math.max(1, bounds.maxX - bounds.minX) * scale;
+    const boxHeight = Math.max(1, bounds.maxY - bounds.minY) * scale;
+    const fitZoom = FOCUS_PANEL_PADDING * Math.min(viewportSize.width / boxWidth, viewportSize.height / boxHeight);
+    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fitZoom));
+
+    const centerX = ((bounds.minX + bounds.maxX) / 2) * scale;
+    const centerY = ((bounds.minY + bounds.maxY) / 2) * scale;
+    const targetStageX = viewportSize.width / 2 - centerX * clamped;
+    const targetStageY = viewportSize.height / 2 - centerY * clamped;
+    const newCenter = centerFor(clamped);
+    setZoom(clamped);
+    setPanOffset({ x: targetStageX - newCenter.x, y: targetStageY - newCenter.y });
+  }
+
+  useEffect(() => {
+    if (!focusRequest) return;
+    const panel = panels.find((p) => p.id === focusRequest.panelId);
+    if (panel) focusOnPanel(panel);
+    // Deliberately keyed on focusRequest alone (not e.g. panels/scale/viewportSize) —
+    // this should only re-run when the CALLER asks for a new focus target (a new
+    // panelId, or the same one again via a bumped requestId), not whenever the page's
+    // own data happens to change in the background.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusRequest]);
 
   function handleWheel(e: Konva.KonvaEventObject<WheelEvent>) {
     e.evt.preventDefault();
@@ -565,6 +676,26 @@ export function PageCanvas({
               readOnly={readOnly}
             />
           ))}
+          {comments.map((c) => (
+            <CommentMarkerShape
+              key={c.id}
+              comment={c}
+              scale={scale}
+              selected={c.id === selectedCommentId}
+              onSelect={(clientX, clientY) => onSelectComment(c.id, clientX, clientY)}
+            />
+          ))}
+          {freehandDraft && freehandDraft.length > 1 && (
+            <Line
+              points={freehandDraft.flatMap((p) => [p.x, p.y])}
+              stroke={FREEHAND_COMMENT_COLOR}
+              strokeWidth={FREEHAND_COMMENT_WIDTH_PX}
+              lineCap="round"
+              lineJoin="round"
+              tension={0.4}
+              listening={false}
+            />
+          )}
           {draft &&
             (drawTool === "oval" ? (
               <Ellipse
