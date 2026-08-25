@@ -46,8 +46,16 @@ React + Konva canvas editor.
 - **Project-specific asset folders** — fonts, SVG bubble contours, and the image
   library can live in a shared global library, a per-project folder, or both (project
   wins on a filename collision).
-- **PNG + JSON export**, with page-range/language filtering and ZIP import/export of a
-  whole volume's layouts.
+- **Review & QC comments** — pins, box regions, or freehand marks anywhere on a page,
+  with @-mentions of specific accounts or roles (and optional email notifications on
+  mention) so feedback reaches the right person directly.
+- **Read/Review viewer** — a dedicated, toolbar-free reading screen for QC passes: free
+  zoom/pan, zoom-to-panel, reading-direction-aware page turning, a double-page spread
+  view, and a side-by-side comparison of up to four arbitrary pages, with read-only
+  access to characters/glossary/script in every project language.
+- **PNG, print (CMYK TIFF), vector PDF/PSD, and CBZ export**, with page-range/language
+  filtering, JSON import/export of a whole volume's layouts, and a full ComicInfo.xml
+  metadata dialog (series/credits/publication/categorization/per-page type) for the CBZ.
 
 Full feature list: [`docs/FEATURES.md`](docs/FEATURES.md) (German). Layout JSON schema:
 [`docs/JSON-Format.md`](docs/JSON-Format.md) (German).
@@ -96,11 +104,12 @@ VITE_API_BASE_URL=https://comikumi.example.com
 ```
 
 The server already accepts cross-origin requests from anywhere (`cors()` with no
-restrictions in [`server/src/app.ts`](server/src/app.ts)). Note that this setup has no
-authentication yet — anyone who can reach the server's origin has full read/write access
-to every project it can open, and the server does all of its file I/O (scan folders,
-project files, assets, thumbnails) on its own local disk, so the actual scanned pages
-must live on (or be reachable from) the machine the server runs on, not the client's.
+origin restriction in [`server/src/app.ts`](server/src/app.ts)) and every API route is
+gated behind account login and per-project roles (viewer/translator/letterer/admin, plus
+a server-wide system-admin bypass — see [Konten, Rollen & Zugriffsschutz](docs/FEATURES.md#konten-rollen--zugriffsschutz)).
+The server does all of its file I/O (scan folders, project files, assets, thumbnails) on
+its own local disk, so the actual scanned pages must live on (or be reachable from) the
+machine the server runs on, not the client's.
 
 ### Scripts
 
@@ -127,7 +136,7 @@ logic shared by the live canvas preview and the PNG export.
 ## Tech stack
 
 React 19 · Konva 10 / react-konva · React Router 7 · Zustand · Zod 4 · Vite 8 · Vitest 4
-— Express 5 · Sharp · Multer · Archiver · Zod 4
+— Express 5 · Sharp · Multer · Archiver · Nodemailer · Zod 4
 
 ## License
 

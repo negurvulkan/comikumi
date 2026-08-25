@@ -449,13 +449,23 @@ hochladen oder aus der Bibliothek wählen — pro Sprache einzeln (wie bei platz
 Bildern: fehlt für die aktive Sprache ein eigenes Bild, wird ersatzweise irgendeine andere
 zugewiesene Sprache gezeigt, statt leer zu bleiben).
 
-Das Ersatzbild wird auf die Bounding-Box des aktuellen Panel-Polygons gestreckt und auf
-dessen tatsächliche Form geclippt (keine Seitenverhältnis-Erhaltung, keine echte
-4-Punkt-Perspektivverzerrung wie bei platzierten Bildern/Viereck-Blasen — ein
-Panel-Polygon kann beliebig viele Eckpunkte haben, nicht zwingend 4). Optional lässt sich
-zusätzlich ein Rahmen (Farbe + Breite) um das Ersatzbild legen — anders als die
-Panel-Randfarbe (reine Editor-Kontur, nie im Export) wird dieser Rahmen tatsächlich mit
-in den PNG-Export gezeichnet.
+Das Ersatzbild wird auf die Bounding-Box des aktuellen Panel-Polygons projiziert und auf
+dessen tatsächliche Form geclippt (keine echte 4-Punkt-Perspektivverzerrung wie bei
+platzierten Bildern/Viereck-Blasen — ein Panel-Polygon kann beliebig viele Eckpunkte
+haben, nicht zwingend 4). Ein **„Passform"**-Umschalter im Inspektor legt fest, wie das
+Bild in die Bounding-Box eingepasst wird: **„Strecken"** (Standard, verzerrt bei
+abweichendem Seitenverhältnis) oder **„Seitenverhältnis erhalten"** (das Bild wird
+zentriert eingepasst, ohne Verzerrung — mit Leerraum an den kürzeren Kanten statt
+Streckung). Optional lässt sich zusätzlich ein Rahmen (Farbe + Breite) um das Ersatzbild
+legen — anders als die Panel-Randfarbe (reine Editor-Kontur, nie im Export) wird dieser
+Rahmen tatsächlich mit in den PNG-Export gezeichnet.
+
+**Horizontal spiegeln**: unabhängig von Verschieben/Entfernen/Ersetzen lässt sich der
+gezeigte Panel-Inhalt zusätzlich horizontal spiegeln — per Kontextmenü-Eintrag oder
+Schalter im Panel-Inspector, **pro Sprache** einstellbar (wie jedes andere
+[sprachabhängige Cut-Panel-Verhalten](#sprachabhängiges-verhalten)). Typischer
+Anwendungsfall: eine Sprechrichtung/Bewegungsrichtung im Panel an eine geänderte
+Leserichtung anpassen, ohne die Originalgrafik extern zu bearbeiten.
 
 ### Sprachabhängiges Verhalten
 
@@ -667,6 +677,16 @@ geschrieben werden.
 - **Kommentar-Werkzeuge** (Pin/Box/Freihand, siehe [Review-Kommentare](#review-kommentare))
   sind immer direkt in der Werkzeugleiste sichtbar — jederzeit eine Anmerkung machen,
   ohne einen zusätzlichen Klick.
+- **Doppelseitenansicht**: zeigt die aktuelle Seite zusammen mit ihrer logischen
+  Nachbarseite nebeneinander (Auto-Paarung, kein Cover-Sonderfall), in der eingestellten
+  Leserichtung sortiert — bei „rtl" steht die früher gelesene Seite rechts, bei „ltr"
+  links, wie in einem echten aufgeschlagenen Band. Vor/Zurück blättert dabei um zwei
+  Seiten statt einer.
+- **Seitenvergleich**: beliebige, frei wählbare Seiten (bis zu vier) lassen sich über
+  einen Thumbnail-Picker gleichzeitig nebeneinander öffnen — jede Seite unabhängig
+  zoom-/verschiebbar, mit eigenem Panel-Zoom und eigener Auswahl. Nützlich um z. B. eine
+  frühere Seite als Stilreferenz neben die aktuelle zu legen. Jede angezeigte Seite hat
+  ihren eigenen Lade-Zustand, statt beim Wechsel die ganze Oberfläche zu blockieren.
 
 ## Berichte
 
@@ -711,11 +731,30 @@ geschrieben werden.
   selben Ordner liegenden Druck-TIFFs/PDFs/PSDs), in echter Seitenreihenfolge (über die
   tatsächliche Seitenliste des Bandes, nicht die Ordner-Sortierung) und fortlaufend
   umbenannt (`0001.png`, `0002.png`, …), damit die Reihenfolge unabhängig von den
-  Original-Dateinamen stimmt. Enthält eine `ComicInfo.xml` mit Seitenzahl und
-  Leserichtung (`Manga`-Feld, `YesAndRightToLeft` bei RTL-Projekten) — vor dem Download
-  fragt ein Modal (`CbzMetadataModal.tsx`) optionale weitere Angaben für die
-  ComicInfo.xml ab (Reihe, Nummer, Titel, Autor, Genre, Verlag, Zusammenfassung); leer
-  gelassene Felder werden in der XML einfach ausgelassen.
+  Original-Dateinamen stimmt. `PageCount` wird immer aus der tatsächlich gepackten
+  Seitenzahl berechnet, nie vom Nutzer vorgegeben.
+- **CBZ-Metadaten-Dialog** (`CbzMetadataModal.tsx`, Schema in `shared/src/cbz.ts`): Vor
+  dem CBZ-Download fragt ein Modal das komplette ComicInfo.xml-Feldset ab, in fünf Tabs
+  gruppiert — jedes Feld ist optional, ein leeres Feld wird in der XML einfach
+  ausgelassen:
+  - **Basis & Serie**: Titel, Reihe, Nummer, Band, Zusammenfassung, Notizen.
+  - **Mitwirkende**: Autor, Zeichner, Inker, Kolorist, Letterer, Cover-Zeichner,
+    Redaktion, Übersetzer.
+  - **Veröffentlichung**: Verlag, Imprint, Jahr/Monat/Tag, Web-Link, Sprache (ISO,
+    vorbelegt mit dem Code der gewählten Export-Sprache).
+  - **Kategorisierung**: Genre, Stichwörter, Altersfreigabe (Dropdown mit den
+    ComicInfo-Standardwerten), Leserichtung (`Manga`-Feld — Dropdown "Automatisch"
+    übernimmt die Leserichtung des Projekts, oder explizit `Yes`/`No`/
+    `YesAndRightToLeft`), Format, Scan-Informationen.
+  - **Seiten**: Tabelle mit einer Zeile pro tatsächlich zu exportierender Seite (gleiche
+    Filterung/Reihenfolge wie serverseitig) — pro Seite wählbarer `Type`
+    (`FrontCover`/`Story`/`BackCover`/…, erste/letzte Seite sind vorbelegt) und eine
+    `DoublePage`-Checkbox; ergibt den optionalen `<Pages>`-Block der ComicInfo.xml.
+
+  Der Download läuft dafür als POST mit JSON-Body statt eines einfachen Downloadlinks
+  (das volle Feldset inklusive Seiten-Tabelle kann eine Query-String-Downloadlink-URL
+  sprengen) — die Antwort kommt als Blob zurück und wird per Objekt-URL + synthetischem
+  Klick gespeichert.
 - **Rendering-Grundlagen**: Schrumpf-zu-Passform + Umbruch für horizontalen Text,
   vollständige Tategaki-Engine (erzwungene Umbrüche, Furigana-Läufe,
   Tate-chū-yoko-Ziffern-/Lateinläufe, Kana-Verkleinerung/-Versatz, Kinsoku-Shori-
