@@ -76,3 +76,29 @@ describe("PUT /:id/script", () => {
     expect(get.body.pages[0].panels[0].dialogue[0].text).toEqual({ de: "Ich bin spät dran!", en: "I'm late!" });
   });
 });
+
+describe("optimistic concurrency (ETag / If-Match)", () => {
+  it("GET sets an ETag header", async () => {
+    const res = await api.get(`/api/volumes/${VOLUME_ID}/script`);
+    expect(res.status).toBe(200);
+    expect(res.headers["etag"]).toBeTruthy();
+  });
+
+  it("PUT with a stale If-Match 409s instead of overwriting a newer save", async () => {
+    const first = await api.get(`/api/volumes/${VOLUME_ID}/script`);
+    const staleEtag = first.headers["etag"] as string;
+
+    const otherSave = await api.put(`/api/volumes/${VOLUME_ID}/script`).send({ pages: [{ id: "p1", label: "", notes: "other", panels: [] }] });
+    expect(otherSave.status).toBe(200);
+
+    const conflicting = await api.put(`/api/volumes/${VOLUME_ID}/script`).set("If-Match", staleEtag).send({ pages: [] });
+    expect(conflicting.status).toBe(409);
+    expect(conflicting.body.error).toBe("script_conflict");
+    expect(conflicting.body.currentScript.pages[0].notes).toBe("other");
+  });
+
+  it("PUT without If-Match still succeeds (unchanged behavior)", async () => {
+    const res = await api.put(`/api/volumes/${VOLUME_ID}/script`).send({ pages: [] });
+    expect(res.status).toBe(200);
+  });
+});

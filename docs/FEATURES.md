@@ -7,6 +7,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 
 - [Projektverwaltung](#projektverwaltung)
 - [Konten, Rollen & Zugriffsschutz](#konten-rollen--zugriffsschutz)
+- [Mehrbenutzerbetrieb](#mehrbenutzerbetrieb)
 - [UI-Sprache](#ui-sprache)
 - [Bände & Seiten](#bände--seiten)
 - [Sprachverwaltung](#sprachverwaltung)
@@ -114,6 +115,40 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - **Mitglieder-/Kontenverwaltung**: über das "Projekt"-Menü — "Mitglieder" (Rolle
   dieses Projekts, ab Admin sichtbar) und "Konten" (serverweite Konten, nur für
   Systemadministratoren sichtbar).
+
+## Mehrbenutzerbetrieb
+
+ComiKumi läuft als ein einziger Server-Prozess mit genau einem aktiven Projekt im
+Speicher (kein Multi-Projekt-Hosting, s. u.) — mehrere gleichzeitig verbundene Personen
+sind aber der Normalfall (Studio-Netzwerk oder gemeinsamer Server), daher drei gezielte
+Absicherungen gegen stille Datenverluste:
+
+- **Optimistische Konflikterkennung beim Seiten-Speichern**: Der Editor merkt sich
+  einen ETag (Inhalts-Hash) der zuletzt geladenen/gespeicherten Version einer Seite und
+  schickt ihn beim Speichern mit. Hat in der Zwischenzeit jemand anderes dieselbe Seite
+  gespeichert, erscheint statt eines stillen Überschreibens ein Dialog: **"Meine
+  Version behalten"** (überschreibt die andere bewusst) oder **"Andere Version laden"**
+  (verwirft die eigenen ungespeicherten Änderungen). Dasselbe ETag/If-Match-Muster
+  steht serverseitig auch für den Skript-Endpunkt bereit (`GET`/`PUT .../script`),
+  bislang ohne eigene Client-Oberfläche dafür.
+- **Serialisiertes Schreiben** (kein Konflikt-Dialog, aber kein Datenverlust durch
+  Verschränkung mehrerer gleichzeitiger Anfragen): Kommentare, Skript und
+  Projekt-Metadaten (Einstellungen, Sprachen, Charaktere, Glossar, Presets,
+  Mitgliederliste) serialisieren ihr Lesen-Ändern-Schreiben pro Datei über einen
+  einfachen In-Prozess-Mutex — zwei gleichzeitig eintreffende neue Kommentare landen
+  beide, statt dass einer den anderen verdrängt.
+- **Warnung beim Projektwechsel**: Da der Server nur ein Projekt gleichzeitig aktiv
+  halten kann, würde ein Wechsel (Projekt öffnen/neu anlegen) sonst anderen gerade
+  aktiven Personen unbemerkt den Boden unter den Füßen wegziehen. War in den letzten
+  fünf Minuten eine andere Person am Server aktiv, fragt der Client vor dem Wechsel
+  nach ("{Namen} war(en) kürzlich aktiv — trotzdem wechseln?") statt sofort zu
+  schalten; Bestätigen wechselt trotzdem.
+
+**Bewusst außerhalb**: echte Mehrprojekt-Parallelität (mehrere Projekte gleichzeitig
+aktiv, pro Sitzung getrennt) und Konflikt-Erkennung für die selteneren
+Verwaltungslisten (Einstellungen/Sprachen/Charaktere/Glossar/Presets/Mitglieder — dort
+nur der Schreib-Mutex, kein ETag-Dialog) bleiben offen; siehe
+`docs/Professional-Workflow-Gaps.md`.
 
 ## UI-Sprache
 
@@ -875,14 +910,36 @@ Duplizieren versetzt Kopien um 24 px, damit sie nicht exakt auf dem Original lie
 
 ## Tests
 
-Drei projekteigene Testdateien (Vitest), alle auf Unit-Ebene:
+Vitest, aktuell 34 Server- + 4 Client-Testdateien (345 + 78 Tests, Stand aktueller Code):
 
-- `server/src/lib/paths.test.ts` — Pfad-/Ordnernamen-Vorlagen und die
-  Path-Traversal-Prüfung.
-- `server/src/lib/sharedSchemas.test.ts` — Validierung/Default-Werte der
-  Projekteinstellungen- und Projektdatei-Schemas.
-- `client/src/export/bubbleBackground.test.ts` — Geometrie-Hilfsfunktionen für
-  Blasen-Konturen und welche Blasenstile einen Schwanz unterstützen.
+- **Server — Routen-Ebene** (`server/src/routes/*.test.ts`, per `supertest` gegen eine
+  echte, temporäre Projekt-/Datenverzeichnis-Instanz — nie das reale `server/data/` oder
+  echte Projektdaten): für praktisch jede Route-Datei eine eigene Testdatei, u. a.
+  `volumes`, `pages`, `layout`, `export`, `script`, `comments`, `auth`, `project`,
+  `characters`, `glossary`, `presets`, `settings`, `languages`, `fonts`, `images`,
+  `bubbleSvgs`.
+- **Server — Lib-Ebene** (`server/src/lib/**/*.test.ts`): Schema-Validierung/
+  Default-Werte (`sharedSchemas`, `layoutSchema`), Pfad-/Ordnernamen-Vorlagen und die
+  Path-Traversal-Prüfung (`paths`), Rendering-Geometrie und -Typografie
+  (`rendering/textLayout`, `rendering/verticalTypesetting`, `rendering/curvedText`,
+  `rendering/bubbleBackground`, `rendering/perspective`, `rendering/cutPanel` — inkl.
+  der Regressionsprüfung, dass beim Cut-Panel-Rendern alle Loch-Füllungen vor allen
+  Inhalts-Zeichnungen passieren, siehe [Cut-Panel](#cut-panel)), Seiten-Rasterung
+  (`pageRaster`), Schriftauflösung (`fontResolver`), Vektor-PDF-/PSD-Aufbau
+  (`vectorPdf/buildPdfPage`, `psdExport`), Auth-Store, Papierkorb-Sweep (`trash`) und
+  den optionalen Mailer für Kommentar-@-Erwähnungen (`mailer`).
+- **Client** (`client/src/**/*.test.ts`): reine Geometrie-/Auswahl-/Report-Logik, die
+  sich Live-Vorschau und Export teilen — `export/pageSelection` (Seitenbereichs-Parsing),
+  `editor/geometry`, `editor/reportUtils`, `state/editorStore`.
 
-Es gibt keine Ende-zu-Ende-/UI-Tests — die Abdeckung beschränkt sich auf gezielte
-Unit-Tests rund um Schema-Validierung und Geometrie-Hilfsfunktionen.
+- **E2E** (`e2e/`, Playwright, eigenes Paket — nicht Teil von `npm test`): vier
+  Kern-Abläufe im echten Browser gegen eine eigens dafür gestartete, isolierte
+  Server-/Client-Instanz (eigene Ports 3101/4173, eigener `LETTERING_DATA_DIR`/
+  Scan-Root unter `e2e/tmp-run/`, per `e2e/global-setup.ts` einmalig vor der Suite
+  provisioniert über die bestehende Projekt-API, nicht die UI) — UI-Login, Projekt
+  über den Projekt-Umschalter öffnen, eine Bubble anlegen/Text setzen/speichern (inkl.
+  Reload-Check, dass es wirklich persistiert wurde), PNG-Export auslösen (geprüft per
+  UI-Meldung **und** tatsächlicher Datei auf der Platte). Kein vollständiges Netz über
+  jedes Feature — ein Grundgerüst für die wichtigsten Abläufe, auf dem sich gezielt
+  weitere Specs ergänzen lassen (z. B. Kommentare, Cut-Panel, Reader). Siehe
+  `README.md`'s "E2E tests"-Abschnitt für die Ausführung.

@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { invalidateFontsCache } from "../editor/fontLoader";
 import { FileBrowserModal } from "../editor/FileBrowserModal";
+import { useConfirmDialog } from "../editor/ConfirmDialog";
 
 interface WizardLanguage {
   code: string;
@@ -69,6 +70,7 @@ export function ProjectWizard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [browserTarget, setBrowserTarget] = useState<BrowserTarget>(null);
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   // Step 1 — basics
   const [name, setName] = useState("");
@@ -183,11 +185,11 @@ export function ProjectWizard() {
     setVolumes((prev) => prev.filter((_, i) => i !== index));
   }
 
-  async function handleFinish() {
+  async function handleFinish(force = false) {
     setBusy(true);
     setError(null);
     try {
-      await api.createProject({
+      const result = await api.createProject({
         filePath: filePath.trim(),
         name: name.trim(),
         scanRoot: scanRoot.trim(),
@@ -197,7 +199,19 @@ export function ProjectWizard() {
         exportFolderTemplate: exportFolderTemplate.trim(),
         languages: languages.map(({ code, label, folderSuffix }) => ({ code, label, folderSuffix })),
         readingDirection,
+        force,
       });
+      if (result.blocked) {
+        setBusy(false);
+        const names = result.activeUsers.map((u) => u.username).join(", ");
+        const ok = await confirm({
+          title: t("projectSwitcher.switchBlockedTitle"),
+          message: t("projectSwitcher.switchBlockedMessage", { names }),
+          danger: true,
+        });
+        if (ok) await handleFinish(true);
+        return;
+      }
       invalidateFontsCache();
       navigate("/");
     } catch (e) {
@@ -225,6 +239,7 @@ export function ProjectWizard() {
 
   return (
     <div className="page page-padded">
+      {confirmDialog}
       <div className="page-scroll" style={{ maxWidth: 560 }}>
         <p style={{ margin: "0 0 4px", fontWeight: 600, fontSize: 16 }}>{t("projectWizard.heading")}</p>
         <p style={{ margin: "0 0 16px", color: "var(--text-muted)", fontSize: 13 }}>
@@ -442,7 +457,7 @@ export function ProjectWizard() {
               </li>
               <li>{t("projectWizard.summaryVolumeCount", { count: volumes.length })}</li>
             </ul>
-            <button type="button" className="primary" onClick={handleFinish} disabled={busy}>
+            <button type="button" className="primary" onClick={() => handleFinish()} disabled={busy}>
               {busy ? t("settings.saving") : t("projectWizard.finishButton")}
             </button>
           </div>

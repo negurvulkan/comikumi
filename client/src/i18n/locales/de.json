@@ -295,6 +295,8 @@
   },
   "projectSwitcher": {
     "heading": "Projekt öffnen",
+    "switchBlockedTitle": "Andere Personen sind noch aktiv",
+    "switchBlockedMessage": "{{names}} hat/haben diesen Server in den letzten Minuten genutzt und arbeitet/arbeiten möglicherweise noch im aktuell geöffneten Projekt. Trotzdem wechseln?",
     "loadingRecent": "Lade…",
     "noneYet": "Noch keine Projekte geöffnet.",
     "fileNotFound": "(Datei nicht gefunden)",
@@ -534,6 +536,12 @@
       "setAngleFixNext": "Winkel setzen (nächsten Punkt fixieren)",
       "anglePlaceholder": "Winkel in Grad",
       "applyAngle": "Anwenden"
+    },
+    "layoutConflict": {
+      "title": "Diese Seite wurde von jemand anderem gespeichert",
+      "message": "Jemand anderes hat eine neuere Version dieser Seite gespeichert, während du sie bearbeitet hast. Deine Version behalten (überschreibt die andere) oder die andere Version laden (verwirft deine ungespeicherten Änderungen)?",
+      "keepMine": "Meine Version behalten",
+      "reload": "Andere Version laden"
     },
     "canvas": {
       "zoomOut": "Verkleinern",

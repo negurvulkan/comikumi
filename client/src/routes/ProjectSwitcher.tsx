@@ -99,11 +99,22 @@ export function ProjectSwitcher() {
     },
   ];
 
-  async function handleOpen(filePath: string) {
+  async function handleOpen(filePath: string, force = false) {
     setBusy(true);
     setError(null);
     try {
-      await api.openProject(filePath);
+      const result = await api.openProject(filePath, force);
+      if (result.blocked) {
+        setBusy(false);
+        const names = result.activeUsers.map((u) => u.username).join(", ");
+        const ok = await confirm({
+          title: t("projectSwitcher.switchBlockedTitle"),
+          message: t("projectSwitcher.switchBlockedMessage", { names }),
+          danger: true,
+        });
+        if (ok) await handleOpen(filePath, true);
+        return;
+      }
       invalidateFontsCache();
       navigate("/");
     } catch (e) {

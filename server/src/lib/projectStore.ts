@@ -9,6 +9,7 @@ import type { GlossaryEntry } from "../../../shared/src/glossary.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
 import type { ProjectMember } from "../../../shared/src/users.js";
 import { APP_STATE_FILE, LEGACY_SETTINGS_FILE, LEGACY_LANGUAGES_FILE, LEGACY_PROJECT_FILE } from "./paths.js";
+import { withFileLock } from "./fileLock.js";
 
 /** Thrown by readSettings/readLanguages/getActiveProject when no project file
  * is open yet — routes turn this into a 409 so the client can redirect to the
@@ -331,8 +332,14 @@ export async function readSettings(): Promise<ProjectSettings> {
 
 export async function writeSettings(settings: ProjectSettings): Promise<void> {
   const project = await getActiveProject();
-  project.data = { ...project.data, ...settings };
-  await writeProjectFile(project.filePath, project.data);
+  // Locked per project file, not just the write call — closes the window where two
+  // concurrent writers to *any* of this project's fields (settings/languages/
+  // characters/glossary/presets/members, all sharing the same underlying file) could
+  // interleave their read-merge-write sequences (see fileLock.ts).
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, ...settings };
+    await writeProjectFile(project.filePath, project.data);
+  });
 }
 
 export async function readLanguages(): Promise<LanguageDef[]> {
@@ -342,8 +349,10 @@ export async function readLanguages(): Promise<LanguageDef[]> {
 
 export async function writeLanguages(languages: LanguageDef[]): Promise<void> {
   const project = await getActiveProject();
-  project.data = { ...project.data, languages };
-  await writeProjectFile(project.filePath, project.data);
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, languages };
+    await writeProjectFile(project.filePath, project.data);
+  });
 }
 
 export async function readCharacters(): Promise<Character[]> {
@@ -353,8 +362,10 @@ export async function readCharacters(): Promise<Character[]> {
 
 export async function writeCharacters(characters: Character[]): Promise<void> {
   const project = await getActiveProject();
-  project.data = { ...project.data, characters };
-  await writeProjectFile(project.filePath, project.data);
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, characters };
+    await writeProjectFile(project.filePath, project.data);
+  });
 }
 
 export async function readGlossary(): Promise<GlossaryEntry[]> {
@@ -364,8 +375,10 @@ export async function readGlossary(): Promise<GlossaryEntry[]> {
 
 export async function writeGlossary(glossary: GlossaryEntry[]): Promise<void> {
   const project = await getActiveProject();
-  project.data = { ...project.data, glossary };
-  await writeProjectFile(project.filePath, project.data);
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, glossary };
+    await writeProjectFile(project.filePath, project.data);
+  });
 }
 
 export async function readPresets(): Promise<LetteringPreset[]> {
@@ -375,8 +388,10 @@ export async function readPresets(): Promise<LetteringPreset[]> {
 
 export async function writePresets(presets: LetteringPreset[]): Promise<void> {
   const project = await getActiveProject();
-  project.data = { ...project.data, presets };
-  await writeProjectFile(project.filePath, project.data);
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, presets };
+    await writeProjectFile(project.filePath, project.data);
+  });
 }
 
 export async function readMembers(): Promise<ProjectMember[]> {
@@ -386,8 +401,10 @@ export async function readMembers(): Promise<ProjectMember[]> {
 
 export async function writeMembers(members: ProjectMember[]): Promise<void> {
   const project = await getActiveProject();
-  project.data = { ...project.data, members };
-  await writeProjectFile(project.filePath, project.data);
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, members };
+    await writeProjectFile(project.filePath, project.data);
+  });
 }
 
 export async function readMembersByPath(filePath: string): Promise<ProjectMember[]> {
@@ -396,12 +413,14 @@ export async function readMembersByPath(filePath: string): Promise<ProjectMember
 }
 
 export async function writeMembersByPath(filePath: string, members: ProjectMember[]): Promise<void> {
-  const data = await readProjectFile(filePath);
-  data.members = members;
-  await writeProjectFile(filePath, data);
-  if (active && active.filePath === filePath) {
-    active.data.members = members;
-  }
+  await withFileLock(filePath, async () => {
+    const data = await readProjectFile(filePath);
+    data.members = members;
+    await writeProjectFile(filePath, data);
+    if (active && active.filePath === filePath) {
+      active.data.members = members;
+    }
+  });
 }
 
 

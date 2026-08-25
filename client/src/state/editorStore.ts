@@ -62,6 +62,15 @@ interface EditorState {
   loading: boolean;
   error: string | null;
   saving: boolean;
+  /** ETag of the layout as last loaded/saved — sent as If-Match on the next save so the
+   * server can detect someone else having saved this same page in the meantime (see
+   * server/src/routes/layout.ts). Null while nothing's been loaded yet. */
+  layoutEtag: string | null;
+  /** Set instead of `error` when a save hits a 409 — the page was saved by someone else
+   * since this session last loaded/saved it. `serverLayout` is what they saved (null if
+   * the conflict body couldn't be parsed), shown by LayoutConflictModal.tsx so the user
+   * can choose to keep their own version or take the other one. */
+  conflict: { serverLayout: PageLayout | null } | null;
   past: PageLayout[];
   future: PageLayout[];
 
@@ -98,6 +107,13 @@ interface EditorState {
   reassignBubblePanel: (bubbleId: string, newPanelId: string | null) => void;
   importBubbles: (bubbles: Bubble[]) => void;
   save: () => Promise<void>;
+  /** Resolves a save conflict by overwriting the server's version with the current
+   * local layout — an unconditional save (no If-Match), then refreshes layoutEtag from
+   * the response. */
+  resolveConflictOverwrite: () => Promise<void>;
+  /** Resolves a save conflict by discarding local changes and reloading the page —
+   * equivalent to loadPage() with the same volumeId/page. */
+  resolveConflictReload: () => Promise<void>;
   undo: () => void;
   redo: () => void;
   /** Deletes every currently-selected bubble/image/curved-text/panel element, across all four arrays at once. */
@@ -159,14 +175,16 @@ export const useEditorStore = create<EditorState>((set, get) => {
     loading: false,
     error: null,
     saving: false,
+    layoutEtag: null,
+    conflict: null,
     past: [],
     future: [],
 
     async loadPage(volumeId, page) {
-      set({ loading: true, error: null, ...clearSelection(), past: [], future: [], volumeId, page });
+      set({ loading: true, error: null, conflict: null, ...clearSelection(), past: [], future: [], volumeId, page });
       try {
-        const layout = await api.getLayout(volumeId, page);
-        set({ layout, loading: false, dirty: false });
+        const { layout, etag } = await api.getLayoutWithEtag(volumeId, page);
+        set({ layout, layoutEtag: etag, loading: false, dirty: false });
       } catch (e) {
         set({ loading: false, error: translateApiError(e, i18n.t) });
       }
@@ -476,15 +494,38 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     async save() {
+      const { volumeId, page, layout, layoutEtag } = get();
+      if (!volumeId || !page || !layout) return;
+      set({ saving: true, error: null });
+      try {
+        const result = await api.saveLayout(volumeId, page, layout, layoutEtag ?? undefined);
+        if (result.conflict) {
+          set({ saving: false, conflict: { serverLayout: result.currentLayout } });
+          return;
+        }
+        set({ saving: false, dirty: false, layoutEtag: result.etag });
+      } catch (e) {
+        set({ saving: false, error: translateApiError(e, i18n.t) });
+      }
+    },
+
+    async resolveConflictOverwrite() {
       const { volumeId, page, layout } = get();
       if (!volumeId || !page || !layout) return;
       set({ saving: true, error: null });
       try {
-        await api.saveLayout(volumeId, page, layout);
-        set({ saving: false, dirty: false });
+        const result = await api.saveLayout(volumeId, page, layout);
+        set({ saving: false, dirty: false, conflict: null, layoutEtag: result.conflict ? null : result.etag });
       } catch (e) {
         set({ saving: false, error: translateApiError(e, i18n.t) });
       }
+    },
+
+    async resolveConflictReload() {
+      const { volumeId, page } = get();
+      if (!volumeId || !page) return;
+      set({ conflict: null });
+      await get().loadPage(volumeId, page);
     },
 
     undo() {

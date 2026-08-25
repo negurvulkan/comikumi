@@ -56,6 +56,10 @@ React + Konva canvas editor.
 - **PNG, print (CMYK TIFF), vector PDF/PSD, and CBZ export**, with page-range/language
   filtering, JSON import/export of a whole volume's layouts, and a full ComicInfo.xml
   metadata dialog (series/credits/publication/categorization/per-page type) for the CBZ.
+- **Multi-user safety** — optimistic conflict detection on page saves (a save conflict
+  prompts to keep your version or load the other one, instead of silently overwriting
+  it), serialized writes for comments/script/project metadata, and a warning before
+  switching the server's active project while someone else is still working in it.
 
 Full feature list: [`docs/FEATURES.md`](docs/FEATURES.md) (German). Layout JSON schema:
 [`docs/JSON-Format.md`](docs/JSON-Format.md) (German).
@@ -132,6 +136,25 @@ Server tests include route-level integration tests (via `supertest`) that run ag
 temporary, isolated project/data directories — they never touch your real project data
 or the repo's own `server/data/`. Client tests cover the pure geometry/typesetting/text
 logic shared by the live canvas preview and the PNG export.
+
+### E2E tests
+
+A small Playwright suite in `e2e/` drives a real browser against real server + client
+instances, covering the login screen, opening a project, editing a bubble (with a
+reload to confirm it actually persisted), and exporting a page to PNG. One-time setup,
+then run from the repo root:
+
+```bash
+npm --prefix e2e install
+npx --prefix e2e playwright install chromium
+npm run test:e2e
+```
+
+Every run spins up its own server (port 3101) and client (port 4173) against a
+throwaway `LETTERING_DATA_DIR`/scan-root under `e2e/tmp-run/` — separate ports and data
+from `npm run dev`, so the suite can run alongside a real dev session without
+interfering with it. Not part of `npm run test` (browser download + runtime are too
+heavy for the default test loop).
 
 ## Tech stack
 

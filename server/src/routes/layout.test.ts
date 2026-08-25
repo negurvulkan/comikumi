@@ -18,10 +18,11 @@ beforeAll(async () => {
 const VOLUME_ID = "Volume_01";
 
 describe("GET /:id/pages/:page/layout", () => {
-  it("returns a synthesized empty layout (derived from the source image) when nothing was saved yet", async () => {
+  it("returns a synthesized empty layout (derived from the source image) when nothing was saved yet, with the \"new\" sentinel ETag", async () => {
     const res = await api.get(`/api/volumes/${VOLUME_ID}/pages/page_01/layout`);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ page: "page_01", sourceImage: "page_01.png", imageWidth: 4, imageHeight: 4, bubbles: [] });
+    expect(res.headers["etag"]).toBe('"new"');
   });
 
   it("404s for an unknown volume", async () => {
@@ -54,6 +55,68 @@ describe("PUT /:id/pages/:page/layout", () => {
 
     const get = await api.get(`/api/volumes/${VOLUME_ID}/pages/page_01/layout`);
     expect(get.body).toMatchObject({ page: "page_01", imageWidth: 4 });
+  });
+});
+
+describe("optimistic concurrency (ETag / If-Match)", () => {
+  const layout = {
+    page: "page_09",
+    sourceImage: "page_01.png",
+    imageWidth: 4,
+    imageHeight: 4,
+    bubbles: [],
+    images: [],
+    curvedTexts: [],
+    panels: [],
+  };
+
+  it("PUT with If-Match: \"new\" succeeds for a page that has never been saved", async () => {
+    const res = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_11/layout`).set("If-Match", '"new"').send({ ...layout, page: "page_11" });
+    expect(res.status).toBe(200);
+  });
+
+  it("PUT without If-Match always succeeds (unchanged last-write-wins behavior)", async () => {
+    const first = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_09/layout`).send(layout);
+    expect(first.status).toBe(200);
+    const second = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_09/layout`).send(layout);
+    expect(second.status).toBe(200);
+  });
+
+  it("PUT with a matching If-Match succeeds and returns a fresh ETag", async () => {
+    const get = await api.get(`/api/volumes/${VOLUME_ID}/pages/page_09/layout`);
+    const etag = get.headers["etag"] as string;
+    const put = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_09/layout`).set("If-Match", etag).send(layout);
+    expect(put.status).toBe(200);
+    expect(put.headers["etag"]).toBeTruthy();
+  });
+
+  it("PUT with a stale If-Match 409s with the currently-saved layout instead of overwriting it", async () => {
+    const get = await api.get(`/api/volumes/${VOLUME_ID}/pages/page_09/layout`);
+    const staleEtag = get.headers["etag"] as string;
+
+    // Someone else saves in the meantime.
+    const otherChange = { ...layout, bubbles: [{ id: "b1", shape: "rect", x: 1, y: 1, width: 2, height: 2, text: { en: "other" } }] };
+    const otherSave = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_09/layout`).send(otherChange);
+    expect(otherSave.status).toBe(200);
+
+    // This session's save, still using the now-stale ETag, must be rejected rather than
+    // silently overwriting the other change.
+    const conflictingSave = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_09/layout`).set("If-Match", staleEtag).send(layout);
+    expect(conflictingSave.status).toBe(409);
+    expect(conflictingSave.body.error).toBe("layout_conflict");
+    expect(conflictingSave.body.currentLayout.bubbles).toHaveLength(1);
+
+    // The other change is still intact on disk.
+    const final = await api.get(`/api/volumes/${VOLUME_ID}/pages/page_09/layout`);
+    expect(final.body.bubbles).toHaveLength(1);
+  });
+
+  it("PUT with If-Match of \"new\" 409s if someone else already created the page in the meantime", async () => {
+    const create = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_10/layout`).send({ ...layout, page: "page_10" });
+    expect(create.status).toBe(200);
+
+    const res = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_10/layout`).set("If-Match", '"new"').send({ ...layout, page: "page_10" });
+    expect(res.status).toBe(409);
   });
 });
 

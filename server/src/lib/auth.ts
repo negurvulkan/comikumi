@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { PROJECT_ROLE_RANK, type ProjectRole } from "../../../shared/src/users.js";
 import { verifyToken, type AuthTokenPayload } from "./authStore.js";
 import { getActiveProjectMembers } from "./projectStore.js";
+import { recordActivity } from "./activityTracker.js";
 
 declare global {
   namespace Express {
@@ -42,6 +43,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
   req.user = payload;
+  recordActivity(payload.sub, payload.username);
   next();
 }
 

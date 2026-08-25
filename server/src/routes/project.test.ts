@@ -246,6 +246,38 @@ describe("POST /api/project/open", () => {
   });
 });
 
+describe("project-switch activity guard", () => {
+  it("blocks switching when another user made a request in the last few minutes, unless force is set", async () => {
+    const otherFile = path.join(path.dirname(env.projectFile), "guard-test-projekt.json");
+    await api.post("/api/project/new").send({ filePath: otherFile, name: "Guard Test Projekt", scanRoot: env.scanRoot });
+
+    // Establish a second, genuinely authenticated user (only requireAuth records
+    // activity — creating the account alone doesn't count, they must make a request).
+    const { createUser } = await import("../lib/authStore.js");
+    await createUser("guard-test-user", "pw", false).catch(() => {});
+    const loginRes = await api.post("/api/auth/login").send({ username: "guard-test-user", password: "pw" });
+    const otherToken = loginRes.body.token as string;
+    const otherApi = authedAgent(app, otherToken);
+    await otherApi.get("/api/project/current");
+
+    // The first user's switch back to the original project is now blocked.
+    const blocked = await api.post("/api/project/open").send({ filePath: env.projectFile });
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error).toBe("project_switch_blocked");
+    expect(blocked.body.activeUsers.some((u: { username: string }) => u.username === "guard-test-user")).toBe(true);
+
+    // force:true proceeds anyway.
+    const forced = await api.post("/api/project/open").send({ filePath: env.projectFile, force: true });
+    expect(forced.status).toBe(200);
+  });
+
+  it("does not block re-opening the already-active project", async () => {
+    const current = await api.get("/api/project/current");
+    const res = await api.post("/api/project/open").send({ filePath: current.body.filePath });
+    expect(res.status).toBe(200);
+  });
+});
+
 describe("Project list and member management by path", () => {
   it("allows system admin to list all projects with isAdmin: true", async () => {
     const res = await api.get("/api/project/list");

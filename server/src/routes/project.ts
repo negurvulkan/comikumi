@@ -22,8 +22,23 @@ import { countVolumesUnder, invalidateVolumesCache } from "../lib/projectScanner
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireSystemAdmin, requireProjectRole, requireAuth } from "../lib/auth.js";
 import { findUserByUsername, listUsers } from "../lib/authStore.js";
+import { getRecentlyActive } from "../lib/activityTracker.js";
 import { LanguageListSchema } from "../../../shared/src/languages.js";
 import { ProjectRoleSchema } from "../../../shared/src/users.js";
+
+/** How recently someone must have made an authenticated request to count as "still
+ * active" for the project-switch warning below. */
+const PROJECT_SWITCH_ACTIVITY_WINDOW_MS = 5 * 60_000;
+
+/** Shared by /new and /open — 409s with the list of other users seen within the last
+ * PROJECT_SWITCH_ACTIVITY_WINDOW_MS unless the caller passed `force`, so switching the
+ * server's single active project (see projectStore.ts's `active` singleton doc comment)
+ * warns instead of silently pulling it out from under whoever's still working in it. */
+function blockedBySwitchGuard(req: import("express").Request, force: boolean | undefined): { activeUsers: { username: string; secondsAgo: number }[] } | null {
+  if (force) return null;
+  const activeUsers = getRecentlyActive(req.user!.sub, PROJECT_SWITCH_ACTIVITY_WINDOW_MS);
+  return activeUsers.length > 0 ? { activeUsers } : null;
+}
 
 export const projectRouter = Router();
 
@@ -180,7 +195,7 @@ projectRouter.post(
   })
 );
 
-const OpenProjectSchema = z.object({ filePath: z.string().min(1) });
+const OpenProjectSchema = z.object({ filePath: z.string().min(1), force: z.boolean().optional() });
 
 /** Unlike the other project-switcher mutations, opening isn't system-admin-only: any
  * authenticated user may open a project they're a member of (checked against the
@@ -200,6 +215,14 @@ projectRouter.post(
       const isMember = members?.some((m) => m.userId === req.user!.sub) ?? false;
       if (!isMember) {
         res.status(403).json({ error: "forbidden" });
+        return;
+      }
+    }
+    const current = await getCurrentProjectInfo();
+    if (current?.filePath !== parsed.data.filePath) {
+      const blocked = blockedBySwitchGuard(req, parsed.data.force);
+      if (blocked) {
+        res.status(409).json({ error: "project_switch_blocked", ...blocked });
         return;
       }
     }
@@ -223,6 +246,7 @@ const NewProjectSchema = z.object({
   exportFolderTemplate: z.string().min(1).optional(),
   languages: LanguageListSchema.optional(),
   readingDirection: z.enum(["ltr", "rtl"]).optional(),
+  force: z.boolean().optional(),
 });
 
 projectRouter.post(
@@ -234,8 +258,15 @@ projectRouter.post(
       res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
       return;
     }
+    // Creating a project always activates it, so this always switches away from
+    // whatever's currently open (if anything) — same guard as /open.
+    const blocked = blockedBySwitchGuard(req, parsed.data.force);
+    if (blocked) {
+      res.status(409).json({ error: "project_switch_blocked", ...blocked });
+      return;
+    }
     try {
-      const { filePath, ...init } = parsed.data;
+      const { filePath, force: _force, ...init } = parsed.data;
       const data = await createProject(filePath, init);
       res.status(201).json({ filePath, ...data });
     } catch (err) {

@@ -12,6 +12,7 @@ import { listUsers } from "../lib/authStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { resolveCallerProjectRole } from "../lib/auth.js";
 import { sendMail, commentDeepLink } from "../lib/mailer.js";
+import { withFileLock } from "../lib/fileLock.js";
 
 export const commentsRouter = Router();
 
@@ -44,6 +45,21 @@ async function readCommentsDocument(file: string): Promise<CommentDocument> {
 async function writeCommentsDocument(file: string, doc: CommentDocument): Promise<void> {
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.writeFile(file, JSON.stringify(doc, null, 2), "utf-8");
+}
+
+/** Serializes every comments-document read-modify-write against concurrent requests for
+ * the same file (see fileLock.ts) — without this, two reviewers posting a comment at
+ * the same moment would each read the same old array and one addition would silently
+ * overwrite the other's. `mutate` does its own permission/not-found checks and sends
+ * the response itself (it needs to reply with just the new comment/reply, not the whole
+ * document) — return `null` from it to skip the write for an error response already
+ * sent, or the next full document to persist. */
+async function mutateCommentsDocument(file: string, mutate: (doc: CommentDocument) => Promise<CommentDocument | null>): Promise<void> {
+  await withFileLock(file, async () => {
+    const doc = await readCommentsDocument(file);
+    const next = await mutate(doc);
+    if (next) await writeCommentsDocument(file, next);
+  });
 }
 
 const MentionFieldsSchema = z.object({
@@ -161,26 +177,26 @@ commentsRouter.post(
       res.status(400).json({ error: "invalid_comment", details: parsed.error.flatten() });
       return;
     }
-    const doc = await readCommentsDocument(resolved.file);
-    const comment = {
-      id: randomUUID(),
-      authorId: req.user!.sub,
-      createdAt: new Date().toISOString(),
-      replies: [],
-      ...parsed.data,
-    };
-    const next = { comments: [...doc.comments, comment] };
-    await writeCommentsDocument(resolved.file, next);
-    res.status(201).json(comment);
-    notifyMentions({
-      volumeId: req.params.id,
-      page: comment.page,
-      commentId: comment.id,
-      authorId: comment.authorId,
-      mentionedUserIds: comment.mentionedUserIds,
-      mentionedRoles: comment.mentionedRoles,
-      body: comment.body,
-    }).catch((err) => console.error("[comments] notifyMentions failed:", err));
+    await mutateCommentsDocument(resolved.file, async (doc) => {
+      const comment = {
+        id: randomUUID(),
+        authorId: req.user!.sub,
+        createdAt: new Date().toISOString(),
+        replies: [],
+        ...parsed.data,
+      };
+      res.status(201).json(comment);
+      notifyMentions({
+        volumeId: req.params.id,
+        page: comment.page,
+        commentId: comment.id,
+        authorId: comment.authorId,
+        mentionedUserIds: comment.mentionedUserIds,
+        mentionedRoles: comment.mentionedRoles,
+        body: comment.body,
+      }).catch((err) => console.error("[comments] notifyMentions failed:", err));
+      return { comments: [...doc.comments, comment] };
+    });
   })
 );
 
@@ -197,26 +213,27 @@ commentsRouter.post(
       res.status(400).json({ error: "invalid_reply", details: parsed.error.flatten() });
       return;
     }
-    const doc = await readCommentsDocument(resolved.file);
-    const idx = doc.comments.findIndex((c) => c.id === req.params.commentId);
-    if (idx === -1) {
-      res.status(404).json({ error: "comment_not_found" });
-      return;
-    }
-    const reply = { id: randomUUID(), authorId: req.user!.sub, createdAt: new Date().toISOString(), ...parsed.data };
-    const comments = [...doc.comments];
-    comments[idx] = { ...comments[idx], replies: [...comments[idx].replies, reply] };
-    await writeCommentsDocument(resolved.file, { comments });
-    res.status(201).json(comments[idx]);
-    notifyMentions({
-      volumeId: req.params.id,
-      page: comments[idx].page,
-      commentId: comments[idx].id,
-      authorId: reply.authorId,
-      mentionedUserIds: reply.mentionedUserIds,
-      mentionedRoles: reply.mentionedRoles,
-      body: reply.body,
-    }).catch((err) => console.error("[comments] notifyMentions failed:", err));
+    await mutateCommentsDocument(resolved.file, async (doc) => {
+      const idx = doc.comments.findIndex((c) => c.id === req.params.commentId);
+      if (idx === -1) {
+        res.status(404).json({ error: "comment_not_found" });
+        return null;
+      }
+      const reply = { id: randomUUID(), authorId: req.user!.sub, createdAt: new Date().toISOString(), ...parsed.data };
+      const comments = [...doc.comments];
+      comments[idx] = { ...comments[idx], replies: [...comments[idx].replies, reply] };
+      res.status(201).json(comments[idx]);
+      notifyMentions({
+        volumeId: req.params.id,
+        page: comments[idx].page,
+        commentId: comments[idx].id,
+        authorId: reply.authorId,
+        mentionedUserIds: reply.mentionedUserIds,
+        mentionedRoles: reply.mentionedRoles,
+        body: reply.body,
+      }).catch((err) => console.error("[comments] notifyMentions failed:", err));
+      return { comments };
+    });
   })
 );
 
@@ -233,16 +250,17 @@ commentsRouter.patch(
       res.status(400).json({ error: "invalid_comment_patch", details: parsed.error.flatten() });
       return;
     }
-    const doc = await readCommentsDocument(resolved.file);
-    const idx = doc.comments.findIndex((c) => c.id === req.params.commentId);
-    if (idx === -1) {
-      res.status(404).json({ error: "comment_not_found" });
-      return;
-    }
-    const comments = [...doc.comments];
-    comments[idx] = { ...comments[idx], resolved: parsed.data.resolved || undefined };
-    await writeCommentsDocument(resolved.file, { comments });
-    res.json(comments[idx]);
+    await mutateCommentsDocument(resolved.file, async (doc) => {
+      const idx = doc.comments.findIndex((c) => c.id === req.params.commentId);
+      if (idx === -1) {
+        res.status(404).json({ error: "comment_not_found" });
+        return null;
+      }
+      const comments = [...doc.comments];
+      comments[idx] = { ...comments[idx], resolved: parsed.data.resolved || undefined };
+      res.json(comments[idx]);
+      return { comments };
+    });
   })
 );
 
@@ -254,21 +272,22 @@ commentsRouter.delete(
       res.status(404).json({ error: "volume_not_found" });
       return;
     }
-    const doc = await readCommentsDocument(resolved.file);
-    const comment = doc.comments.find((c) => c.id === req.params.commentId);
-    if (!comment) {
-      res.status(404).json({ error: "comment_not_found" });
-      return;
-    }
-    if (comment.authorId !== req.user!.sub) {
-      const role = await resolveCallerProjectRole(req);
-      if (role !== "admin") {
-        res.status(403).json({ error: "forbidden" });
-        return;
+    await mutateCommentsDocument(resolved.file, async (doc) => {
+      const comment = doc.comments.find((c) => c.id === req.params.commentId);
+      if (!comment) {
+        res.status(404).json({ error: "comment_not_found" });
+        return null;
       }
-    }
-    const comments = doc.comments.filter((c) => c.id !== req.params.commentId);
-    await writeCommentsDocument(resolved.file, { comments });
-    res.json({ ok: true });
+      if (comment.authorId !== req.user!.sub) {
+        const role = await resolveCallerProjectRole(req);
+        if (role !== "admin") {
+          res.status(403).json({ error: "forbidden" });
+          return null;
+        }
+      }
+      const comments = doc.comments.filter((c) => c.id !== req.params.commentId);
+      res.json({ ok: true });
+      return { comments };
+    });
   })
 );

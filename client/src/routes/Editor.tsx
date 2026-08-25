@@ -27,6 +27,7 @@ import type { MenuGroup } from "../editor/MenuBar";
 import { ToolStrip, type DrawTool } from "../editor/ToolStrip";
 import { LanguageStrip } from "../editor/LanguageStrip";
 import { Modal } from "../editor/Modal";
+import { LayoutConflictModal } from "../editor/LayoutConflictModal";
 import { SettingsForm } from "../editor/SettingsForm";
 import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
@@ -447,6 +448,9 @@ export function Editor() {
         style={{ display: "none" }}
       />
       {exportMsg && <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{exportMsg}</div>}
+      {store.conflict && (
+        <LayoutConflictModal onKeepMine={() => store.resolveConflictOverwrite()} onReload={() => store.resolveConflictReload()} />
+      )}
       {showExportPanel && (
         <Modal onClose={() => setShowExportPanel(false)}>
           <ExportPanel

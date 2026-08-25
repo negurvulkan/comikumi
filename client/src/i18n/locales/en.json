@@ -295,6 +295,8 @@
   },
   "projectSwitcher": {
     "heading": "Open project",
+    "switchBlockedTitle": "Other people are still active",
+    "switchBlockedMessage": "{{names}} used this server within the last few minutes and may still be working in the currently open project. Switch anyway?",
     "loadingRecent": "Loading…",
     "noneYet": "No projects opened yet.",
     "fileNotFound": "(file not found)",
@@ -534,6 +536,12 @@
       "setAngleFixNext": "Set angle (keep next point fixed)",
       "anglePlaceholder": "Angle in degrees",
       "applyAngle": "Apply"
+    },
+    "layoutConflict": {
+      "title": "This page was saved by someone else",
+      "message": "Someone else saved a newer version of this page while you were editing it. Keep your version (overwrites theirs), or load their version (discards your unsaved changes)?",
+      "keepMine": "Keep my version",
+      "reload": "Load their version"
     },
     "canvas": {
       "zoomOut": "Zoom out",

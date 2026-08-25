@@ -77,6 +77,22 @@ describe("POST /:id/comments", () => {
     expect(filtered.body.comments.every((c: { page: string }) => c.page === "page_02")).toBe(true);
     expect(filtered.body.comments.length).toBeGreaterThan(0);
   });
+
+  it("regression: concurrent posts to the same volume never lose one reviewer's comment to another's (see fileLock.ts)", async () => {
+    const before = await api.get(`/api/volumes/${VOLUME_ID}/comments`);
+    const beforeCount = before.body.comments.length;
+
+    const bodies = ["Concurrent A", "Concurrent B", "Concurrent C", "Concurrent D", "Concurrent E"];
+    const results = await Promise.all(
+      bodies.map((body) => api.post(`/api/volumes/${VOLUME_ID}/comments`).send({ page: "page_04", target: { kind: "page" }, body }))
+    );
+    expect(results.every((r) => r.status === 201)).toBe(true);
+
+    const after = await api.get(`/api/volumes/${VOLUME_ID}/comments`);
+    expect(after.body.comments.length).toBe(beforeCount + bodies.length);
+    const savedBodies = after.body.comments.map((c: { body: string }) => c.body);
+    for (const body of bodies) expect(savedBodies).toContain(body);
+  });
 });
 
 describe("POST /:id/comments/:commentId/replies", () => {

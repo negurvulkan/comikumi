@@ -144,6 +144,27 @@ async function json<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface RecentlyActiveUser {
+  username: string;
+  secondsAgo: number;
+}
+
+export type ProjectSwitchResult =
+  | ({ blocked: false } & { filePath: string } & ProjectFile)
+  | { blocked: true; activeUsers: RecentlyActiveUser[] };
+
+async function handleProjectSwitchResponse(res: Response): Promise<ProjectSwitchResult> {
+  if (res.status === 409) {
+    const body = (await res.json()) as { error?: string; activeUsers?: RecentlyActiveUser[] };
+    if (body.error === "project_switch_blocked") {
+      return { blocked: true, activeUsers: body.activeUsers ?? [] };
+    }
+  }
+  if (!res.ok) await throwApiError(res);
+  const data = (await res.json()) as { filePath: string } & ProjectFile;
+  return { blocked: false, ...data };
+}
+
 /** Wraps every entry's server-emitted `url` field (already a root-relative "/api/..."
  * path, see server/src/lib/assetRouter.ts) through apiUrl() — these come back inside
  * JSON bodies, not built from a string literal here, so the api.* methods that fetch
@@ -208,12 +229,41 @@ export const api = {
       json<PageLayout>(r)
     ),
 
-  saveLayout: (volumeId: string, page: string, layout: PageLayout) =>
-    authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`), {
+  /** Same GET as getLayout(), but also surfaces the response's ETag header — used only
+   * by the editor's own load-then-save cycle (editorStore.ts) for optimistic-concurrency
+   * conflict detection on save (see saveLayout()'s `ifMatch` param). The read-only
+   * consumers of getLayout() (export, Reader, TranslatorContextPanel) never save back,
+   * so they don't need it — kept as a separate method rather than changing getLayout()'s
+   * return shape for everyone. */
+  getLayoutWithEtag: async (volumeId: string, page: string): Promise<{ layout: PageLayout; etag: string | null }> => {
+    const res = await authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`));
+    const layout = await json<PageLayout>(res);
+    return { layout, etag: res.headers.get("ETag") };
+  },
+
+  /** `ifMatch`, when given, is sent as an If-Match header — the server 409s with the
+   * other side's currently-saved layout instead of silently overwriting it if the
+   * document changed since `ifMatch` was read (see server/src/routes/layout.ts). Handled
+   * inline (not via the generic json()/throwApiError path) since a 409 here is an
+   * expected, recoverable outcome the caller needs to react to, not a hard error. */
+  saveLayout: async (
+    volumeId: string,
+    page: string,
+    layout: PageLayout,
+    ifMatch?: string
+  ): Promise<{ conflict: false; etag: string | null } | { conflict: true; currentLayout: PageLayout | null }> => {
+    const res = await authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`), {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(ifMatch ? { "If-Match": ifMatch } : {}) },
       body: JSON.stringify(layout),
-    }).then((r) => json<{ ok: true }>(r)),
+    });
+    if (res.status === 409) {
+      const body = (await res.json()) as { currentLayout: PageLayout | null };
+      return { conflict: true, currentLayout: body.currentLayout };
+    }
+    if (!res.ok) await throwApiError(res);
+    return { conflict: false, etag: res.headers.get("ETag") };
+  },
 
   getScript: (volumeId: string) =>
     authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/script`)).then((r) => json<ScriptDocument>(r)),
@@ -551,14 +601,21 @@ export const api = {
    * fonts/images/bubble-svgs asset routers. */
   projectCoverUrl: (coverImagePath: string) => authUrl(apiUrl(`/api/project/cover?${new URLSearchParams({ path: coverImagePath })}`)),
 
-  openProject: (filePath: string) =>
-    authFetch(apiUrl("/api/project/open"), {
+  /** Switching the server's single active project can pull it out from under other
+   * users still working in it (see server/src/lib/activityTracker.ts) — the server 409s
+   * with who was recently active instead of switching, unless `force` is set. Handled
+   * inline here (not via the generic json()/throwApiError path) since the 409 body
+   * carries a structured activeUsers list, not the flat string params ApiError supports. */
+  openProject: async (filePath: string, force?: boolean): Promise<ProjectSwitchResult> => {
+    const res = await authFetch(apiUrl("/api/project/open"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filePath }),
-    }).then((r) => json<{ filePath: string } & ProjectFile>(r)),
+      body: JSON.stringify({ filePath, force }),
+    });
+    return handleProjectSwitchResponse(res);
+  },
 
-  createProject: (data: {
+  createProject: async (data: {
     filePath: string;
     name: string;
     scanRoot: string;
@@ -569,12 +626,15 @@ export const api = {
     exportFolderTemplate?: string;
     languages?: LanguageDef[];
     readingDirection?: "ltr" | "rtl";
-  }) =>
-    authFetch(apiUrl("/api/project/new"), {
+    force?: boolean;
+  }): Promise<ProjectSwitchResult> => {
+    const res = await authFetch(apiUrl("/api/project/new"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then((r) => json<{ filePath: string } & ProjectFile>(r)),
+    });
+    return handleProjectSwitchResponse(res);
+  },
 
   getScanRootStatus: (scanRoot: string, emptySuffix: string) =>
     authFetch(apiUrl(`/api/project/scan-root-status?${new URLSearchParams({ scanRoot, emptySuffix })}`)).then((r) =>

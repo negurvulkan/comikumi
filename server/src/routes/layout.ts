@@ -11,6 +11,8 @@ import { letteringFolderName } from "../lib/paths.js";
 import { readSettings } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole, resolveCallerProjectRole } from "../lib/auth.js";
+import { computeEtag, NEW_DOCUMENT_ETAG } from "../lib/etag.js";
+import { withFileLock } from "../lib/fileLock.js";
 
 export const layoutRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -57,6 +59,7 @@ layoutRouter.get(
     const { volume, file } = resolved;
     try {
       const raw = await fs.readFile(file, "utf-8");
+      res.setHeader("ETag", computeEtag(raw));
       res.json(PageLayoutSchema.parse(JSON.parse(raw)));
       return;
     } catch {
@@ -68,6 +71,7 @@ layoutRouter.get(
         return;
       }
       const dims = await imageSizeFromFile(pageInfo.absolutePath).catch(() => ({ width: 0, height: 0 }));
+      res.setHeader("ETag", NEW_DOCUMENT_ETAG);
       res.json(createEmptyLayout(pageInfo.page, pageInfo.fileName, dims.width ?? 0, dims.height ?? 0));
     }
   })
@@ -88,28 +92,51 @@ layoutRouter.put(
       return;
     }
     const { dir, file } = resolved;
-    // Translators get this same route (no granular text-only endpoint exists), but are
-    // restricted to bubble/curved-text .text changes — see isTextOnlyChange()'s doc
-    // comment. Letterer/admin/system-admin skip this check entirely.
     const role = await resolveCallerProjectRole(req);
-    if (role === "translator") {
-      let previous: PageLayout | null = null;
+    const ifMatch = req.header("If-Match");
+
+    await withFileLock(file, async () => {
+      // Single read serves both the optimistic-concurrency check below and the
+      // translator diff-guard — used to be two separate reads of the same file.
+      let currentRaw: string | null = null;
       try {
-        previous = PageLayoutSchema.parse(JSON.parse(await fs.readFile(file, "utf-8")));
+        currentRaw = await fs.readFile(file, "utf-8");
       } catch {
-        // No existing saved layout — nothing to diff against yet; only allow if the
-        // incoming layout has no non-text content that a translator shouldn't be
-        // able to introduce from scratch (an empty page has no bubbles to compare).
-        previous = { ...parsed.data, bubbles: [], curvedTexts: [] };
+        // No existing saved layout yet.
       }
-      if (!isTextOnlyChange(previous, parsed.data)) {
-        res.status(403).json({ error: "forbidden" });
+      const currentEtag = currentRaw ? computeEtag(currentRaw) : NEW_DOCUMENT_ETAG;
+
+      // Optimistic concurrency: only enforced when the client sends If-Match at all —
+      // callers that never load-then-edit a page through the normal editor flow (JSON
+      // import, "insert dialogue from script") don't send it and keep today's
+      // last-write-wins behavior, which is correct for them (they're not editing a
+      // stale in-memory copy of this exact document).
+      if (ifMatch && ifMatch !== currentEtag) {
+        const currentLayout = currentRaw ? PageLayoutSchema.parse(JSON.parse(currentRaw)) : null;
+        res.status(409).json({ error: "layout_conflict", currentLayout });
         return;
       }
-    }
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(file, JSON.stringify(parsed.data, null, 2), "utf-8");
-    res.json({ ok: true });
+
+      // Translators get this same route (no granular text-only endpoint exists), but
+      // are restricted to bubble/curved-text .text changes — see isTextOnlyChange()'s
+      // doc comment. Letterer/admin/system-admin skip this check entirely.
+      if (role === "translator") {
+        // No existing saved layout — nothing to diff against yet; only allow if the
+        // incoming layout has no non-text content a translator shouldn't be able to
+        // introduce from scratch (an empty page has no bubbles to compare).
+        const previous = currentRaw ? PageLayoutSchema.parse(JSON.parse(currentRaw)) : { ...parsed.data, bubbles: [], curvedTexts: [] };
+        if (!isTextOnlyChange(previous, parsed.data)) {
+          res.status(403).json({ error: "forbidden" });
+          return;
+        }
+      }
+
+      await fs.mkdir(dir, { recursive: true });
+      const nextRaw = JSON.stringify(parsed.data, null, 2);
+      await fs.writeFile(file, nextRaw, "utf-8");
+      res.setHeader("ETag", computeEtag(nextRaw));
+      res.json({ ok: true });
+    });
   })
 );
 
