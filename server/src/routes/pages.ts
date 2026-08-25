@@ -7,9 +7,10 @@ import { findVolume, listPages, PAGE_IMAGE_EXTENSIONS } from "../lib/projectScan
 import { getOrCreateThumbnail } from "../lib/thumbnails.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
-import { readSettings } from "../lib/projectStore.js";
+import { readSettings, readLanguages } from "../lib/projectStore.js";
 import { moveToTrash } from "../lib/trash.js";
 import { DEMO_MAX_PAGES, exceedsDemoPageCap } from "../lib/demoMode.js";
+import { layoutPathFor } from "./layout.js";
 
 export const pagesRouter = Router();
 
@@ -106,7 +107,10 @@ pagesRouter.get(
       return;
     }
     try {
-      const thumbPath = await getOrCreateThumbnail(page.absolutePath);
+      const resolved = await layoutPathFor(req.params.id, req.params.page);
+      const languages = await readLanguages();
+      const languageCode = languages[0]?.code ?? "de";
+      const thumbPath = await getOrCreateThumbnail(page.absolutePath, resolved?.file, languageCode);
       res.type("image/jpeg");
       res.sendFile(thumbPath, { maxAge: "1h" });
     } catch (err) {

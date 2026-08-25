@@ -374,7 +374,11 @@ describe("addPanel", () => {
   });
 
   it("seeds the new panel's BASE cut field when an initialCut is given (used by the panel-grid quick-start templates)", () => {
-    const initialCut = { cutOrigin: { x: 10, y: 10 }, holeFill: { mode: "manual" as const, color: "#ffffff" }, replacement: { files: {} } };
+    const initialCut = {
+      cutOrigin: { x: 10, y: 10 },
+      holeFill: { mode: "manual" as const, color: "#ffffff" },
+      replacement: { files: {}, fit: "stretch" as const },
+    };
     useEditorStore.getState().addPanel([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }], initialCut);
 
     const panel = useEditorStore.getState().layout!.panels[0];

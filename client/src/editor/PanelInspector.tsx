@@ -135,7 +135,7 @@ export function PanelInspector({ panel, index, activeLanguage, onChange, onDelet
                   cut: {
                     ...resolved.cut!,
                     removed: next === "removed" ? true : undefined,
-                    replacement: next === "replacement" ? (resolved.cut!.replacement ?? { files: {} }) : undefined,
+                    replacement: next === "replacement" ? (resolved.cut!.replacement ?? { files: {}, fit: "stretch" }) : undefined,
                   },
                 });
               }}
@@ -169,6 +169,23 @@ export function PanelInspector({ panel, index, activeLanguage, onChange, onDelet
                   <img src={api.imagesFileUrl(replacementFile)} alt="" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4 }} />
                 )}
               </div>
+              <label>
+                {t("editor.panelInspector.replacementFitLabel")}
+                <select
+                  value={resolved.cut!.replacement?.fit ?? "stretch"}
+                  onChange={(e) =>
+                    commitPanel({
+                      cut: {
+                        ...resolved.cut!,
+                        replacement: { ...resolved.cut!.replacement!, fit: e.target.value as "stretch" | "contain" },
+                      },
+                    })
+                  }
+                >
+                  <option value="stretch">{t("editor.panelInspector.replacementFitStretch")}</option>
+                  <option value="contain">{t("editor.panelInspector.replacementFitContain")}</option>
+                </select>
+              </label>
               <label>
                 {t("editor.panelInspector.borderColorLabel")}
                 <input

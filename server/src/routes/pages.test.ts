@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Express } from "express";
 import { setupTestEnv, authedAgent, type TestEnv } from "../test-utils/fixtures.js";
@@ -96,5 +97,74 @@ describe("DELETE /:id/pages/:page", () => {
     const res = await api.delete(`/api/volumes/${VOLUME_ID}/pages/does-not-exist`);
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("page_not_found");
+  });
+});
+
+describe("GET /:id/pages/:page/thumbnail", () => {
+  it("reflects saved layout content, not just the (possibly blank) source scan — regression for a 'New blank page' filled in via bubbles/Cut-Panels/placed images never showing up in the page grid", async () => {
+    // A larger, plain white source — same idea as NewBlankPageDialog.tsx's blank
+    // canvas: all real visual content ends up in the layout, not this file.
+    await sharp({ create: { width: 200, height: 150, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+      .png()
+      .toFile(path.join(EMPTY_DIR(), "page_blank.png"));
+
+    const layout = {
+      page: "page_blank",
+      sourceImage: "page_blank.png",
+      imageWidth: 200,
+      imageHeight: 150,
+      bubbles: [
+        {
+          id: "b1",
+          shape: "rect",
+          x: 20,
+          y: 20,
+          width: 60,
+          height: 40,
+          rotation: 0,
+          bubbleStyle: "speech",
+          fillColor: "#ff0000",
+          strokeColor: "#000000",
+          strokeWidthPx: 6,
+          tail: null,
+          tailAnchor: null,
+          tailWidth: 40,
+          svgFileName: null,
+          fontFamily: "Anime Ace",
+          fontSize: 24,
+          lineHeight: 1.2,
+          align: "center",
+          direction: "ltr",
+          color: "#000000",
+          textOutline: { enabled: false, color: "#000000", widthPx: 4 },
+          textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+          text: {},
+          panelId: null,
+          characterId: null,
+        },
+      ],
+      images: [],
+      curvedTexts: [],
+      panels: [],
+    };
+    const put = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_blank/layout`).send(layout);
+    expect(put.status).toBe(200);
+
+    const res = await api
+      .get(`/api/volumes/${VOLUME_ID}/pages/page_blank/thumbnail`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => cb(null, Buffer.concat(chunks)));
+      });
+    expect(res.status).toBe(200);
+
+    // Sample the bubble's center — should be strongly red (its fillColor), not the
+    // source scan's plain white, if the thumbnail actually composited the layout.
+    const { data } = await sharp(res.body as Buffer).raw().toBuffer({ resolveWithObject: true });
+    const idx = (50 * 200 + 50) * 3; // (x=50,y=50) into a 200-wide, 3-channel RGB buffer
+    expect(data[idx]).toBeGreaterThan(200); // red channel: strong
+    expect(data[idx + 1]).toBeLessThan(50); // green channel: weak
   });
 });

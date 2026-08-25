@@ -251,12 +251,13 @@ describe("Panel.cut field", () => {
       cut: {
         cutOrigin: { x: 0, y: 0 },
         holeFill: { mode: "auto", color: "#abcdef" },
-        replacement: { files: { de: "poster_de.png", ja: "poster_ja.png" }, border: { color: "#000000", widthPx: 4 } },
+        replacement: { files: { de: "poster_de.png", ja: "poster_ja.png" }, border: { color: "#000000", widthPx: 4 }, fit: "stretch" },
       },
     });
     expect(replaced.cut!.replacement).toEqual({
       files: { de: "poster_de.png", ja: "poster_ja.png" },
       border: { color: "#000000", widthPx: 4 },
+      fit: "stretch",
     });
     expect(JSON.parse(JSON.stringify(replaced))).toHaveProperty("cut.replacement.files.ja", "poster_ja.png");
   });
@@ -267,7 +268,7 @@ describe("cutPanelReplacementFileForLanguage", () => {
     return createPanel({
       id: "p1",
       points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
-      cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#fff" }, replacement: { files } },
+      cut: { cutOrigin: { x: 0, y: 0 }, holeFill: { mode: "auto", color: "#fff" }, replacement: { files, fit: "stretch" } },
     });
   }
 

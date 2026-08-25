@@ -35,7 +35,10 @@ function isTextOnlyChange(prev: PageLayout, next: PageLayout): boolean {
   return JSON.stringify(strip(prev)) === JSON.stringify(strip(next));
 }
 
-async function layoutPathFor(volumeId: string, page: string) {
+/** Resolves a page's layout JSON path — exported for pages.ts's thumbnail route, which
+ * needs to know whether (and where) a saved layout exists to decide whether the
+ * thumbnail should reflect it (see thumbnails.ts's doc comment). */
+export async function layoutPathFor(volumeId: string, page: string) {
   const volume = await findVolume(volumeId);
   if (!volume) return undefined;
   const settings = await readSettings();

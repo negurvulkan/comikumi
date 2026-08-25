@@ -435,7 +435,7 @@ export const PanelCutSchema = z.object({
    * wins if both somehow end up set — see drawCutPanelContent() in cutPanel.ts. No
    * true 4-corner perspective warp (unlike ImageElement/quad bubbles): a Panel polygon
    * can have any number of vertices, not just 4, so a homography isn't well-defined —
-   * the replacement image is stretched to the polygon's bounding box instead, then
+   * the replacement image fills the polygon's bounding box (see `fit`), then gets
    * clipped to its actual (possibly non-quad) shape. */
   replacement: z
     .object({
@@ -443,6 +443,12 @@ export const PanelCutSchema = z.object({
       /** Only drawn when a replacement image is actually shown — unlike `Panel.color`
        * (pure editor outline, never exported), this border is rendered into the PNG. */
       border: z.object({ color: z.string(), widthPx: z.number().positive() }).optional(),
+      /** How the replacement image fills the panel's bounding box — "stretch" (default,
+       * original/only behavior before this field existed) distorts the image to match the
+       * box exactly; "contain" scales it uniformly to fit inside instead, preserving its
+       * own aspect ratio, and letterboxes the remaining space with `holeFill.color` (the
+       * same color already used to cover this panel's vacated original spot). */
+      fit: z.enum(["stretch", "contain"]).default("stretch"),
     })
     .optional(),
 });

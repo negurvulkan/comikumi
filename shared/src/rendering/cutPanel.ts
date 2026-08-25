@@ -105,17 +105,33 @@ export function drawCutPanelForeground(
   }
 
   if (panel.cut.replacement && replacementImage) {
+    const boxX = bounds.minX * scale;
+    const boxY = bounds.minY * scale;
+    const boxWidth = (bounds.maxX - bounds.minX) * scale;
+    const boxHeight = (bounds.maxY - bounds.minY) * scale;
+
     ctx.save();
     tracePolygonPath(ctx, scaledPoints);
     ctx.clip();
     applyFlipIfNeeded();
-    ctx.drawImage(
-      replacementImage,
-      bounds.minX * scale,
-      bounds.minY * scale,
-      (bounds.maxX - bounds.minX) * scale,
-      (bounds.maxY - bounds.minY) * scale
-    );
+
+    if (panel.cut.replacement.fit === "contain") {
+      // Intrinsic pixel size — both HTMLImageElement (browser) and @napi-rs/canvas's
+      // Image (server) expose plain-number width/height, unlike CanvasImageSource's
+      // other union members (e.g. SVGImageElement's SVGAnimatedLength), hence the cast.
+      const { width: naturalWidth, height: naturalHeight } = replacementImage as unknown as { width: number; height: number };
+      const fitScale = naturalWidth > 0 && naturalHeight > 0 ? Math.min(boxWidth / naturalWidth, boxHeight / naturalHeight) : 1;
+      const drawWidth = naturalWidth * fitScale;
+      const drawHeight = naturalHeight * fitScale;
+      // Letterbox the box with the same color already used to cover this panel's
+      // vacated original spot, so gaps around a narrower/taller image don't leave
+      // whatever's underneath (the base page art) showing through instead.
+      ctx.fillStyle = panel.cut.holeFill.color;
+      ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+      ctx.drawImage(replacementImage, boxX + (boxWidth - drawWidth) / 2, boxY + (boxHeight - drawHeight) / 2, drawWidth, drawHeight);
+    } else {
+      ctx.drawImage(replacementImage, boxX, boxY, boxWidth, boxHeight);
+    }
     ctx.restore();
     if (panel.cut.replacement.border) {
       ctx.save();

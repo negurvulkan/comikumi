@@ -433,7 +433,7 @@ export function Editor() {
               store.addPanel(points, {
                 cutOrigin: originFromPoints(points),
                 holeFill: { mode: "manual", color: "#ffffff" },
-                replacement: { files: {} },
+                replacement: { files: {}, fit: "stretch" },
               });
             }
           }}

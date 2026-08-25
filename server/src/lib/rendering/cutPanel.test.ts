@@ -10,11 +10,16 @@ import {
 
 /** Minimal CanvasRenderingContext2D stand-in that only records which calls happened —
  * drawCutPanelContent never reads back geometry, just issues path/fill/clip/drawImage
- * calls, so a call-counting fake is enough to exercise it without jsdom/node-canvas. */
+ * calls, so a call-counting fake is enough to exercise it without jsdom/node-canvas.
+ * `drawImageCalls` additionally records drawImage()'s numeric args (dx/dy/dw/dh) for
+ * tests that need to verify the "contain" fit's actual scale/centering math, not just
+ * that a draw happened. */
 function fakeCtx() {
   const calls: string[] = [];
+  const drawImageCalls: number[][] = [];
   return {
     calls,
+    drawImageCalls,
     save: () => calls.push("save"),
     restore: () => calls.push("restore"),
     beginPath: () => calls.push("beginPath"),
@@ -22,20 +27,24 @@ function fakeCtx() {
     lineTo: () => calls.push("lineTo"),
     closePath: () => calls.push("closePath"),
     fill: () => calls.push("fill"),
+    fillRect: () => calls.push("fillRect"),
     clip: () => calls.push("clip"),
-    drawImage: () => calls.push("drawImage"),
+    drawImage: (_image: unknown, ...args: number[]) => {
+      calls.push("drawImage");
+      drawImageCalls.push(args);
+    },
     stroke: () => calls.push("stroke"),
     fillStyle: "",
     strokeStyle: "",
     lineWidth: 0,
-  } as unknown as CanvasRenderingContext2D & { calls: string[] };
+  } as unknown as CanvasRenderingContext2D & { calls: string[]; drawImageCalls: number[][] };
 }
 
 function cutPanel(
   points: { x: number; y: number }[],
   cutOriginOffset = { x: 0, y: 0 },
   removed = false,
-  replacement?: { files: Record<string, string>; border?: { color: string; widthPx: number } }
+  replacement?: { files: Record<string, string>; border?: { color: string; widthPx: number }; fit?: "stretch" | "contain" }
 ) {
   const panel = createPanel({ id: "p1", points });
   return {
@@ -44,7 +53,7 @@ function cutPanel(
       cutOrigin: { x: panel.origin.x + cutOriginOffset.x, y: panel.origin.y + cutOriginOffset.y },
       holeFill: { mode: "auto" as const, color: "#ffffff" },
       removed: removed || undefined,
-      replacement,
+      replacement: replacement ? { fit: "stretch" as const, ...replacement } : undefined,
     },
   };
 }
@@ -140,6 +149,40 @@ describe("drawCutPanelContent", () => {
     drawCutPanelContent(ctx, panel, image, 100, 100, 1, replacementImage);
 
     expect(ctx.calls.filter((c) => c === "stroke")).toHaveLength(1);
+  });
+
+  it("stretches the replacement image to the panel's full bounding box by default (fit: \"stretch\")", () => {
+    // A 10x10-image-space panel box (see cutPanel() helper's points) with a
+    // non-matching-aspect-ratio 50x200 source image — "stretch" ignores the source's
+    // own aspect ratio entirely and fills the whole box.
+    const panel = cutPanel([{ x: 10, y: 10 }, { x: 20, y: 10 }, { x: 20, y: 20 }], { x: 0, y: 0 }, false, { files: { de: "poster.png" } });
+    const replacementImage = { width: 50, height: 200 } as unknown as CanvasImageSource;
+    const ctx = fakeCtx();
+
+    drawCutPanelForeground(ctx, panel, image, 100, 100, 1, replacementImage);
+
+    expect(ctx.calls.filter((c) => c === "fillRect")).toHaveLength(0); // no letterboxing for "stretch"
+    expect(ctx.drawImageCalls).toEqual([[10, 10, 10, 10]]); // dx,dy,dw,dh = exactly the box, aspect ratio ignored
+  });
+
+  it("preserves the replacement image's own aspect ratio and letterboxes with holeFill.color when fit is \"contain\"", () => {
+    // Same 10x10 box, but a 50x200 (1:4) source image — contained inside a 10x10 box
+    // that ratio scales to width 2.5, height 10, centered horizontally.
+    const panel = cutPanel([{ x: 10, y: 10 }, { x: 20, y: 10 }, { x: 20, y: 20 }], { x: 0, y: 0 }, false, {
+      files: { de: "poster.png" },
+      fit: "contain",
+    });
+    const replacementImage = { width: 50, height: 200 } as unknown as CanvasImageSource;
+    const ctx = fakeCtx();
+
+    drawCutPanelForeground(ctx, panel, image, 100, 100, 1, replacementImage);
+
+    expect(ctx.calls.filter((c) => c === "fillRect")).toHaveLength(1); // letterbox background painted first
+    const [dx, dy, dw, dh] = ctx.drawImageCalls[0];
+    expect(dw).toBeCloseTo(2.5);
+    expect(dh).toBeCloseTo(10);
+    expect(dx).toBeCloseTo(10 + (10 - 2.5) / 2); // centered within the 10..20 box
+    expect(dy).toBeCloseTo(10); // fills the box's full height, no vertical offset
   });
 
   it("falls back to redrawing the original when replacement is configured but no image was loaded yet", () => {
