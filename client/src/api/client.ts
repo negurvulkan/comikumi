@@ -8,6 +8,7 @@ import type { ProjectFile } from "../../../shared/src/project";
 import type { ScriptDocument } from "../../../shared/src/script";
 import type { Comment, CommentDocument, CommentTarget } from "../../../shared/src/comments";
 import type { ProjectRole, PublicUser } from "../../../shared/src/users";
+import type { CbzMetadata } from "../../../shared/src/cbz";
 import { apiUrl } from "./apiBase";
 import { authFetch, authUrl } from "./authFetch";
 
@@ -371,6 +372,33 @@ export const api = {
 
   exportFolderZipUrl: (volumeId: string, folderSuffix: string) =>
     authUrl(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/zip`)),
+
+  /** POST (not a plain `<a href>` like the ZIP download) because the full ComicInfo.xml
+   * field set collected by CbzMetadataModal.tsx — including a per-page <Pages> table for
+   * larger volumes — can exceed a comfortable query-string size. Streams the response
+   * into a Blob and triggers the save via a throwaway object URL + synthetic click,
+   * since a POST response can't be handed to the browser as a plain navigation target. */
+  downloadExportCbz: async (volumeId: string, folderSuffix: string, metadata: CbzMetadata): Promise<void> => {
+    const res = await authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/cbz`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(metadata),
+    });
+    if (!res.ok) await throwApiError(res);
+    const blob = await res.blob();
+    const disposition = res.headers.get("Content-Disposition") ?? "";
+    const fileNameMatch = /filename="([^"]+)"/.exec(disposition);
+    const fileName = fileNameMatch ? fileNameMatch[1] : `${volumeId}_${folderSuffix}.cbz`;
+
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  },
 
   deleteExportFile: (volumeId: string, folderSuffix: string, fileName: string) =>
     authFetch(apiUrl(`/api/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/${encodeURIComponent(fileName)}`), {

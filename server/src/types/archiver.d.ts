@@ -21,6 +21,7 @@ declare module "archiver" {
   export class ZipArchive extends Transform {
     constructor(options?: ZipArchiveOptions);
     file(filepath: string, data: ZipEntryData): this;
+    append(source: string | Buffer, data: ZipEntryData): this;
     finalize(): Promise<void>;
   }
 }

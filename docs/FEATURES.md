@@ -704,6 +704,18 @@ geschrieben werden.
   Druckvorstufen (siehe `docs/Professional-Workflow-Gaps.md`), macht den
   bestehenden Raster-Export aber überhaupt erst druckfähig (PNG kennt technisch
   keinen CMYK-Farbraum).
+- **CBZ-Export**: Im Export-Viewer kann der bereits exportierte Bildbestand einer Sprache
+  zusätzlich zum bestehenden ZIP-Download als `.cbz` heruntergeladen werden (von
+  Comic-Readern wie Komga/Kavita/ComicRack erkanntes Format). Anders als der generische
+  ZIP-Download werden dabei nur Seitenbild-Dateien eingepackt (keine versehentlich im
+  selben Ordner liegenden Druck-TIFFs/PDFs/PSDs), in echter Seitenreihenfolge (über die
+  tatsächliche Seitenliste des Bandes, nicht die Ordner-Sortierung) und fortlaufend
+  umbenannt (`0001.png`, `0002.png`, …), damit die Reihenfolge unabhängig von den
+  Original-Dateinamen stimmt. Enthält eine `ComicInfo.xml` mit Seitenzahl und
+  Leserichtung (`Manga`-Feld, `YesAndRightToLeft` bei RTL-Projekten) — vor dem Download
+  fragt ein Modal (`CbzMetadataModal.tsx`) optionale weitere Angaben für die
+  ComicInfo.xml ab (Reihe, Nummer, Titel, Autor, Genre, Verlag, Zusammenfassung); leer
+  gelassene Felder werden in der XML einfach ausgelassen.
 - **Rendering-Grundlagen**: Schrumpf-zu-Passform + Umbruch für horizontalen Text,
   vollständige Tategaki-Engine (erzwungene Umbrüche, Furigana-Läufe,
   Tate-chū-yoko-Ziffern-/Lateinläufe, Kana-Verkleinerung/-Versatz, Kinsoku-Shori-
@@ -795,7 +807,7 @@ Duplizieren versetzt Kopien um 24 px, damit sie nicht exakt auf dem Original lie
 | `pages.ts` | Seiten eines Bandes auflisten, Vollbild + zwischengespeichertes Vorschaubild ausliefern |
 | `layout.ts` | Seiten-Layout lesen/speichern (legt bei Bedarf ein leeres an), Band-weiter ZIP-Export/-Import, `/reports` für den Band-Bericht |
 | `comments.ts` | CRUD für [Review-Kommentare](#review-kommentare) (granulare Mutations-Routen statt Ganzdokument-PUT), `mentionable-members` für den @-Picker |
-| `export.ts` | Hochgeladenes PNG entgegennehmen und im Export-Ordner ablegen |
+| `export.ts` | Hochgeladenes PNG entgegennehmen und im Export-Ordner ablegen, Export-Ordner als ZIP oder CBZ herunterladen |
 | `languages.ts` | CRUD für die Sprachliste des Projekts, mit Konfliktprüfung auf doppelte Codes/Suffixe |
 | `characters.ts` | CRUD für die Charakterliste des Projekts |
 | `glossary.ts` | CRUD für die projektweite Glossarliste |

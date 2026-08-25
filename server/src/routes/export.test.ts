@@ -297,6 +297,118 @@ describe("Export-Viewer Routes", () => {
     });
   });
 
+  describe("POST /api/volumes/:id/exports/:folderSuffix/cbz", () => {
+    async function bufferedPost(url: string, body: object) {
+      return api
+        .post(url)
+        .send(body)
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+    }
+
+    it("packs only the exported page images into a CBZ archive, ordered and renamed by page order", async () => {
+      const res = await bufferedPost(`/api/volumes/${VOLUME_ID}/exports/german/cbz`, {});
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toBe("application/vnd.comicbook+zip");
+      expect(res.headers["content-disposition"]).toContain('attachment; filename="volume_01_german.cbz"');
+      expect(Buffer.isBuffer(res.body)).toBe(true);
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const entryNames = zip.getEntries().map((e) => e.entryName).sort();
+      expect(entryNames).toContain("ComicInfo.xml");
+      // page_01.pdf must be excluded — only page-image extensions are packaged.
+      expect(entryNames).not.toContain("page_01.pdf");
+      expect(entryNames.some((n) => n === "0001.png")).toBe(true);
+    });
+
+    it("404s when the export folder has no page images", async () => {
+      const res = await api.post(`/api/volumes/${VOLUME_ID}/exports/does-not-exist-lang/cbz`).send({});
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe("export_directory_not_found");
+    });
+
+    it("rejects malformed metadata", async () => {
+      const res = await api.post(`/api/volumes/${VOLUME_ID}/exports/german/cbz`).send({ ageRating: "not-a-real-rating" });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("invalid_cbz_metadata");
+    });
+
+    it("writes the full user-supplied metadata set into ComicInfo.xml, escapes it, and omits blank fields", async () => {
+      const res = await bufferedPost(`/api/volumes/${VOLUME_ID}/exports/german/cbz`, {
+        series: "Keito no Sei",
+        number: "1",
+        volume: "1",
+        writer: "A & B <Team>",
+        translator: "C",
+        publisher: "Fan Group",
+        year: "2024",
+        month: "5",
+        languageIso: "de",
+        genre: "Comedy",
+        ageRating: "Teen",
+        manga: "YesAndRightToLeft",
+      });
+      expect(res.status).toBe(200);
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const xml = zip.readAsText("ComicInfo.xml");
+      expect(xml).toContain("<Series>Keito no Sei</Series>");
+      expect(xml).toContain("<Number>1</Number>");
+      expect(xml).toContain("<Volume>1</Volume>");
+      expect(xml).toContain("<Writer>A &amp; B &lt;Team&gt;</Writer>");
+      expect(xml).toContain("<Translator>C</Translator>");
+      expect(xml).toContain("<Publisher>Fan Group</Publisher>");
+      expect(xml).toContain("<Year>2024</Year>");
+      expect(xml).toContain("<Month>5</Month>");
+      expect(xml).toContain("<LanguageISO>de</LanguageISO>");
+      expect(xml).toContain("<Genre>Comedy</Genre>");
+      expect(xml).toContain("<AgeRating>Teen</AgeRating>");
+      expect(xml).toContain("<Manga>YesAndRightToLeft</Manga>");
+      expect(xml).not.toContain("<Publisher>Fan Group</Publisher><Imprint>");
+      expect(xml).not.toContain("<Summary>");
+      expect(xml).not.toContain("<Day>");
+    });
+
+    it("falls back to the project's reading direction for Manga when unset or 'Unknown'", async () => {
+      const res = await bufferedPost(`/api/volumes/${VOLUME_ID}/exports/german/cbz`, {});
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const xml = zip.readAsText("ComicInfo.xml");
+      // Test project defaults to rtl reading direction (see createProject in beforeAll).
+      expect(xml).toContain("<Manga>YesAndRightToLeft</Manga>");
+    });
+
+    it("lets explicit Manga override the project's reading direction", async () => {
+      const res = await bufferedPost(`/api/volumes/${VOLUME_ID}/exports/german/cbz`, { manga: "No" });
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const xml = zip.readAsText("ComicInfo.xml");
+      expect(xml).toContain("<Manga>No</Manga>");
+    });
+
+    it("includes a <Pages> block with per-page Type/DoublePage when supplied", async () => {
+      const res = await bufferedPost(`/api/volumes/${VOLUME_ID}/exports/german/cbz`, {
+        pages: [
+          { image: 0, type: "FrontCover" },
+          { image: 1, type: "Story", doublePage: true },
+        ],
+      });
+      expect(res.status).toBe(200);
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const xml = zip.readAsText("ComicInfo.xml");
+      expect(xml).toContain('<Page Image="0" Type="FrontCover" />');
+      expect(xml).toContain('<Page Image="1" Type="Story" DoublePage="true" />');
+    });
+  });
+
   describe("DELETE /api/volumes/:id/exports/:folderSuffix/:fileName", () => {
     it("blocks a translator from deleting files", async () => {
       const res = await translatorApi.delete(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png`);

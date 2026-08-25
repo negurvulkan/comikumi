@@ -3,13 +3,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import multer from "multer";
 import sharp from "sharp";
-import { findVolume, listPages } from "../lib/projectScanner.js";
+import { findVolume, listPages, PAGE_IMAGE_EXTENSIONS } from "../lib/projectScanner.js";
 import { languageFolderName, isSafeFileName, isSafeFolderPath } from "../lib/paths.js";
-import { readPresets, readSettings } from "../lib/projectStore.js";
+import { readPresets, readSettings, getCurrentProjectInfo } from "../lib/projectStore.js";
 import { ZipArchive } from "archiver";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
 import { PageLayoutSchema } from "../../../shared/src/layoutSchema.js";
+import { CbzMetadataSchema, type CbzMetadata } from "../../../shared/src/cbz.js";
 import { buildVectorPdfPage } from "../lib/vectorPdf/buildPdfPage.js";
 import { buildLayeredPsd } from "../lib/psdExport.js";
 import { resolveImageFilePath } from "../lib/imageResolver.js";
@@ -21,6 +22,10 @@ const requireLetterer = requireProjectRole("letterer");
 /** Fixed print resolution tag (metadata only — see export-print route doc comment for
  * why this never resamples pixels). 300dpi is the standard comic/manga print convention. */
 const PRINT_DPI = 300;
+
+function escapeXml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]!);
+}
 
 exportRouter.post(
   "/:id/export",
@@ -336,6 +341,145 @@ exportRouter.get(
     for (const file of files) {
       archive.file(path.join(dir, file.name), { name: file.name });
     }
+    await archive.finalize();
+  })
+);
+
+/** Renders the full ComicInfo.xml — every field is optional and simply omitted when
+ * unset, except Title/PageCount/Manga which always have a value (falling back to the
+ * book folder name / the actual packaged count / the project's reading direction). The
+ * <Pages> block (per-page Type/DoublePage) is only emitted when the caller specified at
+ * least one entry, since an all-defaults block adds noise most readers ignore anyway. */
+function buildComicInfoXml(metadata: CbzMetadata, title: string, pageCount: number, manga: string): string {
+  const fields: [string, string | undefined][] = [
+    ["Title", title],
+    ["Series", metadata.series],
+    ["Number", metadata.number],
+    ["Volume", metadata.volume],
+    ["Summary", metadata.summary],
+    ["Notes", metadata.notes],
+    ["Year", metadata.year],
+    ["Month", metadata.month],
+    ["Day", metadata.day],
+    ["Writer", metadata.writer],
+    ["Penciller", metadata.penciller],
+    ["Inker", metadata.inker],
+    ["Colorist", metadata.colorist],
+    ["Letterer", metadata.letterer],
+    ["CoverArtist", metadata.coverArtist],
+    ["Editor", metadata.editor],
+    ["Translator", metadata.translator],
+    ["Publisher", metadata.publisher],
+    ["Imprint", metadata.imprint],
+    ["Genre", metadata.genre],
+    ["Tags", metadata.tags],
+    ["Web", metadata.web],
+    ["PageCount", String(pageCount)],
+    ["LanguageISO", metadata.languageIso],
+    ["Format", metadata.format],
+    ["AgeRating", metadata.ageRating && metadata.ageRating !== "Unknown" ? metadata.ageRating : undefined],
+    ["ScanInformation", metadata.scanInformation],
+    ["Manga", manga],
+  ];
+  const fieldsXml = fields
+    .filter(([, value]) => !!value)
+    .map(([tag, value]) => `  <${tag}>${escapeXml(value!)}</${tag}>`)
+    .join("\n");
+
+  let pagesXml = "";
+  if (metadata.pages && metadata.pages.length > 0) {
+    const pageEntries = metadata.pages
+      .map((p) => {
+        const attrs = [`Image="${p.image}"`];
+        if (p.type) attrs.push(`Type="${p.type}"`);
+        if (p.doublePage) attrs.push(`DoublePage="true"`);
+        return `    <Page ${attrs.join(" ")} />`;
+      })
+      .join("\n");
+    pagesXml = `\n  <Pages>\n${pageEntries}\n  </Pages>`;
+  }
+
+  return `<?xml version="1.0" encoding="utf-8"?>\n<ComicInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n${fieldsXml}${pagesXml}\n</ComicInfo>\n`;
+}
+
+/** Packages a language's exported page images as a CBZ (a ZIP with a `.cbz` extension
+ * that comic readers like Komga/Kavita/ComicRack recognize) — unlike the generic /zip
+ * route above, this filters to page-image extensions only (skips stray print TIFFs/PDFs/
+ * PSDs that may share the folder) and orders entries by actual page order via listPages()
+ * rather than raw directory order, renaming each entry sequentially so the archive reads
+ * correctly regardless of the source filenames. POST (not GET) because the full
+ * ComicInfo.xml field set, including a per-page <Pages> table, can exceed a comfortable
+ * query-string size — see client/src/editor/CbzMetadataModal.tsx and the client's
+ * blob-download flow in ExportViewer.tsx. */
+exportRouter.post(
+  "/:id/exports/:folderSuffix/cbz",
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const folderSuffix = req.params.folderSuffix;
+    if (!isSafeFolderPath(folderSuffix)) {
+      res.status(400).json({ error: "invalid_folder_suffix" });
+      return;
+    }
+    const parsed = CbzMetadataSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_cbz_metadata", details: parsed.error.flatten() });
+      return;
+    }
+    const metadata = parsed.data;
+
+    const settings = await readSettings();
+    const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
+
+    let entries: import("node:fs").Dirent[] = [];
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      res.status(404).json({ error: "export_directory_not_found" });
+      return;
+    }
+    const imagesByPage = new Map<string, string>();
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      const ext = path.extname(entry.name).toLowerCase();
+      if (!PAGE_IMAGE_EXTENSIONS.has(ext)) continue;
+      imagesByPage.set(path.basename(entry.name, ext), entry.name);
+    }
+    const pages = await listPages(volume);
+    const orderedFiles = pages.map((p) => imagesByPage.get(p.page)).filter((f): f is string => !!f);
+    if (orderedFiles.length === 0) {
+      res.status(404).json({ error: "no_exported_images_found" });
+      return;
+    }
+
+    const projectInfo = await getCurrentProjectInfo();
+    const manga =
+      metadata.manga && metadata.manga !== "Unknown"
+        ? metadata.manga
+        : projectInfo?.readingDirection === "rtl"
+          ? "YesAndRightToLeft"
+          : "Yes";
+    const title = metadata.title || volume.bookFolderName;
+    const comicInfoXml = buildComicInfoXml(metadata, title, orderedFiles.length, manga);
+
+    res.setHeader("Content-Type", "application/vnd.comicbook+zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${volume.bookFolderName}_${folderSuffix}.cbz"`);
+
+    const archive = new ZipArchive({ zlib: { level: 9 } });
+    archive.on("error", (err: Error) => {
+      if (!res.headersSent) {
+        res.status(500).end(String(err));
+      }
+    });
+    archive.pipe(res);
+    orderedFiles.forEach((fileName, index) => {
+      const ext = path.extname(fileName);
+      archive.file(path.join(dir, fileName), { name: `${String(index + 1).padStart(4, "0")}${ext}` });
+    });
+    archive.append(comicInfoXml, { name: "ComicInfo.xml" });
     await archive.finalize();
   })
 );

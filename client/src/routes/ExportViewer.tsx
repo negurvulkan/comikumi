@@ -6,7 +6,9 @@ import { translateApiError } from "../i18n/translateApiError";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
+import { CbzMetadataModal } from "../editor/CbzMetadataModal";
 import type { LanguageDef } from "../../../shared/src/languages";
+import type { CbzMetadata } from "../../../shared/src/cbz";
 
 interface ExportFile {
   name: string;
@@ -22,6 +24,11 @@ interface LanguageExportSummary {
   folderName: string;
   files: ExportFile[];
 }
+
+// Kept in sync with server/src/lib/projectScanner.ts's PAGE_IMAGE_EXTENSIONS — that
+// constant lives server-side only, so the client re-derives the same filter here to
+// mirror export.ts's /cbz route ordering (see orderedExportedPages below).
+const CBZ_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
 export function ExportViewer() {
   const { t } = useTranslation();
@@ -39,6 +46,7 @@ export function ExportViewer() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [inspectingFile, setInspectingFile] = useState<ExportFile | null>(null);
+  const [cbzModalOpen, setCbzModalOpen] = useState(false);
 
   const loadData = async () => {
     try {
@@ -81,6 +89,13 @@ export function ExportViewer() {
     }
   }
 
+  // Mirrors export.ts's own filtering/ordering for the /cbz route (real page order via
+  // listPages(), image-only extensions) so the indices the Pages tab sends back line up
+  // with what the server actually packages.
+  const orderedExportedPages = (pages ?? [])
+    .filter((p) => (filesMap.get(p.page) ?? []).some((f) => CBZ_IMAGE_EXTENSIONS.has(f.extension.toLowerCase())))
+    .map((p) => p.page);
+
   const handleDeleteFolder = async () => {
     if (!selectedLanguage) return;
     const ok = await confirm({
@@ -113,6 +128,18 @@ export function ExportViewer() {
     try {
       await api.deleteExportFile(volumeId, selectedLanguage, file.name);
       await loadData();
+    } catch (err) {
+      setError(translateApiError(err, t));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleConfirmCbz = async (metadata: CbzMetadata) => {
+    setCbzModalOpen(false);
+    setBusy(true);
+    try {
+      await api.downloadExportCbz(volumeId, selectedLanguage, metadata);
     } catch (err) {
       setError(translateApiError(err, t));
     } finally {
@@ -211,6 +238,9 @@ export function ExportViewer() {
                   >
                     {t("exportViewer.downloadZip")}
                   </a>
+                  <button type="button" onClick={() => setCbzModalOpen(true)} disabled={busy}>
+                    {t("exportViewer.downloadCbz")}
+                  </button>
                   {hasAtLeast("letterer") && (
                     <button type="button" className="danger" onClick={handleDeleteFolder} disabled={busy}>
                       {t("exportViewer.deleteFolder")}
@@ -305,6 +335,19 @@ export function ExportViewer() {
           )}
         </div>
       </div>
+
+      {cbzModalOpen && (
+        <CbzMetadataModal
+          pages={orderedExportedPages}
+          initial={{
+            series: project?.name,
+            languageIso: languages.find((l) => l.folderSuffix === selectedLanguage)?.code,
+            manga: project?.readingDirection === "rtl" ? "YesAndRightToLeft" : "Yes",
+          }}
+          onConfirm={handleConfirmCbz}
+          onClose={() => setCbzModalOpen(false)}
+        />
+      )}
 
       {/* Inspect Comparison Modal */}
       {inspectingFile && (
