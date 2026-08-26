@@ -480,7 +480,7 @@ Ein gesperrtes Panel schützt nur sich selbst, nicht automatisch seine zugeordne
 Kind-Blasen (siehe [Elementtypen](#elementtypen) → Panels) — die bleiben unabhängig
 sperr-/bearbeitbar. Die Sperre wird im gespeicherten Layout nur dann mit abgelegt, wenn
 das Element zuletzt gesperrt war (siehe `locked` in
-[JSON-Format.md](JSON-Format.md#bubble)).
+[JSON-Format.de.md](JSON-Format.de.md#bubble)).
 
 ## Cut-Panel
 

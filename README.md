@@ -68,7 +68,10 @@ React + Konva canvas editor.
 
 Full feature list: [`docs/FEATURES.md`](docs/FEATURES.md) (also available
 [in German](docs/FEATURES.de.md)). Layout JSON schema:
-[`docs/JSON-Format.md`](docs/JSON-Format.md) (German).
+[`docs/JSON-Format.md`](docs/JSON-Format.md) (also available
+[in German](docs/JSON-Format.de.md)). Script-planning JSON schema:
+[`docs/Script-JSON-Format.md`](docs/Script-JSON-Format.md) (also available
+[in German](docs/Script-JSON-Format.de.md)).
 
 ## Architecture
 

@@ -1,0 +1,1313 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Generated from shared/src/layoutSchema.ts's PageLayoutSchema via Zod 4's z.toJSONSchema(). Snapshot — regenerate after changing that file (e.g. `node -e \"const {z}=require('zod');const {PageLayoutSchema}=require('./shared/src/layoutSchema.js');require('fs').writeFileSync('docs/layout.schema.json', JSON.stringify(z.toJSONSchema(PageLayoutSchema,{target:'draft-7'}),null,2)+'\\n')\"` run via tsx from the server/ package, output paths relative to it). See docs/JSON-Format.md for a prose description of the same schema.",
+  "type": "object",
+  "properties": {
+    "page": {
+      "type": "string"
+    },
+    "sourceImage": {
+      "type": "string"
+    },
+    "imageWidth": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "imageHeight": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "bubbles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "shape": {
+            "type": "string",
+            "enum": [
+              "rect",
+              "oval",
+              "quad"
+            ]
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "height": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "rotation": {
+            "default": 0,
+            "type": "number"
+          },
+          "corners": {
+            "minItems": 4,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "bubbleStyle": {
+            "default": "none",
+            "type": "string",
+            "enum": [
+              "none",
+              "speech",
+              "thought",
+              "shout",
+              "svg"
+            ]
+          },
+          "fillColor": {
+            "default": "#ffffff",
+            "type": "string"
+          },
+          "strokeColor": {
+            "default": "#000000",
+            "type": "string"
+          },
+          "strokeWidthPx": {
+            "default": 6,
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "tail": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tailAnchor": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tailWidth": {
+            "default": 40,
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "svgFileName": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tailStyle": {
+            "type": "string",
+            "enum": [
+              "point",
+              "point-detached",
+              "chain"
+            ]
+          },
+          "tailChainSegmentShape": {
+            "default": "circle",
+            "type": "string",
+            "enum": [
+              "circle",
+              "rect",
+              "diamond"
+            ]
+          },
+          "tailChainSegments": {
+            "default": 3,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "tailChainSpacing": {
+            "default": 1,
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "tailCurve": {
+            "default": 0,
+            "type": "number"
+          },
+          "formOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "rotation": {
+                  "default": 0,
+                  "type": "number"
+                },
+                "bubbleStyle": {
+                  "default": "none",
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "speech",
+                    "thought",
+                    "shout",
+                    "svg"
+                  ]
+                },
+                "fillColor": {
+                  "default": "#ffffff",
+                  "type": "string"
+                },
+                "strokeColor": {
+                  "default": "#000000",
+                  "type": "string"
+                },
+                "strokeWidthPx": {
+                  "default": 6,
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "tail": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number"
+                        },
+                        "y": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tailAnchor": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number"
+                        },
+                        "y": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tailWidth": {
+                  "default": 40,
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "svgFileName": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tailStyle": {
+                  "type": "string",
+                  "enum": [
+                    "point",
+                    "point-detached",
+                    "chain"
+                  ]
+                },
+                "tailChainSegmentShape": {
+                  "default": "circle",
+                  "type": "string",
+                  "enum": [
+                    "circle",
+                    "rect",
+                    "diamond"
+                  ]
+                },
+                "tailChainSegments": {
+                  "default": 3,
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 8
+                },
+                "tailChainSpacing": {
+                  "default": 1,
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "tailCurve": {
+                  "default": 0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "width",
+                "height",
+                "rotation",
+                "bubbleStyle",
+                "fillColor",
+                "strokeColor",
+                "strokeWidthPx",
+                "tail",
+                "tailAnchor",
+                "tailWidth",
+                "svgFileName",
+                "tailChainSegmentShape",
+                "tailChainSegments",
+                "tailChainSpacing",
+                "tailCurve"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "fontFamily": {
+            "default": "Anime Ace",
+            "type": "string"
+          },
+          "fontSize": {
+            "default": 24,
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "lineHeight": {
+            "default": 1.2,
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "align": {
+            "default": "center",
+            "type": "string",
+            "enum": [
+              "left",
+              "center",
+              "right"
+            ]
+          },
+          "direction": {
+            "default": "ltr",
+            "type": "string",
+            "enum": [
+              "ltr",
+              "rtl",
+              "vertical-rl"
+            ]
+          },
+          "color": {
+            "default": "#000000",
+            "type": "string"
+          },
+          "textOutline": {
+            "default": {
+              "enabled": false,
+              "color": "#000000",
+              "widthPx": 4
+            },
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "default": false,
+                "type": "boolean"
+              },
+              "color": {
+                "default": "#000000",
+                "type": "string"
+              },
+              "widthPx": {
+                "default": 4,
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "enabled",
+              "color",
+              "widthPx"
+            ],
+            "additionalProperties": false
+          },
+          "textGradient": {
+            "default": {
+              "enabled": false,
+              "colorStart": "#ffffff",
+              "colorEnd": "#6c8cff",
+              "angleDeg": 0
+            },
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "default": false,
+                "type": "boolean"
+              },
+              "colorStart": {
+                "default": "#ffffff",
+                "type": "string"
+              },
+              "colorEnd": {
+                "default": "#6c8cff",
+                "type": "string"
+              },
+              "angleDeg": {
+                "default": 0,
+                "type": "number"
+              }
+            },
+            "required": [
+              "enabled",
+              "colorStart",
+              "colorEnd",
+              "angleDeg"
+            ],
+            "additionalProperties": false
+          },
+          "text": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "fontSizeOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "fontFamilyOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "lineHeightOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "alignOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            }
+          },
+          "directionOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "ltr",
+                "rtl",
+                "vertical-rl"
+              ]
+            }
+          },
+          "textOutlineOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "color": {
+                  "default": "#000000",
+                  "type": "string"
+                },
+                "widthPx": {
+                  "default": 4,
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "enabled",
+                "color",
+                "widthPx"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "textGradientOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "colorStart": {
+                  "default": "#ffffff",
+                  "type": "string"
+                },
+                "colorEnd": {
+                  "default": "#6c8cff",
+                  "type": "string"
+                },
+                "angleDeg": {
+                  "default": 0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "enabled",
+                "colorStart",
+                "colorEnd",
+                "angleDeg"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "panelId": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "characterId": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "readingOrderOverride": {
+            "type": "number"
+          },
+          "presetId": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "locked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "shape",
+          "x",
+          "y",
+          "width",
+          "height",
+          "rotation",
+          "bubbleStyle",
+          "fillColor",
+          "strokeColor",
+          "strokeWidthPx",
+          "tail",
+          "tailAnchor",
+          "tailWidth",
+          "svgFileName",
+          "tailChainSegmentShape",
+          "tailChainSegments",
+          "tailChainSpacing",
+          "tailCurve",
+          "fontFamily",
+          "fontSize",
+          "lineHeight",
+          "align",
+          "direction",
+          "color",
+          "textOutline",
+          "textGradient",
+          "text",
+          "panelId",
+          "characterId",
+          "presetId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "images": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "corners": {
+            "minItems": 4,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "opacity": {
+            "default": 1,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "files": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "locked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "corners",
+          "opacity",
+          "files"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "curvedTexts": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "points": {
+            "minItems": 4,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "fontFamily": {
+            "default": "Anime Ace",
+            "type": "string"
+          },
+          "fontSize": {
+            "default": 48,
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "align": {
+            "default": "center",
+            "type": "string",
+            "enum": [
+              "left",
+              "center",
+              "right"
+            ]
+          },
+          "color": {
+            "default": "#000000",
+            "type": "string"
+          },
+          "textOutline": {
+            "default": {
+              "enabled": false,
+              "color": "#000000",
+              "widthPx": 4
+            },
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "default": false,
+                "type": "boolean"
+              },
+              "color": {
+                "default": "#000000",
+                "type": "string"
+              },
+              "widthPx": {
+                "default": 4,
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "enabled",
+              "color",
+              "widthPx"
+            ],
+            "additionalProperties": false
+          },
+          "textGradient": {
+            "default": {
+              "enabled": false,
+              "colorStart": "#ffffff",
+              "colorEnd": "#6c8cff",
+              "angleDeg": 0
+            },
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "default": false,
+                "type": "boolean"
+              },
+              "colorStart": {
+                "default": "#ffffff",
+                "type": "string"
+              },
+              "colorEnd": {
+                "default": "#6c8cff",
+                "type": "string"
+              },
+              "angleDeg": {
+                "default": 0,
+                "type": "number"
+              }
+            },
+            "required": [
+              "enabled",
+              "colorStart",
+              "colorEnd",
+              "angleDeg"
+            ],
+            "additionalProperties": false
+          },
+          "text": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "fontSizeOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "fontFamilyOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "alignOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            }
+          },
+          "textOutlineOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "color": {
+                  "default": "#000000",
+                  "type": "string"
+                },
+                "widthPx": {
+                  "default": 4,
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "enabled",
+                "color",
+                "widthPx"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "textGradientOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "colorStart": {
+                  "default": "#ffffff",
+                  "type": "string"
+                },
+                "colorEnd": {
+                  "default": "#6c8cff",
+                  "type": "string"
+                },
+                "angleDeg": {
+                  "default": 0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "enabled",
+                "colorStart",
+                "colorEnd",
+                "angleDeg"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "presetId": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "locked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "points",
+          "fontFamily",
+          "fontSize",
+          "align",
+          "color",
+          "textOutline",
+          "textGradient",
+          "text",
+          "presetId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "panels": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "points": {
+            "minItems": 3,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "label": {
+            "default": "",
+            "type": "string"
+          },
+          "color": {
+            "default": "#6c8cff",
+            "type": "string"
+          },
+          "origin": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "cut": {
+            "type": "object",
+            "properties": {
+              "cutOrigin": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "holeFill": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "default": "auto",
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "manual"
+                    ]
+                  },
+                  "color": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "mode",
+                  "color"
+                ],
+                "additionalProperties": false
+              },
+              "removed": {
+                "type": "boolean"
+              },
+              "flipHorizontal": {
+                "type": "boolean"
+              },
+              "replacement": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "default": {},
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "border": {
+                    "type": "object",
+                    "properties": {
+                      "color": {
+                        "type": "string"
+                      },
+                      "widthPx": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "color",
+                      "widthPx"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "fit": {
+                    "default": "stretch",
+                    "type": "string",
+                    "enum": [
+                      "stretch",
+                      "contain"
+                    ]
+                  }
+                },
+                "required": [
+                  "files",
+                  "fit"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "cutOrigin",
+              "holeFill"
+            ],
+            "additionalProperties": false
+          },
+          "languageOverride": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "points": {
+                  "minItems": 3,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "origin": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "additionalProperties": false
+                },
+                "cut": {
+                  "type": "object",
+                  "properties": {
+                    "cutOrigin": {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number"
+                        },
+                        "y": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "holeFill": {
+                      "type": "object",
+                      "properties": {
+                        "mode": {
+                          "default": "auto",
+                          "type": "string",
+                          "enum": [
+                            "auto",
+                            "manual"
+                          ]
+                        },
+                        "color": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "mode",
+                        "color"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "removed": {
+                      "type": "boolean"
+                    },
+                    "flipHorizontal": {
+                      "type": "boolean"
+                    },
+                    "replacement": {
+                      "type": "object",
+                      "properties": {
+                        "files": {
+                          "default": {},
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "border": {
+                          "type": "object",
+                          "properties": {
+                            "color": {
+                              "type": "string"
+                            },
+                            "widthPx": {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": [
+                            "color",
+                            "widthPx"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "fit": {
+                          "default": "stretch",
+                          "type": "string",
+                          "enum": [
+                            "stretch",
+                            "contain"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "files",
+                        "fit"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "cutOrigin",
+                    "holeFill"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "points",
+                "origin"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "points",
+          "label",
+          "color",
+          "origin"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "schemaVersion": {
+      "default": 1,
+      "type": "number"
+    }
+  },
+  "required": [
+    "page",
+    "sourceImage",
+    "imageWidth",
+    "imageHeight",
+    "bubbles",
+    "images",
+    "curvedTexts",
+    "panels",
+    "schemaVersion"
+  ],
+  "additionalProperties": false
+}

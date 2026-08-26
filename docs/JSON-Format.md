@@ -1,17 +1,19 @@
-# Layout-JSON-Format
+# Page Layout JSON Format
 
-Jede Seite hat genau eine JSON-Datei (`<band>_lettering/page_XX.json`), die ihr komplettes
-Lettering-Layout beschreibt: Sprechblasen, platzierte Bilder, Kurventexte, Panel-Markierungen
-und deren Übersetzungen für alle Sprachen. Diese Datei ist die Single Source of Truth —
-sowohl die Live-Vorschau im Editor als auch der PNG-Export lesen ausschließlich daraus. Das
-Schema ist in `shared/src/layoutSchema.ts` als [Zod](https://zod.dev)-Schema definiert; diese
-Datei beschreibt es in Prosa.
+*[Deutsche Version](JSON-Format.de.md)*
 
-Alle Koordinaten/Maße (`x`, `y`, `width`, `height`, `strokeWidthPx`, Punkte in `corners`/
-`points` etc.) sind **Pixel im Koordinatensystem des Quellbilds** (`imageWidth` ×
-`imageHeight`), nicht Bildschirm- oder Zoom-Pixel.
+Each page has exactly one JSON file (`<volume>_lettering/page_XX.json`) describing its
+complete lettering layout: speech bubbles, placed images, curved texts, panel markers,
+and their translations for all languages. This file is the single source of truth —
+both the live preview in the editor and the PNG export read exclusively from it. The
+schema is defined in `shared/src/layoutSchema.ts` as a [Zod](https://zod.dev) schema; this
+file describes it in prose.
 
-## Grundgerüst (`PageLayout`)
+All coordinates/dimensions (`x`, `y`, `width`, `height`, `strokeWidthPx`, points in `corners`/
+`points` etc.) are **pixels in the coordinate system of the source image** (`imageWidth` ×
+`imageHeight`), not screen or zoom pixels.
+
+## Basic structure (`PageLayout`)
 
 ```jsonc
 {
@@ -27,124 +29,125 @@ Alle Koordinaten/Maße (`x`, `y`, `width`, `height`, `strokeWidthPx`, Punkte in 
 }
 ```
 
-| Feld | Typ | Bedeutung |
+| Field | Type | Meaning |
 |---|---|---|
-| `page` | string | Seitenname ohne Dateiendung, z. B. `"page_03"` |
-| `sourceImage` | string | Dateiname des leeren Quellbilds in `..._empty/` |
-| `imageWidth`, `imageHeight` | number | Maße des Quellbilds in px — Bezugsrahmen für alle Koordinaten |
-| `bubbles` | `Bubble[]` | Sprechblasen/Textbereiche dieser Seite |
-| `images` | `ImageElement[]` | Frei platzierte, perspektivisch verzerrbare Bilder (z. B. übersetzte Poster) |
-| `curvedTexts` | `CurvedTextElement[]` | Freistehende Titel-/Effekttexte entlang einer Kurve (z. B. Lautmalerei) |
-| `panels` | `Panel[]` | Gezeichnete Panel-Referenzbereiche (reine Editor-Anmerkung, nie im Export) |
-| `schemaVersion` | number | `1` (oder fehlend) = Bubble-Koordinaten sind immer absolut, auch mit gesetztem `panelId`; `2` = ein Bubble mit gesetztem `panelId` ist Kind seines Panels, seine Koordinaten sind relativ zu dessen `origin` (siehe unten). Alte Dateien werden beim ersten Laden automatisch einmalig umgerechnet und auf `2` angehoben (siehe „Migration“ unten) |
+| `page` | string | Page name without file extension, e.g. `"page_03"` |
+| `sourceImage` | string | File name of the blank source image in `..._empty/` |
+| `imageWidth`, `imageHeight` | number | Dimensions of the source image in px — reference frame for all coordinates |
+| `bubbles` | `Bubble[]` | Speech bubbles/text areas on this page |
+| `images` | `ImageElement[]` | Freely placed, perspective-distortable images (e.g. translated posters) |
+| `curvedTexts` | `CurvedTextElement[]` | Standalone title/effect texts along a curve (e.g. onomatopoeia) |
+| `panels` | `Panel[]` | Drawn panel reference areas (editor annotation only, never in the export) |
+| `schemaVersion` | number | `1` (or missing) = bubble coordinates are always absolute, even with `panelId` set; `2` = a bubble with `panelId` set is a child of its panel, its coordinates are relative to its `origin` (see below). Older files are automatically converted once on first load and bumped to `2` (see "Migration" below) |
 
 ## Bubble
 
-Ein Eintrag in `bubbles` ist ein Textbereich mit optional sichtbarer Blasengrafik.
+An entry in `bubbles` is a text area with an optional visible bubble graphic.
 
-### Geometrie & Grundform
+### Geometry & basic shape
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `id` | string | – | eindeutige ID (uuid) |
-| `shape` | `"rect" \| "oval" \| "quad"` | – | Grundform. `quad` = freies perspektivisches Viereck (z. B. Schilder), nutzt `corners` statt x/y/width/height |
-| `x`, `y` | number | – | Position der Bounding-Box (oben links), Basiswert für alle Sprachen ohne eigene Form |
-| `width`, `height` | number | – | Größe der Bounding-Box, Basiswert |
-| `rotation` | number | `0` | Rotation in Grad, um das Zentrum der Box |
-| `corners` | `Point[4]` \| undefined | – | **nur bei `shape: "quad"`**: die 4 Ecken (Reihenfolge oben-links/oben-rechts/unten-rechts/unten-links) für die perspektivische Verzerrung. `x/y/width/height` halten bei `quad` weiterhin die Bounding-Box, werden aber fürs Rendern ignoriert |
+| `id` | string | – | unique ID (uuid) |
+| `shape` | `"rect" \| "oval" \| "quad"` | – | Basic shape. `quad` = free perspective quadrilateral (e.g. signs), uses `corners` instead of x/y/width/height |
+| `x`, `y` | number | – | Position of the bounding box (top left), base value for all languages without their own shape |
+| `width`, `height` | number | – | Size of the bounding box, base value |
+| `rotation` | number | `0` | Rotation in degrees, around the center of the box |
+| `corners` | `Point[4]` \| undefined | – | **only for `shape: "quad"`**: the 4 corners (order top-left/top-right/bottom-right/bottom-left) for the perspective distortion. For `quad`, `x/y/width/height` still hold the bounding box but are ignored for rendering |
 
-### Sichtbare Blasengrafik
+### Visible bubble graphic
 
-Standardmäßig zeichnet das Tool **keine** Blasenkontur — es wird davon ausgegangen, dass
-die Blase bereits im Quellbild gezeichnet ist. Über `bubbleStyle` kann das Tool selbst eine
-Kontur zeichnen (für vergessene oder zu kleine Blasen):
+By default the tool draws **no** bubble outline — it is assumed the bubble is already
+drawn in the source image. Via `bubbleStyle` the tool can draw an outline itself (for
+forgotten or too-small bubbles):
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `bubbleStyle` | `"none" \| "speech" \| "thought" \| "shout" \| "svg"` | `"none"` | `none` = unsichtbar (Standard). `speech` = glatte Sprechblase (abgerundetes Rechteck bzw. Ellipse). `thought` = wolkig-buckelige Gedankenblase. `shout` = gezackte Effektblase. `svg` = eigene, hochgeladene SVG-Kontur (`svgFileName`) |
-| `fillColor` | string (CSS-Farbe) | `"#ffffff"` | Füllfarbe der Blase, nur wirksam wenn `bubbleStyle ≠ "none"` |
-| `strokeColor` | string (CSS-Farbe) | `"#000000"` | Randfarbe |
-| `strokeWidthPx` | number | `6` | Randbreite in Bild-px |
-| `svgFileName` | string \| `null` | `null` | Dateiname einer hochgeladenen SVG-Kontur unter `server/data/bubble-svgs` — nur wirksam wenn `bubbleStyle: "svg"` |
+| `bubbleStyle` | `"none" \| "speech" \| "thought" \| "shout" \| "svg"` | `"none"` | `none` = invisible (default). `speech` = smooth speech bubble (rounded rectangle or ellipse). `thought` = cloud-shaped, bumpy thought bubble. `shout` = jagged effect bubble. `svg` = custom, uploaded SVG outline (`svgFileName`) |
+| `fillColor` | string (CSS color) | `"#ffffff"` | Fill color of the bubble, only effective when `bubbleStyle ≠ "none"` |
+| `strokeColor` | string (CSS color) | `"#000000"` | Outline color |
+| `strokeWidthPx` | number | `6` | Outline width in image px |
+| `svgFileName` | string \| `null` | `null` | File name of an uploaded SVG outline under `server/data/bubble-svgs` — only effective when `bubbleStyle: "svg"` |
 
-### Schweif/Zeiger
+### Tail/pointer
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `tail` | `Point \| null` | `null` | Spitze des Schweifs (`point`/`point-detached`) bzw. Zielpunkt der Kette (`chain`). **Lokale, unrotierte Koordinaten relativ zur Box** (0,0 = oben links der Box) — dadurch bewegt sich der Schweif automatisch mit, wenn die Blase verschoben/skaliert/rotiert wird. `null` = kein Schweif |
-| `tailAnchor` | `Point \| null` | `null` | Wo der Schweif auf der Blasenkontur ansetzt (ebenfalls lokale Koordinaten). `null` = automatisch ermitteln (nächstgelegener Konturpunkt zu `tail`) — wird gesetzt, sobald der Anker-Griff im Editor gezogen wird |
-| `tailWidth` | number | `40` | Breite der Schweifbasis an der Blasenkontur (Bild-px) — nur relevant für `tailStyle: "point"`/`"point-detached"` |
-| `tailStyle` | `"point" \| "point-detached" \| "chain"` \| undefined | – (siehe unten) | Wie der Schweif mit dem Blasenkörper verbunden ist. `point` = nahtlos in die Kontur übergehend (klassischer Sprechblasen-/Shout-Schweif). `point-detached` = freistehende Spitze, nicht mit der Kontur verschmolzen. `chain` = Kette aus Segmenten (klassischer Gedankenblasen-Stil, jetzt für jeden Blasenstil wählbar) |
-| `tailChainSegmentShape` | `"circle" \| "rect" \| "diamond"` | `"circle"` | Form der einzelnen Kettenglieder, nur bei `tailStyle: "chain"` |
-| `tailChainSegments` | number (1–8) | `3` | Anzahl der Kettenglieder |
-| `tailChainSpacing` | number | `1` | Abstands-Multiplikator zwischen den Kettengliedern — `1` = gleichmäßig bis zur Spitze verteilt (Standard), `<1` staucht näher an die Blase, `>1` streckt darüber hinaus |
-| `tailCurve` | number | `0` | Seitliche Wölbung (Bild-px) der Schweif-Kanten — `0` = gerade, positiv/negativ wölbt nach der einen oder anderen Seite |
+| `tail` | `Point \| null` | `null` | Tip of the tail (`point`/`point-detached`) or target point of the chain (`chain`). **Local, unrotated coordinates relative to the box** (0,0 = top left of the box) — this way the tail automatically moves along when the bubble is moved/scaled/rotated. `null` = no tail |
+| `tailAnchor` | `Point \| null` | `null` | Where the tail attaches to the bubble outline (also local coordinates). `null` = determine automatically (nearest outline point to `tail`) — is set as soon as the anchor handle is dragged in the editor |
+| `tailWidth` | number | `40` | Width of the tail base at the bubble outline (image px) — only relevant for `tailStyle: "point"`/`"point-detached"` |
+| `tailStyle` | `"point" \| "point-detached" \| "chain"` \| undefined | – (see below) | How the tail connects to the bubble body. `point` = seamlessly merging into the outline (classic speech-bubble/shout tail). `point-detached` = standalone tip, not merged with the outline. `chain` = chain of segments (classic thought-bubble style, now selectable for every bubble style) |
+| `tailChainSegmentShape` | `"circle" \| "rect" \| "diamond"` | `"circle"` | Shape of the individual chain links, only for `tailStyle: "chain"` |
+| `tailChainSegments` | number (1–8) | `3` | Number of chain links |
+| `tailChainSpacing` | number | `1` | Spacing multiplier between chain links — `1` = evenly distributed up to the tip (default), `<1` compresses closer to the bubble, `>1` stretches beyond it |
+| `tailCurve` | number | `0` | Lateral bulge (image px) of the tail edges — `0` = straight, positive/negative bulges to one side or the other |
 
-`tailStyle` ist auf gespeicherten Daten optional: Fehlt es (ältere Dateien), wird es zur
-Laufzeit über `resolveEffectiveTailStyle()` implizit aufgelöst — `"chain"` für
-`bubbleStyle: "thought"`, sonst `"point"` — damit alte Layouts unverändert weiter aussehen.
+`tailStyle` is optional on saved data: if it's missing (older files), it is implicitly
+resolved at runtime via `resolveEffectiveTailStyle()` — `"chain"` for
+`bubbleStyle: "thought"`, otherwise `"point"` — so old layouts keep looking unchanged.
 
-### Textstil (Basiswert für alle Sprachen)
+### Text style (base value for all languages)
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `fontFamily` | string | `"Anime Ace"` | Schriftname (muss unter `server/data/fonts` registriert sein) |
-| `fontSize` | number | `24` | Basis-Schriftgröße in px (wird beim Rendern ggf. automatisch verkleinert, damit der Text in die Box passt) |
-| `lineHeight` | number | `1.2` | Zeilenhöhe als Vielfaches der Schriftgröße |
-| `align` | `"left" \| "center" \| "right"` | `"center"` | Horizontale Textausrichtung |
-| `direction` | `"ltr" \| "rtl" \| "vertical-rl"` | `"ltr"` | Leserichtung. `vertical-rl` = vertikale Spalten von rechts nach links (japanisches Lettering, inkl. Furigana `{漢字\|かんじ}` und automatischem Tate-chū-yoko) |
-| `color` | string (CSS-Farbe) | `"#000000"` | Textfarbe (Basiswert; **nicht** direkt, aber über `textGradient` ersetzbar) |
-| `textOutline` | `TextOutline`-Objekt | siehe unten | Optionale Textumrandung |
-| `textGradient` | `TextGradient`-Objekt | siehe unten | Optionaler Farbverlauf statt Volltonfarbe |
+| `fontFamily` | string | `"Anime Ace"` | Font name (must be registered under `server/data/fonts`) |
+| `fontSize` | number | `24` | Base font size in px (automatically shrunk during rendering if needed so the text fits in the box) |
+| `lineHeight` | number | `1.2` | Line height as a multiple of the font size |
+| `align` | `"left" \| "center" \| "right"` | `"center"` | Horizontal text alignment |
+| `direction` | `"ltr" \| "rtl" \| "vertical-rl"` | `"ltr"` | Reading direction. `vertical-rl` = vertical columns right-to-left (Japanese lettering, including furigana `{漢字\|かんじ}` and automatic tate-chū-yoko) |
+| `color` | string (CSS color) | `"#000000"` | Text color (base value; **not** directly, but replaceable via `textGradient`) |
+| `textOutline` | `TextOutline` object | see below | Optional text outline |
+| `textGradient` | `TextGradient` object | see below | Optional gradient instead of solid color |
 
 #### `TextOutline`
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `enabled` | boolean | `false` | Umrandung an/aus |
-| `color` | string (CSS-Farbe) | `"#000000"` | Umrandungsfarbe |
-| `widthPx` | number | `4` | Umrandungsbreite in px, hinter der Füllung gezeichnet (wie `strokeText`+`fillText` übereinander) |
+| `enabled` | boolean | `false` | Outline on/off |
+| `color` | string (CSS color) | `"#000000"` | Outline color |
+| `widthPx` | number | `4` | Outline width in px, drawn behind the fill (like `strokeText`+`fillText` stacked) |
 
 #### `TextGradient`
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `enabled` | boolean | `false` | Farbverlauf an/aus — ersetzt bei `true` die Volltonfarbe `color` |
-| `colorStart` | string (CSS-Farbe) | `"#ffffff"` | Startfarbe |
-| `colorEnd` | string (CSS-Farbe) | `"#6c8cff"` | Endfarbe |
-| `angleDeg` | number | `0` | Verlaufsrichtung: `0` = links→rechts, `90` = oben→unten |
+| `enabled` | boolean | `false` | Gradient on/off — when `true` replaces the solid `color` |
+| `colorStart` | string (CSS color) | `"#ffffff"` | Start color |
+| `colorEnd` | string (CSS color) | `"#6c8cff"` | End color |
+| `angleDeg` | number | `0` | Gradient direction: `0` = left→right, `90` = top→bottom |
 
-### Text pro Sprache
+### Text per language
 
-| Feld | Typ | Bedeutung |
+| Field | Type | Meaning |
 |---|---|---|
-| `text` | `Record<Sprachcode, string>` | z. B. `{ "de": "Hallo!", "en": "Hello!", "jp": "こんにちは！" }`. Fehlt ein Sprachcode, gilt die Bubble für diese Sprache als unübersetzt (kein Text gerendert) |
+| `text` | `Record<LanguageCode, string>` | e.g. `{ "de": "Hallo!", "en": "Hello!", "jp": "こんにちは！" }`. If a language code is missing, the bubble is considered untranslated for that language (no text rendered) |
 
-### Sprachabhängige Overrides
+### Language-dependent overrides
 
-Jedes der folgenden `*Override`-Felder ist ein `Record<Sprachcode, Wert>`. Fehlt ein
-Sprachcode im Override, gilt der Basiswert oben. Aufgelöst wird das zur Laufzeit über
-`resolveBubbleStyle(bubble, sprache)` bzw. `resolveBubbleForm(bubble, sprache)` — dieselbe
-Funktion nutzen Vorschau und Export, damit sie nie auseinanderlaufen können.
+Each of the following `*Override` fields is a `Record<LanguageCode, value>`. If a
+language code is missing from the override, the base value above applies. This is
+resolved at runtime via `resolveBubbleStyle(bubble, language)` and
+`resolveBubbleForm(bubble, language)` respectively — the preview and the export use the
+same function, so they can never diverge.
 
-| Feld | Override für | Werttyp |
+| Field | Override for | Value type |
 |---|---|---|
 | `fontSizeOverride` | `fontSize` | number |
 | `fontFamilyOverride` | `fontFamily` | string |
 | `lineHeightOverride` | `lineHeight` | number |
 | `alignOverride` | `align` | `TextAlign` |
 | `directionOverride` | `direction` | `TextDirection` |
-| `textOutlineOverride` | `textOutline` | `TextOutline`-Objekt |
-| `textGradientOverride` | `textGradient` | `TextGradient`-Objekt |
-| `formOverride` | **gesamtes Bündel**: `x/y/width/height/rotation` + komplette sichtbare Blasengrafik + Schweif (`bubbleStyle/fillColor/strokeColor/strokeWidthPx/svgFileName/tail/tailAnchor/tailWidth/tailStyle/tailChainSegmentShape/tailChainSegments/tailChainSpacing/tailCurve`) | `BubbleForm`-Objekt (siehe unten) |
+| `textOutlineOverride` | `textOutline` | `TextOutline` object |
+| `textGradientOverride` | `textGradient` | `TextGradient` object |
+| `formOverride` | **entire bundle**: `x/y/width/height/rotation` + complete visible bubble graphic + tail (`bubbleStyle/fillColor/strokeColor/strokeWidthPx/svgFileName/tail/tailAnchor/tailWidth/tailStyle/tailChainSegmentShape/tailChainSegments/tailChainSpacing/tailCurve`) | `BubbleForm` object (see below) |
 
-`formOverride` ersetzt (anders als die anderen Overrides) nicht nur ein einzelnes Feld,
-sondern das komplette Geometrie+Optik+Schweif-Bündel auf einmal — z. B. weil eine deutsche
-Übersetzung eine größere, anders positionierte oder anders gestylte Blase braucht als das
-japanische Original. Nur für `shape: "rect"`/`"oval"` relevant (nicht für `"quad"`).
+`formOverride` — unlike the other overrides — replaces not just a single field but the
+entire geometry+visuals+tail bundle at once — e.g. because a German translation needs a
+bigger, differently positioned, or differently styled bubble than the Japanese original.
+Only relevant for `shape: "rect"`/`"oval"` (not for `"quad"`).
 
 ```jsonc
-// formOverride-Eintrag für Sprache "de":
+// formOverride entry for language "de":
 "formOverride": {
   "de": {
     "x": 180, "y": 120, "width": 820, "height": 460, "rotation": 0,
@@ -157,173 +160,172 @@ japanische Original. Nur für `shape: "rect"`/`"oval"` relevant (nicht für `"qu
 }
 ```
 
-### Zuordnung zu Panel & Charakter
+### Panel & character assignment
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `panelId` | string \| `null` | `null` | ID eines Eintrags aus `panels` dieser Seite. `null` = keinem Panel zugeordnet, absolute Koordinaten (Standardfall). Ist es gesetzt, ist die Blase **Kind** dieses Panels: `x`/`y`/`corners`/`formOverride[*].x/y` sind relativ zu dessen `origin` (siehe [Panel](#panel) unten) statt absolut. Zuordnung geschieht automatisch beim Panel-Erstellen (Mittelpunkt-in-Polygon-Test, keine bereits zugeordnete Blase wird gestohlen) sowie automatisch beim Trennen, falls die Blase per Drag/Resize aus dem Panel-Umriss herausbewegt wird; nur die Neuzuordnung/Trennung selbst bleibt ein manueller Schritt (Inspector-Dropdown, Rechtsklick-Menü). Verweist die ID auf ein gelöschtes Panel, gilt die Blase als unzugeordnet (ihre Koordinaten sind dann bereits wieder absolut — ein Panel-Löschen entkoppelt seine Kinder statt sie stehen zu lassen) |
-| `characterId` | string \| `null` | `null` | ID eines projektweiten Charakters (siehe [Charaktere](#charakter)). `null` = keinem Charakter zugeordnet, ebenso bei gelöschtem Charakter |
+| `panelId` | string \| `null` | `null` | ID of an entry from this page's `panels`. `null` = not assigned to a panel, absolute coordinates (default case). If set, the bubble is a **child** of this panel: `x`/`y`/`corners`/`formOverride[*].x/y` are relative to its `origin` (see [Panel](#panel) below) instead of absolute. Assignment happens automatically on panel creation (center-in-polygon test, an already-assigned bubble is never stolen) and automatically on detachment if the bubble is moved out of the panel outline via drag/resize; only the (re-)assignment/detachment itself remains a manual step (inspector dropdown, right-click menu). If the ID refers to a deleted panel, the bubble is considered unassigned (its coordinates are then already absolute again — deleting a panel decouples its children instead of leaving them stranded) |
+| `characterId` | string \| `null` | `null` | ID of a project-wide character (see [Character Management](FEATURES.md#character-management)). `null` = not assigned to a character, likewise if the character has been deleted |
 
-`characterId` bleibt rein informativ für die [Berichte](FEATURES.md#berichte) — beeinflusst
-weder Rendering noch PNG-Export. `panelId` dagegen wirkt sich seit `schemaVersion: 2` auf die
-Koordinaten selbst aus (siehe oben und [Panel](#panel)).
+`characterId` remains purely informational for the [Reports](FEATURES.md#reports) — it
+affects neither rendering nor the PNG export. `panelId`, on the other hand, has affected
+the coordinates themselves since `schemaVersion: 2` (see above and [Panel](#panel)).
 
-### Lettering-Preset-Verknüpfung
+### Lettering preset link
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `presetId` | string \| `null` | `null` | ID eines projektweiten [`LetteringPreset`](#letteringpreset). Jedes vom Preset definierte Feld (Textstil und, nur bei Bubbles, Blasenhintergrund) überschreibt live den entsprechenden Basiswert — außer ein `*Override`/`formOverride` für die aktive Sprache ist gesetzt, der gewinnt immer. `null` oder eine auf ein gelöschtes Preset verweisende ID = keine Verknüpfung, alle Felder nutzen den eigenen Basiswert |
+| `presetId` | string \| `null` | `null` | ID of a project-wide [`LetteringPreset`](#letteringpreset). Every field defined by the preset (text style, and, for bubbles only, bubble background) live-overrides the corresponding base value — unless a `*Override`/`formOverride` for the active language is set, which always wins. `null` or an ID pointing to a deleted preset = no link, all fields use their own base value |
 
-Aufgelöst wird das zusammen mit den Sprach-Overrides in derselben Funktion
-(`resolveBubbleStyle(bubble, sprache, presets)` / `resolveBubbleForm(bubble, sprache, presets)`),
-Rangfolge: Sprach-Override > Preset-Feld > Basiswert.
+This is resolved together with the language overrides in the same function
+(`resolveBubbleStyle(bubble, language, presets)` / `resolveBubbleForm(bubble, language, presets)`),
+precedence: language override > preset field > base value.
 
-### Reading-Order
+### Reading order
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `readingOrderOverride` | number \| fehlt | fehlt | Manuelle Korrektur der Leseposition innerhalb der Gruppe der Blase (ihr Panel, oder „Ohne Panel“) — siehe [Reading-Order](FEATURES.md#reading-order). Fehlt das Feld, gilt die automatische Y-Sortierung. Nur relativ zu den anderen Blasen **derselben Gruppe zum Zeitpunkt der letzten manuellen Korrektur** aussagekräftig; wird beim Ändern von `panelId` automatisch verworfen |
-| `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren (per Schloss-Symbol im Editor umschaltbar, siehe [Sperren](FEATURES.md#sperren)). Wird nur gespeichert, wenn zuletzt gesperrt — kein `false`-Wert in der JSON |
+| `readingOrderOverride` | number \| missing | missing | Manual correction of the reading position within the bubble's group (its panel, or "no panel") — see [Reading Order](FEATURES.md#reading-order). If the field is missing, automatic Y sorting applies. Only meaningful relative to the other bubbles **in the same group at the time of the last manual correction**; automatically discarded when `panelId` changes |
+| `locked` | boolean \| missing | missing | Locks position/shape against moving, resizing, deleting, and duplicating (toggleable via the lock icon in the editor, see [Locking](FEATURES.md#locking)). Only saved when last locked — no `false` value in the JSON |
 
 ## ImageElement
 
-Ein Eintrag in `images` ist ein frei platziertes, perspektivisch verzerrbares Bild (z. B.
-ein übersetztes Poster/Schild), unabhängig von Sprechblasen.
+An entry in `images` is a freely placed, perspective-distortable image (e.g. a
+translated poster/sign), independent of speech bubbles.
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `id` | string | – | eindeutige ID |
-| `corners` | `Point[4]` | – | die 4 Ecken (px, Bildkoordinaten) für die perspektivische Verzerrung, wie bei `quad`-Bubbles |
-| `opacity` | number (0–1) | `1` | Deckkraft |
-| `files` | `Record<Sprachcode, Dateiname>` | `{}` | hochgeladene Bilddatei (unter `server/data/images`) pro Sprache. Fehlt eine Sprache, wird ersatzweise die erste vorhandene Datei angezeigt statt gar nichts (siehe `imageFileForLanguage()`) |
-| `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren — siehe [Sperren](FEATURES.md#sperren). Wird nur gespeichert, wenn zuletzt gesperrt |
+| `id` | string | – | unique ID |
+| `corners` | `Point[4]` | – | the 4 corners (px, image coordinates) for the perspective distortion, as with `quad` bubbles |
+| `opacity` | number (0–1) | `1` | Opacity |
+| `files` | `Record<LanguageCode, filename>` | `{}` | uploaded image file (under `server/data/images`) per language. If a language is missing, the first available file is shown as a fallback instead of nothing (see `imageFileForLanguage()`) |
+| `locked` | boolean \| missing | missing | Locks position/shape against moving, resizing, deleting, and duplicating — see [Locking](FEATURES.md#locking). Only saved when last locked |
 
 ## CurvedTextElement
 
-Ein Eintrag in `curvedTexts` ist ein freistehender Titel-/Effekttext, der statt in einer
-Blasen-Box entlang einer kubischen Bézierkurve verläuft — z. B. ein logoartiger Kapiteltitel
-oder eine Lautmalerei wie „BOOM!“ auf einer Splash-Page. Bewusst einzeilig und ohne
-Leserichtungs-/Vertikal-Option (fokussiertes Titel-/Effekt-Werkzeug, kein zweites
-Volltext-Layoutsystem).
+An entry in `curvedTexts` is a standalone title/effect text that runs along a cubic
+Bézier curve instead of inside a bubble box — e.g. a logo-like chapter title or
+onomatopoeia like "BOOM!" on a splash page. Deliberately single-line and without a
+reading-direction/vertical option (a focused title/effect tool, not a second full-text
+layout system).
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `id` | string | – | eindeutige ID |
-| `points` | `Point[4]` | – | 4 Kontrollpunkte der kubischen Bézierkurve, absolute Bild-px (gleiche Konvention wie `ImageElement.corners`) |
-| `fontFamily` | string | `"Anime Ace"` | Schriftname |
-| `fontSize` | number | `48` | Basis-Schriftgröße (schrumpft automatisch passend zur Kurvenlänge) |
-| `align` | `"left" \| "center" \| "right"` | `"center"` | Ausrichtung entlang der Kurve (Anfang/Mitte/Ende) |
-| `color` | string (CSS-Farbe) | `"#000000"` | Textfarbe |
-| `textOutline` | `TextOutline`-Objekt | wie bei Bubble | Optionale Textumrandung |
-| `textGradient` | `TextGradient`-Objekt | wie bei Bubble | Optionaler Farbverlauf |
-| `text` | `Record<Sprachcode, string>` | `{}` | Text pro Sprache |
-| `presetId` | string \| `null` | `null` | ID eines projektweiten [`LetteringPreset`](#letteringpreset) — nur dessen Textstil-Teil wird angewendet, kein Blasenhintergrund. Gleiche Rangfolge/Stale-Referenz-Behandlung wie bei `Bubble.presetId` |
-| `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren — siehe [Sperren](FEATURES.md#sperren). Wird nur gespeichert, wenn zuletzt gesperrt |
+| `id` | string | – | unique ID |
+| `points` | `Point[4]` | – | 4 control points of the cubic Bézier curve, absolute image px (same convention as `ImageElement.corners`) |
+| `fontFamily` | string | `"Anime Ace"` | Font name |
+| `fontSize` | number | `48` | Base font size (automatically shrinks to fit the curve length) |
+| `align` | `"left" \| "center" \| "right"` | `"center"` | Alignment along the curve (start/middle/end) |
+| `color` | string (CSS color) | `"#000000"` | Text color |
+| `textOutline` | `TextOutline` object | as for Bubble | Optional text outline |
+| `textGradient` | `TextGradient` object | as for Bubble | Optional gradient |
+| `text` | `Record<LanguageCode, string>` | `{}` | Text per language |
+| `presetId` | string \| `null` | `null` | ID of a project-wide [`LetteringPreset`](#letteringpreset) — only its text-style part is applied, no bubble background. Same precedence/stale-reference handling as `Bubble.presetId` |
+| `locked` | boolean \| missing | missing | Locks position/shape against moving, resizing, deleting, and duplicating — see [Locking](FEATURES.md#locking). Only saved when last locked |
 
-### Sprachabhängige Overrides
+### Language-dependent overrides
 
-Gleiches Muster wie bei Bubble, aufgelöst über `resolveCurvedTextStyle(element, sprache, presets)`:
+Same pattern as Bubble, resolved via `resolveCurvedTextStyle(element, language, presets)`:
 
-| Feld | Override für | Werttyp |
+| Field | Override for | Value type |
 |---|---|---|
 | `fontSizeOverride` | `fontSize` | number |
 | `fontFamilyOverride` | `fontFamily` | string |
 | `alignOverride` | `align` | `TextAlign` |
-| `textOutlineOverride` | `textOutline` | `TextOutline`-Objekt |
-| `textGradientOverride` | `textGradient` | `TextGradient`-Objekt |
+| `textOutlineOverride` | `textOutline` | `TextOutline` object |
+| `textGradientOverride` | `textGradient` | `TextGradient` object |
 
-Kein `formOverride`/`directionOverride`/`lineHeightOverride` — Kurventexte haben weder
-Box-Geometrie noch Leserichtung noch mehrere Zeilen.
+No `formOverride`/`directionOverride`/`lineHeightOverride` — curved texts have neither
+box geometry, nor reading direction, nor multiple lines.
 
 ## Panel
 
-Ein Eintrag in `panels` markiert einen Comic-Panel als gezeichneten Referenzbereich — reine
-Editor-Anmerkung (gestrichelte Kontur + Beschriftung in der Vorschau), **nie Teil des
-PNG-Exports**. Ein freies Polygon (nicht nur ein Rechteck), da echte Manga-Panels oft
-schräg geschnitten oder mehreckig sind: die Form wird durch Ziehen/Hinzufügen/Entfernen
-einzelner Eckpunkte verändert, nicht über Rotations-/Skalierungsgriffe.
+An entry in `panels` marks a comic panel as a drawn reference area — editor annotation
+only (dashed outline + label in the preview), **never part of the PNG export**. A free
+polygon (not just a rectangle), since real manga panels are often cut at an angle or
+have many sides: the shape is changed by dragging/adding/removing individual corner
+points, not via rotation/scale handles.
 
-| Feld | Typ | Default | Bedeutung |
+| Field | Type | Default | Meaning |
 |---|---|---|---|
-| `id` | string | – | eindeutige ID |
-| `points` | `Point[]` (mind. 3) | – | Eckpunkte des Polygons, Bild-px, in Zeichenreihenfolge |
-| `label` | string | `""` | Beschriftung; leer = automatisch „Panel N“ (1-basiert, nach Position im `panels`-Array) — siehe `panelDisplayLabel()` |
-| `color` | string (CSS-Farbe) | `"#6c8cff"` | Rahmen-/Beschriftungsfarbe |
-| `origin` | `Point` | – | Anker, auf den sich die Koordinaten einer Kind-Blase (`Bubble.panelId === id`) beziehen — die Bounding-Box-oben-links-Ecke des Polygons **zum Zeitpunkt der Erstellung**, danach **nicht** mehr live aus `points` neu berechnet. Wird nur mitverschoben, wenn das ganze Panel als Starrkörper bewegt wird (Fläche ziehen, Nudge, Duplizieren) — ein einzelner Eckpunkt-Reshape lässt `origin` unangetastet, damit Kind-Blasen beim reinen Umformen der Kontur nicht mitspringen |
-| `locked` | boolean \| fehlt | fehlt | Sperrt Position/Form gegen Verschieben, Verformen, Löschen und Duplizieren — siehe [Sperren](FEATURES.md#sperren). Wird nur gespeichert, wenn zuletzt gesperrt |
-| `cut` | Objekt \| fehlt | fehlt | Nur gesetzt, wenn dieses Panel ein „Cut-Panel“ ist — siehe [Cut-Panel](FEATURES.md#cut-panel). `{ cutOrigin: Point, holeFill: { mode: "auto" \| "manual", color: string }, removed?: boolean, replacement?: { files: Record<Sprachcode, Dateiname>, border?: { color: string, widthPx: number } } }`. `cutOrigin` ist `origin`s Wert zum Zeitpunkt des Ausschneidens, danach nie mehr verändert — die Differenz zum aktuellen `origin` plus die aktuellen `points` legen jederzeit fest, welcher Bereich der `_empty`-Quelldatei hier gezeigt wird (siehe `cutPanelDelta()` in `client/src/export/cutPanel.ts`). `holeFill.color` ist immer ein konkreter Hex-Wert, auch im „auto“-Modus (einmalig beim Ausschneiden aus der Umgebung abgetastet). `removed: true` überdeckt den Inhalt nur an der Original-Stelle, zeichnet ihn aber nirgends erneut — das Panel gilt dann semantisch als nicht mehr vorhanden für Skript/Berichte/Leserichtung (`groupBubblesByPanel()`/`charactersByPanel()` in `reportUtils.ts`), bleibt aber strukturell (Geometrie, Kind-Blasen) unverändert und jederzeit reversibel. `replacement` zeigt stattdessen ein hochgeladenes Ersatzbild (gleiche Sprachcode→Dateiname-Konvention wie `ImageElement.files`/`imageFileForLanguage()`, siehe `cutPanelReplacementFileForLanguage()`) — auf die Bounding-Box des aktuellen Polygons gestreckt und auf dessen tatsächliche Form geclippt (keine 4-Punkt-Perspektivverzerrung, da ein Panel-Polygon beliebig viele Eckpunkte haben kann). `replacement.border`, falls gesetzt, wird — anders als `Panel.color` — tatsächlich mit in den PNG-Export gezeichnet. `removed` gewinnt immer, falls beide gleichzeitig gesetzt wären. Jedes Unterfeld nur gespeichert, wenn zuletzt gesetzt |
-| `languageOverride` | `Record<Sprachcode, { points: Point[], origin: Point, cut?: Objekt }>` \| fehlt | fehlt | Sprachabhängiges Cut-Verhalten — siehe [Cut-Panel](FEATURES.md#cut-panel). Gleiches „ganzes Bündel ersetzt Basis"-Muster wie `Bubble.formOverride`: ein Sprach-Eintrag ersetzt `points`+`origin`+`cut` komplett für diese Sprache; fehlt er, gilt die Basis (siehe `resolvePanelForLanguage()`). Damit kann dasselbe Panel z. B. in „ja" eine unveränderte reine Referenzmarkierung sein (Basis ohne `cut`), während es in „de"/„en" verschoben/entfernt/ersetzt ist (Override mit eigenem `cut`). Betrifft **nicht** `Bubble.panelId`-Koordinaten — Kind-Blasen bleiben immer relativ zum **Basis**-`origin`, unabhängig davon, welche Sprache gerade aktiv ist |
+| `id` | string | – | unique ID |
+| `points` | `Point[]` (at least 3) | – | Corner points of the polygon, image px, in drawing order |
+| `label` | string | `""` | Label; empty = automatic "Panel N" (1-based, by position in the `panels` array) — see `panelDisplayLabel()` |
+| `color` | string (CSS color) | `"#6c8cff"` | Border/label color |
+| `origin` | `Point` | – | Anchor that a child bubble's (`Bubble.panelId === id`) coordinates are relative to — the top-left bounding-box corner of the polygon **at the time of creation**, after which it is **not** recomputed live from `points`. Only moves along when the whole panel is moved as a rigid body (dragging the area, nudging, duplicating) — reshaping a single corner point leaves `origin` untouched, so child bubbles don't jump when the outline alone is reshaped |
+| `locked` | boolean \| missing | missing | Locks position/shape against moving, resizing, deleting, and duplicating — see [Locking](FEATURES.md#locking). Only saved when last locked |
+| `cut` | object \| missing | missing | Only set when this panel is a "cut panel" — see [Cut Panel](FEATURES.md#cut-panel). `{ cutOrigin: Point, holeFill: { mode: "auto" \| "manual", color: string }, removed?: boolean, replacement?: { files: Record<LanguageCode, filename>, border?: { color: string, widthPx: number } } }`. `cutOrigin` is the value of `origin` at the time of cutting, never changed afterward — the difference to the current `origin` plus the current `points` determine at any time which area of the `_empty` source file is shown here (see `cutPanelDelta()` in `client/src/export/cutPanel.ts`). `holeFill.color` is always a concrete hex value, even in "auto" mode (sampled once from the surroundings at the time of cutting). `removed: true` only covers up the content at the original location but doesn't redraw it anywhere — the panel is then semantically considered no longer present for script/reports/reading order (`groupBubblesByPanel()`/`charactersByPanel()` in `reportUtils.ts`), but remains structurally unchanged (geometry, child bubbles) and reversible at any time. `replacement` instead shows an uploaded replacement image (same language-code→filename convention as `ImageElement.files`/`imageFileForLanguage()`, see `cutPanelReplacementFileForLanguage()`) — stretched to the bounding box of the current polygon and clipped to its actual shape (no 4-point perspective distortion, since a panel polygon can have any number of corner points). `replacement.border`, if set, is — unlike `Panel.color` — actually drawn into the PNG export. `removed` always wins if both were set at the same time. Each sub-field is only saved when last set |
+| `languageOverride` | `Record<LanguageCode, { points: Point[], origin: Point, cut?: object }>` \| missing | missing | Language-dependent cut behavior — see [Cut Panel](FEATURES.md#cut-panel). Same "entire bundle replaces base" pattern as `Bubble.formOverride`: a language entry completely replaces `points`+`origin`+`cut` for that language; if missing, the base applies (see `resolvePanelForLanguage()`). This lets the same panel, for example, be an unmodified pure reference marker in "ja" (base without `cut`), while being moved/removed/replaced in "de"/"en" (override with its own `cut`). Does **not** affect `Bubble.panelId` coordinates — child bubbles always stay relative to the **base** `origin`, regardless of which language is currently active |
 
-Im Editor: die ganze Fläche ziehen verschiebt das Panel (und trägt seine Kind-Blasen mit),
-ein einzelner Eckpunkt verformt nur die Kontur (Kind-Blasen bleiben unbewegt), Doppelklick
-auf die Kontur fügt dort einen neuen Punkt ein, Rechtsklick auf einen Punkt entfernt ihn
-(mindestens 3 Punkte bleiben immer erhalten). Ein neu gezeichnetes Panel startet als
-Rechteck (4 Eckpunkte), ist danach aber ein Polygon wie jedes andere.
+In the editor: dragging the whole area moves the panel (and carries its child bubbles
+along), a single corner point only reshapes the outline (child bubbles stay put),
+double-clicking the outline inserts a new point there, right-clicking a point removes it
+(at least 3 points are always kept). A newly drawn panel starts as a rectangle (4 corner
+points) but is afterward a polygon like any other.
 
-**Bubbles als Kinder eines Panels**: eine Blase wird beim Erstellen eines neuen Panels
-automatisch dessen Kind, wenn ihr Mittelpunkt im neuen Polygon liegt und sie noch keinem
-anderen Panel zugeordnet ist (kein „Stehlen“). Wird eine Kind-Blase per Drag/Resize so
-bewegt, dass ihr Mittelpunkt den Panel-Umriss verlässt, wird sie automatisch wieder
-eigenständig (zurück auf absolute Koordinaten, `panelId: null`) — ausgelöst nur bei echter
-Geometrie-Änderung, nicht bei reinen Text-/Stil-Änderungen. Eine manuelle
-(Neu-)Zuordnung/Trennung bleibt weiterhin über das Panel-Dropdown im Inspector bzw. das
-Rechtsklick-Menü möglich. Wird ein Panel gelöscht, werden seine Kind-Blasen nicht
-mitgelöscht, sondern entkoppelt (zurück auf absolute Koordinaten, `panelId: null`) —
-konsistent mit dem „stale Referenz = unzugeordnet“-Prinzip bei gelöschten
-Charakteren/Presets.
+**Bubbles as children of a panel**: a bubble automatically becomes a new panel's child
+when it's created if its center lies within the new polygon and it isn't already
+assigned to another panel (no "stealing"). If a child bubble is moved via drag/resize so
+that its center leaves the panel outline, it automatically becomes independent again
+(back to absolute coordinates, `panelId: null`) — triggered only by actual geometry
+changes, not by pure text/style changes. Manual (re-)assignment/detachment remains
+possible via the panel dropdown in the inspector or the right-click menu. When a panel
+is deleted, its child bubbles are not deleted along with it but decoupled (back to
+absolute coordinates, `panelId: null`) — consistent with the "stale reference =
+unassigned" principle for deleted characters/presets.
 
-**Migration alter Rechteck-Panels**: Seiten, die noch ein Panel im alten Format
-(`x`/`y`/`width`/`height`/`rotation`) enthalten, werden beim Einlesen automatisch in ein
-gleichwertiges 4-Eckpunkte-Polygon umgerechnet (inklusive vorhandener Rotation) — das
-Panel sieht unverändert aus, ist danach aber sofort frei verformbar. Diese Umwandlung
-passiert nur beim Parsen (`PanelSchema`), nicht dauerhaft auf der Festplatte — erst ein
-erneutes Speichern schreibt das neue Format zurück. Fehlt `origin` (jedes Panel vor dieser
-Funktion), wird es genauso beim Parsen aus den (ggf. gerade migrierten) `points` abgeleitet.
+**Migration of old rectangle panels**: pages that still contain a panel in the old
+format (`x`/`y`/`width`/`height`/`rotation`) are automatically converted into an
+equivalent 4-corner-point polygon on read (including any existing rotation) — the panel
+looks unchanged but is then immediately freely reshapeable. This conversion only happens
+during parsing (`PanelSchema`), not permanently on disk — only a subsequent save writes
+the new format back. If `origin` is missing (every panel from before this feature), it
+is likewise derived during parsing from the (possibly just-migrated) `points`.
 
-**Migration auf `schemaVersion: 2`**: Seiten mit bereits vorhandenen `panelId`-Zuordnungen
-aus der Zeit vor dieser Funktion hatten immer absolute Blasen-Koordinaten. Damit sie unter
-der neuen Bedeutung nicht plötzlich falsch (relativ statt absolut) interpretiert werden,
-rechnet ein einmaliges Preprocessing beim ersten Laden (`PageLayoutSchema`, ausgelöst wenn
-`schemaVersion` fehlt oder `< 2` ist) für jede Blase mit gültigem `panelId` ihre bisherigen
-absoluten Koordinaten (`x`/`y`/`corners`/`formOverride[*].x/y`) auf panel-relative um und
-setzt danach `schemaVersion: 2` — optisch bleibt alles exakt an Ort und Stelle. Erst ein
-erneutes Speichern schreibt `schemaVersion: 2` dauerhaft auf die Festplatte.
+**Migration to `schemaVersion: 2`**: pages with existing `panelId` assignments from
+before this feature always had absolute bubble coordinates. So that they aren't
+suddenly misinterpreted (relative instead of absolute) under the new meaning, a one-time
+preprocessing step on first load (`PageLayoutSchema`, triggered when `schemaVersion` is
+missing or `< 2`) converts, for every bubble with a valid `panelId`, its previous
+absolute coordinates (`x`/`y`/`corners`/`formOverride[*].x/y`) to panel-relative ones and
+then sets `schemaVersion: 2` — visually everything stays exactly in place. Only a
+subsequent save permanently writes `schemaVersion: 2` to disk.
 
 ## LetteringPreset
 
-Presets sind **nicht** Teil der Seiten-Layout-JSON, sondern projektweit in der Projektdatei
-gespeichert (`presets`-Feld, analog zu `characters`/`glossary`) — siehe
-[Lettering-Presets](FEATURES.md#lettering-presets). Jedes Feld ist einzeln optional
-(„sparse“): fehlt ein Feld, definiert das Preset diesen Aspekt bewusst nicht, und jede
-verknüpfte Bubble/jeder Kurventext behält dafür ihren/seinen eigenen Basiswert.
+Presets are **not** part of the page layout JSON but stored project-wide in the project
+file (`presets` field, analogous to `characters`/`glossary`) — see
+[Lettering Presets](FEATURES.md#lettering-presets). Every field is individually optional
+("sparse"): if a field is missing, the preset deliberately does not define that aspect,
+and every linked bubble/curved text keeps its own base value for it.
 
-| Feld | Typ | Bedeutung |
+| Field | Type | Meaning |
 |---|---|---|
-| `id` | string | eindeutige ID |
-| `name` | string | Anzeigename, z. B. „SFX Style“ — freier Text, keine feste Kategorie |
-| `text` | `PresetTextFields`-Objekt | siehe unten |
-| `background` | `PresetBackgroundFields`-Objekt | siehe unten, nur für Bubbles relevant |
+| `id` | string | unique ID |
+| `name` | string | Display name, e.g. "SFX Style" — free text, no fixed category |
+| `text` | `PresetTextFields` object | see below |
+| `background` | `PresetBackgroundFields` object | see below, only relevant for bubbles |
 
-### `PresetTextFields` (alle Felder optional)
+### `PresetTextFields` (all fields optional)
 
-| Feld | Werttyp |
+| Field | Value type |
 |---|---|
 | `fontFamily` | string |
 | `fontSize` | number |
 | `lineHeight` | number |
 | `align` | `TextAlign` |
 | `direction` | `TextDirection` |
-| `color` | string (CSS-Farbe) |
-| `textOutline` | `TextOutline`-Objekt |
-| `textGradient` | `TextGradient`-Objekt |
+| `color` | string (CSS color) |
+| `textOutline` | `TextOutline` object |
+| `textGradient` | `TextGradient` object |
 
-### `PresetBackgroundFields` (alle Felder optional, nur für Bubbles)
+### `PresetBackgroundFields` (all fields optional, bubbles only)
 
-| Feld | Werttyp |
+| Field | Value type |
 |---|---|
 | `bubbleStyle` | `"none" \| "speech" \| "thought" \| "shout" \| "svg"` |
-| `fillColor` | string (CSS-Farbe) |
-| `strokeColor` | string (CSS-Farbe) |
+| `fillColor` | string (CSS color) |
+| `strokeColor` | string (CSS color) |
 | `strokeWidthPx` | number |
 | `svgFileName` | string \| `null` |
 | `tailStyle` | `"point" \| "point-detached" \| "chain"` |
@@ -331,31 +333,31 @@ verknüpfte Bubble/jeder Kurventext behält dafür ihren/seinen eigenen Basiswer
 | `tailChainSegments` | number (1–8) |
 | `tailChainSpacing` | number |
 
-Bewusst **kein** `x/y/width/height/rotation`/`tail`/`tailAnchor`/`tailWidth`/`tailCurve` —
-das sind Instanz-Eigenschaften einer einzelnen Blase, kein Preset-Feld.
+Deliberately **no** `x/y/width/height/rotation`/`tail`/`tailAnchor`/`tailWidth`/`tailCurve`
+— those are instance properties of an individual bubble, not a preset field.
 
 ## ProjectMember
 
-Wie `presets`/`characters`/`glossary` ist auch `members` ein Feld der Projektdatei
-selbst (nicht der Seiten-Layout-JSON) — siehe
-[Konten, Rollen & Zugriffsschutz](FEATURES.md#konten-rollen--zugriffsschutz). Zieht
-portabel mit der Projektdatei um.
+Like `presets`/`characters`/`glossary`, `members` is also a field of the project file
+itself (not the page layout JSON) — see
+[Accounts, Roles & Access Control](FEATURES.md#accounts-roles--access-control). Moves
+portably with the project file.
 
-| Feld | Typ | Bedeutung |
+| Field | Type | Meaning |
 |---|---|---|
-| `userId` | string | ID eines serverweiten Accounts (siehe `users.json` im Server-Datenordner, nicht Teil der Projektdatei) |
-| `role` | `"viewer" \| "translator" \| "letterer" \| "admin"` | Rolle dieses Accounts in genau diesem Projekt |
+| `userId` | string | ID of a server-wide account (see `users.json` in the server data folder, not part of the project file) |
+| `role` | `"viewer" \| "translator" \| "letterer" \| "admin"` | This account's role in exactly this project |
 
-Ein Account mit `isSystemAdmin: true` (serverweites Konto-Flag) braucht hier keinen
-Eintrag — er hat unabhängig von dieser Liste vollen Admin-Zugriff auf jedes Projekt.
+An account with `isSystemAdmin: true` (server-wide account flag) doesn't need an entry
+here — it has full admin access to every project regardless of this list.
 
-## Hilfstypen
+## Helper types
 
 ```ts
 type Point = { x: number; y: number };
 ```
 
-## Vollständiges Beispiel
+## Complete example
 
 ```json
 {
@@ -419,26 +421,25 @@ type Point = { x: number; y: number };
 }
 ```
 
-## Wichtige Invarianten
+## Important invariants
 
-- **Rückwärtskompatibel per Design:** Alle neueren Felder (`bubbleStyle`, `fillColor`,
+- **Backward compatible by design:** All newer fields (`bubbleStyle`, `fillColor`,
   `strokeColor`, `strokeWidthPx`, `svgFileName`, `tail`, `tailAnchor`, `tailWidth`,
-  `tailStyle` + Ketten-Felder, `tailCurve`, `textOutline`, `textGradient`, `formOverride`,
-  alle `*Override`-Felder, `panelId`, `characterId`, `readingOrderOverride`, `presetId`,
-  `locked`, `cut`, `languageOverride`, sowie die Arrays `curvedTexts` und
-  `panels` selbst) sind in Zod mit `.default(...)` bzw. `.optional()` deklariert. Ältere
-  JSON-Dateien ohne diese Felder werden beim Einlesen automatisch mit den Defaultwerten
-  aufgefüllt — keine Migration nötig. Panels haben zusätzlich eine echte
-  Formatmigration (siehe oben): das alte `x/y/width/height/rotation`-Format wird beim
-  Parsen in `points` umgerechnet, nicht nur mit Defaults aufgefüllt.
-- **`bubbleStyle: "none"` (Default) ist unsichtbar** und ändert am gerenderten Bild nichts
-  gegenüber dem reinen Text-Overlay von früher.
-- Overrides greifen nur, wenn der jeweilige Sprachcode als Schlüssel vorhanden ist — ein
-  leeres Objekt `{}` bzw. ein fehlendes Feld bedeutet „kein Override, nutze Basiswert“.
-- **`panels` sind reine Editor-Daten** — `renderPageToPng.ts` liest dieses Array nicht,
-  Panels erscheinen also nie im exportierten Bild.
-- **Stale-Referenzen sind kein Fehler**: Ein `panelId`/`characterId`/`presetId`, das auf
-  ein inzwischen gelöschtes Panel/Charakter/Preset verweist, bleibt als Wert in der JSON
-  stehen (wird nicht automatisch bereinigt), gilt aber überall (Inspector-Dropdowns,
-  Berichte, Stil-Auflösung) als „unzugeordnet“ bzw. fällt auf den eigenen Basiswert
-  zurück.
+  `tailStyle` + chain fields, `tailCurve`, `textOutline`, `textGradient`, `formOverride`,
+  all `*Override` fields, `panelId`, `characterId`, `readingOrderOverride`, `presetId`,
+  `locked`, `cut`, `languageOverride`, as well as the `curvedTexts` and
+  `panels` arrays themselves) are declared in Zod with `.default(...)` or `.optional()`.
+  Older JSON files without these fields are automatically filled in with default values
+  on read — no migration needed. Panels additionally have a real format migration
+  (see above): the old `x/y/width/height/rotation` format is converted to `points`
+  during parsing, not just filled in with defaults.
+- **`bubbleStyle: "none"` (default) is invisible** and changes nothing in the rendered
+  image compared to the plain text overlay of before.
+- Overrides only take effect if the respective language code is present as a key — an
+  empty object `{}` or a missing field means "no override, use base value".
+- **`panels` are pure editor data** — `renderPageToPng.ts` does not read this array, so
+  panels never appear in the exported image.
+- **Stale references are not an error**: a `panelId`/`characterId`/`presetId` that points
+  to a panel/character/preset that has since been deleted remains as a value in the JSON
+  (not automatically cleaned up), but is everywhere (inspector dropdowns, reports,
+  style resolution) treated as "unassigned" or falls back to its own base value.

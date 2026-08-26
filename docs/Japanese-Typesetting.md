@@ -1,84 +1,87 @@
-# Japanisches (vertikales) Lettering
+# Japanese (vertical) typesetting
 
-Für Bubbles mit `direction: "vertical-rl"` (Spalten von rechts nach links,
-Standard für japanisches Manga-Lettering) wendet das Tool automatisch mehrere
-typografische Verbesserungen an. Das JSON-Format selbst ändert sich dadurch
-nicht (siehe [JSON-Format.md](JSON-Format.md)) — alles wird beim Rendern aus dem
-normalen `text`-Feld herausgelesen.
+*[Deutsche Version](Japanese-Typesetting.de.md)*
 
-## Automatisch (kein Zutun nötig)
+For bubbles with `direction: "vertical-rl"` (columns right-to-left, the default
+for Japanese manga lettering) the tool automatically applies several
+typographic refinements. This doesn't change the JSON format itself
+(see [JSON-Format.md](JSON-Format.md)) — everything is read out of the
+normal `text` field at render time.
 
-- **Manuelle Zeilenumbrüche.** Ein `\n` im Text erzwingt jetzt einen echten
-  Spaltenumbruch, statt (wie zuvor) stillschweigend entfernt zu werden.
-- **Kinsoku Shori (禁則処理).** Eine Spalte beginnt nie mit Satzzeichen/kleinen
-  Kana (、。ー」ゃゅょっ...) und endet nie mit einer öffnenden Klammer (「『（...)
-  — solche Zeichen wandern automatisch in die Nachbarspalte.
-- **ー/〜-Rotation.** Der lange Vokal-Strich (ー) und die Wellenlinie (〜) werden
-  um 90° gedreht, damit sie als vertikaler Strich statt als quer liegender
-  Strich in der Spalte erscheinen.
-- **Satzzeichen (、。「」『』（）).** Werden durch ihre eigenen Unicode-„Vertical
-  Forms“-Codepoints ersetzt (z. B. 、→ ︑, 。→ ︒) — echte, vom Font selbst
-  korrekt oben rechts positionierte bzw. gedrehte Glyphen, kein manueller
-  Trick. Das Tool prüft das pro Schriftart einmalig per Pixel-Probe (rendert
-  das Ersatzzeichen und vergleicht dessen Tinten-Bounding-Box mit dem
-  Originalzeichen); hat eine Schriftart diese Glyphen nicht, fällt das Tool
-  automatisch auf den manuellen Versatz nach oben rechts zurück.
-- **Kleine Kana.** っゃゅょ (und Katakana-Pendants) sowie ぁぃぅぇぉ werden leicht
-  nach oben rechts in ihrer Zelle versetzt — eine Annäherung an die
-  dedizierten vertikalen Glyphvarianten (die dieses Tool mangels nativer
-  `writing-mode`-Textauslagerung nicht direkt nutzen kann, da jedes Zeichen
-  einzeln auf Canvas gezeichnet wird; für sie gibt es anders als bei 、。「」
-  keine eigenen Vertical-Forms-Codepoints).
-- **Tate-chū-yoko (縦中横).** Kurze Läufe aus genau 2 Halbbreite-Ziffern/
-  Buchstaben (z. B. „21“, „MP“) werden aufrecht und nebeneinander in einer
-  einzigen Zelle gesetzt statt einzeln gestapelt. Läufe mit ungerader Länge
-  behalten das letzte Zeichen als normales Einzelzeichen.
-- **Wortzusammenhalt (Katakana/Kanji).** Zusammenhängende Katakana-Läufe (Namen,
-  Lehnwörter) und Kanji-Läufe (Komplexbegriffe) werden beim Spaltenumbruch nie
-  mitten getrennt — z. B. bleibt „ケイト“ als Ganzes in einer Spalte, statt als
-  „ケイ“/„ト“ auf zwei Spalten aufgeteilt zu werden. Einzelne Kanji oder
-  Hiragana-Übergänge (z. B. bei 食べる zwischen 食べ und る) bleiben weiterhin
-  reguläre, zulässige Umbruchstellen.
-- **Einheitliche Ausrichtung.** Alle Spalten eines Textblocks teilen sich einen
-  gemeinsamen oberen Startpunkt, statt sich (wie zuvor) jede für sich an ihrer
-  eigenen Zeichenzahl vertikal zu zentrieren — das verhinderte, dass Spalten
-  unterschiedlicher Länge (z. B. bei mehreren `\n`-getrennten Sätzen) sichtbar
-  „treppenförmig“ versetzt wirkten. Zusätzlich wirkt die „Ausrichtung“-Einstellung
-  (links/zentriert/rechts) jetzt auch bei vertikalem Text: Sie verschiebt den
-  gesamten Spaltenblock horizontal innerhalb der Box, statt (wie zuvor) ignoriert
-  zu werden.
+## Automatic (no action needed)
 
-## Manuell: Furigana
+- **Manual line breaks.** A `\n` in the text now forces an actual
+  column break, instead of (as before) being silently removed.
+- **Kinsoku shori (禁則処理).** A column never starts with punctuation/small
+  kana (、。ー」ゃゅょっ...) and never ends with an opening bracket (「『（...)
+  — such characters automatically move to the neighboring column.
+- **ー/〜 rotation.** The long vowel mark (ー) and the wave dash (〜) are
+  rotated 90° so they appear as a vertical stroke rather than a horizontal
+  stroke within the column.
+- **Punctuation (、。「」『』（）).** Replaced by their own Unicode "Vertical
+  Forms" code points (e.g. 、→ ︑, 。→ ︒) — real glyphs correctly
+  positioned/rotated in the upper right by the font itself, not a manual
+  trick. The tool checks this once per font via a pixel probe (renders
+  the replacement character and compares its ink bounding box with the
+  original character); if a font lacks these glyphs, the tool
+  automatically falls back to a manual offset toward the upper right.
+- **Small kana.** っゃゅょ (and their katakana counterparts) as well as ぁぃぅぇぉ are
+  offset slightly toward the upper right within their cell — an
+  approximation of the dedicated vertical glyph variants (which this tool
+  cannot use directly for lack of native `writing-mode` text layout,
+  since every character is drawn individually on canvas; unlike 、。「」,
+  no dedicated vertical-forms code points exist for them).
+- **Tate-chū-yoko (縦中横).** Short runs of exactly 2 half-width digits/
+  letters (e.g. "21", "MP") are set upright and side by side in a
+  single cell instead of stacked individually. Runs of odd length
+  keep the last character as a normal single character.
+- **Word cohesion (katakana/kanji).** Contiguous katakana runs (names,
+  loanwords) and kanji runs (compound terms) are never split in the
+  middle at a column break — e.g. "ケイト" stays together in one column
+  instead of being split into "ケイ"/"ト" across two columns. Individual
+  kanji or hiragana transitions (e.g. in 食べる between 食べ and る) remain
+  regular, permitted break points.
+- **Uniform alignment.** All columns of a text block share a common
+  top starting point, instead of (as before) each vertically centering
+  itself based on its own character count — this used to make columns
+  of different length (e.g. with several `\n`-separated sentences)
+  visibly appear "staggered." In addition, the "alignment" setting
+  (left/center/right) now also applies to vertical text: it shifts the
+  entire column block horizontally within the box, instead of (as
+  before) being ignored.
 
-Lesehilfen über Kanji werden inline im Text markiert:
+## Manual: furigana
+
+Reading aids above kanji are marked inline in the text:
 
 ```
 {漢字|かんじ}
 ```
 
-`漢字` (der Basis-Text) wird normal in der Spalte gesetzt, `かんじ` (die Lesung)
-erscheint kleiner, rechts daneben, gleichmäßig über die Höhe des Basis-Laufs
-verteilt. Enthält eine Bubble mindestens eine Furigana-Markierung, wird der
-Spaltenabstand für den gesamten Textblock etwas großzügiger reserviert, damit
-die Lesungen Platz haben (eine pauschale, nicht pro Spalte optimierte Lücke —
-einfacher und robuster als eine exakt bedarfsgerechte Berechnung).
+`漢字` (the base text) is set normally in the column, `かんじ` (the reading)
+appears smaller, next to it on the right, evenly distributed over the
+height of the base run. If a bubble contains at least one furigana
+marker, the column spacing for the entire text block is reserved a
+little more generously so the readings have room (a flat, non-per-column-
+optimized gap — simpler and more robust than an exact needs-based
+calculation).
 
-Nicht erkannte/unvollständige `{...}`-Ausdrücke (z. B. vergessene `|`) werden
-als normaler Text behandelt, es gibt keinen Absturz.
+Unrecognized/incomplete `{...}` expressions (e.g. a forgotten `|`) are
+treated as normal text — there is no crash.
 
-## Bewusste Vereinfachungen
+## Deliberate simplifications
 
-- Die Kinsoku-Anpassung optimiert Lesbarkeit, nicht perfekte Spaltenhöhe —
-  eine Spalte kann dadurch ein bis zwei Zeichen länger werden als rechnerisch
-  vorgesehen. Das ist der übliche Kompromiss auch in anderen (nicht rein
-  professionellen) Satzwerkzeugen.
-- Tate-chū-yoko gruppiert feste 2er-Läufe; längere Zahlen (z. B. Jahreszahlen)
-  werden bewusst nicht gruppiert, da sie im echten Manga-Lettering meist auch
-  einzeln gesetzt werden.
-- Furigana-Spaltenabstand ist pauschal für den ganzen Textblock, nicht nur an
-  den Stellen mit tatsächlicher Furigana.
-- Der Wortzusammenhalt erkennt Katakana-/Kanji-Läufe rein anhand der
-  Unicode-Skriptzugehörigkeit (kein Wörterbuch/Morphologie-Analyse) — er
-  verhindert das Auftrennen zusammenhängender Skript-Läufe, bevorzugt aber
-  (noch) keine Umbrüche direkt nach Partikeln (は/が/を/に/で/と). Eine
-  echte Bunsetsu-Erkennung bräuchte einen Tokenizer wie TinySegmenter.
+- The kinsoku adjustment optimizes readability, not perfect column
+  height — a column may as a result become one or two characters
+  longer than calculated. This is the usual trade-off in other
+  (non-strictly-professional) typesetting tools as well.
+- Tate-chū-yoko groups fixed runs of 2; longer numbers (e.g. years)
+  are deliberately not grouped, since in real manga lettering they're
+  usually set individually too.
+- Furigana column spacing is applied flatly to the whole text block,
+  not only at the positions with actual furigana.
+- Word cohesion detects katakana/kanji runs purely by Unicode script
+  membership (no dictionary/morphological analysis) — it prevents
+  splitting contiguous script runs, but does not (yet) prefer breaks
+  directly after particles (は/が/を/に/で/と). Real bunsetsu detection
+  would need a tokenizer like TinySegmenter.

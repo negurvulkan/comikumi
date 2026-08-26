@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Generated from shared/src/script.ts's ScriptDocumentSchema via Zod 4's z.toJSONSchema(). Snapshot — regenerate after changing that file (same approach as docs/layout.schema.json, substituting ScriptDocumentSchema/script.js). See docs/Script-JSON-Format.md for a prose description of the same schema.",
+  "type": "object",
+  "properties": {
+    "pages": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "default": "",
+            "type": "string"
+          },
+          "notes": {
+            "default": "",
+            "type": "string"
+          },
+          "panels": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sizeHint": {
+                  "default": "medium",
+                  "type": "string",
+                  "enum": [
+                    "small",
+                    "medium",
+                    "large"
+                  ]
+                },
+                "composition": {
+                  "default": "",
+                  "type": "string"
+                },
+                "action": {
+                  "default": "",
+                  "type": "string"
+                },
+                "dialogue": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "characterId": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "text": {
+                        "default": {},
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "note": {
+                        "default": "",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "characterId",
+                      "text",
+                      "note"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "sizeHint",
+                "composition",
+                "action",
+                "dialogue"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "linkedPage": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "notes",
+          "panels",
+          "linkedPage"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "pages"
+  ],
+  "additionalProperties": false
+}
