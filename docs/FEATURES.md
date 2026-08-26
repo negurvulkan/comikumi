@@ -12,6 +12,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Bände & Seiten](#bände--seiten)
 - [Sprachverwaltung](#sprachverwaltung)
 - [Charakterverwaltung](#charakterverwaltung)
+- [Story Bible](#story-bible)
 - [Lettering-Presets](#lettering-presets)
 - [Projekt-Assets-Ordner](#projekt-assets-ordner)
 - [Editor — Canvas-Grundlagen](#editor--canvas-grundlagen)
@@ -287,6 +288,40 @@ dort nur der Schreib-Mutex, kein ETag-Dialog) bleibt ebenfalls offen; siehe
   die [Berichte](#berichte) und die [Kontextansicht](#kontextansicht)
   ein — die Voice Notes werden dort und unter dem Charakter-Dropdown im Bubble-Inspector
   angezeigt, sobald einer Blase ein Charakter mit Notizen zugeordnet ist.
+
+## Story Bible
+
+Eigener Bereich für Worldbuilding/Story-Inhalte (Charakterprofile, Orte, Objekte,
+Fraktionen, ...) — ein **generisches Entitäten-System**, erreichbar über den neuen
+"Story Bible"-Eintrag im "Projekt"-Menü (`client/src/routes/StoryBible.tsx`, eigene
+volle Route unter `/p/:projectId/story-bible`, nicht als Modal wie die schlankeren
+Manager).
+
+- **Einträge** haben einen freien `type` (kein festes Enum — z. B. "character",
+  "location", "item", "faction"; der Client schlägt beim Anlegen gängige Typen sowie
+  bereits im Projekt verwendete vor), Name, Farbe, eine Kurzbeschreibung und ein
+  Freitext-Notizfeld.
+- **Echte Vereinheitlichung mit dem Blasen-Tagging, keine Doppelverwaltung**:
+  `type === "character"`-Einträge sind exakt dieselben Datensätze, die auch für
+  `Bubble.characterId` in der [Charakterverwaltung](#charakterverwaltung) genutzt
+  werden (server/src/lib/projectStore.ts stellt für die alte `/api/characters`-API
+  weiterhin dieselbe schmale Sicht bereit, intern aber auf denselben Daten) — ein
+  Charakter umbenennen oder seine Notizen pflegen wirkt sich sofort auf beide Stellen
+  aus, es gibt keine zwei getrennten Listen. Projekte, die vor diesem Feature angelegt
+  wurden, werden beim ersten Laden automatisch und einmalig migriert (gleiche IDs
+  übernommen, jede bestehende Blasen-Zuordnung bleibt unverändert gültig).
+- **Referenzbilder/Sketches**: jeder Eintrag hat eine eigene Bildergalerie
+  (Upload/Löschen einzelner Bilder), technisch auf demselben Asset-Router-Baustein wie
+  die [Projekt-Assets](#projekt-assets-ordner) aufgebaut, nur mit einem eigenen
+  Ordner pro Eintrag.
+- **Beziehungen**: gerichtete, frei beschriftete Verknüpfungen zwischen zwei Einträgen
+  (z. B. "ist Schwester von", "arbeitet für") — projektweite Liste, auf beiden
+  verknüpften Einträgen sichtbar. Löschen eines Eintrags entfernt automatisch jede
+  Beziehung, die ihn referenziert.
+- **Rollen**: Lesen für jedes Projektmitglied; Einträge/Beziehungen anlegen/bearbeiten/
+  löschen ab Rolle "translator" (wie beim Glossar — redaktioneller Inhalt, keine
+  Lettering-Produktionsarbeit); Bilder hochladen/löschen ab Rolle "letterer" (wie jeder
+  andere Asset-Upload in der App).
 
 ## Lettering-Presets
 

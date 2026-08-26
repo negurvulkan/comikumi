@@ -48,6 +48,7 @@ export const DEFAULT_SCAN_ROOT = path.join(DEFAULT_PROJECT_ROOT, "04_Comic_Produ
 export const FONTS_DIR = path.join(DATA_DIR, "fonts");
 export const IMAGES_DIR = path.join(DATA_DIR, "images");
 export const BUBBLE_SVGS_DIR = path.join(DATA_DIR, "bubble-svgs");
+export const ENTITY_IMAGES_DIR = path.join(DATA_DIR, "entity-images");
 export const THUMBNAILS_DIR = path.join(DATA_DIR, "thumbnails");
 
 /** Pre-multi-project settings/languages files — read once, at most, during the

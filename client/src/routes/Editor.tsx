@@ -19,6 +19,7 @@ import { ExportPanel } from "../editor/ExportPanel";
 import { TextListPanel } from "../editor/TextListPanel";
 import { TranslatorContextPanel } from "../editor/TranslatorContextPanel";
 import { ScriptSidebar } from "../editor/ScriptSidebar";
+import { StoryBiblePanel } from "../editor/StoryBiblePanel";
 import { CommentsPanel } from "../editor/CommentsPanel";
 import { CommentThread } from "../editor/CommentThread";
 import type { MentionableMember } from "../editor/MentionInput";
@@ -77,6 +78,7 @@ export function Editor() {
   const [showTextPanel, setShowTextPanel] = useState(false);
   const [showContextPanel, setShowContextPanel] = useState(false);
   const [showScriptPanel, setShowScriptPanel] = useState(false);
+  const [showStoryBiblePanel, setShowStoryBiblePanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
@@ -415,6 +417,7 @@ export function Editor() {
         { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
+        { type: "action", label: t("storyBible.menuEntry"), onClick: () => navigate(`${pBase}/story-bible`) },
         {
           type: "action",
           label: t("script.menuEntry"),
@@ -509,6 +512,7 @@ export function Editor() {
             setShowTextPanel((v) => !v);
             setShowContextPanel(false);
             setShowScriptPanel(false);
+            setShowStoryBiblePanel(false);
             setShowCommentsPanel(false);
           }}
           textPanelDisabled={languages.length === 0}
@@ -517,6 +521,7 @@ export function Editor() {
             setShowContextPanel((v) => !v);
             setShowTextPanel(false);
             setShowScriptPanel(false);
+            setShowStoryBiblePanel(false);
             setShowCommentsPanel(false);
           }}
           scriptPanelOpen={showScriptPanel}
@@ -524,6 +529,15 @@ export function Editor() {
             setShowScriptPanel((v) => !v);
             setShowTextPanel(false);
             setShowContextPanel(false);
+            setShowStoryBiblePanel(false);
+            setShowCommentsPanel(false);
+          }}
+          storyBiblePanelOpen={showStoryBiblePanel}
+          onToggleStoryBiblePanel={() => {
+            setShowStoryBiblePanel((v) => !v);
+            setShowTextPanel(false);
+            setShowContextPanel(false);
+            setShowScriptPanel(false);
             setShowCommentsPanel(false);
           }}
           commentsPanelOpen={showCommentsPanel}
@@ -532,6 +546,7 @@ export function Editor() {
             setShowTextPanel(false);
             setShowContextPanel(false);
             setShowScriptPanel(false);
+            setShowStoryBiblePanel(false);
           }}
           imageWidth={layout.imageWidth}
           imageHeight={layout.imageHeight}
@@ -598,6 +613,7 @@ export function Editor() {
           onCreatePageComment={() => setCommentThreadState({ mode: "create", ...SIDEBAR_TRIGGERED_THREAD_POSITION, target: { kind: "page" } })}
           onClose={() => setShowCommentsPanel(false)}
         />
+        <StoryBiblePanel open={showStoryBiblePanel} onClose={() => setShowStoryBiblePanel(false)} />
         <LanguageStrip languages={languages} active={activeLanguage} onChange={store.setActiveLanguage} onLanguagesChange={setLanguages} />
         <div className="editor-layout">
           <PageCanvas

@@ -10,6 +10,8 @@ import { imagesRouter } from "./routes/images.js";
 import { bubbleSvgsRouter } from "./routes/bubbleSvgs.js";
 import { languagesRouter } from "./routes/languages.js";
 import { charactersRouter } from "./routes/characters.js";
+import { entitiesRouter } from "./routes/entities.js";
+import { entityImagesRouter } from "./routes/entityImages.js";
 import { glossaryRouter } from "./routes/glossary.js";
 import { presetsRouter } from "./routes/presets.js";
 import { scriptRouter } from "./routes/script.js";
@@ -74,6 +76,8 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/bubble-svgs", requireAuth, requireViewer, bubbleSvgsRouter);
   app.use("/api/languages", requireAuth, requireViewer, languagesRouter);
   app.use("/api/characters", requireAuth, requireViewer, charactersRouter);
+  app.use("/api/entities", requireAuth, requireViewer, entitiesRouter);
+  app.use("/api/entity-images", requireAuth, requireViewer, entityImagesRouter);
   app.use("/api/glossary", requireAuth, requireViewer, glossaryRouter);
   app.use("/api/presets", requireAuth, requireViewer, presetsRouter);
   app.use("/api/settings", requireAuth, requireViewer, settingsRouter);
@@ -97,6 +101,8 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/p/:projectId/bubble-svgs", requireAuth, resolveProjectParam, requireViewerScoped, bubbleSvgsRouter);
   app.use("/api/p/:projectId/languages", requireAuth, resolveProjectParam, requireViewerScoped, languagesRouter);
   app.use("/api/p/:projectId/characters", requireAuth, resolveProjectParam, requireViewerScoped, charactersRouter);
+  app.use("/api/p/:projectId/entities", requireAuth, resolveProjectParam, requireViewerScoped, entitiesRouter);
+  app.use("/api/p/:projectId/entity-images", requireAuth, resolveProjectParam, requireViewerScoped, entityImagesRouter);
   app.use("/api/p/:projectId/glossary", requireAuth, resolveProjectParam, requireViewerScoped, glossaryRouter);
   app.use("/api/p/:projectId/presets", requireAuth, resolveProjectParam, requireViewerScoped, presetsRouter);
   app.use("/api/p/:projectId/settings", requireAuth, resolveProjectParam, requireViewerScoped, settingsRouter);

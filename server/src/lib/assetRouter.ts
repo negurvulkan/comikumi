@@ -7,7 +7,7 @@ import { getActiveProjectAssetDir } from "./projectStore.js";
 import { asyncHandler } from "./asyncHandler.js";
 import { requireProjectRole } from "./auth.js";
 
-type AssetKind = "fonts" | "images" | "bubble-svgs";
+type AssetKind = "fonts" | "images" | "bubble-svgs" | "entity-images";
 
 interface AssetRouterOptions {
   kind: AssetKind;
@@ -141,6 +141,39 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
         }
       }
       res.sendFile(path.join(globalDir, folder, fileName));
+    })
+  );
+
+  router.delete(
+    "/file/:fileName",
+    requireProjectRole("letterer"),
+    asyncHandler(async (req, res) => {
+      const fileName = req.params.fileName;
+      if (!isSafeFileName(fileName)) {
+        res.status(400).json({ error: "invalid_file_name" });
+        return;
+      }
+      const folder = foldersEnabled ? folderFromQuery(req.query.folder) : "";
+      if (folder === null) {
+        res.status(400).json({ error: "invalid_folder" });
+        return;
+      }
+      // Same lookup order as GET /file/:fileName above — project dir first, then the
+      // global dir — so deleting removes whichever copy would actually have been served.
+      const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
+      const bases = [...(projectDir ? [projectDir] : []), globalDir];
+      for (const base of bases) {
+        const target = path.join(base, folder, fileName);
+        const exists = await fs
+          .access(target)
+          .then(() => true)
+          .catch(() => false);
+        if (!exists) continue;
+        await fs.unlink(target);
+        res.json({ ok: true });
+        return;
+      }
+      res.status(404).json({ error: "file_not_found" });
     })
   );
 

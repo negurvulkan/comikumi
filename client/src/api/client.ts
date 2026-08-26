@@ -1,6 +1,7 @@
 import type { PageLayout } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
+import type { Entity, EntityRelation } from "../../../shared/src/entities";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "../../../shared/src/presets";
 import type { ProjectSettings } from "../../../shared/src/settings";
@@ -708,6 +709,61 @@ export const api = {
 
   deleteCharacter: (id: string) =>
     authFetch(projectApiUrl(`/characters/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<Character[]>(r)),
+
+  listEntities: () => authFetch(projectApiUrl("/entities")).then((r) => json<Entity[]>(r)),
+
+  addEntity: (entity: { type: string; name: string; color: string; summary?: string; notes?: string }) =>
+    authFetch(projectApiUrl("/entities"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entity),
+    }).then((r) => json<Entity[]>(r)),
+
+  updateEntity: (id: string, entity: { type: string; name: string; color: string; summary?: string; notes?: string }) =>
+    authFetch(projectApiUrl(`/entities/${encodeURIComponent(id)}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entity),
+    }).then((r) => json<Entity[]>(r)),
+
+  deleteEntity: (id: string) =>
+    authFetch(projectApiUrl(`/entities/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<Entity[]>(r)),
+
+  listEntityRelations: () => authFetch(projectApiUrl("/entities/relations")).then((r) => json<EntityRelation[]>(r)),
+
+  addEntityRelation: (relation: { fromId: string; toId: string; label: string }) =>
+    authFetch(projectApiUrl("/entities/relations"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(relation),
+    }).then((r) => json<EntityRelation[]>(r)),
+
+  deleteEntityRelation: (id: string) =>
+    authFetch(projectApiUrl(`/entities/relations/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<EntityRelation[]>(r)),
+
+  /** Every entity's gallery lives in its own asset-router folder, named by the
+   * entity's id — see server/src/routes/entityImages.ts. Unlike listImages()/
+   * uploadImage() there's no folder-browsing UI here, so these always pass `folder =
+   * entityId` for the caller instead of taking a folder parameter. */
+  listEntityImages: (entityId: string) =>
+    authFetch(projectApiUrl(`/entity-images${folderQuery(entityId)}`)).then((r) => json<AssetListing<ImageEntry>>(r)).then(withListingApiUrls),
+
+  entityImageFileUrl: (entityId: string, fileName: string) =>
+    authUrl(projectApiUrl(`/entity-images/file/${encodeURIComponent(fileName)}${folderQuery(entityId)}`)),
+
+  uploadEntityImage: (entityId: string, file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    form.append("folder", entityId);
+    return authFetch(projectApiUrl("/entity-images"), { method: "POST", body: form }).then((r) =>
+      json<{ ok: true; fileName: string; folder: string; width: number; height: number; scope: AssetScope }>(r)
+    );
+  },
+
+  deleteEntityImage: (entityId: string, fileName: string) =>
+    authFetch(projectApiUrl(`/entity-images/file/${encodeURIComponent(fileName)}${folderQuery(entityId)}`), { method: "DELETE" }).then((r) =>
+      json<{ ok: true }>(r)
+    ),
 
   listGlossary: () => authFetch(projectApiUrl("/glossary")).then((r) => json<GlossaryEntry[]>(r)),
 

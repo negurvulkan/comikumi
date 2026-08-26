@@ -15,6 +15,7 @@ import { Login } from "./routes/Login";
 import { Setup } from "./routes/Setup";
 import { AdminDashboard } from "./routes/AdminDashboard";
 import { ExportViewer } from "./routes/ExportViewer";
+import { StoryBible } from "./routes/StoryBible";
 import "./index.css";
 
 const router = createHashRouter([
@@ -38,6 +39,7 @@ const router = createHashRouter([
         children: [
           { index: true, element: <VolumeList /> },
           { path: "settings", element: <Settings /> },
+          { path: "story-bible", element: <StoryBible /> },
           { path: "volumes/:volumeId", element: <PageGrid /> },
           { path: "volumes/:volumeId/script", element: <ScriptEditor /> },
           { path: "volumes/:volumeId/exports", element: <ExportViewer /> },

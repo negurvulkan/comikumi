@@ -11,6 +11,7 @@ import {
   GlobeToolIcon,
   ContextToolIcon,
   ScriptToolIcon,
+  BookIcon,
   CommentPinToolIcon,
   CommentBoxToolIcon,
   CommentFreehandToolIcon,
@@ -44,6 +45,8 @@ interface Props {
   onToggleContextPanel: () => void;
   scriptPanelOpen: boolean;
   onToggleScriptPanel: () => void;
+  storyBiblePanelOpen: boolean;
+  onToggleStoryBiblePanel: () => void;
   commentsPanelOpen: boolean;
   onToggleCommentsPanel: () => void;
   imageWidth: number;
@@ -67,6 +70,8 @@ export function ToolStrip({
   onToggleContextPanel,
   scriptPanelOpen,
   onToggleScriptPanel,
+  storyBiblePanelOpen,
+  onToggleStoryBiblePanel,
   commentsPanelOpen,
   onToggleCommentsPanel,
   imageWidth,
@@ -173,6 +178,13 @@ export function ToolStrip({
         title={t("script.title")}
       >
         <ScriptToolIcon />
+      </button>
+      <button
+        className={`tool-btn${storyBiblePanelOpen ? " active" : ""}`}
+        onClick={onToggleStoryBiblePanel}
+        title={t("editor.toolStrip.storyBible")}
+      >
+        <BookIcon />
       </button>
     </div>
   );

@@ -472,7 +472,18 @@
       "noPanelCrop": "할당된 패널이 없습니다 — 이미지 잘라내기를 사용할 수 없습니다.",
       "panelCropHint": "스크롤로 확대/축소 · 드래그로 이동"
     },
+    "storyBiblePanel": {
+      "title": "스토리 바이블",
+      "searchPlaceholder": "검색…",
+      "empty": "항목을 찾을 수 없습니다.",
+      "noSummary": "요약이 없습니다.",
+      "noNotes": "메모가 없습니다.",
+      "noImages": "참고 이미지가 없습니다.",
+      "noRelations": "관계가 없습니다.",
+      "openFull": "스토리 바이블에서 열기"
+    },
     "toolStrip": {
+      "storyBible": "스토리 바이블",
       "bubbleOval": "말풍선 (타원)",
       "rect": "사각형",
       "quadPerspective": "사각형 (원근)",
@@ -655,6 +666,34 @@
     "unlink": "연결 해제",
     "linkedWithPage": "페이지 {{page}}에 연결됨",
     "insertIntoBubble": "말풍선에 삽입"
+  },
+  "storyBible": {
+    "menuEntry": "스토리 바이블",
+    "title": "스토리 바이블",
+    "backLink": "← 권 목록으로 돌아가기",
+    "filterAll": "전체",
+    "empty": "아직 항목이 없습니다.",
+    "noSelection": "왼쪽에서 항목을 선택하거나 새로 만드세요.",
+    "namePlaceholder": "이름",
+    "typePlaceholder": "유형 (예: character, location, item, faction)",
+    "newEntry": "+ 새 항목",
+    "nameLabel": "이름",
+    "typeLabel": "유형",
+    "colorLabel": "색상",
+    "summaryLabel": "요약",
+    "notesLabel": "메모",
+    "deleteEntity": "항목 삭제",
+    "confirmDelete": "\"{{name}}\"을(를) 삭제할까요? 연결된 관계도 함께 삭제됩니다.",
+    "galleryHeading": "참고 이미지",
+    "noImages": "아직 참고 이미지가 없습니다.",
+    "uploadImage": "이미지 업로드",
+    "deleteImage": "이미지 삭제",
+    "relationsHeading": "관계",
+    "noRelations": "아직 관계가 없습니다.",
+    "relationToLabel": "대상 선택…",
+    "relationLabelPlaceholder": "예: ~의 언니",
+    "addRelation": "추가",
+    "deleteRelation": "관계 삭제"
   },
   "reader": {
     "menuEntry": "읽기 / 리뷰",

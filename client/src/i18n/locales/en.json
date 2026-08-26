@@ -485,7 +485,18 @@
       "noPanelCrop": "No panel assigned — no image crop available.",
       "panelCropHint": "Scroll to zoom · drag to pan"
     },
+    "storyBiblePanel": {
+      "title": "Story Bible",
+      "searchPlaceholder": "Search…",
+      "empty": "No entries found.",
+      "noSummary": "No summary.",
+      "noNotes": "No notes.",
+      "noImages": "No reference images.",
+      "noRelations": "No relations.",
+      "openFull": "Open in Story Bible"
+    },
     "toolStrip": {
+      "storyBible": "Story Bible",
       "bubbleOval": "Bubble (oval)",
       "rect": "Rectangle",
       "quadPerspective": "Quad (perspective)",
@@ -675,6 +686,34 @@
     "unlink": "Unlink",
     "linkedWithPage": "Linked with page {{page}}",
     "insertIntoBubble": "Insert into bubble"
+  },
+  "storyBible": {
+    "menuEntry": "Story Bible",
+    "title": "Story Bible",
+    "backLink": "← Back to volume list",
+    "filterAll": "All",
+    "empty": "No entries yet.",
+    "noSelection": "Select an entry on the left, or create a new one.",
+    "namePlaceholder": "Name",
+    "typePlaceholder": "Type (e.g. character, location, item, faction)",
+    "newEntry": "+ New entry",
+    "nameLabel": "Name",
+    "typeLabel": "Type",
+    "colorLabel": "Color",
+    "summaryLabel": "Summary",
+    "notesLabel": "Notes",
+    "deleteEntity": "Delete entry",
+    "confirmDelete": "Delete \"{{name}}\"? Linked relations will be removed too.",
+    "galleryHeading": "Reference images",
+    "noImages": "No reference images yet.",
+    "uploadImage": "Upload image",
+    "deleteImage": "Remove image",
+    "relationsHeading": "Relations",
+    "noRelations": "No relations yet.",
+    "relationToLabel": "Choose target…",
+    "relationLabelPlaceholder": "e.g. is sister of",
+    "addRelation": "Add",
+    "deleteRelation": "Remove relation"
   },
   "reader": {
     "menuEntry": "Read / Review",

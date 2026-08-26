@@ -6,6 +6,7 @@ import { ProjectFileSchema, type ProjectFile } from "../../../shared/src/project
 import { ProjectSettingsSchema, type ProjectSettings } from "../../../shared/src/settings.js";
 import { LanguageListSchema, DEFAULT_LANGUAGES, type LanguageDef } from "../../../shared/src/languages.js";
 import type { Character } from "../../../shared/src/characters.js";
+import type { Entity, EntityRelation } from "../../../shared/src/entities.js";
 import type { GlossaryEntry } from "../../../shared/src/glossary.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
 import type { ProjectMember } from "../../../shared/src/users.js";
@@ -147,16 +148,41 @@ async function writeProjectFile(filePath: string, data: ProjectFile): Promise<vo
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
 }
 
+/** One-time migration for project files still on the pre-Story-Bible `characters`
+ * array: converts every legacy Character into an Entity (type "character", SAME id —
+ * so every existing Bubble.characterId reference across every page's layout JSON keeps
+ * resolving unchanged, since those only ever store an id, never the character itself),
+ * clears `characters` (nothing writes to it anymore afterwards). Returns the same
+ * object reference untouched when there's nothing to migrate (already migrated, or a
+ * project that never had any characters), so loadProjectWithId() can tell whether a
+ * write is needed via a simple reference check. */
+function migrateCharactersToEntities(data: ProjectFile): ProjectFile {
+  if (data.entities.length > 0 || data.characters.length === 0) return data;
+  const entities: Entity[] = data.characters.map((c) => ({
+    id: c.id,
+    type: "character",
+    name: c.name,
+    color: c.color,
+    summary: "",
+    notes: c.voiceNotes,
+  }));
+  return { ...data, entities, characters: [] };
+}
+
 /** Reads a project file, assigning it a fresh id (and writing that back) if it doesn't
  * have one yet — the migrate-on-load path for every project file that existed before
  * the `id` field did, mirroring migrateLegacyProject()'s "upgrade in place" approach for
- * the pre-multi-project settings.json/languages.json layout. Also registers the
- * (possibly newly assigned) id in the app-state index. */
+ * the pre-multi-project settings.json/languages.json layout. Also runs the
+ * characters-to-entities migration (see migrateCharactersToEntities()) and registers the
+ * (possibly newly assigned) id in the app-state index. Both migrations share a single
+ * write when both apply, so a project that predates both `id` and `entities` still only
+ * gets written once. */
 async function loadProjectWithId(filePath: string): Promise<ActiveProject> {
   const loaded = await readProjectFile(filePath);
   const id = loaded.id ?? randomUUID();
-  const data: ProjectFile = loaded.id ? loaded : { ...loaded, id };
-  if (!loaded.id) await writeProjectFile(filePath, data);
+  const withId: ProjectFile = loaded.id ? loaded : { ...loaded, id };
+  const data = migrateCharactersToEntities(withId);
+  if (!loaded.id || data !== withId) await writeProjectFile(filePath, data);
   await registerProjectId(id, filePath);
   return { id, filePath, data };
 }
@@ -260,7 +286,10 @@ export async function getCurrentProjectInfo(ctx?: ActiveProject): Promise<{
  * that case. Reads the legacy-active entry directly (non-throwing) rather than via
  * getActiveProject() so the asset routers keep working with no project open at all,
  * exactly like today. */
-export async function getActiveProjectAssetDir(kind: "fonts" | "images" | "bubble-svgs", ctx?: ActiveProject): Promise<string | null> {
+export async function getActiveProjectAssetDir(
+  kind: "fonts" | "images" | "bubble-svgs" | "entity-images",
+  ctx?: ActiveProject
+): Promise<string | null> {
   if (!ctx) await ensureInitialized();
   const project = ctx ?? legacyActive();
   if (!project || !project.data.assetsDir) return null;
@@ -479,15 +508,61 @@ export async function writeLanguages(languages: LanguageDef[], ctx?: ActiveProje
   });
 }
 
+/** Thin compatibility view over `entities` (type === "character") — the legacy
+ * Character shape (id/name/color/voiceNotes) is exactly what server/src/routes/
+ * characters.ts and every client caller (CharacterManager.tsx, the bubble inspector's
+ * character dropdown, reportUtils.ts, VolumeReportModal.tsx, TranslatorContextPanel.tsx)
+ * already expect — keeping this signature/shape unchanged means none of that code needs
+ * to know entities.ts exists. See migrateCharactersToEntities() for how a pre-Story-Bible
+ * project's `characters` array becomes these same entities on first load. */
 export async function readCharacters(ctx?: ActiveProject): Promise<Character[]> {
-  const { data } = ctx ?? (await getActiveProject());
-  return data.characters;
+  const entities = await readEntities(ctx);
+  return entities
+    .filter((e) => e.type === "character")
+    .map((e) => ({ id: e.id, name: e.name, color: e.color, voiceNotes: e.notes }));
 }
 
+/** Writes the full desired character list back, merging it into `entities`: replaces
+ * every character-type entity, leaves every other entity untouched, and preserves each
+ * character entity's `summary` (a Story-Bible-only field the legacy Character shape
+ * doesn't carry) when its id already existed. Always pins `type: "character"`, so
+ * editing via the legacy characters API can't leave an entity in a different type. */
 export async function writeCharacters(characters: Character[], ctx?: ActiveProject): Promise<void> {
+  const entities = await readEntities(ctx);
+  const others = entities.filter((e) => e.type !== "character");
+  const next: Entity[] = characters.map((c) => ({
+    id: c.id,
+    type: "character",
+    name: c.name,
+    color: c.color,
+    summary: entities.find((e) => e.id === c.id)?.summary ?? "",
+    notes: c.voiceNotes,
+  }));
+  await writeEntities([...others, ...next], ctx);
+}
+
+export async function readEntities(ctx?: ActiveProject): Promise<Entity[]> {
+  const { data } = ctx ?? (await getActiveProject());
+  return data.entities;
+}
+
+export async function writeEntities(entities: Entity[], ctx?: ActiveProject): Promise<void> {
   const project = ctx ?? (await getActiveProject());
   await withFileLock(project.filePath, async () => {
-    project.data = { ...project.data, characters };
+    project.data = { ...project.data, entities };
+    await writeProjectFile(project.filePath, project.data);
+  });
+}
+
+export async function readEntityRelations(ctx?: ActiveProject): Promise<EntityRelation[]> {
+  const { data } = ctx ?? (await getActiveProject());
+  return data.entityRelations;
+}
+
+export async function writeEntityRelations(entityRelations: EntityRelation[], ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, entityRelations };
     await writeProjectFile(project.filePath, project.data);
   });
 }

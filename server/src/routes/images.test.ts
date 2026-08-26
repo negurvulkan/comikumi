@@ -89,6 +89,26 @@ describe("DELETE /api/images/folders", () => {
   });
 });
 
+describe("DELETE /api/images/file/:fileName", () => {
+  it("deletes a single file without requiring the folder to be empty", async () => {
+    await api.post("/api/images").field("folder", "effects").attach("image", TINY_PNG, "removable.png");
+    let listing = await api.get("/api/images?folder=effects");
+    expect(listing.body.files.map((f: { fileName: string }) => f.fileName)).toContain("removable.png");
+
+    const del = await api.delete("/api/images/file/removable.png?folder=effects");
+    expect(del.status).toBe(200);
+
+    listing = await api.get("/api/images?folder=effects");
+    expect(listing.body.files.map((f: { fileName: string }) => f.fileName)).not.toContain("removable.png");
+  });
+
+  it("404s deleting a file that doesn't exist", async () => {
+    const res = await api.delete("/api/images/file/does-not-exist.png");
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe("file_not_found");
+  });
+});
+
 describe("POST /api/images/move", () => {
   it("moves a file between folders", async () => {
     await api.post("/api/images").attach("image", TINY_PNG, "movable.png");

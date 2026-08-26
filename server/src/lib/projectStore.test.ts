@@ -41,6 +41,42 @@ describe("project id migration", () => {
   });
 });
 
+describe("characters-to-entities migration", () => {
+  it("migrates a legacy characters list into entities on load, idempotently, keeping readCharacters working", async () => {
+    const root = await freshDataDir();
+    const { createProject, openProject, readCharacters, getOrLoadProjectById } = await import("./projectStore.js");
+    const filePath = path.join(root, "legacy-projekt.json");
+    const created = await createProject(filePath, { name: "Legacy Cast", scanRoot: path.join(root, "scan") });
+
+    // Simulate a pre-Story-Bible file: populated `characters`, no `entities` field at all.
+    const raw = JSON.parse(await fs.readFile(filePath, "utf-8"));
+    raw.characters = [{ id: "char-kei", name: "Kei", color: "#ff0000", voiceNotes: "Locker, kindlich" }];
+    delete raw.entities;
+    await fs.writeFile(filePath, JSON.stringify(raw), "utf-8");
+
+    const reopened = await openProject(filePath);
+    expect(reopened.characters).toEqual([]);
+    expect(reopened.entities).toHaveLength(1);
+    expect(reopened.entities[0]).toMatchObject({ id: "char-kei", type: "character", name: "Kei", color: "#ff0000", notes: "Locker, kindlich" });
+
+    const onDisk = JSON.parse(await fs.readFile(filePath, "utf-8"));
+    expect(onDisk.characters).toEqual([]);
+    expect(onDisk.entities).toHaveLength(1);
+
+    // readCharacters() still presents the same legacy shape, id, and content.
+    const ctx = await getOrLoadProjectById(created.id!);
+    const chars = await readCharacters(ctx);
+    expect(chars).toEqual([{ id: "char-kei", name: "Kei", color: "#ff0000", voiceNotes: "Locker, kindlich" }]);
+
+    // Reopening again must not double-migrate or duplicate the entity — check the file
+    // on disk (not the stale `ctx` reference above) since a fresh load produces a new
+    // in-memory ActiveProject object rather than mutating the old one.
+    await openProject(filePath);
+    const onDiskAfterSecondLoad = JSON.parse(await fs.readFile(filePath, "utf-8"));
+    expect(onDiskAfterSecondLoad.entities).toHaveLength(1);
+  });
+});
+
 describe("multi-project cache", () => {
   it("getOrLoadProjectById resolves two different projects independently, without cross-talk", async () => {
     const root = await freshDataDir();

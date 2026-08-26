@@ -480,7 +480,18 @@
       "noPanelCrop": "Aucune case assignée — aucun extrait d'image disponible.",
       "panelCropHint": "Molette pour zoomer · glisser pour déplacer"
     },
+    "storyBiblePanel": {
+      "title": "Bible narrative",
+      "searchPlaceholder": "Rechercher…",
+      "empty": "Aucune entrée trouvée.",
+      "noSummary": "Aucun résumé.",
+      "noNotes": "Aucune note.",
+      "noImages": "Aucune image de référence.",
+      "noRelations": "Aucune relation.",
+      "openFull": "Ouvrir dans la Bible narrative"
+    },
     "toolStrip": {
+      "storyBible": "Bible narrative",
       "bubbleOval": "Bulle (ovale)",
       "rect": "Rectangle",
       "quadPerspective": "Quadrilatère (perspective)",
@@ -664,6 +675,34 @@
     "unlink": "Dissocier",
     "linkedWithPage": "Associée à la page {{page}}",
     "insertIntoBubble": "Insérer dans la bulle"
+  },
+  "storyBible": {
+    "menuEntry": "Bible narrative",
+    "title": "Bible narrative",
+    "backLink": "← Retour à la liste des tomes",
+    "filterAll": "Tous",
+    "empty": "Aucune entrée pour le moment.",
+    "noSelection": "Sélectionnez une entrée à gauche, ou créez-en une nouvelle.",
+    "namePlaceholder": "Nom",
+    "typePlaceholder": "Type (ex. character, location, item, faction)",
+    "newEntry": "+ Nouvelle entrée",
+    "nameLabel": "Nom",
+    "typeLabel": "Type",
+    "colorLabel": "Couleur",
+    "summaryLabel": "Résumé",
+    "notesLabel": "Notes",
+    "deleteEntity": "Supprimer l'entrée",
+    "confirmDelete": "Supprimer « {{name}} » ? Les relations liées seront également supprimées.",
+    "galleryHeading": "Images de référence",
+    "noImages": "Aucune image de référence pour le moment.",
+    "uploadImage": "Téléverser une image",
+    "deleteImage": "Retirer l'image",
+    "relationsHeading": "Relations",
+    "noRelations": "Aucune relation pour le moment.",
+    "relationToLabel": "Choisir la cible…",
+    "relationLabelPlaceholder": "ex. est la sœur de",
+    "addRelation": "Ajouter",
+    "deleteRelation": "Retirer la relation"
   },
   "reader": {
     "menuEntry": "Lecture / Relecture",

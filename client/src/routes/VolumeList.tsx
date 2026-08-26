@@ -78,6 +78,7 @@ export function VolumeList() {
         { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
+        { type: "action", label: t("storyBible.menuEntry"), onClick: () => navigate(`/p/${encodeURIComponent(projectId!)}/story-bible`) },
         { type: "action", label: t("menu.members"), onClick: () => navigate("/admin?tab=projects"), disabled: !hasAtLeast("admin") },
         { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },
         ...(myRole === "system-admin"

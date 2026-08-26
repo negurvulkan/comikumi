@@ -472,7 +472,18 @@
       "noPanelCrop": "パネルが割り当てられていません — 画像の切り抜きは利用できません。",
       "panelCropHint": "スクロールで拡大縮小 · ドラッグで移動"
     },
+    "storyBiblePanel": {
+      "title": "ストーリーバイブル",
+      "searchPlaceholder": "検索…",
+      "empty": "項目が見つかりません。",
+      "noSummary": "概要がありません。",
+      "noNotes": "メモがありません。",
+      "noImages": "参考画像がありません。",
+      "noRelations": "関係がありません。",
+      "openFull": "ストーリーバイブルで開く"
+    },
     "toolStrip": {
+      "storyBible": "ストーリーバイブル",
       "bubbleOval": "吹き出し（楕円）",
       "rect": "四角形",
       "quadPerspective": "四辺形（遠近）",
@@ -655,6 +666,34 @@
     "unlink": "関連付けを解除",
     "linkedWithPage": "ページ {{page}} と関連付け済み",
     "insertIntoBubble": "吹き出しに挿入"
+  },
+  "storyBible": {
+    "menuEntry": "ストーリーバイブル",
+    "title": "ストーリーバイブル",
+    "backLink": "← 巻一覧に戻る",
+    "filterAll": "すべて",
+    "empty": "まだ項目がありません。",
+    "noSelection": "左のリストから項目を選ぶか、新しく作成してください。",
+    "namePlaceholder": "名前",
+    "typePlaceholder": "種類（例: character, location, item, faction）",
+    "newEntry": "+ 新規項目",
+    "nameLabel": "名前",
+    "typeLabel": "種類",
+    "colorLabel": "色",
+    "summaryLabel": "概要",
+    "notesLabel": "メモ",
+    "deleteEntity": "項目を削除",
+    "confirmDelete": "「{{name}}」を削除しますか？ 関連する関係も削除されます。",
+    "galleryHeading": "参考画像",
+    "noImages": "まだ参考画像がありません。",
+    "uploadImage": "画像をアップロード",
+    "deleteImage": "画像を削除",
+    "relationsHeading": "関係",
+    "noRelations": "まだ関係がありません。",
+    "relationToLabel": "対象を選択…",
+    "relationLabelPlaceholder": "例: 〜の姉",
+    "addRelation": "追加",
+    "deleteRelation": "関係を削除"
   },
   "reader": {
     "menuEntry": "読む / レビュー",

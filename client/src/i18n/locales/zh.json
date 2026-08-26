@@ -472,7 +472,18 @@
       "noPanelCrop": "未分配分格——没有可用的图片裁剪。",
       "panelCropHint": "滚动缩放 · 拖动平移"
     },
+    "storyBiblePanel": {
+      "title": "故事设定集",
+      "searchPlaceholder": "搜索…",
+      "empty": "未找到条目。",
+      "noSummary": "没有简介。",
+      "noNotes": "没有备注。",
+      "noImages": "没有参考图片。",
+      "noRelations": "没有关系。",
+      "openFull": "在故事设定集中打开"
+    },
     "toolStrip": {
+      "storyBible": "故事设定集",
       "bubbleOval": "气泡（椭圆）",
       "rect": "矩形",
       "quadPerspective": "四边形（透视）",
@@ -655,6 +666,34 @@
     "unlink": "取消关联",
     "linkedWithPage": "已与第 {{page}} 页关联",
     "insertIntoBubble": "插入到气泡"
+  },
+  "storyBible": {
+    "menuEntry": "故事设定集",
+    "title": "故事设定集",
+    "backLink": "← 返回卷列表",
+    "filterAll": "全部",
+    "empty": "还没有条目。",
+    "noSelection": "在左侧选择一个条目，或新建一个。",
+    "namePlaceholder": "名称",
+    "typePlaceholder": "类型（例如 character、location、item、faction）",
+    "newEntry": "+ 新建条目",
+    "nameLabel": "名称",
+    "typeLabel": "类型",
+    "colorLabel": "颜色",
+    "summaryLabel": "简介",
+    "notesLabel": "备注",
+    "deleteEntity": "删除条目",
+    "confirmDelete": "删除“{{name}}”？相关联的关系也会一并删除。",
+    "galleryHeading": "参考图片",
+    "noImages": "还没有参考图片。",
+    "uploadImage": "上传图片",
+    "deleteImage": "移除图片",
+    "relationsHeading": "关系",
+    "noRelations": "还没有关系。",
+    "relationToLabel": "选择目标…",
+    "relationLabelPlaceholder": "例如：是……的姐姐",
+    "addRelation": "添加",
+    "deleteRelation": "移除关系"
   },
   "reader": {
     "menuEntry": "阅读 / 审阅",

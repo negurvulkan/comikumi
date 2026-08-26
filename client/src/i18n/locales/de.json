@@ -485,7 +485,18 @@
       "noPanelCrop": "Kein Panel zugeordnet — kein Bildausschnitt verfügbar.",
       "panelCropHint": "Scrollen = zoomen · Ziehen = verschieben"
     },
+    "storyBiblePanel": {
+      "title": "Story Bible",
+      "searchPlaceholder": "Suchen…",
+      "empty": "Keine Einträge gefunden.",
+      "noSummary": "Keine Kurzbeschreibung.",
+      "noNotes": "Keine Notizen.",
+      "noImages": "Keine Referenzbilder.",
+      "noRelations": "Keine Beziehungen.",
+      "openFull": "In Story Bible öffnen"
+    },
     "toolStrip": {
+      "storyBible": "Story Bible",
       "bubbleOval": "Blase (oval)",
       "rect": "Rechteck",
       "quadPerspective": "Raute (Perspektive)",
@@ -675,6 +686,34 @@
     "unlink": "Verknüpfung aufheben",
     "linkedWithPage": "Verknüpft mit Seite {{page}}",
     "insertIntoBubble": "In Blase einfügen"
+  },
+  "storyBible": {
+    "menuEntry": "Story Bible",
+    "title": "Story Bible",
+    "backLink": "← Zurück zur Bandliste",
+    "filterAll": "Alle",
+    "empty": "Noch keine Einträge angelegt.",
+    "noSelection": "Eintrag links auswählen oder einen neuen anlegen.",
+    "namePlaceholder": "Name",
+    "typePlaceholder": "Typ (z. B. character, location, item, faction)",
+    "newEntry": "+ Neuer Eintrag",
+    "nameLabel": "Name",
+    "typeLabel": "Typ",
+    "colorLabel": "Farbe",
+    "summaryLabel": "Kurzbeschreibung",
+    "notesLabel": "Notizen",
+    "deleteEntity": "Eintrag löschen",
+    "confirmDelete": "\"{{name}}\" löschen? Verknüpfte Beziehungen werden mit entfernt.",
+    "galleryHeading": "Referenzbilder",
+    "noImages": "Noch keine Referenzbilder.",
+    "uploadImage": "Bild hochladen",
+    "deleteImage": "Bild entfernen",
+    "relationsHeading": "Beziehungen",
+    "noRelations": "Noch keine Beziehungen.",
+    "relationToLabel": "Ziel wählen…",
+    "relationLabelPlaceholder": "z. B. ist Schwester von",
+    "addRelation": "Hinzufügen",
+    "deleteRelation": "Beziehung entfernen"
   },
   "reader": {
     "menuEntry": "Lesen / Review",

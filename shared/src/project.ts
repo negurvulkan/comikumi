@@ -5,6 +5,7 @@ import { CharacterListSchema } from "./characters.js";
 import { GlossaryListSchema } from "./glossary.js";
 import { LetteringPresetListSchema } from "./presets.js";
 import { ProjectMemberListSchema } from "./users.js";
+import { EntityListSchema, EntityRelationListSchema } from "./entities.js";
 
 /**
  * The full contents of a project file — everything a project needs to work
@@ -24,8 +25,18 @@ export const ProjectFileSchema = ProjectSettingsSchema.extend({
   id: z.string().min(1).optional(),
   name: z.string().min(1),
   languages: LanguageListSchema.default(DEFAULT_LANGUAGES),
-  /** Recurring cast, referenced by Bubble.characterId — see characters.ts. */
+  /** Legacy recurring-cast list, referenced by Bubble.characterId — see characters.ts.
+   * Migrated into `entities` (type "character", same ids) on first load by
+   * server/src/lib/projectStore.ts's loadProjectWithId(); stays in the schema only so
+   * that migration can still read pre-migration project files. Left empty (not
+   * removed from the schema) after migration — nothing writes to it anymore. */
   characters: CharacterListSchema.default([]),
+  /** Generic worldbuilding/story-bible records (characters, locations, items, ...) —
+   * see entities.ts. Character-type entries here ARE the Bubble.characterId targets,
+   * not a separate list (see characters field's doc comment above). */
+  entities: EntityListSchema.default([]),
+  /** Directed labeled links between entities — see entities.ts. */
+  entityRelations: EntityRelationListSchema.default([]),
   /** Projectwide term list for consistent translations — see glossary.ts. */
   glossary: GlossaryListSchema.default([]),
   /** Projectwide live-linked style presets — see presets.ts. */

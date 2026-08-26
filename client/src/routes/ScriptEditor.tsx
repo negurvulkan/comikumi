@@ -10,6 +10,8 @@ import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ScriptPanelCard } from "../editor/ScriptPanelCard";
 import { addPanel, deletePanel, emptyPage, movePanel, scriptPageFromLayout, updatePanel } from "../editor/scriptEditing";
+import { StoryBiblePanel } from "../editor/StoryBiblePanel";
+import { BookIcon } from "../editor/Icons";
 import { useProject } from "../state/ProjectContext";
 
 export function ScriptEditor() {
@@ -27,6 +29,7 @@ export function ScriptEditor() {
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generateMsg, setGenerateMsg] = useState<string | null>(null);
+  const [showStoryBiblePanel, setShowStoryBiblePanel] = useState(false);
 
   useEffect(() => {
     api.getScript(volumeId).then(setDoc).catch((e) => setError(translateApiError(e, t)));
@@ -131,96 +134,110 @@ export function ScriptEditor() {
         <Link to={`${pBase}/volumes/${encodeURIComponent(volumeId)}`}>{t("script.backToPages")}</Link>
         <span className="canvas-titlebar-name">{t("script.title")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
+        <button
+          type="button"
+          className={`tool-btn${showStoryBiblePanel ? " active" : ""}`}
+          style={{ marginLeft: "auto" }}
+          onClick={() => setShowStoryBiblePanel((v) => !v)}
+          title={t("editor.toolStrip.storyBible")}
+        >
+          <BookIcon />
+        </button>
       </div>
 
-      <div className="langstrip langstrip-horizontal" style={{ margin: "8px 12px" }}>
-        {languages.map((l) => (
-          <button
-            key={l.code}
-            className={`lang-chip${l.code === language ? " active" : ""}`}
-            onClick={() => setLanguage(l.code)}
-            title={l.label}
-          >
-            {l.code.toUpperCase()}
-          </button>
-        ))}
-      </div>
+      <div className="editor-body">
+        <StoryBiblePanel open={showStoryBiblePanel} onClose={() => setShowStoryBiblePanel(false)} />
+        <div style={{ display: "flex", flexDirection: "column", flex: "1 1 auto", minHeight: 0 }}>
+          <div className="langstrip langstrip-horizontal" style={{ margin: "8px 12px" }}>
+            {languages.map((l) => (
+              <button
+                key={l.code}
+                className={`lang-chip${l.code === language ? " active" : ""}`}
+                onClick={() => setLanguage(l.code)}
+                title={l.label}
+              >
+                {l.code.toUpperCase()}
+              </button>
+            ))}
+          </div>
 
-      <div className="page-scroll" style={{ padding: "0 16px 16px" }}>
-        {doc.pages.map((page, pageIndex) => (
-          <div key={page.id} className="inspector" style={{ marginBottom: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <p style={{ margin: 0, fontWeight: 600 }}>
-                {scriptPageDisplayLabel(page, t("script.pageFallbackLabel", { index: pageIndex + 1 }))}
-              </p>
-              <div style={{ display: "flex", gap: 4 }}>
-                <button type="button" onClick={() => movePage(page.id, "up")} disabled={pageIndex === 0}>
-                  ↑
-                </button>
-                <button type="button" onClick={() => movePage(page.id, "down")} disabled={pageIndex === doc.pages.length - 1}>
-                  ↓
-                </button>
-                <button type="button" onClick={() => deletePage(page.id)} style={{ color: "#ff8a95" }}>
-                  {t("script.deletePage")}
+          <div className="page-scroll" style={{ padding: "0 16px 16px" }}>
+            {doc.pages.map((page, pageIndex) => (
+              <div key={page.id} className="inspector" style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <p style={{ margin: 0, fontWeight: 600 }}>
+                    {scriptPageDisplayLabel(page, t("script.pageFallbackLabel", { index: pageIndex + 1 }))}
+                  </p>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button type="button" onClick={() => movePage(page.id, "up")} disabled={pageIndex === 0}>
+                      ↑
+                    </button>
+                    <button type="button" onClick={() => movePage(page.id, "down")} disabled={pageIndex === doc.pages.length - 1}>
+                      ↓
+                    </button>
+                    <button type="button" onClick={() => deletePage(page.id)} style={{ color: "#ff8a95" }}>
+                      {t("script.deletePage")}
+                    </button>
+                  </div>
+                </div>
+                {page.linkedPage && (
+                  <p className="hint" style={{ margin: 0 }}>
+                    {t("script.linkedWithPage", { page: page.linkedPage })}
+                  </p>
+                )}
+                <label>
+                  {t("script.pageLabel")}
+                  <input
+                    value={page.label}
+                    onChange={(e) => updatePage(page.id, { label: e.target.value })}
+                    placeholder={t("script.pageFallbackLabel", { index: pageIndex + 1 })}
+                  />
+                </label>
+                <label>
+                  {t("script.pageNotesLabel")}
+                  <textarea value={page.notes} onChange={(e) => updatePage(page.id, { notes: e.target.value })} style={{ minHeight: 40 }} />
+                </label>
+
+                {page.panels.map((panel: ScriptPanel, panelIndex) => (
+                  <ScriptPanelCard
+                    key={panel.id}
+                    panel={panel}
+                    index={panelIndex}
+                    language={language}
+                    characters={characters}
+                    glossary={glossary}
+                    onChange={(patch) => applyToPage(page.id, (p) => updatePanel(p, panel.id, patch))}
+                    onDelete={() => applyToPage(page.id, (p) => deletePanel(p, panel.id))}
+                    onMove={(direction) => applyToPage(page.id, (p) => movePanel(p, panel.id, direction))}
+                    canMoveUp={panelIndex > 0}
+                    canMoveDown={panelIndex < page.panels.length - 1}
+                  />
+                ))}
+                <button type="button" onClick={() => applyToPage(page.id, addPanel)}>
+                  {t("script.addPanel")}
                 </button>
               </div>
-            </div>
-            {page.linkedPage && (
-              <p className="hint" style={{ margin: 0 }}>
-                {t("script.linkedWithPage", { page: page.linkedPage })}
-              </p>
-            )}
-            <label>
-              {t("script.pageLabel")}
-              <input
-                value={page.label}
-                onChange={(e) => updatePage(page.id, { label: e.target.value })}
-                placeholder={t("script.pageFallbackLabel", { index: pageIndex + 1 })}
-              />
-            </label>
-            <label>
-              {t("script.pageNotesLabel")}
-              <textarea value={page.notes} onChange={(e) => updatePage(page.id, { notes: e.target.value })} style={{ minHeight: 40 }} />
-            </label>
-
-            {page.panels.map((panel: ScriptPanel, panelIndex) => (
-              <ScriptPanelCard
-                key={panel.id}
-                panel={panel}
-                index={panelIndex}
-                language={language}
-                characters={characters}
-                glossary={glossary}
-                onChange={(patch) => applyToPage(page.id, (p) => updatePanel(p, panel.id, patch))}
-                onDelete={() => applyToPage(page.id, (p) => deletePanel(p, panel.id))}
-                onMove={(direction) => applyToPage(page.id, (p) => movePanel(p, panel.id, direction))}
-                canMoveUp={panelIndex > 0}
-                canMoveDown={panelIndex < page.panels.length - 1}
-              />
             ))}
-            <button type="button" onClick={() => applyToPage(page.id, addPanel)}>
-              {t("script.addPanel")}
-            </button>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" onClick={addPage}>
+                {t("script.addPage")}
+              </button>
+              <button type="button" onClick={handleGenerateFromVolume} disabled={generating}>
+                {t("script.generateFromVolume")}
+              </button>
+            </div>
+            {generateMsg && <p className="hint" style={{ margin: "4px 0 0" }}>{generateMsg}</p>}
+
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button type="button" className="primary" onClick={handleSave} disabled={saving}>
+                {saving ? t("settings.saving") : t("common.save")}
+              </button>
+            </div>
+            {savedMsg && <p style={{ color: "#b3ffc0", margin: "8px 0 0" }}>{savedMsg}</p>}
+            {error && <div className="error-banner">{error}</div>}
           </div>
-        ))}
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" onClick={addPage}>
-            {t("script.addPage")}
-          </button>
-          <button type="button" onClick={handleGenerateFromVolume} disabled={generating}>
-            {t("script.generateFromVolume")}
-          </button>
         </div>
-        {generateMsg && <p className="hint" style={{ margin: "4px 0 0" }}>{generateMsg}</p>}
-
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <button type="button" className="primary" onClick={handleSave} disabled={saving}>
-            {saving ? t("settings.saving") : t("common.save")}
-          </button>
-        </div>
-        {savedMsg && <p style={{ color: "#b3ffc0", margin: "8px 0 0" }}>{savedMsg}</p>}
-        {error && <div className="error-banner">{error}</div>}
       </div>
     </div>
   );
