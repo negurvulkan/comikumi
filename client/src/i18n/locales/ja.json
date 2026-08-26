@@ -21,6 +21,21 @@
     "loggedInAs": "{{username}} としてログイン中",
     "logout": "ログアウト"
   },
+  "account": {
+    "title": "アカウント",
+    "backLink": "← 戻る",
+    "openaiKeyLabel": "OpenAI APIキー",
+    "saveKey": "保存",
+    "clearKey": "削除",
+    "openaiConfigured": "OpenAIキーが登録されています。",
+    "codexConfigured": "ChatGPTでログイン済み",
+    "usedPercentSuffix": "使用済み",
+    "codexSignIn": "ChatGPTでサインイン",
+    "codexSignOut": "サインアウト",
+    "codexEnterCode": "次のページでこのコードを入力してください:",
+    "codexWaiting": "確認を待っています…",
+    "codexLoginFailed": "サインインに失敗しました。"
+  },
   "settings": {
     "headingWithProject": "設定 — {{name}}",
     "heading": "設定",
@@ -482,8 +497,22 @@
       "noRelations": "関係がありません。",
       "openFull": "ストーリーバイブルで開く"
     },
+    "aiPanel": {
+      "title": "AIアシスタント",
+      "noProviderConfigured": "AIプロバイダーが設定されていません。",
+      "configureLink": "今すぐ設定",
+      "includeContext": "{{label}}を含める",
+      "defaultContextLabel": "現在のコンテキスト",
+      "contextSelectedBubble": "選択中の吹き出し",
+      "contextCurrentPage": "現在のページ",
+      "contextCurrentScript": "現在のスクリプト",
+      "empty": "まだメッセージがありません。質問を入力して始めましょう。",
+      "inputPlaceholder": "質問を入力…",
+      "send": "送信"
+    },
     "toolStrip": {
       "storyBible": "ストーリーバイブル",
+      "aiAssistant": "AIアシスタント",
       "bubbleOval": "吹き出し（楕円）",
       "rect": "四角形",
       "quadPerspective": "四辺形（遠近）",

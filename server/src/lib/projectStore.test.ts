@@ -1,14 +1,36 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+
+/** GUARD — must run before anything below ever imports "./projectStore.js" (which
+ * transitively imports paths.js, computing DATA_DIR/APP_STATE_FILE ONCE, from
+ * whatever LETTERING_DATA_DIR happens to be at that first-ever import, then caching
+ * that forever — vitest's isolate:true gives this whole FILE one shared module
+ * registry, not one per test). Without this, `beforeEach` below is itself the first
+ * import (it runs before the first test's own freshDataDir() call), with no env var
+ * set yet — silently freezing every test in this file onto the REAL repo's
+ * server/data/app-state.json for its entire run. Confirmed as the actual root cause
+ * of real project data (recentProjectFiles/projectIndex) getting polluted with
+ * this file's temp fixture paths — a plain string constant, so a guard this blunt is
+ * the correct fix, not a smaller tweak. */
+if (!process.env.LETTERING_DATA_DIR) {
+  process.env.LETTERING_DATA_DIR = path.join(fsSync.mkdtempSync(path.join(os.tmpdir(), "projectstore-test-guard-")), "data");
+}
 
 /** Own isolated temp dir per test (not shared setupTestEnv()) — this file exercises
  * projectStore.ts's internals directly (multi-project cache, id migration) rather than
  * going through HTTP routes, so it wants a fresh LETTERING_DATA_DIR per test to freely
  * create/open several project files without route-level auth/volume fixtures getting
  * in the way. Same "set env var, then dynamically import" requirement as
- * test-utils/fixtures.ts's setupTestEnv() — see its doc comment. */
+ * test-utils/fixtures.ts's setupTestEnv() — see its doc comment. Note: reassigning
+ * LETTERING_DATA_DIR here no longer changes DATA_DIR/APP_STATE_FILE (paths.js already
+ * evaluated once, per the guard above's doc comment) — it only matters for the parts
+ * of projectStore.ts that re-read process.env.LETTERING_DATA_DIR directly, if any ever
+ * do; every test in this file still gets a genuinely fresh directory on disk for its
+ * own project *files* (createProject/openProject take an explicit absolute path, not
+ * something derived from DATA_DIR), which is what these tests actually assert on. */
 async function freshDataDir(): Promise<string> {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "projectstore-test-"));
   process.env.LETTERING_DATA_DIR = path.join(root, "data");

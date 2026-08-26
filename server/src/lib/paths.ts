@@ -73,6 +73,19 @@ export const USERS_FILE = path.join(DATA_DIR, "users.json");
  * "no required configuration" philosophy (e.g. PORT in index.ts is optional too). */
 export const AUTH_SECRET_FILE = path.join(DATA_DIR, "auth-secret.txt");
 
+/** AES-256-GCM key for encrypting per-user AI-provider secrets (currently: the OpenAI
+ * API key) at rest in users.json — auto-generated once, see secretsCrypto.ts's
+ * getOrCreateEncryptionKey(). Deliberately a SEPARATE secret from AUTH_SECRET_FILE
+ * (key separation between "signs tokens" and "encrypts stored secrets"), even though
+ * both are generated the same way. */
+export const SECRETS_KEY_FILE = path.join(DATA_DIR, "secrets-key.txt");
+
+/** Per-ComiKumi-account home directory for the `codex app-server` subprocess (passed
+ * as its CODEX_HOME env var, see server/src/lib/ai/codexProcessManager.ts) — isolates
+ * each account's ChatGPT OAuth tokens from every other account's, even though they
+ * all run on the same shared ComiKumi server/OS user. */
+export const CODEX_HOME_DIR = path.join(DATA_DIR, "codex-home");
+
 /** e.g. "volume_01" + "_empty" -> "volume_01_empty" */
 export function emptyFolderName(bookFolderName: string, emptySuffix: string): string {
   return `${bookFolderName}${emptySuffix}`;

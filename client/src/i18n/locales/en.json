@@ -27,6 +27,21 @@
     "passwordLabel": "Password",
     "submitButton": "Log in"
   },
+  "account": {
+    "title": "Account",
+    "backLink": "← Back",
+    "openaiKeyLabel": "OpenAI API key",
+    "saveKey": "Save",
+    "clearKey": "Remove",
+    "openaiConfigured": "An OpenAI key is on file.",
+    "codexConfigured": "Signed in with ChatGPT",
+    "usedPercentSuffix": "used",
+    "codexSignIn": "Sign in with ChatGPT",
+    "codexSignOut": "Sign out",
+    "codexEnterCode": "Enter this code on the following page:",
+    "codexWaiting": "Waiting for confirmation…",
+    "codexLoginFailed": "Sign-in failed."
+  },
   "roles": {
     "viewer": "Viewer",
     "translator": "Translator",
@@ -495,8 +510,22 @@
       "noRelations": "No relations.",
       "openFull": "Open in Story Bible"
     },
+    "aiPanel": {
+      "title": "AI Assistant",
+      "noProviderConfigured": "No AI provider configured.",
+      "configureLink": "Set up now",
+      "includeContext": "Include {{label}}",
+      "defaultContextLabel": "current context",
+      "contextSelectedBubble": "selected bubble",
+      "contextCurrentPage": "current page",
+      "contextCurrentScript": "current script",
+      "empty": "No messages yet. Ask a question to get started.",
+      "inputPlaceholder": "Ask something…",
+      "send": "Send"
+    },
     "toolStrip": {
       "storyBible": "Story Bible",
+      "aiAssistant": "AI Assistant",
       "bubbleOval": "Bubble (oval)",
       "rect": "Rectangle",
       "quadPerspective": "Quad (perspective)",

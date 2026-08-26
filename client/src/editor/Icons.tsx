@@ -232,3 +232,13 @@ export function ChevronDownIcon() {
     </svg>
   );
 }
+
+/** A four-point sparkle — used for the AI-assistant panel toggle. */
+export function AIAssistantIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 20 20" fill="currentColor" stroke="none">
+      <path d="M10 2 C10.6 5.4 11.8 6.6 15.2 7.2 C11.8 7.8 10.6 9 10 12.4 C9.4 9 8.2 7.8 4.8 7.2 C8.2 6.6 9.4 5.4 10 2 Z" />
+      <path d="M15.5 12 C15.85 13.7 16.3 14.15 18 14.5 C16.3 14.85 15.85 15.3 15.5 17 C15.15 15.3 14.7 14.85 13 14.5 C14.7 14.15 15.15 13.7 15.5 12 Z" opacity="0.7" />
+    </svg>
+  );
+}

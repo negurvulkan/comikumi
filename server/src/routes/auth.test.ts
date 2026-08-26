@@ -268,3 +268,49 @@ describe("PATCH /api/auth/me", () => {
   });
 });
 
+describe("AI provider configuration (self-service)", () => {
+  it("401s every ai-provider route without a token", async () => {
+    expect((await request(app).get("/api/auth/me/ai-status")).status).toBe(401);
+    expect((await request(app).put("/api/auth/me/openai-key").send({ apiKey: "sk-x" })).status).toBe(401);
+    expect((await request(app).delete("/api/auth/me/openai-key")).status).toBe(401);
+  });
+
+  it("reports openai.configured: false before any key is set", async () => {
+    const res = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.openai).toEqual({ configured: false });
+    expect(res.body.codex.configured).toBe(false);
+  });
+
+  it("rejects an empty key", async () => {
+    const res = await request(app).put("/api/auth/me/openai-key").set("Authorization", `Bearer ${env.token}`).send({ apiKey: "" });
+    expect(res.status).toBe(400);
+  });
+
+  it("sets a key, never returns it anywhere, and reports configured: true", async () => {
+    const set = await request(app).put("/api/auth/me/openai-key").set("Authorization", `Bearer ${env.token}`).send({ apiKey: "sk-test-123" });
+    expect(set.status).toBe(200);
+    expect(set.body).toEqual({ ok: true });
+
+    const me = await request(app).get("/api/auth/me").set("Authorization", `Bearer ${env.token}`);
+    expect(me.body).not.toHaveProperty("openaiApiKeyEncrypted");
+
+    const status = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(status.body.openai).toEqual({ configured: true });
+  });
+
+  it("clears a previously set key", async () => {
+    await request(app).put("/api/auth/me/openai-key").set("Authorization", `Bearer ${env.token}`).send({ apiKey: "sk-test-456" });
+    const del = await request(app).delete("/api/auth/me/openai-key").set("Authorization", `Bearer ${env.token}`);
+    expect(del.status).toBe(200);
+
+    const status = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(status.body.openai).toEqual({ configured: false });
+  });
+
+  it("404s polling codex login status with no login in progress", async () => {
+    const res = await request(app).get("/api/auth/me/codex-login/status").set("Authorization", `Bearer ${env.token}`);
+    expect(res.status).toBe(404);
+  });
+});
+

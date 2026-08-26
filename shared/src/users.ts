@@ -47,10 +47,26 @@ export const UserAccountSchema = z.object({
    * account requires one. `.optional()` (not `.default("")`) so JSON.stringify drops the
    * key entirely when unset, same convention as Bubble.locked. */
   email: z.string().trim().email().optional(),
+  /** Encrypted at rest (see server/src/lib/secretsCrypto.ts) — never sent to a client,
+   * see routes/auth.ts's toPublicUser()/toAIProviderStatus(). `.optional()` for the
+   * same reason as `email`: JSON.stringify drops the key entirely when unset. Codex's
+   * own ChatGPT-login credentials are NOT stored here at all — Codex manages those
+   * itself inside an isolated per-user CODEX_HOME directory (see
+   * server/src/lib/ai/codexProcessManager.ts), so there's nothing for ComiKumi to
+   * encrypt/store for that provider. */
+  openaiApiKeyEncrypted: z
+    .object({
+      iv: z.string(),
+      tag: z.string(),
+      ciphertext: z.string(),
+    })
+    .optional(),
 });
 export type UserAccount = z.infer<typeof UserAccountSchema>;
 export const UserAccountListSchema = z.array(UserAccountSchema);
 
-/** Öffentliche Sicht auf einen Account — passwordHash darf nie über die API nach
- * außen gehen (siehe routes/auth.ts's toPublicUser()). */
-export type PublicUser = Omit<UserAccount, "passwordHash">;
+/** Öffentliche Sicht auf einen Account — passwordHash und der verschlüsselte
+ * OpenAI-Key dürfen nie über die API nach außen gehen (siehe routes/auth.ts's
+ * toPublicUser()). Provider-Status (nur ein Boolean, kein Secret) läuft stattdessen
+ * über toAIProviderStatus() und einen eigenen Endpunkt. */
+export type PublicUser = Omit<UserAccount, "passwordHash" | "openaiApiKeyEncrypted">;

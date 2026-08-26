@@ -21,6 +21,21 @@
     "loggedInAs": "{{username}}(으)로 로그인됨",
     "logout": "로그아웃"
   },
+  "account": {
+    "title": "계정",
+    "backLink": "← 뒤로",
+    "openaiKeyLabel": "OpenAI API 키",
+    "saveKey": "저장",
+    "clearKey": "제거",
+    "openaiConfigured": "OpenAI 키가 저장되어 있습니다.",
+    "codexConfigured": "ChatGPT로 로그인됨",
+    "usedPercentSuffix": "사용됨",
+    "codexSignIn": "ChatGPT로 로그인",
+    "codexSignOut": "로그아웃",
+    "codexEnterCode": "다음 페이지에서 이 코드를 입력하세요:",
+    "codexWaiting": "확인 대기 중…",
+    "codexLoginFailed": "로그인에 실패했습니다."
+  },
   "settings": {
     "headingWithProject": "설정 — {{name}}",
     "heading": "설정",
@@ -482,8 +497,22 @@
       "noRelations": "관계가 없습니다.",
       "openFull": "스토리 바이블에서 열기"
     },
+    "aiPanel": {
+      "title": "AI 어시스턴트",
+      "noProviderConfigured": "설정된 AI 제공자가 없습니다.",
+      "configureLink": "지금 설정하기",
+      "includeContext": "{{label}} 포함",
+      "defaultContextLabel": "현재 컨텍스트",
+      "contextSelectedBubble": "선택한 말풍선",
+      "contextCurrentPage": "현재 페이지",
+      "contextCurrentScript": "현재 스크립트",
+      "empty": "아직 메시지가 없습니다. 질문을 입력해 시작하세요.",
+      "inputPlaceholder": "질문을 입력하세요…",
+      "send": "보내기"
+    },
     "toolStrip": {
       "storyBible": "스토리 바이블",
+      "aiAssistant": "AI 어시스턴트",
       "bubbleOval": "말풍선 (타원)",
       "rect": "사각형",
       "quadPerspective": "사각형 (원근)",

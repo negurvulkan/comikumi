@@ -874,6 +874,59 @@ export const api = {
       body: JSON.stringify({ email }),
     }).then((r) => json<PublicUser>(r)),
 
+  // --- AI provider configuration (self-service, per account) ---
+
+  getAIProviderStatus: () =>
+    authFetch(apiUrl("/api/auth/me/ai-status")).then((r) =>
+      json<{ openai: { configured: boolean }; codex: { configured: boolean; planType?: string; usedPercent?: number } }>(r)
+    ),
+
+  setOpenAIKey: (apiKey: string) =>
+    authFetch(apiUrl("/api/auth/me/openai-key"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  clearOpenAIKey: () => authFetch(apiUrl("/api/auth/me/openai-key"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  startCodexLogin: () =>
+    authFetch(apiUrl("/api/auth/me/codex-login"), { method: "POST" }).then((r) =>
+      json<{ loginId: string; userCode: string; verificationUrl: string }>(r)
+    ),
+
+  /** 404 (no login in progress) is a normal, expected response here — callers should
+   * treat it as "nothing to poll", not an error. */
+  pollCodexLoginStatus: async () => {
+    const res = await authFetch(apiUrl("/api/auth/me/codex-login/status"));
+    if (res.status === 404) return null;
+    return json<{ status: "pending" | "complete" | "error"; error?: string }>(res);
+  },
+
+  cancelCodexLogin: () => authFetch(apiUrl("/api/auth/me/codex-login"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  logoutCodex: () => authFetch(apiUrl("/api/auth/me/codex-session"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  /** Returns the raw fetch Response for the caller (client/src/editor/AIPanel.tsx) to
+   * read as a stream — the only streaming endpoint in the app, see server/src/routes/
+   * ai.ts's own doc comment for the SSE wire format. Throws (via throwApiError,
+   * mirrored here since json() isn't called) on a non-OK response before any stream
+   * would even start (e.g. invalid_request, unknown_provider). */
+  sendAIChat: async (request: {
+    providerId: "openai" | "codex";
+    messages: { role: "system" | "user" | "assistant"; content: string }[];
+    contextText?: string;
+    contextImage?: string;
+  }) => {
+    const res = await authFetch(apiUrl("/api/ai/chat"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    if (!res.ok) await throwApiError(res);
+    return res;
+  },
+
   listProjectsForAdmin: () =>
     authFetch(apiUrl("/api/project/list")).then((r) =>
       json<{ filePath: string; name: string; coverImagePath?: string; isAdmin: boolean; isArchived: boolean }[]>(r)

@@ -9,9 +9,10 @@ import type { GlossaryEntry } from "../../../shared/src/glossary";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ScriptPanelCard } from "../editor/ScriptPanelCard";
-import { addPanel, deletePanel, emptyPage, movePanel, scriptPageFromLayout, updatePanel } from "../editor/scriptEditing";
+import { addPanel, buildScriptContextText, deletePanel, emptyPage, movePanel, scriptPageFromLayout, updatePanel } from "../editor/scriptEditing";
 import { StoryBiblePanel } from "../editor/StoryBiblePanel";
-import { BookIcon } from "../editor/Icons";
+import { AIPanel } from "../editor/AIPanel";
+import { BookIcon, AIAssistantIcon } from "../editor/Icons";
 import { useProject } from "../state/ProjectContext";
 
 export function ScriptEditor() {
@@ -30,6 +31,7 @@ export function ScriptEditor() {
   const [generating, setGenerating] = useState(false);
   const [generateMsg, setGenerateMsg] = useState<string | null>(null);
   const [showStoryBiblePanel, setShowStoryBiblePanel] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
 
   useEffect(() => {
     api.getScript(volumeId).then(setDoc).catch((e) => setError(translateApiError(e, t)));
@@ -138,15 +140,35 @@ export function ScriptEditor() {
           type="button"
           className={`tool-btn${showStoryBiblePanel ? " active" : ""}`}
           style={{ marginLeft: "auto" }}
-          onClick={() => setShowStoryBiblePanel((v) => !v)}
+          onClick={() => {
+            setShowStoryBiblePanel((v) => !v);
+            setShowAIPanel(false);
+          }}
           title={t("editor.toolStrip.storyBible")}
         >
           <BookIcon />
+        </button>
+        <button
+          type="button"
+          className={`tool-btn${showAIPanel ? " active" : ""}`}
+          onClick={() => {
+            setShowAIPanel((v) => !v);
+            setShowStoryBiblePanel(false);
+          }}
+          title={t("editor.toolStrip.aiAssistant")}
+        >
+          <AIAssistantIcon />
         </button>
       </div>
 
       <div className="editor-body">
         <StoryBiblePanel open={showStoryBiblePanel} onClose={() => setShowStoryBiblePanel(false)} />
+        <AIPanel
+          open={showAIPanel}
+          onClose={() => setShowAIPanel(false)}
+          contextLabel={t("editor.aiPanel.contextCurrentScript")}
+          contextText={buildScriptContextText(doc, characters, language)}
+        />
         <div style={{ display: "flex", flexDirection: "column", flex: "1 1 auto", minHeight: 0 }}>
           <div className="langstrip langstrip-horizontal" style={{ margin: "8px 12px" }}>
             {languages.map((l) => (

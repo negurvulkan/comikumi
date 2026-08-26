@@ -4,12 +4,13 @@ import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypt
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { UserAccountListSchema, type UserAccount, type PublicUser } from "../../../shared/src/users.js";
 import { USERS_FILE, AUTH_SECRET_FILE } from "./paths.js";
+import { encryptSecret, decryptSecret } from "./secretsCrypto.js";
 
 const SCRYPT_KEYLEN = 64;
 const TOKEN_EXPIRY: NonNullable<SignOptions["expiresIn"]> = "30d";
 
 export function toPublicUser(user: UserAccount): PublicUser {
-  const { passwordHash: _passwordHash, ...rest } = user;
+  const { passwordHash: _passwordHash, openaiApiKeyEncrypted: _openaiApiKeyEncrypted, ...rest } = user;
   return rest;
 }
 
@@ -98,8 +99,10 @@ export async function updateUser(
   id: string,
   // `email: null` clears it (JSON has no "delete this field" signal otherwise);
   // `undefined`/omitted leaves it untouched — same distinction PATCH-style updates
-  // need everywhere else in this codebase.
-  updates: { password?: string; isSystemAdmin?: boolean; email?: string | null }
+  // need everywhere else in this codebase. `openaiApiKey` takes the PLAINTEXT key in
+  // (encrypted here, at the storage boundary) and follows the same omit/set/null-clear
+  // convention.
+  updates: { password?: string; isSystemAdmin?: boolean; email?: string | null; openaiApiKey?: string | null }
 ): Promise<UserAccount> {
   const users = await readUsersRaw();
   const index = users.findIndex((u) => u.id === id);
@@ -125,9 +128,36 @@ export async function updateUser(
     if (updates.email === null) delete user.email;
     else user.email = updates.email;
   }
+  if (updates.openaiApiKey !== undefined) {
+    if (updates.openaiApiKey === null) delete user.openaiApiKeyEncrypted;
+    else user.openaiApiKeyEncrypted = await encryptSecret(updates.openaiApiKey);
+  }
 
   await writeUsersRaw(users);
   return user;
+}
+
+/** Decrypts the caller's own stored OpenAI key for the one moment it's actually
+ * needed (an outgoing request to the OpenAI API, see lib/ai/openaiProvider.ts) —
+ * never cached, never returned to any route handler that could leak it back to a
+ * client. Returns null if the user hasn't configured one. */
+export async function getDecryptedOpenAIKey(id: string): Promise<string | null> {
+  const user = await findUserById(id);
+  if (!user?.openaiApiKeyEncrypted) return null;
+  return decryptSecret(user.openaiApiKeyEncrypted);
+}
+
+export interface AIProviderStatus {
+  openai: { configured: boolean };
+}
+
+/** Safe-to-send-to-the-client summary of which AI providers this account has
+ * configured — never the secret itself (see toPublicUser()'s own doc comment for why
+ * openaiApiKeyEncrypted never round-trips to the browser at all). Codex's status is
+ * NOT reported here — it's derived live from CODEX_HOME file presence/the running
+ * app-server process, see lib/ai/codexProcessManager.ts. */
+export function toAIProviderStatus(user: UserAccount): AIProviderStatus {
+  return { openai: { configured: user.openaiApiKeyEncrypted !== undefined } };
 }
 
 

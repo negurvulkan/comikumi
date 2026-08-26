@@ -27,6 +27,21 @@
     "passwordLabel": "Passwort",
     "submitButton": "Anmelden"
   },
+  "account": {
+    "title": "Account",
+    "backLink": "← Zurück",
+    "openaiKeyLabel": "OpenAI API-Key",
+    "saveKey": "Speichern",
+    "clearKey": "Entfernen",
+    "openaiConfigured": "OpenAI-Key ist hinterlegt.",
+    "codexConfigured": "Mit ChatGPT angemeldet",
+    "usedPercentSuffix": "verbraucht",
+    "codexSignIn": "Mit ChatGPT anmelden",
+    "codexSignOut": "Abmelden",
+    "codexEnterCode": "Gib diesen Code auf der folgenden Seite ein:",
+    "codexWaiting": "Warte auf Bestätigung…",
+    "codexLoginFailed": "Anmeldung fehlgeschlagen."
+  },
   "roles": {
     "viewer": "Betrachter",
     "translator": "Übersetzer",
@@ -495,8 +510,22 @@
       "noRelations": "Keine Beziehungen.",
       "openFull": "In Story Bible öffnen"
     },
+    "aiPanel": {
+      "title": "KI-Assistent",
+      "noProviderConfigured": "Kein KI-Provider eingerichtet.",
+      "configureLink": "Jetzt einrichten",
+      "includeContext": "{{label}} einbeziehen",
+      "defaultContextLabel": "Aktueller Kontext",
+      "contextSelectedBubble": "Ausgewählte Blase",
+      "contextCurrentPage": "Aktuelle Seite",
+      "contextCurrentScript": "Aktuelles Skript",
+      "empty": "Noch keine Nachrichten. Stell eine Frage, um loszulegen.",
+      "inputPlaceholder": "Frage stellen…",
+      "send": "Senden"
+    },
     "toolStrip": {
       "storyBible": "Story Bible",
+      "aiAssistant": "KI-Assistent",
       "bubbleOval": "Blase (oval)",
       "rect": "Rechteck",
       "quadPerspective": "Raute (Perspektive)",

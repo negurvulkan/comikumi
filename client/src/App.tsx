@@ -27,12 +27,15 @@ function HeaderSettingsLink() {
 }
 
 function HeaderSessionInfo() {
-  const { user, logout } = useSession();
+  const { user, demoMode, logout } = useSession();
   const { t } = useTranslation();
   if (!user) return null;
   return (
     <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 8 }}>
       {t("appShell.loggedInAs", { username: user.username })}
+      {/* Demo container shares one seeded account across visitors — per-account AI
+          provider keys/ChatGPT logins have no business being configurable there. */}
+      {!demoMode && <Link to="/account">{t("account.title")}</Link>}
       <button type="button" onClick={logout} title={t("appShell.logout")}>
         {t("appShell.logout")}
       </button>

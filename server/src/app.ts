@@ -20,6 +20,7 @@ import { settingsRouter } from "./routes/settings.js";
 import { projectRouter } from "./routes/project.js";
 import { browseRouter } from "./routes/browse.js";
 import { authRouter } from "./routes/auth.js";
+import { aiRouter } from "./routes/ai.js";
 import { demoRouter, demoRateLimiter } from "./routes/demo.js";
 import { requireAuth, requireProjectRole, requireSystemAdmin } from "./lib/auth.js";
 import { resolveProjectParam, requireProjectRoleScoped } from "./lib/projectContext.js";
@@ -136,6 +137,11 @@ export function createApp(options: CreateAppOptions = {}): Express {
       });
     })
   );
+
+  // Per-account, not project-scoped at all — same gate as /api/auth/me (just
+  // requireAuth, no project role). Deliberately separate from the /api/auth mount so
+  // it reads as its own subsystem (provider abstraction, see server/src/lib/ai/).
+  app.use("/api/ai", requireAuth, aiRouter);
 
   // Project-switcher-level, not project-content — its own routes self-gate per-route
   // (requireSystemAdmin for most, a bespoke membership check for /open), see routes/project.ts.

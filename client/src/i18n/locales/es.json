@@ -21,6 +21,21 @@
     "loggedInAs": "Sesión iniciada como {{username}}",
     "logout": "Cerrar sesión"
   },
+  "account": {
+    "title": "Cuenta",
+    "backLink": "← Volver",
+    "openaiKeyLabel": "Clave de API de OpenAI",
+    "saveKey": "Guardar",
+    "clearKey": "Quitar",
+    "openaiConfigured": "Hay una clave de OpenAI guardada.",
+    "codexConfigured": "Conectado con ChatGPT",
+    "usedPercentSuffix": "usado",
+    "codexSignIn": "Iniciar sesión con ChatGPT",
+    "codexSignOut": "Cerrar sesión",
+    "codexEnterCode": "Introduce este código en la siguiente página:",
+    "codexWaiting": "Esperando confirmación…",
+    "codexLoginFailed": "Error al iniciar sesión."
+  },
   "settings": {
     "headingWithProject": "Ajustes — {{name}}",
     "heading": "Ajustes",
@@ -490,8 +505,22 @@
       "noRelations": "Sin relaciones.",
       "openFull": "Abrir en la Biblia narrativa"
     },
+    "aiPanel": {
+      "title": "Asistente de IA",
+      "noProviderConfigured": "No hay ningún proveedor de IA configurado.",
+      "configureLink": "Configurar ahora",
+      "includeContext": "Incluir {{label}}",
+      "defaultContextLabel": "el contexto actual",
+      "contextSelectedBubble": "el bocadillo seleccionado",
+      "contextCurrentPage": "la página actual",
+      "contextCurrentScript": "el guion actual",
+      "empty": "Aún no hay mensajes. Haz una pregunta para empezar.",
+      "inputPlaceholder": "Escribe una pregunta…",
+      "send": "Enviar"
+    },
     "toolStrip": {
       "storyBible": "Biblia narrativa",
+      "aiAssistant": "Asistente de IA",
       "bubbleOval": "Bocadillo (ovalado)",
       "rect": "Rectángulo",
       "quadPerspective": "Cuadrilátero (perspectiva)",

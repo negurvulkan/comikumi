@@ -1,7 +1,9 @@
 import { v4 as uuid } from "uuid";
-import type { ScriptDialogueLine, ScriptPage, ScriptPanel } from "../../../shared/src/script";
+import type { ScriptDialogueLine, ScriptDocument, ScriptPage, ScriptPanel } from "../../../shared/src/script";
+import { scriptPageDisplayLabel } from "../../../shared/src/script";
 import type { PageLayout } from "../../../shared/src/layoutSchema";
-import { groupBubblesByPanel, type ReadingDirection } from "./reportUtils";
+import type { Character } from "../../../shared/src/characters";
+import { characterName, groupBubblesByPanel, type ReadingDirection } from "./reportUtils";
 
 /** Pure, immutable update helpers for a single script page/panel — shared by the
  * standalone script editor (routes/ScriptEditor.tsx, operating across a whole
@@ -74,4 +76,27 @@ export function scriptPageFromLayout(page: string, layout: PageLayout, readingDi
       dialogue: group.bubbles.map((b) => ({ id: uuid(), characterId: b.characterId, text: { ...b.text }, note: "" })),
     })),
   };
+}
+
+/** Transcript of a whole script document for the AI panel's context — per page, per
+ * panel: composition, action, and dialogue (speaker via `characterName`, active
+ * language's text, note if set). Replaces the previous placeholder ("Skript für
+ * <Projekt>/<Volume>", no actual content) the same way buildPageContextText() in
+ * routes/Editor.tsx replaces the page editor's own placeholder. */
+export function buildScriptContextText(doc: ScriptDocument, characters: Character[], language: string): string {
+  const lines: string[] = [];
+  doc.pages.forEach((page, pageIndex) => {
+    lines.push(`${scriptPageDisplayLabel(page, `Seite ${pageIndex + 1}`)}:`);
+    page.panels.forEach((panel, panelIndex) => {
+      lines.push(`  Panel ${panelIndex + 1}:`);
+      if (panel.composition.trim()) lines.push(`    Bild: ${panel.composition.trim()}`);
+      if (panel.action.trim()) lines.push(`    Handlung: ${panel.action.trim()}`);
+      for (const line of panel.dialogue) {
+        const text = line.text[language]?.trim();
+        const note = line.note.trim();
+        lines.push(`    ${characterName(characters, line.characterId)}: ${text || "(leer)"}${note ? ` (${note})` : ""}`);
+      }
+    });
+  });
+  return lines.join("\n");
 }

@@ -16,6 +16,7 @@ import { Setup } from "./routes/Setup";
 import { AdminDashboard } from "./routes/AdminDashboard";
 import { ExportViewer } from "./routes/ExportViewer";
 import { StoryBible } from "./routes/StoryBible";
+import { AccountSettings } from "./routes/AccountSettings";
 import "./index.css";
 
 const router = createHashRouter([
@@ -29,6 +30,7 @@ const router = createHashRouter([
       { path: "project", element: <ProjectSwitcher /> },
       { path: "project/new", element: <ProjectWizard /> },
       { path: "admin", element: <AdminDashboard /> },
+      { path: "account", element: <AccountSettings /> },
       {
         // No element — React Router renders an implicit <Outlet/> for a layout route
         // with children and no element of its own. The actual project-context wiring

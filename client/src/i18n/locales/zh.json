@@ -21,6 +21,21 @@
     "loggedInAs": "已登录：{{username}}",
     "logout": "退出登录"
   },
+  "account": {
+    "title": "账户",
+    "backLink": "← 返回",
+    "openaiKeyLabel": "OpenAI API 密钥",
+    "saveKey": "保存",
+    "clearKey": "移除",
+    "openaiConfigured": "已保存 OpenAI 密钥。",
+    "codexConfigured": "已通过 ChatGPT 登录",
+    "usedPercentSuffix": "已使用",
+    "codexSignIn": "使用 ChatGPT 登录",
+    "codexSignOut": "退出登录",
+    "codexEnterCode": "请在以下页面输入此代码：",
+    "codexWaiting": "等待确认…",
+    "codexLoginFailed": "登录失败。"
+  },
   "settings": {
     "headingWithProject": "设置 — {{name}}",
     "heading": "设置",
@@ -482,8 +497,22 @@
       "noRelations": "没有关系。",
       "openFull": "在故事设定集中打开"
     },
+    "aiPanel": {
+      "title": "AI 助手",
+      "noProviderConfigured": "尚未配置 AI 提供方。",
+      "configureLink": "立即设置",
+      "includeContext": "包含{{label}}",
+      "defaultContextLabel": "当前上下文",
+      "contextSelectedBubble": "选中的气泡",
+      "contextCurrentPage": "当前页面",
+      "contextCurrentScript": "当前脚本",
+      "empty": "还没有消息。提出一个问题开始吧。",
+      "inputPlaceholder": "输入问题…",
+      "send": "发送"
+    },
     "toolStrip": {
       "storyBible": "故事设定集",
+      "aiAssistant": "AI 助手",
       "bubbleOval": "气泡（椭圆）",
       "rect": "矩形",
       "quadPerspective": "四边形（透视）",

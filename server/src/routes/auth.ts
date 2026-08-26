@@ -11,10 +11,19 @@ import {
   verifyPassword,
   signToken,
   toPublicUser,
+  toAIProviderStatus,
 } from "../lib/authStore.js";
 import { requireAuth, requireSystemAdmin } from "../lib/auth.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { DEMO_MODE } from "../lib/demoMode.js";
+import {
+  startCodexLogin,
+  getCodexLoginStatus,
+  cancelCodexLogin,
+  logoutCodex,
+  isCodexLoggedIn,
+  getCodexRateLimits,
+} from "../lib/ai/codexProcessManager.js";
 
 export const authRouter = Router();
 
@@ -220,6 +229,97 @@ authRouter.post(
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
     }
+  })
+);
+
+// --- AI provider configuration (self-service, per account — never project- or
+// instance-wide, see docs/FEATURES.md and the multi-provider-assistant plan). ---
+
+const SetOpenAIKeySchema = z.object({ apiKey: z.string().min(1) });
+
+authRouter.put(
+  "/me/openai-key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = SetOpenAIKeySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    await updateUser(req.user!.sub, { openaiApiKey: parsed.data.apiKey });
+    res.json({ ok: true });
+  })
+);
+
+authRouter.delete(
+  "/me/openai-key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await updateUser(req.user!.sub, { openaiApiKey: null });
+    res.json({ ok: true });
+  })
+);
+
+/** Never returns the key itself (encrypted or not) — just enough for the client to
+ * know which providers are usable (see AccountSettings.tsx/AIPanel.tsx). Codex's
+ * status is derived live from CODEX_HOME file presence / the running app-server
+ * process, not from anything stored in users.json. */
+authRouter.get(
+  "/me/ai-status",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const user = await findUserById(req.user!.sub);
+    if (!user) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const openai = toAIProviderStatus(user).openai;
+    const codexConfigured = await isCodexLoggedIn(req.user!.sub);
+    const codexRateLimits = codexConfigured ? await getCodexRateLimits(req.user!.sub) : null;
+    res.json({
+      openai,
+      codex: { configured: codexConfigured, planType: codexRateLimits?.planType, usedPercent: codexRateLimits?.usedPercent },
+    });
+  })
+);
+
+authRouter.post(
+  "/me/codex-login",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const start = await startCodexLogin(req.user!.sub);
+    res.json(start);
+  })
+);
+
+authRouter.get(
+  "/me/codex-login/status",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const status = getCodexLoginStatus(req.user!.sub);
+    if (!status) {
+      res.status(404).json({ error: "no_login_in_progress" });
+      return;
+    }
+    res.json(status);
+  })
+);
+
+authRouter.delete(
+  "/me/codex-login",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await cancelCodexLogin(req.user!.sub);
+    res.json({ ok: true });
+  })
+);
+
+authRouter.delete(
+  "/me/codex-session",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await logoutCodex(req.user!.sub);
+    res.json({ ok: true });
   })
 );
 

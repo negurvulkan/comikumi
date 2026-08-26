@@ -20,6 +20,7 @@ import { TextListPanel } from "../editor/TextListPanel";
 import { TranslatorContextPanel } from "../editor/TranslatorContextPanel";
 import { ScriptSidebar } from "../editor/ScriptSidebar";
 import { StoryBiblePanel } from "../editor/StoryBiblePanel";
+import { AIPanel } from "../editor/AIPanel";
 import { CommentsPanel } from "../editor/CommentsPanel";
 import { CommentThread } from "../editor/CommentThread";
 import type { MentionableMember } from "../editor/MentionInput";
@@ -34,7 +35,7 @@ import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { ReportModal } from "../editor/ReportModal";
-import { moveBubbleInReadingOrder } from "../editor/reportUtils";
+import { characterName, groupBubblesByPanel, moveBubbleInReadingOrder } from "../editor/reportUtils";
 import { api, downloadBlob } from "../api/client";
 import { useExportRun } from "../export/useExportRun";
 import { ensureFontsLoaded } from "../editor/fontLoader";
@@ -79,6 +80,7 @@ export function Editor() {
   const [showContextPanel, setShowContextPanel] = useState(false);
   const [showScriptPanel, setShowScriptPanel] = useState(false);
   const [showStoryBiblePanel, setShowStoryBiblePanel] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
@@ -293,6 +295,32 @@ export function Editor() {
   const selectedPanel = selectedPanelIndex >= 0 ? layout?.panels[selectedPanelIndex] ?? null : null;
   const activeLangDef = languages.find((l) => l.code === activeLanguage) ?? languages[0];
   const { exporting, exportMsg, setExportMsg, runExport } = useExportRun(volumeId, languages);
+
+  /** Transcript of the current page for the AI panel's context — panels in reading
+   * order, each bubble's speaker + text, plus curved (title/effect) text. Reuses the
+   * same grouping/ordering ReportModal.tsx already relies on so this can never disagree
+   * with what the report shows. Far more useful to the model than the bare "Seite N"
+   * this used to send (see AIPanel.tsx's usage below). */
+  function buildPageContextText(): string {
+    if (!layout) return `Seite ${page}`;
+    const lines = [`Seite ${page}`];
+    for (const group of groupBubblesByPanel(layout.bubbles, layout.panels, activeLanguage, readingDirection)) {
+      if (group.bubbles.length === 0) continue;
+      lines.push(`${group.label}:`);
+      for (const b of group.bubbles) {
+        const text = b.text[activeLanguage]?.trim();
+        lines.push(`  ${characterName(characters, b.characterId)}: ${text || "(leer)"}`);
+      }
+    }
+    for (const curved of layout.curvedTexts) {
+      const text = curved.text[activeLanguage]?.trim();
+      if (text) lines.push(`Effekt-/Titeltext: ${text}`);
+    }
+    if (selectedBubble) {
+      lines.push(`Aktuell ausgewählte Blase: ${selectedBubble.text[activeLanguage]?.trim() || "(leer)"}`);
+    }
+    return lines.join("\n");
+  }
 
   function handleDownloadJson() {
     if (!layout) return;
@@ -513,6 +541,7 @@ export function Editor() {
             setShowContextPanel(false);
             setShowScriptPanel(false);
             setShowStoryBiblePanel(false);
+            setShowAIPanel(false);
             setShowCommentsPanel(false);
           }}
           textPanelDisabled={languages.length === 0}
@@ -522,6 +551,7 @@ export function Editor() {
             setShowTextPanel(false);
             setShowScriptPanel(false);
             setShowStoryBiblePanel(false);
+            setShowAIPanel(false);
             setShowCommentsPanel(false);
           }}
           scriptPanelOpen={showScriptPanel}
@@ -530,6 +560,7 @@ export function Editor() {
             setShowTextPanel(false);
             setShowContextPanel(false);
             setShowStoryBiblePanel(false);
+            setShowAIPanel(false);
             setShowCommentsPanel(false);
           }}
           storyBiblePanelOpen={showStoryBiblePanel}
@@ -538,6 +569,16 @@ export function Editor() {
             setShowTextPanel(false);
             setShowContextPanel(false);
             setShowScriptPanel(false);
+            setShowAIPanel(false);
+            setShowCommentsPanel(false);
+          }}
+          aiPanelOpen={showAIPanel}
+          onToggleAIPanel={() => {
+            setShowAIPanel((v) => !v);
+            setShowTextPanel(false);
+            setShowContextPanel(false);
+            setShowScriptPanel(false);
+            setShowStoryBiblePanel(false);
             setShowCommentsPanel(false);
           }}
           commentsPanelOpen={showCommentsPanel}
@@ -547,6 +588,7 @@ export function Editor() {
             setShowContextPanel(false);
             setShowScriptPanel(false);
             setShowStoryBiblePanel(false);
+            setShowAIPanel(false);
           }}
           imageWidth={layout.imageWidth}
           imageHeight={layout.imageHeight}
@@ -614,6 +656,13 @@ export function Editor() {
           onClose={() => setShowCommentsPanel(false)}
         />
         <StoryBiblePanel open={showStoryBiblePanel} onClose={() => setShowStoryBiblePanel(false)} />
+        <AIPanel
+          open={showAIPanel}
+          onClose={() => setShowAIPanel(false)}
+          contextLabel={selectedBubble ? t("editor.aiPanel.contextSelectedBubble") : t("editor.aiPanel.contextCurrentPage")}
+          contextText={buildPageContextText()}
+          contextImageUrl={api.pageImageUrl(volumeId, page)}
+        />
         <LanguageStrip languages={languages} active={activeLanguage} onChange={store.setActiveLanguage} onLanguagesChange={setLanguages} />
         <div className="editor-layout">
           <PageCanvas

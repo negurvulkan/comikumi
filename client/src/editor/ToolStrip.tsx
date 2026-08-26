@@ -12,6 +12,7 @@ import {
   ContextToolIcon,
   ScriptToolIcon,
   BookIcon,
+  AIAssistantIcon,
   CommentPinToolIcon,
   CommentBoxToolIcon,
   CommentFreehandToolIcon,
@@ -47,6 +48,8 @@ interface Props {
   onToggleScriptPanel: () => void;
   storyBiblePanelOpen: boolean;
   onToggleStoryBiblePanel: () => void;
+  aiPanelOpen: boolean;
+  onToggleAIPanel: () => void;
   commentsPanelOpen: boolean;
   onToggleCommentsPanel: () => void;
   imageWidth: number;
@@ -72,6 +75,8 @@ export function ToolStrip({
   onToggleScriptPanel,
   storyBiblePanelOpen,
   onToggleStoryBiblePanel,
+  aiPanelOpen,
+  onToggleAIPanel,
   commentsPanelOpen,
   onToggleCommentsPanel,
   imageWidth,
@@ -185,6 +190,9 @@ export function ToolStrip({
         title={t("editor.toolStrip.storyBible")}
       >
         <BookIcon />
+      </button>
+      <button className={`tool-btn${aiPanelOpen ? " active" : ""}`} onClick={onToggleAIPanel} title={t("editor.toolStrip.aiAssistant")}>
+        <AIAssistantIcon />
       </button>
     </div>
   );
