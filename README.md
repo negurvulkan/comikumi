@@ -43,6 +43,11 @@ React + Konva canvas editor.
   an in-editor sidebar that links a script page to a real page (see [screenshot](docs/screenshot/05_editor_sidebar_script.png)) and inserts dialogue
   straight into the selected bubble. Either can be generated with one click from
   already-lettered pages instead of typed up from scratch.
+- **AI assistant** — a chat panel in the page editor and script editor, backed by
+  either your own OpenAI API key or a "Sign in with ChatGPT" Codex login (per account,
+  isolated credentials). Ask-only for now (no automatic edits to project data); each
+  question is sent together with the current page's speech-bubble transcript and,
+  where available, the page image itself.
 - **Project-specific asset folders** — fonts, SVG bubble contours, and the image
   library can live in a shared global library, a per-project folder, or both (project
   wins on a filename collision).
@@ -61,7 +66,8 @@ React + Konva canvas editor.
   it), serialized writes for comments/script/project metadata, and a warning before
   switching the server's active project while someone else is still working in it.
 
-Full feature list: [`docs/FEATURES.md`](docs/FEATURES.md) (German). Layout JSON schema:
+Full feature list: [`docs/FEATURES.md`](docs/FEATURES.md) (also available
+[in German](docs/FEATURES.de.md)). Layout JSON schema:
 [`docs/JSON-Format.md`](docs/JSON-Format.md) (German).
 
 ## Architecture

@@ -1,1013 +1,1060 @@
-# Feature-Liste
+# Feature List
 
-Vollständige Übersicht aller Funktionen von ComiKumi, Stand aktueller Code. Diese
-Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nachziehen.
+*[Deutsche Version](FEATURES.de.md)*
 
-## Inhalt
+Complete overview of all ComiKumi features, as of the current code. This file is a
+snapshot — please keep it in sync with larger changes.
 
-- [Projektverwaltung](#projektverwaltung)
-- [Konten, Rollen & Zugriffsschutz](#konten-rollen--zugriffsschutz)
-- [Mehrbenutzerbetrieb](#mehrbenutzerbetrieb)
-- [UI-Sprache](#ui-sprache)
-- [Bände & Seiten](#bände--seiten)
-- [Sprachverwaltung](#sprachverwaltung)
-- [Charakterverwaltung](#charakterverwaltung)
+## Contents
+
+- [Project Management](#project-management)
+- [Accounts, Roles & Access Control](#accounts-roles--access-control)
+- [Multi-User Operation](#multi-user-operation)
+- [UI Language](#ui-language)
+- [Volumes & Pages](#volumes--pages)
+- [Language Management](#language-management)
+- [Character Management](#character-management)
 - [Story Bible](#story-bible)
-- [Lettering-Presets](#lettering-presets)
-- [Projekt-Assets-Ordner](#projekt-assets-ordner)
-- [Editor — Canvas-Grundlagen](#editor--canvas-grundlagen)
-- [Elementtypen](#elementtypen)
-- [Sperren](#sperren)
-- [Cut-Panel](#cut-panel)
-- [Text-Liste](#text-liste)
-- [Reading-Order](#reading-order)
-- [Glossar](#glossar)
-- [Kontextansicht](#kontextansicht)
-- [Skript-Editor & Skript-Sidebar](#skript-editor--skript-sidebar)
-- [Review-Kommentare](#review-kommentare)
-- [Read/Review-Oberfläche](#readreview-oberfläche)
-- [Berichte](#berichte)
+- [Lettering Presets](#lettering-presets)
+- [Project Asset Folder](#project-asset-folder)
+- [Editor — Canvas Basics](#editor--canvas-basics)
+- [Element Types](#element-types)
+- [Locking](#locking)
+- [Cut Panel](#cut-panel)
+- [Text List](#text-list)
+- [Reading Order](#reading-order)
+- [Glossary](#glossary)
+- [Context View](#context-view)
+- [AI Assistant](#ai-assistant)
+- [Script Editor & Script Sidebar](#script-editor--script-sidebar)
+- [Review Comments](#review-comments)
+- [Read/Review Interface](#readreview-interface)
+- [Reports](#reports)
 - [Export & Import](#export--import)
-- [Schriftarten](#schriftarten)
+- [Fonts](#fonts)
 - [Undo/Redo](#undoredo)
-- [Server-API](#server-api)
-- [Fehlerbehandlung & Sicherheit](#fehlerbehandlung--sicherheit)
+- [Server API](#server-api)
+- [Error Handling & Security](#error-handling--security)
 - [Tests](#tests)
 
 ---
 
-## Projektverwaltung
+## Project Management
 
-- **Projekt-Umschalter** (Startbildschirm): Liste zuletzt geöffneter Projekte (Name +
-  Dateipfad, ein Klick öffnet sie erneut, bis zu 10 Einträge), ein Formular zum Öffnen
-  eines Projekts über den Pfad einer `projekt.json`, und ein Button zum Anlegen eines
-  neuen Projekts über den **Projekt-Wizard**.
-- **Projekt-Wizard**: fünf geführte Schritte statt eines einzelnen Formulars —
-  Grundlagen (Name, Speicherort der Projektdatei, Scan-Ordner), Ordner-
-  Namenskonvention (Suffixe, Export-Vorlage, vorbelegt mit den Standardwerten),
-  initiale Sprachen (frei bearbeitbare Liste, standardmäßig nur mit der aus der
-  aktuellen UI-Sprache vermuteten einen Content-Sprache vorbelegt — Mehrsprachigkeit
-  bleibt jederzeit über "Hinzufügen" möglich, wird aber niemandem aufgezwungen, der nur
-  einsprachig arbeitet) und optional erste Bände. Der Wizard hilft dabei aktiv beim Anlegen der
-  nötigen Ordner: fehlt der Scan-Ordner, kann er direkt angelegt werden (inkl. Live-
-  Prüfung, ob dort schon Bände gefunden werden); für jeden im letzten Schritt
-  angelegten Band entstehen sofort der `<Name><emptySuffix>`-Ordner sowie ein
-  `<Name>_<folderSuffix>`-Ordner pro ausgewählter Sprache. Der letzte Schritt zeigt
-  eine Zusammenfassung und legt erst dann die eigentliche Projektdatei an.
-- **Projekt-Datei**: Jedes Projekt ist genau eine JSON-Datei, die Name, Scan-Wurzel,
-  Ordner-Suffixe, Export-Vorlage, Beschreibung, Sprachen und Charaktere bündelt — die
-  komplette Projektkonfiguration liegt also portabel in einer Datei statt verteilt in
-  Server-internen Daten.
-- **Einstellungen-Formular** (Projekt-Menü → Einstellungen, auf allen Bildschirmen):
-  Beschreibung (Freitext), Scan-Wurzelordner (mit Live-Prüfung, ob der Ordner vom Server
-  aus tatsächlich existiert — rote Warnung falls nicht), Suffix für "leere"
-  (unübersetzte) Seitenordner (z. B. `_empty`), Suffix für den Lettering-JSON-Ordner
-  (z. B. `_lettering`) und die Export-Ordner-Namensvorlage mit Platzhaltern
-  `{book}`/`{folderSuffix}`. Optional außerdem ein
-  [Projekt-Assets-Ordner](#projekt-assets-ordner) für projekteigene Schriften/SVG-
-  Konturen/Bilder sowie, unabhängig davon, ein eigener Thumbnail-Ordner. Zusätzlich die
-  **Leserichtung** (rechts→links/Japanisch-Manga, Standard, oder links→rechts/westlich)
-  — bestimmt die automatische [Reading-Order](#reading-order) von Panels und Blasen für
-  das ganze Projekt; bestehende Projekte ohne dieses Feld bleiben unverändert bei
-  rechts→links, der bisherigen impliziten Annahme.
-- **Eingebauter Datei-/Ordner-Browser**: Da ein normales `<input type="file">` keinen
-  absoluten Pfad liefert, bringt das Tool einen eigenen, servergestützten
-  Dateisystem-Browser mit — listet Laufwerke (Windows) als Wurzeln, erlaubt Navigation
-  rauf/runter, und wählt entweder einen Ordner ("Diesen Ordner wählen") oder direkt eine
-  `.json`-Datei aus. Wird für die Scan-Wurzel-Auswahl und zum Öffnen/Anlegen von
-  Projektdateien verwendet.
-- **Band-Erkennung**: Der Server durchsucht die Scan-Wurzel rekursiv (bis Tiefe 5) nach
-  Ordnern, die auf das konfigurierte "Leer"-Suffix enden (z. B. `*_empty`), behandelt
-  jeden als einen "Band", und ermittelt, welche Sprachordner daneben schon existieren.
-- **Migration alter Projekte**: Einmalig und automatisch werden alte
-  Einzelprojekt-Dateien (`settings.json`/`languages.json` aus Vorgängerversionen) beim
-  ersten Start in eine echte Projektdatei überführt, ohne die Originale anzufassen.
+- **Project switcher** (start screen): a list of recently opened projects (name +
+  file path, one click reopens them, up to 10 entries), a form to open a project by
+  the path of its `projekt.json`, and a button to create a new project via the
+  **project wizard**.
+- **Project wizard**: five guided steps instead of a single form —
+  basics (name, project file location, scan folder), folder naming convention
+  (suffixes, export template, pre-filled with the default values), initial
+  languages (a freely editable list, by default pre-filled with just the one
+  content language guessed from the current UI language — multi-language support
+  remains available at any time via "Add", but is never forced on anyone working
+  single-language) and, optionally, initial volumes. The wizard actively helps
+  create the necessary folders: if the scan folder is missing, it can be created
+  directly (including a live check whether volumes are already found there); for
+  each volume created in the last step, a `<Name><emptySuffix>` folder and a
+  `<Name>_<folderSuffix>` folder per selected language are created immediately.
+  The last step shows a summary and only then creates the actual project file.
+- **Project file**: each project is exactly one JSON file bundling name, scan
+  root, folder suffixes, export template, description, languages, and characters
+  — the complete project configuration therefore lives portably in a single file
+  instead of being spread across server-internal data.
+- **Settings form** (Project menu → Settings, on every screen): description
+  (free text), scan root folder (with a live check whether the folder actually
+  exists from the server's point of view — a red warning if not), suffix for
+  "empty" (untranslated) page folders (e.g. `_empty`), suffix for the lettering
+  JSON folder (e.g. `_lettering`), and the export folder naming template with
+  `{book}`/`{folderSuffix}` placeholders. Optionally also a
+  [project asset folder](#project-asset-folder) for project-specific fonts/SVG
+  contours/images, and, independent of that, a custom thumbnail folder.
+  Additionally the **reading direction** (right-to-left/Japanese manga, the
+  default, or left-to-right/Western) — determines the automatic
+  [reading order](#reading-order) of panels and bubbles for the whole project;
+  existing projects without this field remain unchanged at right-to-left, the
+  previous implicit assumption.
+- **Built-in file/folder browser**: since a normal `<input type="file">` doesn't
+  return an absolute path, the tool brings its own server-backed filesystem
+  browser — lists drives (Windows) as roots, allows navigating up/down, and
+  selects either a folder ("Choose this folder") or a `.json` file directly.
+  Used for scan-root selection and for opening/creating project files.
+- **Volume detection**: the server recursively searches the scan root (up to depth
+  5) for folders ending in the configured "empty" suffix (e.g. `*_empty`), treats
+  each as one "volume", and determines which language folders already exist next
+  to it.
+- **Migration of old projects**: old single-project files (`settings.json`/
+  `languages.json` from previous versions) are automatically converted into a
+  real project file once, on first startup, without touching the originals.
 
-## Konten, Rollen & Zugriffsschutz
+## Accounts, Roles & Access Control
 
-- **Server-weite Konten**: Benutzername + Passwort (Passwörter serverseitig per
-  `scrypt` gehasht, kein Klartext, keine native Abhängigkeit). Beim allerersten Start
-  (noch keine Konten vorhanden) zeigt die App statt eines Logins einen
-  Ersteinrichtungs-Bildschirm — das dort angelegte Konto wird automatisch
-  Systemadministrator. Optionale **E-Mail-Adresse** pro Konto (selbst unter "Mein
-  Konto" setzbar, oder von einem Systemadministrator) — wird ausschließlich für
-  [@-Erwähnungs-Benachrichtigungen](#review-kommentare) verwendet, nirgends sonst
-  gebraucht.
-- **Anmeldung**: JWT-Bearer-Token (`Authorization`-Header), im Browser in
-  `localStorage` gespeichert, 30 Tage gültig. Funktioniert unverändert, wenn Client
-  und Server auf getrennten Origins laufen (siehe die konfigurierbare API-Basis-URL).
-- **Projektbezogene Rollen**: Betrachter (nur lesen) < Übersetzer (Blasentext +
-  Glossar) < Letterer (volle Bearbeitung: Layout, Panels, Presets, Export,
-  Schriften-/Bild-/SVG-Upload) < Admin (zusätzlich Projekteinstellungen und
-  Mitgliederverwaltung dieses Projekts). Die Mitgliederliste eines Projekts lebt
-  portabel in dessen eigener Projektdatei (wie Charaktere/Glossar/Presets) — zieht
-  also mit um, wenn die Datei kopiert/verschoben wird.
-- **Systemadministrator** (serverweites Konto-Flag, unabhängig von einzelnen
-  Projekten): voller Bypass-Zugriff auf jedes Projekt unabhängig von dessen
-  Mitgliederliste, plus alleiniger Zugriff auf Projekt-Umschalter-Aktionen (Projekt
-  anlegen/löschen/archivieren, Dateisystem durchsuchen) und die serverweite
-  Kontenverwaltung.
-- **Übersetzer-Einschränkung**: Da es (noch) keinen eigenen "nur Text"-Endpunkt gibt,
-  teilen sich Übersetzer und Letterer denselben Speichern-Endpunkt für das
-  Seiten-Layout — der Server vergleicht bei der Rolle "Übersetzer" das eingehende
-  Layout gegen die zuletzt gespeicherte Version und lehnt jede Änderung außerhalb der
-  Blasentext-Felder ab. Im Editor selbst bleiben für Übersetzer nur die Textfelder
-  aktiv, keine Geometrie-Werkzeuge.
-- **Mitglieder-/Kontenverwaltung**: über das "Projekt"-Menü — "Mitglieder" (Rolle
-  dieses Projekts, ab Admin sichtbar) und "Konten" (serverweite Konten, nur für
-  Systemadministratoren sichtbar).
+- **Server-wide accounts**: username + password (passwords hashed server-side
+  with `scrypt`, no plaintext, no native dependency). On the very first startup
+  (no accounts yet exist) the app shows an initial-setup screen instead of a
+  login — the account created there automatically becomes system administrator.
+  Optional **email address** per account (settable by the user themselves under
+  "My Account", or by a system administrator) — used exclusively for
+  [@-mention notifications](#review-comments), needed nowhere else.
+- **Login**: JWT bearer token (`Authorization` header), stored in the browser's
+  `localStorage`, valid for 30 days. Works unchanged when client and server run
+  on separate origins (see the configurable API base URL).
+- **Project-scoped roles**: Viewer (read-only) < Translator (bubble text +
+  glossary) < Letterer (full editing: layout, panels, presets, export,
+  font/image/SVG upload) < Admin (additionally project settings and member
+  management for that project). A project's member list lives portably in its
+  own project file (like characters/glossary/presets) — so it moves along when
+  the file is copied/moved.
+- **System administrator** (server-wide account flag, independent of individual
+  projects): full bypass access to every project regardless of its member list,
+  plus sole access to project-switcher actions (create/delete/archive project,
+  browse the filesystem) and server-wide account management.
+- **Translator restriction**: since there is not (yet) a dedicated "text only"
+  endpoint, translators and letterers share the same save endpoint for the page
+  layout — for the "translator" role, the server compares the incoming layout
+  against the last saved version and rejects any change outside the bubble-text
+  fields. In the editor itself, translators only have the text fields active, no
+  geometry tools.
+- **Member/account management**: via the "Project" menu — "Members" (this
+  project's role, visible from Admin up) and "Accounts" (server-wide accounts,
+  visible only to system administrators).
 
-## Mehrbenutzerbetrieb
+## Multi-User Operation
 
-Mehrere gleichzeitig verbundene Personen sind der Normalfall (Studio-Netzwerk oder
-gemeinsamer Server), daher drei gezielte Absicherungen gegen stille Datenverluste, plus
-(neu) ein erster Schritt Richtung echter Mehrprojekt-Parallelität:
+Multiple people connected at the same time is the normal case (studio network or
+shared server), hence three targeted safeguards against silent data loss, plus
+(new) a first step towards genuine multi-project concurrency:
 
-- **Optimistische Konflikterkennung beim Seiten-Speichern**: Der Editor merkt sich
-  einen ETag (Inhalts-Hash) der zuletzt geladenen/gespeicherten Version einer Seite und
-  schickt ihn beim Speichern mit. Hat in der Zwischenzeit jemand anderes dieselbe Seite
-  gespeichert, erscheint statt eines stillen Überschreibens ein Dialog: **"Meine
-  Version behalten"** (überschreibt die andere bewusst) oder **"Andere Version laden"**
-  (verwirft die eigenen ungespeicherten Änderungen). Dasselbe ETag/If-Match-Muster
-  steht serverseitig auch für den Skript-Endpunkt bereit (`GET`/`PUT .../script`),
-  bislang ohne eigene Client-Oberfläche dafür.
-- **Serialisiertes Schreiben** (kein Konflikt-Dialog, aber kein Datenverlust durch
-  Verschränkung mehrerer gleichzeitiger Anfragen): Kommentare, Skript und
-  Projekt-Metadaten (Einstellungen, Sprachen, Charaktere, Glossar, Presets,
-  Mitgliederliste) serialisieren ihr Lesen-Ändern-Schreiben pro Datei über einen
-  einfachen In-Prozess-Mutex — zwei gleichzeitig eintreffende neue Kommentare landen
-  beide, statt dass einer den anderen verdrängt.
-- **Warnung beim Projektwechsel**: Da der Server nur ein Projekt gleichzeitig aktiv
-  halten kann, würde ein Wechsel (Projekt öffnen/neu anlegen) sonst anderen gerade
-  aktiven Personen unbemerkt den Boden unter den Füßen wegziehen. War in den letzten
-  fünf Minuten eine andere Person am Server aktiv, fragt der Client vor dem Wechsel
-  nach ("{Namen} war(en) kürzlich aktiv — trotzdem wechseln?") statt sofort zu
-  schalten; Bestätigen wechselt trotzdem.
+- **Optimistic conflict detection on page save**: the editor remembers an ETag
+  (content hash) of the last loaded/saved version of a page and sends it along
+  when saving. If someone else has saved the same page in the meantime, instead
+  of a silent overwrite a dialog appears: **"Keep my version"** (deliberately
+  overwrites the other one) or **"Load other version"** (discards your own
+  unsaved changes). The same ETag/If-Match pattern is also available server-side
+  for the script endpoint (`GET`/`PUT .../script`), so far without a dedicated
+  client UI for it.
+- **Serialized writes** (no conflict dialog, but no data loss from interleaving
+  multiple simultaneous requests): comments, script, and project metadata
+  (settings, languages, characters, glossary, presets, member list) serialize
+  their read-modify-write per file through a simple in-process mutex — two new
+  comments arriving at the same time both land, instead of one displacing the
+  other.
+- **Warning on project switch**: since the server can only keep one project
+  active at a time, switching (opening/creating a project) would otherwise pull
+  the rug out from under other people currently active, without warning. If
+  another person has been active on the server in the last five minutes, the
+  client asks before switching ("{names} were recently active — switch anyway?")
+  instead of switching immediately; confirming switches anyway.
 
-- **Mehrprojekt-Zugriff, Phase 1+2 (serverseitig)**: Bisher lief der ganze Server mit
-  genau einem aktiven Projekt im Speicher (ein globaler Singleton) — jeder Wechsel
-  betraf zwangsläufig alle verbundenen Personen. Jedes Projekt bekommt jetzt eine
-  stabile ID (`ProjectFile.id`, für Altprojekte beim ersten Laden einmalig vergeben und
-  zurückgeschrieben), und der Server hält bis zu acht Projekte gleichzeitig in einem
-  gedeckelten Cache (`server/src/lib/projectStore.ts`). Für **jeden** Inhalts-Router
-  (Bände, Seiten, Layout, Export, Skript, Kommentare, Fonts/Bilder/SVGs, Sprachen,
-  Charaktere, Glossar, Presets, Einstellungen) gibt es zusätzlich zu den bestehenden
-  Routen neue, projekt-gescopte Routen unter `/api/p/:projectId/...`
-  (`server/src/lib/projectContext.ts`) — zwei Anfragen mit unterschiedlicher
-  `:projectId` sehen dadurch nachweislich unterschiedliche Projekte, unabhängig von der
-  Reihenfolge.
-- **Mehrprojekt-Zugriff, Phase 3 (Client-Umbau)**: Der Client kennt jetzt selbst ein
-  Projekt in der URL — das komplette Bände-/Seiten-/Editor-/Skript-/Export-/Reader-
-  Routenschema hängt unter `/p/:projectId/...` (`client/src/main.tsx`), statt implizit
-  "das eine offene Projekt" zu meinen. Welches Projekt ein Browser-**Tab** gerade zeigt,
-  ist ein reiner In-Memory-Wert pro Tab (`client/src/api/projectScope.ts`, bewusst nicht
-  in `localStorage` wie der Auth-Token — sonst könnten zwei Tabs nie zwei verschiedene
-  Projekte offen halten), gesetzt synchron beim Rendern von `ProjectProvider`
-  (`client/src/state/ProjectContext.tsx`, wrappt weiterhin die ganze App-Hülle inkl.
-  Kopfzeile) aus dem `:projectId`-Segment der aktuellen URL. Alle projekt-bezogenen
-  `api.*`-Methoden (`client/src/api/client.ts`) gehen über einen `projectApiUrl()`-
-  Helfer, der automatisch auf die gescopte Route umschreibt, mit ungescoptem
-  `/api/...`-Fallback als Sicherheitsnetz. Ergebnis: zwei Browser-Tabs können jetzt
-  wirklich zwei unterschiedliche Projekte gleichzeitig offen und in Bearbeitung haben,
-  ohne sich gegenseitig zu beeinflussen — manuell mit zwei echten Tabs gegen einen
-  laufenden Server verifiziert (inkl. Reload mitten in einer `/p/:id/volumes/...`-URL
-  über die neue Bootstrap-Route `GET /api/p/:projectId`, und dem `/` → `/project`-
-  Redirect für den Fall ganz ohne Projekt in der URL).
+- **Multi-project access, phase 1+2 (server-side)**: previously the whole server
+  ran with exactly one active project in memory (a global singleton) — every
+  switch necessarily affected everyone connected. Every project now gets a
+  stable ID (`ProjectFile.id`, assigned once and written back for legacy
+  projects on first load), and the server keeps up to eight projects
+  simultaneously in a capped cache (`server/src/lib/projectStore.ts`). For
+  **every** content router (volumes, pages, layout, export, script, comments,
+  fonts/images/SVGs, languages, characters, glossary, presets, settings), in
+  addition to the existing routes there are now new, project-scoped routes
+  under `/api/p/:projectId/...` (`server/src/lib/projectContext.ts`) — two
+  requests with a different `:projectId` demonstrably see different projects,
+  regardless of order.
+- **Multi-project access, phase 3 (client rework)**: the client itself now knows
+  a project in the URL — the entire volumes/pages/editor/script/export/reader
+  route scheme lives under `/p/:projectId/...` (`client/src/main.tsx`), instead
+  of implicitly meaning "the one open project". Which project a browser **tab**
+  is currently showing is a purely in-memory value per tab
+  (`client/src/api/projectScope.ts`, deliberately not in `localStorage` like the
+  auth token — otherwise two tabs could never keep two different projects open),
+  set synchronously when `ProjectProvider` renders
+  (`client/src/state/ProjectContext.tsx`, still wraps the whole app shell
+  including the header) from the `:projectId` segment of the current URL. All
+  project-related `api.*` methods (`client/src/api/client.ts`) go through a
+  `projectApiUrl()` helper that automatically rewrites to the scoped route, with
+  an unscoped `/api/...` fallback as a safety net. Result: two browser tabs can
+  now genuinely have two different projects open and in edit simultaneously,
+  without affecting each other — manually verified with two real tabs against a
+  running server (including a reload in the middle of a `/p/:id/volumes/...`
+  URL via the new bootstrap route `GET /api/p/:projectId`, and the `/` →
+  `/project` redirect for the case of no project at all in the URL).
 
-**Bewusst außerhalb (bisher)**: das Abschalten der ungescopten Legacy-Routen (Phase 4)
-— bleiben als Sicherheitsnetz bestehen, bis sich der Client-Umbau in der Praxis bewährt
-hat. Der Projekt-Umschalter selbst (`/api/project`, Anlegen/Öffnen/Archivieren/
-Mitgliederverwaltung — operiert ohnehin auf Projekt*dateien*, nicht "dem gerade offenen
-Projekt") sowie die serverweite Dateisystem-Suche bleiben bewusst Singleton-only, das
-betrifft kein einzelnes Projekt. Konflikt-Erkennung für die selteneren
-Verwaltungslisten (Einstellungen/Sprachen/Charaktere/Glossar/Presets/Mitgliederliste —
-dort nur der Schreib-Mutex, kein ETag-Dialog) bleibt ebenfalls offen; siehe
-`docs/Professional-Workflow-Gaps.md`.
+**Deliberately out of scope (so far)**: disabling the unscoped legacy routes
+(phase 4) — they remain as a safety net until the client rework has proven
+itself in practice. The project switcher itself (`/api/project`,
+create/open/archive/member management — operates on project *files* anyway, not
+"the currently open project") as well as server-wide filesystem search remain
+deliberately singleton-only, since they don't concern a single project. Conflict
+detection for the rarer management lists (settings/languages/characters/
+glossary/presets/member list — only the write mutex there, no ETag dialog) also
+remains open; see `docs/Professional-Workflow-Gaps.md`.
 
-## UI-Sprache
+## UI Language
 
-- Die **Oberfläche selbst** (Labels, Buttons, Menüs, Tooltips, Bestätigungsdialoge,
-  Fehlermeldungen) ist in sieben Sprachen verfügbar: Englisch, Deutsch, Japanisch,
-  Französisch, Spanisch, Chinesisch (vereinfacht) und Koreanisch — umsetzt über
+- The **interface itself** (labels, buttons, menus, tooltips, confirmation
+  dialogs, error messages) is available in seven languages: English, German,
+  Japanese, French, Spanish, Chinese (Simplified), and Korean — implemented via
   `react-i18next` (`client/src/i18n/`).
-- **Wichtige Abgrenzung**: Das ist komplett unabhängig von der
-  [Sprachverwaltung](#sprachverwaltung) weiter oben — jene verwaltet die
-  Content-Sprachen eines *Projekts* (in welchen Sprachen die Comic-Dialoge selbst
-  übersetzt werden). Ein Nutzer kann die UI z. B. auf Englisch stellen und trotzdem
-  Deutsch/Japanisch als Übersetzungssprachen im Projekt pflegen.
-- **Umschalter** in der App-Kopfzeile (neben "Einstellungen"), zeigt jede Sprache in
-  ihrer eigenen Bezeichnung (z. B. "日本語", "한국어"). Wechsel übersetzt die aktuell
-  sichtbare Seite sofort, ohne Neuladen.
-- **Standardsprache**: Beim allerersten Start wird die Browser-/System-Sprache erkannt;
-  passt keine der sieben, ist Englisch der Fallback. Die getroffene Wahl wird
-  client-seitig in `localStorage` gespeichert (Schlüssel `comikumi.uiLocale`) — eine
-  reine Maschinen-/Browser-Einstellung, kein Teil der Projektdatei.
-- **Server-Fehlercodes**: API-Fehlerantworten sind stabile `snake_case`-Codes
-  (`{ error, params? }`) statt roher Prosa — der Client übersetzt sie über den
-  `errors.*`-Namensraum (`client/src/api/client.ts`s `ApiError` +
+- **Important distinction**: this is completely independent of
+  [Language Management](#language-management) above — that manages a
+  *project's* content languages (which languages the comic dialogue itself is
+  translated into). A user can set the UI to English, for example, and still
+  maintain German/Japanese as translation languages in the project.
+- **Switcher** in the app header (next to "Settings"), shows each language in
+  its own name (e.g. "日本語", "한국어"). Switching translates the currently
+  visible page immediately, without reloading.
+- **Default language**: on the very first startup the browser/system language is
+  detected; if none of the seven match, English is the fallback. The chosen
+  setting is stored client-side in `localStorage` (key `comikumi.uiLocale`) — a
+  purely machine/browser setting, not part of the project file.
+- **Server error codes**: API error responses are stable `snake_case` codes
+  (`{ error, params? }`) instead of raw prose — the client translates them via
+  the `errors.*` namespace (`client/src/api/client.ts`'s `ApiError` +
   `client/src/i18n/translateApiError.ts`).
-- **Übersetzungsqualität**: Alle sieben Sprachversionen wurden direkt erstellt (kein
-  externer Übersetzungsdienst) — fachlich sauber, aber ohne Muttersprachler-Review. Für
-  den internen Gebrauch ausreichend; bei einer öffentlichen Veröffentlichung wäre ein
-  Korrekturdurchgang durch Muttersprachler empfehlenswert.
+- **Translation quality**: all seven language versions were created directly (no
+  external translation service) — technically sound, but without native-speaker
+  review. Sufficient for internal use; for a public release a proofreading pass
+  by native speakers would be advisable.
 
-## Bände & Seiten
+## Volumes & Pages
 
-- **Band-Liste**: Jeder erkannte Band als Karte (Ordnername, bereits vorhandene
-  Sprachen), führt zur Seiten-Übersicht. Ohne gefundene `*_empty`-Ordner erklärt der
-  Bildschirm warum und verweist auf Projekt → Einstellungen.
-- **Seiten-Übersicht**: Vorschaubild-Raster aller Seiten eines Bandes (verzögert
-  geladen, serverseitig als JPEG zwischengespeichert und automatisch neu erzeugt, wenn
-  sich die Quelldatei ändert), ein Klick öffnet den Editor für diese Seite. Zeigt einen
-  Seitenzähler in der Statusleiste. Der Cache liegt in einem separat konfigurierbaren
-  [Thumbnail-Ordner](#projekt-assets-ordner), standardmäßig direkt neben der Projektdatei.
-- **Seiten hochladen**: Über "Seite → Seiten hochladen…" lassen sich ein oder mehrere
-  Seiten-Scans direkt aus dem Browser in den `_empty`-Ordner des Bandes hochladen —
-  wichtig, sobald Client und Server auf getrennten Geräten laufen (bisher ließ sich
-  eine neue Seite nur hinzufügen, indem die Bilddatei direkt ins `scanRoot` auf der
-  Server-Maschine kopiert wurde). Existiert bereits eine Seite mit demselben
-  Dateinamen, fragt ein Dialog vor dem Überschreiben nach. Jede Seiten-Karte hat
-  zusätzlich einen "Löschen"-Button — entfernt nur die Quelldatei (eine für diese
-  Seite bereits gespeicherte Lettering-Datei bleibt in jedem Fall bestehen) und **nicht
-  destruktiv**: die Datei landet in einem `_trash`-Ordner direkt neben `scanRoot` (mit
-  Zeitstempel im Dateinamen und derselben relativen Ordnerstruktur wie im Original), statt
-  sofort endgültig gelöscht zu werden. Eine Systemverwaltung kann eine Datei jederzeit
-  manuell wiederherstellen, indem sie sie zurück an ihren ursprünglichen Ort verschiebt
-  und den Zeitstempel-Präfix entfernt. Ein automatischer Hintergrund-Sweep (alle 6
-  Stunden, `server/src/index.ts`) räumt den Papierkorb danach selbstständig auf — wie
-  lange eine Datei dort verbleibt, bevor sie endgültig entfernt wird, ist über
-  Einstellungen → "Papierkorb-Aufbewahrung (Tage)" konfigurierbar (Default: 30 Tage).
-- **Leere Seite anlegen**: über "Seite → Leere Seite…" lässt sich statt eines Uploads
-  auch eine komplett leere (weiße) Seite in gewählter Größe anlegen — für Seiten, die
-  nicht aus einem Gesamt-Scan entstehen, sondern Panel für Panel aus bereits fertig
-  gezeichneten Einzelgrafiken zusammengesetzt werden sollen (siehe
-  [Panel-Inhalt ersetzen](#cut-panel) und die Panel-Raster-Vorlagen im Editor-Werkzeug).
-  Nutzt denselben Upload-Weg wie oben, verhält sich danach wie jede andere Seite und
-  öffnet sich direkt im Editor.
-- Beide Bildschirme haben ein **"Projekt"-Menü** (Projekt wechseln, Charaktere
-  verwalten, Einstellungen öffnen) sowie eine Menüleiste mit Import-/Export-Aktionen
-  (siehe [Export & Import](#export--import)), einen Eintrag "Bericht für den Band" und
-  eine Status-/Meldungsleiste für Hintergrundvorgänge.
+- **Volume list**: every detected volume as a card (folder name, languages
+  already present), leads to the page overview. Without any `*_empty` folders
+  found, the screen explains why and points to Project → Settings.
+- **Page overview**: a thumbnail grid of all pages in a volume (lazily loaded,
+  cached server-side as JPEG and automatically regenerated when the source file
+  changes), one click opens the editor for that page. Shows a page counter in
+  the status bar. The cache lives in a separately configurable
+  [thumbnail folder](#project-asset-folder), by default right next to the
+  project file.
+- **Upload pages**: via "Page → Upload pages…" one or more page scans can be
+  uploaded directly from the browser into the volume's `_empty` folder —
+  important as soon as client and server run on separate machines (previously a
+  new page could only be added by copying the image file directly into
+  `scanRoot` on the server machine). If a page with the same filename already
+  exists, a dialog asks before overwriting. Every page card also has a "Delete"
+  button — removes only the source file (a lettering file already saved for
+  this page is always kept) and **non-destructively**: the file lands in a
+  `_trash` folder right next to `scanRoot` (with a timestamp in the filename and
+  the same relative folder structure as the original), instead of being
+  permanently deleted immediately. A system administrator can restore a file
+  manually at any time by moving it back to its original location and removing
+  the timestamp prefix. An automatic background sweep (every 6 hours,
+  `server/src/index.ts`) then cleans up the trash on its own — how long a file
+  stays there before being permanently removed is configurable under Settings →
+  "Trash retention (days)" (default: 30 days).
+- **Create empty page**: via "Page → Empty page…" a completely empty (white)
+  page of a chosen size can be created instead of an upload — for pages that
+  aren't built from a full scan but are assembled panel by panel from
+  already-finished individual artwork (see
+  [Replacing panel content](#cut-panel) and the panel grid templates in the
+  editor toolbar). Uses the same upload path as above, behaves afterwards like
+  any other page, and opens directly in the editor.
+- Both screens have a **"Project" menu** (switch project, manage characters,
+  open settings) as well as a menu bar with import/export actions (see
+  [Export & Import](#export--import)), a "Report for volume" entry, and a
+  status/message bar for background operations.
 
-## Sprachverwaltung
+## Language Management
 
-- **Sprachen** sind projektweit definiert: ein Code (z. B. `de`), eine Anzeige-
-  Bezeichnung (z. B. "Deutsch") und ein Ordner-Suffix für die Export-Konvention (z. B.
+- **Languages** are defined project-wide: a code (e.g. `de`), a display name
+  (e.g. "Deutsch"), and a folder suffix for the export convention (e.g.
   `volume_01_german`).
-- **Sprachen-Verwaltung** (Popover, sowohl kompakt in der Sprachleiste als auch als
-  vollständiges Formular): Sprache hinzufügen (Ordner-Suffix wird automatisch aus der
-  Bezeichnung abgeleitet, kann aber manuell überschrieben werden), Sprache löschen (mit
-  Sicherheitsabfrage — bereits übersetzte Texte bleiben in der JSON erhalten, verlieren
-  nur ihren Tab). Der Server lehnt doppelte Codes/Ordner-Suffixe mit einem Fehler ab.
-- **Sprachleiste**: Der vertikale Sprach-Umschalter neben der (einklappbaren)
-  Text-Seitenleiste im Editor — ein Klick auf einen Tab (`DE`, `EN`, `JP`, …) wechselt,
-  welche Sprache der Inspector gerade bearbeitet; das "+"-Chip öffnet die kompakte
-  Sprachen-Verwaltung direkt darin.
-- **Sprachspezifische Anpassungen**: Praktisch jedes Textformatierungs-Feld einer
-  Blase/eines Kurventexts (Schriftart, Größe, Zeilenhöhe, Ausrichtung, Leserichtung,
-  Umrandung, Farbverlauf) sowie die komplette visuelle Form (Position/Größe/Rotation/
-  Hintergrund) kann per Umschalter ("Alle" vs. aktive Sprache) direkt neben dem
-  jeweiligen Feld sprachspezifisch überschrieben werden — z. B. Japanisch vertikal mit
-  einer Schriftart, während Deutsch/Englisch horizontal bleiben und eine andere
-  Schriftart nutzen; eine Übersetzung mit mehr Platzbedarf kann eine eigene, verschobene
-  Blasenform bekommen.
+- **Language management** (popover, both compact in the language bar and as a
+  full form): add a language (folder suffix is derived automatically from the
+  name but can be manually overridden), delete a language (with a confirmation
+  prompt — already-translated text stays in the JSON, only losing its tab). The
+  server rejects duplicate codes/folder suffixes with an error.
+- **Language bar**: the vertical language switcher next to the (collapsible)
+  text sidebar in the editor — clicking a tab (`DE`, `EN`, `JP`, …) switches
+  which language the inspector is currently editing; the "+" chip opens the
+  compact language management directly within it.
+- **Language-specific overrides**: virtually every text-formatting field of a
+  bubble/curved text (font, size, line height, alignment, reading direction,
+  outline, gradient) as well as the entire visual shape (position/size/
+  rotation/background) can be overridden per language via a toggle ("All" vs.
+  active language) right next to the respective field — e.g. Japanese
+  vertical with one font while German/English stay horizontal and use a
+  different font; a translation that needs more space can get its own,
+  repositioned bubble shape.
 
-## Charakterverwaltung
+## Character Management
 
-- **Charaktere** sind eine projektweite Besetzungsliste: ID, Name, eine Farbe und
-  **Voice Notes** (freier Text: Sprechweise, Persönlichkeit, Floskeln, Förmlichkeit —
-  die "Character Voice Bible"). Referenziert wird per `characterId` auf der Blase
-  (nicht in der Seite dupliziert) — Umbenennen, Umfärben oder Nachpflegen der Voice
-  Notes muss also keine einzige Seite anfassen.
-- **Charakter-Verwaltung** (Modal, über das "Projekt"-Menü auf jedem Bildschirm
-  erreichbar): Charakter anlegen (Name, Farbwähler, Voice Notes), per Klick auf einen
-  Eintrag bearbeiten, löschen (mit Warnung, dass Blasen mit dieser Zuordnung nur die
-  Zuordnung verlieren, nicht gelöscht werden).
-- **Zuordnung**: pro Blase über ein Dropdown im Bubble-Inspector oder über das
-  Rechtsklick-Kontextmenü im Canvas ("Charakter zuweisen"-Untermenü). Fließt direkt in
-  die [Berichte](#berichte) und die [Kontextansicht](#kontextansicht)
-  ein — die Voice Notes werden dort und unter dem Charakter-Dropdown im Bubble-Inspector
-  angezeigt, sobald einer Blase ein Charakter mit Notizen zugeordnet ist.
+- **Characters** are a project-wide cast list: ID, name, a color, and
+  **voice notes** (free text: manner of speech, personality, catchphrases,
+  formality — the "character voice bible"). Referenced via `characterId` on
+  the bubble (not duplicated on the page) — renaming, recoloring, or updating
+  voice notes never needs to touch a single page.
+- **Character management** (modal, reachable via the "Project" menu on every
+  screen): create a character (name, color picker, voice notes), edit by
+  clicking an entry, delete (with a warning that bubbles with that assignment
+  only lose the assignment, they are not deleted).
+- **Assignment**: per bubble via a dropdown in the bubble inspector or via the
+  right-click context menu on the canvas ("Assign character" submenu). Feeds
+  directly into [Reports](#reports) and the [Context View](#context-view) — the
+  voice notes are shown there and under the character dropdown in the bubble
+  inspector as soon as a bubble is assigned a character with notes.
 
 ## Story Bible
 
-Eigener Bereich für Worldbuilding/Story-Inhalte (Charakterprofile, Orte, Objekte,
-Fraktionen, ...) — ein **generisches Entitäten-System**, erreichbar über den neuen
-"Story Bible"-Eintrag im "Projekt"-Menü (`client/src/routes/StoryBible.tsx`, eigene
-volle Route unter `/p/:projectId/story-bible`, nicht als Modal wie die schlankeren
-Manager).
+A dedicated area for worldbuilding/story content (character profiles, locations,
+objects, factions, ...) — a **generic entity system**, reachable via the new
+"Story Bible" entry in the "Project" menu (`client/src/routes/StoryBible.tsx`,
+its own full route under `/p/:projectId/story-bible`, not a modal like the
+leaner managers).
 
-- **Einträge** haben einen freien `type` (kein festes Enum — z. B. "character",
-  "location", "item", "faction"; der Client schlägt beim Anlegen gängige Typen sowie
-  bereits im Projekt verwendete vor), Name, Farbe, eine Kurzbeschreibung und ein
-  Freitext-Notizfeld.
-- **Echte Vereinheitlichung mit dem Blasen-Tagging, keine Doppelverwaltung**:
-  `type === "character"`-Einträge sind exakt dieselben Datensätze, die auch für
-  `Bubble.characterId` in der [Charakterverwaltung](#charakterverwaltung) genutzt
-  werden (server/src/lib/projectStore.ts stellt für die alte `/api/characters`-API
-  weiterhin dieselbe schmale Sicht bereit, intern aber auf denselben Daten) — ein
-  Charakter umbenennen oder seine Notizen pflegen wirkt sich sofort auf beide Stellen
-  aus, es gibt keine zwei getrennten Listen. Projekte, die vor diesem Feature angelegt
-  wurden, werden beim ersten Laden automatisch und einmalig migriert (gleiche IDs
-  übernommen, jede bestehende Blasen-Zuordnung bleibt unverändert gültig).
-- **Referenzbilder/Sketches**: jeder Eintrag hat eine eigene Bildergalerie
-  (Upload/Löschen einzelner Bilder), technisch auf demselben Asset-Router-Baustein wie
-  die [Projekt-Assets](#projekt-assets-ordner) aufgebaut, nur mit einem eigenen
-  Ordner pro Eintrag.
-- **Beziehungen**: gerichtete, frei beschriftete Verknüpfungen zwischen zwei Einträgen
-  (z. B. "ist Schwester von", "arbeitet für") — projektweite Liste, auf beiden
-  verknüpften Einträgen sichtbar. Löschen eines Eintrags entfernt automatisch jede
-  Beziehung, die ihn referenziert.
-- **Rollen**: Lesen für jedes Projektmitglied; Einträge/Beziehungen anlegen/bearbeiten/
-  löschen ab Rolle "translator" (wie beim Glossar — redaktioneller Inhalt, keine
-  Lettering-Produktionsarbeit); Bilder hochladen/löschen ab Rolle "letterer" (wie jeder
-  andere Asset-Upload in der App).
+- **Entries** have a free-form `type` (no fixed enum — e.g. "character",
+  "location", "item", "faction"; the client suggests common types as well as
+  types already used in the project when creating one), name, color, a short
+  description, and a free-text notes field.
+- **True unification with bubble tagging, no duplicate management**:
+  `type === "character"` entries are exactly the same records also used for
+  `Bubble.characterId` in [Character Management](#character-management)
+  (`server/src/lib/projectStore.ts` still exposes the same narrow view for the
+  old `/api/characters` API, but internally on the same data) — renaming a
+  character or updating their notes takes effect at both places immediately,
+  there are no two separate lists. Projects created before this feature are
+  automatically and once migrated on first load (same IDs carried over, every
+  existing bubble assignment remains valid).
+- **Reference images/sketches**: every entry has its own image gallery
+  (upload/delete individual images), technically built on the same asset-router
+  building block as [Project Assets](#project-asset-folder), just with its own
+  folder per entry.
+- **Relationships**: directed, freely labeled links between two entries (e.g.
+  "is sister of", "works for") — a project-wide list, visible on both linked
+  entries. Deleting an entry automatically removes every relationship that
+  references it.
+- **Roles**: reading for every project member; creating/editing/deleting
+  entries/relationships from the "translator" role up (like the glossary —
+  editorial content, not lettering production work); uploading/deleting images
+  from the "letterer" role up (like every other asset upload in the app).
 
-## Lettering-Presets
+## Lettering Presets
 
-Projektweite, live verknüpfte Stil-Vorlagen (z. B. "Bubble Style", "Character Style",
-"Narration Style", "SFX Style") für Textstil und Blasenhintergrund — verwaltet über ein
-Modal im "Projekt"-Menü auf jedem Bildschirm (Anlegen, Bearbeiten per Klick auf einen
-Eintrag, Löschen). Anwendbar auf Blasen **und** Kurventexte (Kurventexte nutzen nur den
-Textstil-Teil, keinen Blasenhintergrund).
+Project-wide, live-linked style templates (e.g. "Bubble Style", "Character
+Style", "Narration Style", "SFX Style") for text style and bubble background —
+managed via a modal in the "Project" menu on every screen (create, edit by
+clicking an entry, delete). Applicable to bubbles **and** curved texts (curved
+texts only use the text-style part, no bubble background).
 
-- **Sparse/granular pro Feld**: Ein Preset kann bewusst nur einen Teil der ~17 Felder
-  definieren (z. B. nur die Schriftart) — jedes Feld ist einzeln per Checkbox ein-/
-  ausschaltbar. Nicht definierte Felder bleiben vollständig Sache der einzelnen
-  Blase/des Kurventexts und werden vom Preset nie angefasst. So kann z. B. die
-  Schriftart aller SFX-Blasen auf einmal geändert werden, ohne individuell eingestellte
-  Schriftgrößen zu überschreiben.
-- **Live-Verknüpfung**: Eine Blase/ein Kurventext trägt eine `presetId`. Ändert man ein
-  vom Preset definiertes Feld im Preset selbst, aktualisieren sich alle verknüpften
-  Elemente sofort — ohne Neuladen, in Live-Vorschau **und** PNG-Export gleichermaßen.
-  Ein gelöschtes Preset wird wie ein gelöschtes Panel/ein gelöschter Charakter
-  behandelt: die Verknüpfung fällt automatisch auf den eigenen Basiswert der Blase
-  zurück.
-- **Rangfolge** (am spezifischsten gewinnt): Sprach-Override > Preset-definiertes Feld
-  > Blasen-/Kurventext-eigener Basiswert. Ein `formOverride` (komplettes
-  Sprach-Override der gesamten Blasenform) gewinnt weiterhin immer, unabhängig von
-  Presets.
-- **Umfang**: Textstil (Schriftart, Größe, Zeilenhöhe, Ausrichtung, Leserichtung, Farbe,
-  Umrandung, Farbverlauf) und, nur für Blasen, Blasenhintergrund (Blasenstil, Füll-/
-  Randfarbe, Randbreite, Zeigerart inkl. Ketten-Details). Reine Geometrie
-  (Position/Größe/Rotation, Tail-Spitze/-Anker/-Breite/-Krümmung) ist bewusst kein
-  Preset-Feld — das sind Instanz-Eigenschaften einer einzelnen Blase, kein "Stil".
-- **Zuordnung**: über ein Preset-Dropdown im Bubble-/Kurventext-Inspector, oder über das
-  Rechtsklick-Kontextmenü im Canvas ("Preset zuweisen"-Untermenü, nur für Blasen). Jedes
-  vom aktuellen Preset gesteuerte Feld wird im Inspector deaktiviert angezeigt (mit
-  Hinweis, von welchem Preset es vorgegeben wird) — außer ein Sprach-Override dafür ist
-  aktiv, der gewinnt immer. Ein "Vom Preset lösen"-Button friert alle aktuell vom
-  Preset übernommenen Werte einmalig in die Blase/den Kurventext ein und entfernt die
-  Verknüpfung, ohne dass sich optisch etwas ändert.
+- **Sparse/granular per field**: a preset can deliberately define only part of
+  the ~17 fields (e.g. just the font) — every field is individually toggleable
+  via a checkbox. Fields not defined remain entirely up to the individual
+  bubble/curved text and are never touched by the preset. This way, for
+  example, the font of all SFX bubbles can be changed at once without
+  overwriting individually set font sizes.
+- **Live linking**: a bubble/curved text carries a `presetId`. Changing a field
+  defined by the preset in the preset itself updates all linked elements
+  immediately — without reloading, equally in the live preview **and** the PNG
+  export. A deleted preset is treated like a deleted panel/deleted character:
+  the link automatically falls back to the bubble's own base value.
+- **Precedence** (most specific wins): language override > preset-defined field
+  > the bubble's/curved text's own base value. A `formOverride` (a complete
+  language override of the entire bubble shape) always wins regardless of
+  presets.
+- **Scope**: text style (font, size, line height, alignment, reading direction,
+  color, outline, gradient) and, bubbles only, bubble background (bubble style,
+  fill/border color, border width, tail type including chain details). Pure
+  geometry (position/size/rotation, tail tip/anchor/width/curvature) is
+  deliberately not a preset field — those are instance properties of an
+  individual bubble, not "style".
+- **Assignment**: via a preset dropdown in the bubble/curved-text inspector, or
+  via the right-click context menu on the canvas ("Assign preset" submenu,
+  bubbles only). Every field controlled by the current preset is shown disabled
+  in the inspector (with a note of which preset defines it) — unless a language
+  override for it is active, which always wins. A "Detach from preset" button
+  freezes every value currently taken from the preset into the bubble/curved
+  text once and removes the link, without any visual change.
 
-## Editor — Canvas-Grundlagen
+## Editor — Canvas Basics
 
-- **Zoom & Pan**: Mausrad zoomt zum Cursor hin (20 %–600 %), Ziehen auf leerer Fläche
-  verschiebt die Ansicht, +/- -Buttons und "Reset" in der Statusleiste, laufende
-  Prozentanzeige.
-- **Automatische Einpassung**: Das Seitenbild wird auf die verfügbare Fläche skaliert
-  (per ResizeObserver verfolgt), sodass hohe Seiten in der Höhe passen und die Seite nie
-  einen Scrollbalken erzwingt.
-- **Auswahl**: Klick auf Blase/Bild/Kurventext/Panel wählt es aus; Shift-Klick fügt es
-  einer Mehrfachauswahl hinzu/entfernt es daraus. Klick auf leere Fläche hebt die
-  Auswahl auf. Ein Wechsel auf einen anderen Element-*Typ* bei gehaltener Shift-Taste
-  startet immer eine neue, typreine Auswahl — gemischte Mehrfachauswahl über Typen
-  hinweg wird bewusst nicht unterstützt.
-- **Verschieben/Skalieren/Rotieren**: Jeder Elementtyp hat eigene Ziehgriffe
-  (Rechteck-/Oval-Blasen rotieren/skalieren um ihr Zentrum passend zur
-  PNG-Export-Mathematik; Viereck-Blasen und Bilder ziehen einzelne Eckpunkte für
-  freie perspektivische Verzerrung).
-- **Tastaturkürzel** (global, deaktiviert während ein Textfeld fokussiert ist):
-  Strg+Z Rückgängig, Strg+Y / Strg+Umschalt+Z Wiederholen, Strg+D Duplizieren,
-  Escape Auswahl aufheben, Entf/Rücktaste Auswahl löschen, Pfeiltasten verschieben
-  die Auswahl um 1 px (10 px mit gehaltener Umschalttaste).
-- **Zeichenwerkzeuge**: Ein aktiviertes Werkzeug (Oval-/Rechteck-/Viereck-Blase oder
-  "Panel") verwandelt Ziehen auf dem Canvas in eine Vorschau-Box, die ab einer
-  Mindestgröße (>5 px) als neues Element dieser Größe/Art entsteht.
-- **Rechtsklick-Kontextmenü**: Erscheint an der Klickposition (bildschirmfest,
-  unabhängig von Zoom/Pan), bleibt automatisch im sichtbaren Bereich, schließt bei Klick
-  außerhalb oder Escape. Auf einer Blase: Untermenüs "Panel zuweisen" und "Charakter
-  zuweisen" (live aus dem aktuellen Layout aufgebaut, aktuelle Zuordnung markiert),
-  sowie Duplizieren/Löschen. Auf einem Panel (Fläche, nicht Eckpunkt): Duplizieren/
-  Löschen; auf einem einzelnen Panel-Eckpunkt oder einer Viereck-Blasen-Ecke
-  zusätzlich "Winkel setzen" (zwei Varianten — vorherigen bzw. nächsten Punkt
-  fixieren, mit Eingabefeld für den exakten Winkel in Grad; der jeweils nicht
-  fixierte Nachbarpunkt dreht sich um den angeklickten Punkt, bis genau dieser Winkel
-  anliegt, Kantenlänge bleibt erhalten), auf einem Panel-Eckpunkt außerdem "Punkt entfernen" (deaktiviert
-  bei nur noch 3 Punkten). Untermenüs klappen inline auf (kein Hover-Flyout).
+- **Zoom & pan**: mouse wheel zooms toward the cursor (20%–600%), dragging on
+  empty space pans the view, +/- buttons and "Reset" in the status bar, a live
+  percentage readout.
+- **Automatic fit**: the page image is scaled to the available area (tracked
+  via ResizeObserver) so tall pages fit in height and the page never forces a
+  scrollbar.
+- **Selection**: clicking a bubble/image/curved text/panel selects it;
+  shift-click adds it to/removes it from a multi-selection. Clicking empty
+  space clears the selection. Switching to a different element *type* while
+  holding shift always starts a new, type-pure selection — mixed
+  multi-selection across types is deliberately unsupported.
+- **Move/scale/rotate**: every element type has its own drag handles
+  (rect/oval bubbles rotate/scale around their center to match the PNG-export
+  math; quad bubbles and images drag individual corner points for free
+  perspective distortion).
+- **Keyboard shortcuts** (global, disabled while a text field is focused):
+  Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo, Ctrl+D duplicate, Escape clear
+  selection, Del/Backspace delete selection, arrow keys move the selection by
+  1px (10px while holding shift).
+- **Drawing tools**: an activated tool (oval/rect/quad bubble or "panel") turns
+  dragging on the canvas into a preview box that, once above a minimum size
+  (>5px), becomes a new element of that size/type.
+- **Right-click context menu**: appears at the click position (fixed to the
+  screen, independent of zoom/pan), automatically stays within the visible
+  area, closes on click outside or Escape. On a bubble: "Assign panel" and
+  "Assign character" submenus (built live from the current layout, current
+  assignment marked), plus duplicate/delete. On a panel (area, not corner
+  point): duplicate/delete; on an individual panel corner point or a quad
+  bubble corner, additionally "Set angle" (two variants — fix the previous or
+  the next point, with an input field for the exact angle in degrees; the
+  neighboring point that isn't fixed rotates around the clicked point until
+  exactly that angle is reached, edge length is preserved), and on a panel
+  corner point additionally "Remove point" (disabled once only 3 points
+  remain). Submenus expand inline (no hover flyout).
 
-## Elementtypen
+## Element Types
 
-### Sprechblasen
+### Speech Bubbles
 
-Drei Formen — Rechteck, Oval und ein freies "Viereck" (Perspektive), dessen vier
-Eckpunkte unabhängig gezogen werden können; der Text wird dabei mit einer echten
-projektiven Transformation verzerrt (z. B. für ein schräg gesehenes Schild).
+Three shapes — rectangle, oval, and a free "quad" (perspective) whose four
+corner points can be dragged independently; the text is warped with a true
+projective transform (e.g. for a sign seen at an angle).
 
-Blasen-Hintergrundstile: keine (unsichtbare Überlagerung auf vorhandener Grafik),
-Sprechblase, Gedankenblase, Effekt (gezackter Rand), oder eine eigene hochgeladene
-SVG-Kontur. Bei sichtbarem Stil: Füll-/Randfarbe, Randbreite, und ein optionaler
-Zeiger/Schwanz mit eigenem Stil — nahtlos verbunden, freistehend, oder eine
-segmentierte "Kette" (Kreis/Rechteck/Raute-Segmente, Anzahl und Abstand konfigurierbar)
-— Position, Breite und Krümmung sind alle per Canvas-Ziehgriff einstellbar.
+Bubble background styles: none (an invisible overlay on existing artwork),
+speech bubble, thought bubble, effect (jagged edge), or a custom uploaded SVG
+contour. With a visible style: fill/border color, border width, and an optional
+pointer/tail with its own style — seamlessly connected, free-standing, or a
+segmented "chain" (circle/rectangle/diamond segments, count and spacing
+configurable) — position, width, and curvature are all adjustable via canvas
+drag handles.
 
-Text-Optionen: Schriftart (eigene hochgeladene Schriften), Größe, Zeilenhöhe,
-horizontale Ausrichtung, sowie Leserichtung — horizontal LTR, horizontal RTL, oder
-vertikal (Tategaki) inklusive Furigana (`{漢字|かんじ}`) und automatischem
-Tate-chū-yoko (seitlich liegende Zahlen-/Lateinlauf-Blöcke). Text kann eine
-Umrandung und/oder einen linearen Farbverlauf statt Volltonfarbe bekommen. Jedes
-dieser Stil-Felder (und die komplette Form/Position/Größe/Rotation/Hintergrund) ist
-per Sprach-Umschalter überschreibbar. Blasen können einem Panel und einem Charakter
-zugeordnet werden.
+Text options: font (custom uploaded fonts), size, line height, horizontal
+alignment, and reading direction — horizontal LTR, horizontal RTL, or vertical
+(tategaki) including furigana (`{漢字|かんじ}`) and automatic tate-chū-yoko
+(sideways digit/Latin runs). Text can have an outline and/or a linear gradient
+instead of a solid color. Every one of these style fields (and the entire
+shape/position/size/rotation/background) can be overridden per language.
+Bubbles can be assigned to a panel and a character.
 
-### Bilder
+### Images
 
-Ein platziertes Rasterbild, in ein freies Viereck verzerrt (gleicher
-Eckpunkt-Zieh-Mechanismus wie Viereck-Blasen) — für Dinge, die Text nicht abdecken
-kann, z. B. ein neu gezeichnetes/übersetztes Schild oder Poster. Die eigentliche
-Bilddatei kann pro Sprache unterschiedlich sein (aus einer gemeinsamen Bild-Bibliothek
-hochgeladen), mit Deckkraft-Regler; eine Sprache ohne eigene Datei fällt automatisch
-auf eine andere zugewiesene zurück, damit das Element nie leer bleibt.
+A placed raster image, warped into a free quad (same corner-drag mechanism as
+quad bubbles) — for things text can't cover, e.g. a newly drawn/translated sign
+or poster. The actual image file can differ per language (uploaded from a
+shared image library), with an opacity slider; a language without its own file
+automatically falls back to another assigned language, so the element is never
+left empty.
 
-### Kurventext
+### Curved Text
 
-Ein freistehender Titel-/Effekttext (z. B. ein logoartiger Kapiteltitel oder eine
-Lautmalerei wie "BOOM!"), der entlang einer kubischen Bézierkurve mit 4 ziehbaren
-Kontrollpunkten verläuft, statt in einer Blasen-Box zu sitzen. Bewusst einzeilig/ohne
-Leserichtungs-Option (ein fokussiertes Titel-/Effekt-Werkzeug, kein zweites
-Volltext-Layoutsystem) — Schriftart, Größe (schrumpft automatisch passend zur Kurve),
-Ausrichtung entlang der Kurve (Anfang/Mitte/Ende), Farbe/Umrandung/Farbverlauf, alle
-mit demselben Sprach-Umschalter-Muster.
+A free-standing title/effect text (e.g. a logo-style chapter title or an
+onomatopoeia like "BOOM!") that runs along a cubic Bézier curve with 4 draggable
+control points, instead of sitting in a bubble box. Deliberately single-line/
+without a reading-direction option (a focused title/effect tool, not a second
+full-text layout system) — font, size (shrinks automatically to fit the curve),
+alignment along the curve (start/middle/end), color/outline/gradient, all with
+the same per-language override pattern.
 
 ### Panels
 
-Ein manuell gezeichnetes Referenzpolygon, das einen Comic-Panel markiert — reine
-Editor-Anmerkung mit Beschriftung (automatisch "Panel N" falls leer gelassen) und
-Rahmenfarbe. Startet beim Zeichnen als Rechteck, ist danach aber ein frei formbares
-Polygon (nicht auf 4 rechte Winkel beschränkt, passend zu schräg geschnittenen oder
-mehreckigen Manga-Panels): die ganze Fläche ziehen verschiebt sie, ein einzelner
-Eckpunkt verformt sie, Doppelklick auf die Kontur fügt dort einen neuen Punkt ein,
-Rechtsklick auf einen Punkt entfernt ihn (mindestens 3 Punkte bleiben immer erhalten).
-Blasen können einem Panel manuell zugeordnet werden, um "wer sagt was pro
-Panel"-Auswertungen zu ermöglichen. **Erscheint nie im PNG-Export.**
+A manually drawn reference polygon marking a comic panel — a pure editor
+annotation with a label (automatically "Panel N" if left blank) and a border
+color. Starts as a rectangle when drawn, but is afterwards a freely shapeable
+polygon (not limited to 4 right angles, matching skewed or many-sided manga
+panels): dragging the whole area moves it, a single corner point reshapes it,
+double-clicking the outline inserts a new point there, right-clicking a point
+removes it (at least 3 points are always kept). Bubbles can be manually
+assigned to a panel to enable "who says what per panel" evaluations. **Never
+appears in the PNG export.**
 
-Neben dem einzelnen Panel-Werkzeug bietet die Werkzeugleiste ein **Panel-Raster-Menü**
-mit gängigen Vorlagen (1 Panel/ganze Seite, 2/3 übereinander, 2×2, 2×3) — legt auf einen
-Klick mehrere Panels gleichmäßig verteilt an, jedes bereits im Zustand
-[„Ersetzt durch eigenes Bild"](#cut-panel) (für alle Sprachen aktiviert): einfach
-anklicken und die fertige Panel-Grafik zuweisen. Gedacht für den
-Panel-für-Panel-Aufbau einer [leeren Seite](#bände--seiten).
+Besides the individual panel tool, the toolbar offers a **panel grid menu**
+with common templates (1 panel/whole page, 2/3 stacked, 2×2, 2×3) — creates
+several evenly distributed panels with one click, each already in the state
+["replaced by custom image"](#cut-panel) (enabled for every language): just
+click and assign the finished panel artwork. Intended for the
+panel-by-panel construction of an [empty page](#volumes--pages).
 
-## Sperren
+## Locking
 
-Jedes Element (Blase, Panel, Bild, Kurventext) lässt sich einzeln gegen versehentliches
-Verschieben, Verformen, Löschen und Duplizieren sperren. Ein ausgewähltes Element zeigt
-ein kleines Schloss-Symbol an seiner Ecke — offen bedeutet entsperrt, geschlossen
-gesperrt; ein Klick darauf schaltet um. Solange ein Element gesperrt ist:
+Every element (bubble, panel, image, curved text) can be individually locked
+against accidental moving, reshaping, deleting, and duplicating. A selected
+element shows a small lock icon at its corner — open means unlocked, closed
+means locked; clicking it toggles the state. While an element is locked:
 
-- Ziehen, Größenänderung, Rotation und Konturpunkte lassen sich nicht mehr bewegen.
-- Entf-Taste und Duplizieren (Strg+D) wirken nicht — auch nicht über das
-  Rechtsklick-Menü. Ist das Element Teil einer Mehrfachauswahl, werden nur die
-  ungesperrten Elemente betroffen, das gesperrte bleibt unangetastet (und ausgewählt)
-  liegen.
-- Text-/Stil-Bearbeitung im Inspector bleibt weiterhin möglich — die Sperre betrifft
-  ausschließlich Geometrie.
+- Dragging, resizing, rotation, and outline points can no longer be moved.
+- The Delete key and duplicate (Ctrl+D) have no effect — not even via the
+  right-click menu. If the element is part of a multi-selection, only the
+  unlocked elements are affected, the locked one is left untouched (and
+  selected).
+- Text/style editing in the inspector remains possible — the lock only
+  concerns geometry.
 
-Ein gesperrtes Panel schützt nur sich selbst, nicht automatisch seine zugeordneten
-Kind-Blasen (siehe [Elementtypen](#elementtypen) → Panels) — die bleiben unabhängig
-sperr-/bearbeitbar. Die Sperre wird im gespeicherten Layout nur dann mit abgelegt, wenn
-das Element zuletzt gesperrt war (siehe `locked` in
+A locked panel only protects itself, not automatically its assigned child
+bubbles (see [Element Types](#element-types) → Panels) — those remain
+independently lockable/editable. The lock is only stored in the saved layout
+if the element was locked last (see `locked` in
 [JSON-Format.md](JSON-Format.md#bubble)).
 
-## Cut-Panel
+## Cut Panel
 
-Keine eigene Werkzeugleisten-Schaltfläche und kein eigener Datentyp — jedes [Panel](#elementtypen)
-lässt sich im Panel-Inspector per Knopf „Cut-Panel für „{Sprache}" aktivieren" zusätzlich
-zum Cut-Panel aufwerten: sein Inhalt wird dadurch visuell von der Original-Seite
-(`_empty`-Quelldatei) gelöst und lässt sich danach frei verschieben. Typische
-Anwendungsfälle: ein Panel für eine RTL→LTR-Umgestaltung an eine andere Stelle der Seite
-bringen, oder ein leicht verrutschtes Panel korrigieren — ganz ohne externes
-Grafikprogramm.
+No dedicated toolbar button and no dedicated data type — every
+[panel](#element-types) can additionally be upgraded to a cut panel in the panel
+inspector via a "Enable cut panel for "{language}"" button: its content is
+thereby visually detached from the original page (`_empty` source file) and can
+then be moved freely. Typical use cases: moving a panel for an RTL→LTR relayout
+to a different spot on the page, or correcting a slightly misaligned panel —
+entirely without an external graphics program.
 
-**Aktivierung** gibt es in zwei Varianten:
-- **„Für alle Sprachen aktivieren"** — löst den Panel-Inhalt einmalig für jede Sprache
-  gleichzeitig (schreibt in die Basis-Felder des Panels). Die richtige Wahl, wenn der
-  Panel-Inhalt sprachunabhängig ist — allen voran beim [Panel-für-Panel-Aufbau einer
-  leeren Seite](#bände--seiten) aus fertigen Einzelgrafiken: einmal ein Bild zuweisen,
-  sichtbar in jeder Projektsprache, ohne erneuten Upload.
-- **„Cut-Panel für „{Sprache}" aktivieren"** — betrifft ausschließlich die gerade aktive
-  Sprache; alle anderen bleiben unverändert ein normales, unbearbeitetes Panel. Gedacht
-  für gezielte Ausnahmen (z. B. ein Schild, das nur in „de"/„en" lokalisiert werden muss,
-  im japanischen Original aber unverändert bleibt). Ein „...deaktivieren"-Knopf (erscheint,
-  sobald für die aktive Sprache Cut-Verhalten aktiv ist) macht das gezielt für genau diese
-  eine Sprache wieder rückgängig (siehe [Sprachabhängiges Verhalten](#sprachabhängiges-verhalten)
-  unten).
+**Activation** comes in two variants:
+- **"Enable for all languages"** — detaches the panel content for every
+  language at once (writes to the panel's base fields). The right choice when
+  the panel content is language-independent — first and foremost for
+  [panel-by-panel construction of an empty page](#volumes--pages) from
+  finished individual artwork: assign an image once, visible in every project
+  language, no re-upload needed.
+- **"Enable cut panel for "{language}""** — affects only the currently active
+  language; every other language remains an unmodified, normal panel. Intended
+  for targeted exceptions (e.g. a sign that only needs to be localized in
+  "de"/"en" but stays unchanged in the Japanese original). A "...disable"
+  button (appears as soon as cut behavior is active for the active language)
+  specifically reverses this for exactly that one language (see
+  [Language-Dependent Behavior](#language-dependent-behavior) below).
 
-Verhalten (ansonsten identisch zu einem normalen Panel — Beschriftung, Rahmenfarbe,
-Kind-Blasen-Zuordnung, Sperren, Duplizieren, Löschen funktionieren gleich):
+Behavior (otherwise identical to a normal panel — label, border color, child
+bubble assignment, locking, duplicating, deleting all work the same):
 
-- **Die ganze Fläche verschieben** trägt den losgelösten Inhalt mit an die neue Position.
-  Die verlassene Original-Stelle wird mit einer Fläche überdeckt — die Füllfarbe wird
-  beim Aufwerten zunächst von der Panel-Randfarbe übernommen und ist im Panel-Inspector
-  jederzeit manuell änderbar. Das ist **nicht destruktiv**: die `_empty`-Quelldatei
-  selbst bleibt unverändert, die Überdeckung passiert nur beim Rendern (Vorschau wie
-  PNG-Export).
-- **Einen einzelnen Eckpunkt verformen** korrigiert die Kontur, ohne das Panel zu
-  verschieben — der angezeigte Ausschnitt aus der Originalseite passt sich dabei
-  automatisch an die neue Form an.
-- Ein noch nie verschobenes Cut-Panel sieht optisch identisch zu einem unbearbeiteten
-  Panel-Bereich aus (die Loch-Füllung und der Ausschnitt decken sich exakt).
+- **Moving the whole area** carries the detached content along to the new
+  position. The vacated original spot is covered with a fill area — the fill
+  color is initially taken from the panel's border color when upgrading and can
+  be changed manually in the panel inspector at any time. This is
+  **non-destructive**: the `_empty` source file itself remains unchanged, the
+  cover-up only happens at render time (preview as well as PNG export).
+- **Reshaping a single corner point** corrects the outline without moving the
+  panel — the displayed crop of the original page automatically adapts to the
+  new shape.
+- A cut panel that has never been moved looks visually identical to an
+  unmodified panel area (the hole fill and the crop match exactly).
 
-### Drei Inhalts-Zustände eines Cut-Panels
+### Three Content States of a Cut Panel
 
-Im Panel-Inspector legt eine einzige Auswahl „Inhalt" fest, was an der aktuellen
-Panel-Position gezeigt wird — die drei Optionen schließen sich gegenseitig aus:
+In the panel inspector, a single "Content" selector determines what is shown at
+the current panel position — the three options are mutually exclusive:
 
-- **„Original-Ausschnitt"** (Standard) — der Inhalt, wie unter „Cut-Panel" oben
-  beschrieben (verschieben, umformen).
-- **„Entfernt (nicht-destruktiv)"** — die Original-Stelle wird nur überdeckt, der Inhalt
-  aber **nirgends** erneut gezeichnet: das Panel verschwindet visuell vollständig, in
-  Vorschau und PNG-Export gleichermaßen. Rein visuell/semantisch und jederzeit durch
-  Zurückstellen auf „Original-Ausschnitt" rückgängig zu machen — Geometrie und
-  zugeordnete Kind-Blasen bleiben vollständig unangetastet. Ein so entferntes Panel gilt
-  aber semantisch als nicht mehr vorhanden für Skript, Berichte und Leserichtung
-  (`groupBubblesByPanel()` in `reportUtils.ts`) — eine ihm zugeordnete Blase erscheint
-  stattdessen in der „Ohne Panel"-Gruppe. Im Panel-Zuordnungs-Dropdown/-Kontextmenü
-  bleibt das Panel weiterhin mit dem Zusatz „(entfernt)" sichtbar.
-- **„Ersetzt durch eigenes Bild"** — siehe nächster Abschnitt.
+- **"Original crop"** (default) — the content as described under "Cut Panel"
+  above (move, reshape).
+- **"Removed (non-destructive)"** — the original spot is only covered up, the
+  content is **nowhere** redrawn: the panel disappears visually entirely, in
+  both preview and PNG export. Purely visual/semantic and reversible at any
+  time by switching back to "Original crop" — geometry and assigned child
+  bubbles remain completely untouched. However, a panel removed this way
+  counts as semantically no longer present for script, reports, and reading
+  order (`groupBubblesByPanel()` in `reportUtils.ts`) — a bubble assigned to it
+  appears in the "No panel" group instead. In the panel-assignment
+  dropdown/context menu the panel remains visible, marked "(removed)".
+- **"Replaced by custom image"** — see next section.
 
-Unabhängig davon bleibt der bestehende **„Panel löschen"-Button**: er entfernt den
-Panel-Datensatz endgültig aus der Seite und entkoppelt seine Kind-Blasen (zurück auf
-absolute Koordinaten) — nicht rückgängig zu machen außer per Undo. Die „Inhalt"-Auswahl
-betrifft dagegen nie den Datensatz selbst, nur was gerendert wird.
+Independent of this, the existing **"Delete panel" button** remains: it
+permanently removes the panel record from the page and decouples its child
+bubbles (back to absolute coordinates) — not reversible except via undo. The
+"Content" selector, in contrast, never affects the record itself, only what is
+rendered.
 
-### Panel-Inhalt ersetzen
+### Replacing Panel Content
 
-Statt den Original-Ausschnitt zu verschieben oder zu entfernen, lässt er sich auch durch
-ein **eigenes hochgeladenes Bild** ersetzen — z. B. um einen falschen Bildinhalt
-auszutauschen oder eine Zensur-Auflage zu erfüllen, ohne die ganze Seite neu erstellen zu
-müssen. Im Panel-Inspector unter „Inhalt" → „Ersetzt durch eigenes Bild" auswählen, dann
-über denselben Bild-Auswahl-Dialog wie beim Einfügen eines platzierten Bildes ein Bild
-hochladen oder aus der Bibliothek wählen — pro Sprache einzeln (wie bei platzierten
-Bildern: fehlt für die aktive Sprache ein eigenes Bild, wird ersatzweise irgendeine andere
-zugewiesene Sprache gezeigt, statt leer zu bleiben).
+Instead of moving or removing the original crop, it can also be replaced with a
+**custom uploaded image** — e.g. to swap out incorrect image content or meet a
+censorship requirement, without having to recreate the whole page. In the panel
+inspector under "Content" → "Replaced by custom image", then upload an image or
+choose one from the library via the same image-picker dialog used when inserting
+a placed image — per language individually (like placed images: if the active
+language has no own image, some other assigned language is shown instead of
+staying empty).
 
-Das Ersatzbild wird auf die Bounding-Box des aktuellen Panel-Polygons projiziert und auf
-dessen tatsächliche Form geclippt (keine echte 4-Punkt-Perspektivverzerrung wie bei
-platzierten Bildern/Viereck-Blasen — ein Panel-Polygon kann beliebig viele Eckpunkte
-haben, nicht zwingend 4). Ein **„Passform"**-Umschalter im Inspektor legt fest, wie das
-Bild in die Bounding-Box eingepasst wird: **„Strecken"** (Standard, verzerrt bei
-abweichendem Seitenverhältnis) oder **„Seitenverhältnis erhalten"** (das Bild wird
-zentriert eingepasst, ohne Verzerrung — mit Leerraum an den kürzeren Kanten statt
-Streckung). Optional lässt sich zusätzlich ein Rahmen (Farbe + Breite) um das Ersatzbild
-legen — anders als die Panel-Randfarbe (reine Editor-Kontur, nie im Export) wird dieser
-Rahmen tatsächlich mit in den PNG-Export gezeichnet.
+The replacement image is projected onto the bounding box of the current panel
+polygon and clipped to its actual shape (no true 4-point perspective warp like
+placed images/quad bubbles — a panel polygon can have any number of corner
+points, not necessarily 4). A **"Fit"** toggle in the inspector determines how
+the image is fitted into the bounding box: **"Stretch"** (default, distorts on
+a mismatched aspect ratio) or **"Preserve aspect ratio"** (the image is fitted
+centered, without distortion — with empty space on the shorter edges instead of
+stretching). Optionally a border (color + width) can also be placed around the
+replacement image — unlike the panel border color (a pure editor outline, never
+in the export), this border is actually drawn into the PNG export.
 
-**Horizontal spiegeln**: unabhängig von Verschieben/Entfernen/Ersetzen lässt sich der
-gezeigte Panel-Inhalt zusätzlich horizontal spiegeln — per Kontextmenü-Eintrag oder
-Schalter im Panel-Inspector, **pro Sprache** einstellbar (wie jedes andere
-[sprachabhängige Cut-Panel-Verhalten](#sprachabhängiges-verhalten)). Typischer
-Anwendungsfall: eine Sprechrichtung/Bewegungsrichtung im Panel an eine geänderte
-Leserichtung anpassen, ohne die Originalgrafik extern zu bearbeiten.
+**Flip horizontally**: independent of moving/removing/replacing, the displayed
+panel content can additionally be flipped horizontally — via a context-menu
+entry or a toggle in the panel inspector, settable **per language** (like every
+other [language-dependent cut-panel behavior](#language-dependent-behavior)).
+Typical use case: adjusting a speaking/motion direction in the panel to a
+changed reading direction, without editing the original artwork externally.
 
-### Sprachabhängiges Verhalten
+### Language-Dependent Behavior
 
-Ob ein Panel überhaupt ein Cut-Panel ist, ist selbst ein **Schalter pro Sprache** — nicht
-nur seine Details. Der „Cut-Panel für „{Sprache}" aktivieren/deaktivieren"-Knopf im
-Panel-Inspector betrifft ausschließlich die gerade aktive Sprache; Position/Form,
-„Inhalt"-Zustand, Loch-Füllung und Ersatzbild/Rahmen lassen sich danach zusätzlich **pro
-Sprache** unterschiedlich einstellen, über das Häkchen „Eigene Version für „{Sprache}""
-(nur relevant, sobald Cut-Verhalten für diese Sprache aktiv ist). Damit ist dasselbe
-Panel gleichzeitig eine unveränderte Referenzmarkierung in einer Sprache und ein voll
-bearbeitetes Cut-Panel in einer anderen — **eine einzige Entity** deckt beide Rollen ab,
-es gibt keinen separaten Panel-Typ.
+Whether a panel is a cut panel at all is itself a **per-language toggle** — not
+just its details. The "Enable/disable cut panel for "{language}"" button in the
+panel inspector affects only the currently active language; position/shape,
+"Content" state, hole fill, and replacement image/border can then additionally
+be set differently **per language**, via the "Custom version for "{language}""
+checkbox (only relevant once cut behavior is active for that language). This
+means the same panel is simultaneously an unmodified reference marker in one
+language and a fully edited cut panel in another — **a single entity** covers
+both roles, there is no separate panel type.
 
-Beispiel: ein Panel bleibt in „ja" (Original) unverändert an Ort und Stelle — reine
-semantische Markierung, keine sichtbare Wirkung, kein aktiviertes Cut-Verhalten. In
-„de"/„en" wurde es dagegen gezielt aktiviert und ist dort verschoben, entfernt oder
-durch ein eigenes Bild ersetzt (z. B. für eine RTL→LTR-Umgestaltung oder eine
-Zensur-Auflage im Zielmarkt).
+Example: a panel remains unchanged in place in "ja" (original) — a purely
+semantic marker, no visible effect, no cut behavior enabled. In "de"/"en", by
+contrast, it was deliberately enabled and is moved, removed, or replaced with a
+custom image there (e.g. for an RTL→LTR relayout or a censorship requirement in
+the target market).
 
-- Ohne Aktivierung für eine Sprache verhält sich das Panel dort wie ein ganz normales,
-  unbearbeitetes Panel — unabhängig davon, ob/wie es für andere Sprachen aktiviert ist.
-  Ältere, noch sprachunabhängige Cut-Panels aus früheren Arbeitsständen bleiben davon
-  unberührt: sie gelten weiterhin einfach für jede Sprache gleich, bis gezielt eine
-  Sprache abweichend aktiviert/deaktiviert wird.
-- Aktivieren/Deaktivieren übernimmt beim Umschalten die aktuell angezeigte Geometrie 1:1
-  (kein optischer Sprung) und legt dafür automatisch einen Sprach-Override an; das
-  Häkchen „Eigene Version" zeigt diesen Zustand an und erlaubt einen vollständigen Reset
-  auf die Basis.
-- **Kind-Blasen sind davon unberührt**: ihre Position bleibt immer relativ zum
-  **Basis**-Anker des Panels, unabhängig davon, ob und wie das Panel für die gerade
-  aktive Sprache verschoben ist. Wer eine Blase pro Sprache anders platzieren möchte,
-  tut das weiterhin unabhängig über die Blase selbst (Sprach-Override der Bubble-Form).
-- Ein in einer Sprache „entferntes" Panel (siehe oben) gilt auch nur in **dieser**
-  Sprache als semantisch nicht vorhanden für Skript/Berichte/Leserichtung — in jeder
-  anderen Sprache ohne diesen Override erscheint es dort ganz normal.
-- Sperren (`locked`) gilt bewusst **immer sprachübergreifend** — eine Sperre soll
-  unabhängig davon halten, welche Sprache gerade aktiv ist.
+- Without activation for a language, the panel behaves there like a completely
+  normal, unmodified panel — regardless of whether/how it is enabled for other
+  languages. Older, still language-independent cut panels from earlier work
+  states are unaffected by this: they continue to simply apply the same way to
+  every language, until a language is specifically enabled/disabled
+  differently.
+- Enabling/disabling takes over the currently displayed geometry 1:1 when
+  toggled (no visual jump) and automatically creates a language override for
+  it; the "Custom version" checkbox shows this state and allows a full reset
+  back to the base.
+- **Child bubbles are unaffected by this**: their position always stays
+  relative to the panel's **base** anchor, regardless of whether and how the
+  panel is moved for the currently active language. Anyone who wants to
+  position a bubble differently per language still does so independently via
+  the bubble itself (language override of the bubble shape).
+- A panel "removed" in one language (see above) is also only considered
+  semantically absent for script/reports/reading order in **that** language —
+  in every other language without this override it appears there completely
+  normally.
+- Locking (`locked`) deliberately **always applies across all languages** — a
+  lock should hold regardless of which language is currently active.
 
-## Text-Liste
+## Text List
 
-Einklappbare Seitenleiste mit jeder Blase/jedem Kurventext der aktuellen Seite in
-Leserichtung (oben nach unten), mehrzeiliger Text zu einer Zeile zusammengefasst
-(Zeilenumbrüche als "⏎" angezeigt). Hat eine eigene, von der aktiven Bearbeitungssprache
-unabhängige Sprachauswahl, damit z. B. der japanische Ausgangstext mitgelesen werden
-kann, während anderswo die deutsche Übersetzung bearbeitet wird. Klick auf einen
-Eintrag wählt die zugehörige Blase/den Kurventext im Canvas aus.
+A collapsible sidebar with every bubble/curved text on the current page in
+reading order (top to bottom), multi-line text collapsed to a single line (line
+breaks shown as "⏎"). Has its own language selector, independent of the active
+editing language, so e.g. the Japanese source text can be read along while the
+German translation is being edited elsewhere. Clicking an entry selects the
+associated bubble/curved text on the canvas.
 
-## Reading-Order
+## Reading Order
 
-Panels werden zunächst automatisch zu Y-"Zeilen" zusammengefasst (Panels, deren
-vertikale Bounding-Box sich überlappt, gelten als eine Zeile — kein fester
-Pixel-Schwellwert, funktioniert unabhängig von völlig unterschiedlich großen Panels),
-innerhalb einer Zeile dann nach der projektweiten [Leserichtung](#projektverwaltung)
-sortiert (rechts→links für Japanisch/Manga, links→rechts für westliche Comics).
-Dieselbe Zeilen-+Leserichtungs-Logik bestimmt auch die Reihenfolge der Blasen
-innerhalb eines Panels (bzw. im "Ohne Panel"-Sammelbecken) — das war zuvor eine reine
-Y-Sortierung, die bei nebeneinanderliegenden Blasen/Panels auf ähnlicher Höhe keine
-verlässliche Reihenfolge lieferte.
+Panels are first automatically grouped into Y-"rows" (panels whose vertical
+bounding boxes overlap count as one row — no fixed pixel threshold, works
+independent of wildly different panel sizes), then sorted within a row by the
+project-wide [reading direction](#project-management) (right-to-left for
+Japanese/manga, left-to-right for Western comics). The same row +
+reading-direction logic also determines the order of bubbles within a panel
+(or in the "no panel" collection) — previously this was a pure Y-sort, which
+gave no reliable order for bubbles/panels sitting side by side at similar
+height.
 
-Zusätzlich hat jede Blase eine Leseposition innerhalb ihrer Gruppe (ihr zugeordnetes
-Panel, oder der Sammelbecken "Ohne Panel"). Ein optionales Feld
-(`readingOrderOverride`) erlaubt eine manuelle Korrektur für Fälle, in denen auch die
-Zeilen-/Leserichtungs-Sortierung nicht der tatsächlichen Erzählreihenfolge entspricht
-— der manuelle Override gewinnt dabei immer, unabhängig von der Leserichtung.
-Bearbeitet wird das über die Hoch-/Runter-Buttons in der
-[Kontextansicht](#kontextansicht) — ein Klick tauscht die Blase mit ihrem Nachbarn in
-der Gruppe und nummeriert die ganze Gruppe neu durch, damit die Reihenfolge auch nach
-mehreren Korrekturen eindeutig bleibt. Wird einer Blase ein anderes (oder gar kein)
-Panel zugewiesen, wird ihr Override automatisch zurückgesetzt, da er nur innerhalb der
-ursprünglichen Gruppe sinnvoll ist.
+Additionally, every bubble has a reading position within its group (its
+assigned panel, or the "no panel" collection). An optional field
+(`readingOrderOverride`) allows a manual correction for cases where even the
+row/reading-direction sort doesn't match the actual narrative order — the
+manual override always wins, regardless of reading direction. Edited via the
+up/down buttons in the [Context View](#context-view) — a click swaps the
+bubble with its neighbor in the group and renumbers the whole group, so the
+order stays unambiguous even after several corrections. If a bubble is assigned
+a different (or no) panel, its override is automatically reset, since it only
+makes sense within its original group.
 
-## Glossar
+## Glossary
 
-Projektweite Liste wichtiger Begriffe mit einer Übersetzung pro Sprache (wie
-`Bubble.text`) und einer optionalen Notiz — verwaltet über ein Modal im "Projekt"-Menü
-auf jedem Bildschirm (Anlegen, Bearbeiten per Klick auf einen Eintrag, Löschen). Sobald
-ein Glossar-Eintrag eine Übersetzung für die gerade aktive Sprache hat, wird jedes
-Vorkommen dieser Übersetzung **direkt im Textfeld einer Blase oder eines Kurventexts
-farblich hervorgehoben**, während getippt wird — so sieht der Übersetzer sofort, wo ein
-bereits abgestimmter Begriff verwendet wurde. Technisch eine transparente Textarea über
-einem synchron mitscrollenden Hintergrund-Div (kein contentEditable — Cursor, Auswahl,
-IME-Eingabe und Rückgängig funktionieren dadurch unverändert nativ). Bei vertikalem
-(japanischem) Text wird bewusst nicht hervorgehoben — nur eine normale Textarea, da
-vertikale Textumbrüche eine grundlegend andere Sonderbehandlung bräuchten.
+A project-wide list of important terms with a translation per language (like
+`Bubble.text`) and an optional note — managed via a modal in the "Project" menu
+on every screen (create, edit by clicking an entry, delete). As soon as a
+glossary entry has a translation for the currently active language, every
+occurrence of that translation is **highlighted directly in a bubble's or
+curved text's text field** while typing — so the translator immediately sees
+where an already-agreed term was used. Technically a transparent textarea over
+a synchronously scrolling background div (not contentEditable — cursor,
+selection, IME input, and undo therefore keep working natively unchanged). For
+vertical (Japanese) text, highlighting is deliberately not shown — just a plain
+textarea, since vertical text wrapping would need fundamentally different
+special handling.
 
-## Kontextansicht
+## Context View
 
-Einklappbare Seitenleiste (Werkzeugleisten-Symbol, schließt beim Öffnen automatisch die
-Text-Liste und umgekehrt — beide docken an derselben Stelle), die zur aktuell
-ausgewählten Blase anzeigt. Nützlich nicht nur beim Übersetzen — Sprecher, Lese-
-reihenfolge und Panel-Ausschnitt helfen genauso beim reinen Lettern oder beim Schreiben:
+A collapsible sidebar (toolbar icon, automatically closes the text list when
+opened and vice versa — both dock in the same spot) showing information for
+the currently selected bubble. Useful not just for translating — speaker,
+reading order, and panel crop help just as much with pure lettering or writing:
 
-- **Speaker** (samt Voice Notes, falls vorhanden) und das zugeordnete **Panel**.
-- **Vorherige/Aktuelle/Nächste** Blase in Leserichtung — mit eigener, von der
-  Haupt-Sprache unabhängiger Sprachauswahl. An einer Seitengrenze wird dafür
-  **automatisch die Nachbarseite nachgeladen** (nur ihr Layout, nicht die volle
-  Editor-Ansicht), sodass "Vorherige"/"Nächste" auch über Seiten hinweg funktioniert;
-  ein Klick darauf wählt die Blase aus (gleiche Seite) oder navigiert zur Nachbarseite.
-- Hoch-/Runter-Buttons bei der aktuellen Blase zum Korrigieren der
-  [Reading-Order](#reading-order) innerhalb ihrer Gruppe.
-- Ein **Bildausschnitt** des aktuellen Panels (aus dem Quellbild der aktuellen Seite
-  zugeschnitten, keine Nachbarseiten-Bilder) — oder ein Hinweis, falls die Blase keinem
-  Panel zugeordnet ist.
+- **Speaker** (including voice notes, if any) and the assigned **panel**.
+- **Previous/current/next** bubble in reading order — with its own language
+  selector, independent of the main language. At a page boundary, the
+  neighboring page is **automatically preloaded** for this (only its layout,
+  not the full editor view), so "previous"/"next" also works across pages; a
+  click on it either selects the bubble (same page) or navigates to the
+  neighboring page.
+- Up/down buttons for the current bubble to correct the
+  [reading order](#reading-order) within its group.
+- An **image crop** of the current panel (cropped from the current page's
+  source image, no neighboring-page images) — or a note if the bubble isn't
+  assigned to a panel.
 
-## Skript-Editor & Skript-Sidebar
+## AI Assistant
 
-Zwei bewusst getrennte, aber datenmäßig verbundene Werkzeuge für die Planungsphase vor
-dem eigentlichen Lettern — Plot, grobe Panel-Aufteilung, Bildkomposition und
-mehrsprachiger Dialogtext, unabhängig vom später gescannten Seitenbild und dessen
-Blasen/Panels.
+A collapsible chat sidebar (toolbar icon, same docking spot as Story Bible/
+Context View) in the page editor and the script editor — a pure ask-only
+assistant, no automatic changes to project data or tool-calling. The chat
+history is purely client-side for the current session, not stored server-side.
 
-### Skript-Editor (eigenständiger Bildschirm)
+- **Two interchangeable providers**, configured per account under "My Account"
+  (`/account`, linked in the header): a self-supplied **OpenAI API key**
+  (stored encrypted on the server, never returned to the client in plaintext)
+  or a **"Sign in with ChatGPT"** login via Codex (device-code flow — display a
+  code + verification link, then confirm in a browser on any device). Only the
+  providers actually configured appear as choices in the panel.
+- **Codex runs as its own, long-lived server subprocess per account** with an
+  isolated credentials folder (`server/data/codex-home/<account-id>`) —
+  multiple accounts on the same ComiKumi server have separate ChatGPT logins
+  and can never see each other. The process is terminated after a few minutes
+  of inactivity and automatically restarted on the next question.
+- **Context per question**: a "Include current page" checkbox controls whether,
+  in addition to the question, the following is automatically sent along — in
+  the page editor, a transcript of the current page (panels in reading order,
+  speaker + text per bubble, effect/title texts) **plus the actual page image**
+  (downscaled to max 1280px, so purely visual/dialogue-free panels can be
+  described too); in the script editor, a transcript of the entire script
+  document (composition, plot, dialogue per panel). Rebuilt on every question,
+  so it always reflects the current editing state.
+- Responses are **streamed** (Server-Sent Events) and rendered as Markdown
+  (restricted: no raw HTML, only http(s) links).
 
-- Genau ein Skript-Dokument pro Band (`<Band><scriptSuffix>.json`, Suffix in den
-  Einstellungen konfigurierbar, Standard `_script`), erreichbar über den Eintrag
-  "Skript" im "Projekt"-Menü der Seiten-Übersicht/des Editors.
-- Seiten-Liste (frei benennbares Label, Notizfeld, verschiebbar/löschbar), darin Panels
-  (Größen-Hinweis klein/mittel/groß, Bildkomposition- und Handlungs-Freitext), darin
-  Dialogzeilen (Charakter-Dropdown inkl. Voice-Notes-Anzeige, Regieanweisung, ein
-  Textfeld pro Projekt-Sprache mit Glossar-Hervorhebung).
-- "Kopieren"-Button pro Dialogzeile legt den Text der gerade gewählten Skript-Sprache in
-  die Zwischenablage — die einzige Brücke zum späteren Seiten-Editor, bewusst ohne
-  engere Kopplung.
-- Rein manuelles Speichern (kein Autosave), wie der Rest der Skript-Funktionalität.
+## Script Editor & Script Sidebar
 
-### Skript-Sidebar (im Seiten-Editor)
+Two deliberately separate but data-linked tools for the planning phase before
+actual lettering — plot, rough panel breakdown, image composition, and
+multi-language dialogue text, independent of the later scanned page image and
+its bubbles/panels.
 
-- Einklappbare Seitenleiste, die eine echte Seite mit genau einer Skript-Seite
-  verknüpft (`linkedPage`, einmalig gesetzt, dauerhaft im Skript-Dokument gespeichert —
-  eine strukturell erzwungene 1:1-Zuordnung).
-- Volle Bearbeitung wie im Skript-Editor (Panels/Dialogzeilen hinzufügen, verschieben,
-  löschen) direkt neben dem Canvas, plus ein zusätzlicher "In Blase einfügen"-Button pro
-  Dialogzeile: bei ausgewählter Blase schreibt ein Klick den Text direkt in
-  `bubble.text[aktive Sprache]`, ganz ohne Zwischenablage-Umweg. Ohne Auswahl bleibt nur
-  der Kopieren-Button aktiv.
-- "Verknüpfung aufheben" trennt Seite und Skript-Seite wieder, ohne deren Panels zu
-  löschen — im Skript-Editor bleibt die Skript-Seite unverändert erhalten, nur ohne
-  Verknüpfung.
+### Script Editor (standalone screen)
 
-### Skript aus fertig geletterten Seiten generieren
+- Exactly one script document per volume (`<volume><scriptSuffix>.json`, suffix
+  configurable in settings, default `_script`), reachable via the "Script"
+  entry in the "Project" menu of the page overview/editor.
+- A page list (freely nameable label, notes field, movable/deletable), within
+  it panels (size hint small/medium/large, image-composition and plot free
+  text), within those dialogue lines (character dropdown including voice-notes
+  display, stage direction, one text field per project language with glossary
+  highlighting).
+- A "Copy" button per dialogue line puts the text of the currently selected
+  script language on the clipboard — the only bridge to the later page editor,
+  deliberately without tighter coupling.
+- Purely manual saving (no autosave), like the rest of the script
+  functionality.
 
-Statt eine Skript-Seite von Hand zu befüllen, lässt sie sich direkt aus einer bereits
-geletterten Seite erzeugen — ein Panel pro echtem Panel (in Leserichtung) plus ein
-Sammel-Panel für Blasen ohne Zuordnung, je mit einer Dialogzeile pro Blase (Charakter
-und Text pro Sprache 1:1 übernommen). Bildkomposition, Handlung und Größen-Hinweis
-lassen sich aus Blasendaten nicht ableiten und bleiben leer, zum Nachtragen von Hand.
+### Script Sidebar (in the page editor)
 
-- **Pro Seite**: Der "+ Aus dieser Seite erzeugen"-Button in der Skript-Sidebar befüllt
-  die neue verknüpfte Skript-Seite direkt aus den Blasen der gerade offenen Seite.
-- **Für den ganzen Band**: Der Button "Aus geletterten Seiten generieren" im
-  Skript-Editor generiert in einem Schritt für **jede** Seite mit einer gespeicherten
-  Lettering-Datei, die noch nicht mit einer Skript-Seite verknüpft ist — bereits
-  verknüpfte Seiten werden übersprungen, um von Hand ergänzte Inhalte (Bildkomposition,
-  Handlung, Notizen) nicht zu überschreiben.
-- Beide Wege ändern nur den Arbeitsspeicher-Zustand — wie überall im Skript-Bereich muss
-  anschließend bewusst "Speichern" geklickt werden, damit es auf der Platte landet.
+- A collapsible sidebar that links a real page to exactly one script page
+  (`linkedPage`, set once, stored permanently in the script document — a
+  structurally enforced 1:1 mapping).
+- Full editing like in the Script Editor (add/move/delete panels/dialogue
+  lines) right next to the canvas, plus an extra "Insert into bubble" button
+  per dialogue line: with a bubble selected, a click writes the text directly
+  into `bubble.text[active language]`, entirely without the clipboard detour.
+  Without a selection, only the Copy button stays active.
+- "Unlink" separates page and script page again without deleting its panels —
+  in the Script Editor the script page remains unchanged, just without a link.
 
-## Review-Kommentare
+### Generating a Script from Already-Lettered Pages
 
-Eigenständiges, pro Band gespeichertes JSON-Dokument (`<Band><commentsSuffix>.json`,
-Suffix in den Einstellungen konfigurierbar, Standard `_comments` — gleiches Muster wie
-das Skript-Dokument), unabhängig vom Seiten-Layout — Kommentieren löst nie den
-Übersetzer-Diff-Guard aus und "alle offenen Kommentare im Band" ist ein einzelner
-Request. Jedes Projekt-Mitglied ab "Betrachter" darf lesen und kommentieren — Review/QC
-ist kein eigenes Rollen-Konzept, sondern genau das, was "Betrachter" ohnehin schon
-bedeutet, plus Kommentar-Schreibrecht.
+Instead of filling in a script page by hand, it can be generated directly from
+an already-lettered page — one panel per real panel (in reading order) plus a
+collection panel for unassigned bubbles, each with one dialogue line per bubble
+(character and text per language carried over 1:1). Image composition, plot,
+and size hint cannot be derived from bubble data and stay empty, to be filled
+in by hand.
 
-- **Drei Markierungsarten** plus ein allgemeiner Seitenkommentar ohne Ortsbezug: **Pin**
-  (Klick), **Box** (Ziehen, wie das Panel-Werkzeug) und **Freihand** (ein
-  zusammenhängender Kritzel-Strich, z. B. zum Einkreisen/Unterstreichen einer Stelle).
-  Marker sind nach dem Anlegen nicht mehr verschiebbar — nur Farbe/Deckkraft ändern sich
-  je nach Status (offen = kräftig, erledigt = gedimmt).
-- **Threads**: jeder Kommentar hat Antworten, einen Erledigt/Wiedereröffnen-Umschalter
-  und lässt sich vom Autor oder einem Projekt-Admin löschen.
-- **@-Erwähnungen** einzelner Accounts (Autocomplete über eine eigene, nicht
-  Admin-beschränkte `mentionable-members`-Route) oder ganzer Projekt-Rollen (Betrachter/
-  Übersetzer/Letterer/Admin — zur Sendezeit gegen die aktuelle Mitgliederliste
-  aufgelöst, nie als Snapshot gespeichert). Löst, sofern die erwähnte Person eine
-  E-Mail-Adresse hinterlegt hat, eine Benachrichtigungs-Mail mit Deep-Link zurück in den
-  Editor aus (`server/src/lib/mailer.ts`, SMTP komplett optional konfiguriert — ohne
-  `SMTP_HOST` bleibt es bei der In-App-Markierung, kein Fehler).
-- **Sidebar**: alle Kommentare des Bands (nicht nur der aktuellen Seite), filterbar nach
-  offen/erledigt/"erwähnt mich", springt seitenübergreifend per `?comment=`-Deep-Link
-  (derselbe Mechanismus wie die E-Mail-Links).
+- **Per page**: the "+ Generate from this page" button in the Script Sidebar
+  fills the new linked script page directly from the bubbles of the currently
+  open page.
+- **For the whole volume**: the "Generate from lettered pages" button in the
+  Script Editor generates, in one step, for **every** page with a saved
+  lettering file that isn't yet linked to a script page — already-linked pages
+  are skipped, to avoid overwriting manually added content (image composition,
+  plot, notes).
+- Both paths only change in-memory state — as everywhere in the script area,
+  "Save" must be clicked deliberately afterward for it to land on disk.
 
-## Read/Review-Oberfläche
+## Review Comments
 
-Eigener, schlanker Lese-Screen (`/volumes/:id/read/:page`, Einstiegspunkte: "Lesen"-Icon
-auf jeder Seiten-Karte sowie ein Menüeintrag in der Seitenübersicht) für QC-/Review-
-Personen, die einen Band einfach nur bequem durchsehen wollen — ohne Werkzeugleiste,
-Inspektoren oder Undo/Speichern-Mechanik des vollen Editors. Technisch dieselbe
-Canvas-Engine wie der Editor (`PageCanvas.tsx` im `readOnly`-Modus), nur mit eigenem
-Datenladen direkt über die API statt über den Editor-Store, da hier nie Layout-Daten
-geschrieben werden.
+A standalone, per-volume-stored JSON document (`<volume><commentsSuffix>.json`,
+suffix configurable in settings, default `_comments` — same pattern as the
+script document), independent of the page layout — commenting never triggers
+the translator diff guard, and "all open comments in the volume" is a single
+request. Every project member from "viewer" up may read and comment — review/QC
+is not a separate role concept, but exactly what "viewer" already means, plus
+comment-write permission.
 
-- **Frei zoomen/verschieben** wie im Editor, zusätzlich **Zoom auf ein bestimmtes
-  Panel**: ein Streifen anklickbarer Panel-Miniaturen unten am Bildschirmrand, in
-  Lesereihenfolge sortiert (dieselbe Sortierung wie Berichte/Skript-Sidebar) — Klick
-  zoomt die Ansicht exakt auf dieses Panel.
-- **Seiten vor/zurück** — Pfeiltasten und Buttons, deren Richtung sich nach der
-  eingestellten Leserichtung richtet (bei "rtl" blättert man nach links vor, wie ein
-  echter Manga-Reader). Die tatsächliche Seiten-Reihenfolge bleibt unverändert, nur
-  welche Taste "vorwärts" bedeutet, dreht sich um.
-- **Charaktere, Glossar und Skript** in einem einzigen Info-Panel, alle rein lesend
-  (keine Bearbeitungsformulare wie in den vollen Verwaltungsdialogen — ein
-  Betrachter-Konto dürfte deren Schreib-Endpunkte ohnehin nicht aufrufen). Glossar-
-  Einträge zeigen alle hinterlegten Sprachen auf einmal; das verlinkte Skript hat einen
-  eigenen Sprachumschalter.
-- **Kommentar-Werkzeuge** (Pin/Box/Freihand, siehe [Review-Kommentare](#review-kommentare))
-  sind immer direkt in der Werkzeugleiste sichtbar — jederzeit eine Anmerkung machen,
-  ohne einen zusätzlichen Klick.
-- **Doppelseitenansicht**: zeigt die aktuelle Seite zusammen mit ihrer logischen
-  Nachbarseite nebeneinander (Auto-Paarung, kein Cover-Sonderfall), in der eingestellten
-  Leserichtung sortiert — bei „rtl" steht die früher gelesene Seite rechts, bei „ltr"
-  links, wie in einem echten aufgeschlagenen Band. Vor/Zurück blättert dabei um zwei
-  Seiten statt einer.
-- **Seitenvergleich**: beliebige, frei wählbare Seiten (bis zu vier) lassen sich über
-  einen Thumbnail-Picker gleichzeitig nebeneinander öffnen — jede Seite unabhängig
-  zoom-/verschiebbar, mit eigenem Panel-Zoom und eigener Auswahl. Nützlich um z. B. eine
-  frühere Seite als Stilreferenz neben die aktuelle zu legen. Jede angezeigte Seite hat
-  ihren eigenen Lade-Zustand, statt beim Wechsel die ganze Oberfläche zu blockieren.
+- **Three marker types** plus a general page comment with no location: **pin**
+  (click), **box** (drag, like the panel tool), and **freehand** (a continuous
+  scribble stroke, e.g. to circle/underline a spot). Markers can't be moved once
+  created — only color/opacity change depending on status (open = solid,
+  resolved = dimmed).
+- **Threads**: every comment has replies, a resolve/reopen toggle, and can be
+  deleted by its author or a project admin.
+- **@-mentions** of individual accounts (autocomplete via a dedicated,
+  non-admin-restricted `mentionable-members` route) or entire project roles
+  (viewer/translator/letterer/admin — resolved against the current member list
+  at send time, never stored as a snapshot). If the mentioned person has an
+  email address on file, this triggers a notification email with a deep link
+  back into the editor (`server/src/lib/mailer.ts`, SMTP entirely optional to
+  configure — without `SMTP_HOST` it stays at the in-app marker, no error).
+- **Sidebar**: all comments in the volume (not just the current page),
+  filterable by open/resolved/"mentions me", jumps across pages via a
+  `?comment=` deep link (same mechanism as the email links).
 
-## Berichte
+## Read/Review Interface
 
-- **Seiten-Bericht**: Vier live berechnete Ansichten für die aktuell geöffnete Seite —
-  "Wer sagt was?" (jede Blase in Leserichtung mit zugeordnetem Charakter und Text),
-  dasselbe gruppiert nach Panel ("Wer sagt was in welchem Panel?", mit einem
-  "Ohne Panel"-Sammelbecken für nicht zugeordnete oder auf gelöschte Panels
-  verweisende Blasen), "Welche Charaktere kommen auf der Seite vor?" (eindeutige
-  Charakterliste) und "Welche Charaktere kommen in welchen Panels vor?".
-- **Band-Bericht**: Aggregiert dieselben Daten über jede *bereits gespeicherte* Seite
-  des Bandes (noch nie geöffnete/gespeicherte Seiten werden übersprungen) — welche
-  Charaktere im gesamten Band vorkommen und auf welchen Seiten, plus eine
-  Seiten-für-Seiten-"wer sagt was"-Übersicht mit eigener Sprachauswahl.
-- Seiten- und Band-Bericht teilen sich dieselbe Auswertungslogik, damit beide nie
-  unterschiedliche Definitionen verwenden.
+A dedicated, lean reading screen (`/volumes/:id/read/:page`, entry points: a
+"Read" icon on every page card as well as a menu entry in the page overview)
+for QC/review people who just want to conveniently look through a volume —
+without the toolbar, inspectors, or undo/save mechanics of the full editor.
+Technically the same canvas engine as the editor (`PageCanvas.tsx` in
+`readOnly` mode), just with its own data loading directly via the API instead
+of via the editor store, since layout data is never written here.
+
+- **Free zoom/pan** like in the editor, plus **zoom to a specific panel**: a
+  strip of clickable panel thumbnails at the bottom of the screen, sorted in
+  reading order (same sort as reports/script sidebar) — clicking zooms the
+  view exactly onto that panel.
+- **Next/previous page** — arrow keys and buttons whose direction follows the
+  configured reading direction (with "rtl" you page forward to the left, like a
+  real manga reader). The actual page order stays unchanged, only which key
+  means "forward" flips.
+- **Characters, glossary, and script** in a single info panel, all read-only
+  (no editing forms like in the full management dialogs — a viewer account
+  couldn't call their write endpoints anyway). Glossary entries show every
+  stored language at once; the linked script has its own language switcher.
+- **Comment tools** (pin/box/freehand, see [Review Comments](#review-comments))
+  are always directly visible in the toolbar — leave a note at any time,
+  without an extra click.
+- **Double-page spread view**: shows the current page together with its
+  logical neighboring page side by side (auto-pairing, no cover special case),
+  sorted by the configured reading direction — with "rtl" the earlier-read
+  page sits on the right, with "ltr" on the left, like an actual open volume.
+  Forward/back then pages by two pages instead of one.
+- **Page comparison**: any freely chosen pages (up to four) can be opened side
+  by side simultaneously via a thumbnail picker — each page independently
+  zoomable/pannable, with its own panel zoom and own selection. Useful for
+  e.g. placing an earlier page next to the current one as a style reference.
+  Every displayed page has its own loading state, instead of blocking the
+  whole interface on a switch.
+
+## Reports
+
+- **Page report**: four live-computed views for the currently open page — "who
+  says what?" (every bubble in reading order with assigned character and
+  text), the same grouped by panel ("who says what in which panel?", with a
+  "no panel" collection for unassigned bubbles or bubbles referencing deleted
+  panels), "which characters appear on the page?" (a unique character list),
+  and "which characters appear in which panels?".
+- **Volume report**: aggregates the same data across every *already-saved*
+  page of the volume (pages never opened/saved are skipped) — which characters
+  appear across the whole volume and on which pages, plus a page-by-page
+  "who says what" overview with its own language selector.
+- The page and volume reports share the same evaluation logic, so the two
+  never use different definitions.
 
 ## Export & Import
 
-- **PNG-Export**: Rendert Seitenbild plus alle Blasen/Bilder/Kurventexte einer
-  gewählten Sprache auf einen Canvas und lädt das Ergebnis-PNG zum Server hoch, der es
-  im passend benannten Export-Ordner ablegt. Wählbarer Seitenbereich (aktuelle Seite /
-  alle / gerade / ungerade / Zahlenbereich / eigene Liste wie `1,3,5,10-14`), ein Filter
-  "nur Seiten mit Übersetzung für diese Sprache" (überspringt Seiten ohne Inhalt in der
-  Zielsprache), und ein Sprachfilter (alle oder nur eine). Fortschritt wird live
-  angezeigt.
-- **Druck-Export (TIFF, CMYK)**: zusätzliches Ausgabeformat neben PNG, im selben
-  Export-Dialog wählbar (gleicher Seiten-/Sprachfilter). Nutzt exakt dasselbe
-  gerenderte Bild wie der PNG-Export — nur die Nachbearbeitung unterscheidet
-  sich: der Server konvertiert es serverseitig (`sharp`) nach CMYK und schreibt
-  es als `.tiff` mit einer 300dpi-Auflösungsangabe in denselben Sprachordner.
-  Bewusst einfach gehalten: **keine Pixel-Neuberechnung** (die Auflösungsangabe
-  ist reine Metadaten, ein niedrig aufgelöster Scan wird nicht künstlich
-  "geschärft") und **generische CMYK-Konvertierung** (kein eigenes
-  FOGRA-/SWOP-ICC-Profil) — löst nicht das Vektortext-Problem professioneller
-  Druckvorstufen (siehe `docs/Professional-Workflow-Gaps.md`), macht den
-  bestehenden Raster-Export aber überhaupt erst druckfähig (PNG kennt technisch
-  keinen CMYK-Farbraum).
-- **CBZ-Export**: Im Export-Viewer kann der bereits exportierte Bildbestand einer Sprache
-  zusätzlich zum bestehenden ZIP-Download als `.cbz` heruntergeladen werden (von
-  Comic-Readern wie Komga/Kavita/ComicRack erkanntes Format). Anders als der generische
-  ZIP-Download werden dabei nur Seitenbild-Dateien eingepackt (keine versehentlich im
-  selben Ordner liegenden Druck-TIFFs/PDFs/PSDs), in echter Seitenreihenfolge (über die
-  tatsächliche Seitenliste des Bandes, nicht die Ordner-Sortierung) und fortlaufend
-  umbenannt (`0001.png`, `0002.png`, …), damit die Reihenfolge unabhängig von den
-  Original-Dateinamen stimmt. `PageCount` wird immer aus der tatsächlich gepackten
-  Seitenzahl berechnet, nie vom Nutzer vorgegeben.
-- **CBZ-Metadaten-Dialog** (`CbzMetadataModal.tsx`, Schema in `shared/src/cbz.ts`): Vor
-  dem CBZ-Download fragt ein Modal das komplette ComicInfo.xml-Feldset ab, in fünf Tabs
-  gruppiert — jedes Feld ist optional, ein leeres Feld wird in der XML einfach
-  ausgelassen:
-  - **Basis & Serie**: Titel, Reihe, Nummer, Band, Zusammenfassung, Notizen.
-  - **Mitwirkende**: Autor, Zeichner, Inker, Kolorist, Letterer, Cover-Zeichner,
-    Redaktion, Übersetzer.
-  - **Veröffentlichung**: Verlag, Imprint, Jahr/Monat/Tag, Web-Link, Sprache (ISO,
-    vorbelegt mit dem Code der gewählten Export-Sprache).
-  - **Kategorisierung**: Genre, Stichwörter, Altersfreigabe (Dropdown mit den
-    ComicInfo-Standardwerten), Leserichtung (`Manga`-Feld — Dropdown "Automatisch"
-    übernimmt die Leserichtung des Projekts, oder explizit `Yes`/`No`/
-    `YesAndRightToLeft`), Format, Scan-Informationen.
-  - **Seiten**: Tabelle mit einer Zeile pro tatsächlich zu exportierender Seite (gleiche
-    Filterung/Reihenfolge wie serverseitig) — pro Seite wählbarer `Type`
-    (`FrontCover`/`Story`/`BackCover`/…, erste/letzte Seite sind vorbelegt) und eine
-    `DoublePage`-Checkbox; ergibt den optionalen `<Pages>`-Block der ComicInfo.xml.
+- **PNG export**: renders the page image plus all bubbles/images/curved texts
+  of a chosen language onto a canvas and uploads the resulting PNG to the
+  server, which stores it in the appropriately named export folder. Selectable
+  page range (current page / all / even / odd / number range / custom list
+  like `1,3,5,10-14`), a filter "only pages with a translation for this
+  language" (skips pages with no content in the target language), and a
+  language filter (all or just one). Progress is shown live.
+- **Print export (TIFF, CMYK)**: an additional output format alongside PNG,
+  selectable in the same export dialog (same page/language filter). Uses
+  exactly the same rendered image as the PNG export — only the post-processing
+  differs: the server converts it server-side (`sharp`) to CMYK and writes it
+  as `.tiff` with a 300dpi resolution tag into the same language folder.
+  Deliberately kept simple: **no pixel recomputation** (the resolution tag is
+  pure metadata, a low-resolution scan is not artificially "sharpened") and
+  **generic CMYK conversion** (no dedicated FOGRA/SWOP ICC profile) — doesn't
+  solve the vector-text problem of professional print prepress (see
+  `docs/Professional-Workflow-Gaps.md`), but makes the existing raster export
+  print-capable in the first place (PNG technically has no CMYK color space).
+- **CBZ export**: in the export viewer, the already-exported image set for a
+  language can be downloaded as `.cbz` in addition to the existing ZIP download
+  (a format recognized by comic readers like Komga/Kavita/ComicRack). Unlike
+  the generic ZIP download, only page-image files are packed (no print
+  TIFFs/PDFs/PSDs that happen to sit in the same folder), in true page order
+  (via the volume's actual page list, not folder sorting), and consecutively
+  renamed (`0001.png`, `0002.png`, …), so the order is correct regardless of
+  the original filenames. `PageCount` is always computed from the actual
+  number of packed pages, never supplied by the user.
+- **CBZ metadata dialog** (`CbzMetadataModal.tsx`, schema in
+  `shared/src/cbz.ts`): before the CBZ download, a modal asks for the complete
+  ComicInfo.xml field set, grouped into five tabs — every field is optional, an
+  empty field is simply omitted from the XML:
+  - **Basics & series**: title, series, number, volume, summary, notes.
+  - **Contributors**: writer, penciller, inker, colorist, letterer, cover
+    artist, editor, translator.
+  - **Publication**: publisher, imprint, year/month/day, web link, language
+    (ISO, pre-filled with the code of the chosen export language).
+  - **Categorization**: genre, tags, age rating (dropdown with the standard
+    ComicInfo values), reading direction (the `Manga` field — dropdown
+    "Automatic" takes over the project's reading direction, or explicit
+    `Yes`/`No`/`YesAndRightToLeft`), format, scan information.
+  - **Pages**: a table with one row per page actually to be exported (same
+    filtering/order as server-side) — a selectable `Type` per page
+    (`FrontCover`/`Story`/`BackCover`/…, first/last page pre-filled) and a
+    `DoublePage` checkbox; produces the optional `<Pages>` block of the
+    ComicInfo.xml.
 
-  Der Download läuft dafür als POST mit JSON-Body statt eines einfachen Downloadlinks
-  (das volle Feldset inklusive Seiten-Tabelle kann eine Query-String-Downloadlink-URL
-  sprengen) — die Antwort kommt als Blob zurück und wird per Objekt-URL + synthetischem
-  Klick gespeichert.
-- **Rendering-Grundlagen**: Schrumpf-zu-Passform + Umbruch für horizontalen Text,
-  vollständige Tategaki-Engine (erzwungene Umbrüche, Furigana-Läufe,
-  Tate-chū-yoko-Ziffern-/Lateinläufe, Kana-Verkleinerung/-Versatz, Kinsoku-Shori-
-  Umbruchregeln), Homographie-Verzerrung von Text/Bild in ein beliebiges Viereck,
-  gemeinsame Konturen-/Schwanz-Zeichenlogik für Blasenstile (identisch zwischen
-  Live-Vorschau und PNG-Export, damit beide nie auseinanderlaufen), gemeinsame
-  Volltonfarbe-/Farbverlauf-/Umrandungs-Zeichenlogik für Text, SVG-Konturen-Parsing
-  (größte Bounding-Box-Geometrie wird gewählt, falls die SVG mehrere enthält).
-- **JSON-Export/-Import** (Seiten-Ebene): Das Layout einer einzelnen Seite kann als
-  JSON heruntergeladen und wieder importiert werden (gegen das Zod-Schema validiert —
-  ein Formatfehler zeigt eine Fehlermeldung statt die Seite still zu beschädigen);
-  ersetzt dabei nur das Blasen-Array, nicht Bilder/Kurventexte/Panels.
-- **JSON-Export/-Import** (Band-Ebene): Alle gespeicherten Seiten-Layouts eines Bandes
-  können als ein ZIP heruntergeladen werden; ein ZIP mit Layout-JSONs kann umgekehrt
-  importiert werden (ungültige/beschädigte Einträge im ZIP werden einzeln übersprungen
-  und gemeldet, statt den ganzen Import abzubrechen).
+  The download runs as a POST with a JSON body instead of a simple download
+  link (the full field set including the page table could blow up a
+  query-string download-link URL) — the response comes back as a blob and is
+  saved via an object URL + synthetic click.
+- **Rendering fundamentals**: shrink-to-fit + wrapping for horizontal text, a
+  complete tategaki engine (forced line breaks, furigana runs, tate-chū-yoko
+  digit/Latin runs, kana shrink/offset, kinsoku shori line-breaking rules),
+  homography warping of text/image into an arbitrary quad, shared
+  outline/tail drawing logic for bubble styles (identical between live preview
+  and PNG export, so the two never drift apart), shared solid-color/gradient/
+  outline drawing logic for text, SVG contour parsing (the largest
+  bounding-box geometry is chosen if the SVG contains several).
+- **JSON export/import** (page level): a single page's layout can be
+  downloaded as JSON and imported again (validated against the Zod schema — a
+  format error shows an error message instead of silently corrupting the
+  page); replaces only the bubble array, not images/curved texts/panels.
+- **JSON export/import** (volume level): all saved page layouts of a volume can
+  be downloaded as one ZIP; conversely, a ZIP with layout JSONs can be
+  imported (invalid/corrupted entries in the ZIP are individually skipped and
+  reported, instead of aborting the whole import).
 
-## Schriftarten
+## Fonts
 
-Eigene Schriftdateien (`.ttf`/`.otf`/`.woff`/`.woff2`) können hochgeladen werden und
-sind danach pro Blase/Kurventext per Dropdown wählbar. Schriften werden einmalig über
-die `FontFace`-API des Browsers registriert und zwischen Live-Vorschau und
-PNG-Export geteilt (beide warten explizit auf denselben Ladevorgang), damit eine
-Schrift nie in der Vorschau anders aussieht als im Export. Ein interner Zähler sorgt
-dafür, dass Blasen nach dem Laden der echten Schrift neu gezeichnet werden (statt beim
-anfänglichen Ersatzschrift-Rendering zu bleiben).
+Custom font files (`.ttf`/`.otf`/`.woff`/`.woff2`) can be uploaded and are then
+selectable per bubble/curved text via a dropdown. Fonts are registered once via
+the browser's `FontFace` API and shared between the live preview and the PNG
+export (both explicitly wait for the same loading process), so a font never
+looks different in the preview than in the export. An internal counter ensures
+bubbles are redrawn once the real font has loaded (instead of staying on the
+initial fallback-font rendering).
 
-## Projekt-Assets-Ordner
+## Project Asset Folder
 
-Schriften, SVG-Blasenkonturen und die Bild-Bibliothek liegen standardmäßig projektweit
-gemeinsam in einer globalen Bibliothek. In den Einstellungen kann zusätzlich ein
-projekteigener Assets-Ordner hinterlegt werden (analog zum Projekt-Ordner, mit
-Datei-Browser und Existenz-Prüfung) — darin legt das Tool automatisch die Unterordner
-`fonts/`, `images/` und `bubble-svgs/` an.
+Fonts, SVG bubble contours, and the image library live, by default, project-wide
+together in a global library. In settings, a project-specific asset folder can
+additionally be configured (analogous to the project folder, with a file
+browser and existence check) — the tool automatically creates the `fonts/`,
+`images/`, and `bubble-svgs/` subfolders within it.
 
-- **Additiv, nicht ersetzend**: Die gemeinsame Bibliothek bleibt für jedes Projekt
-  weiterhin sichtbar/nutzbar, auch wenn ein eigener Assets-Ordner konfiguriert ist. Der
-  Projekt-Ordner kommt als zusätzliche Ebene obendrauf.
-- **Namenskollision**: Hat eine Datei im Projekt-Ordner denselben Dateinamen wie eine in
-  der gemeinsamen Bibliothek, gewinnt die Projekt-Version — sowohl in der Liste
-  (Font-/Bild-/SVG-Auswahl) als auch beim Ausliefern.
-- **Upload-Ziel**: Neue Uploads landen automatisch im Projekt-Ordner, sobald einer
-  konfiguriert ist. Ist keiner konfiguriert (der Fall für alle Projekte ohne diese
-  Einstellung), verhält sich alles wie zuvor — rein global, keine Migration nötig.
-- Font-/Bild-/SVG-Auswahl zeigen projekteigene und gemeinsame Einträge getrennt
-  gruppiert ("Projekt"/"Gemeinsam"), damit klar ist, was nur in diesem Projekt verfügbar
-  ist.
+- **Additive, not replacing**: the shared library remains visible/usable for
+  every project even when a custom asset folder is configured. The project
+  folder comes as an additional layer on top.
+- **Filename collision**: if a file in the project folder has the same filename
+  as one in the shared library, the project version wins — both in the listing
+  (font/image/SVG picker) and when serving it.
+- **Upload target**: new uploads automatically land in the project folder as
+  soon as one is configured. If none is configured (the case for every project
+  without this setting), everything behaves as before — purely global, no
+  migration needed.
+- The font/image/SVG picker show project-specific and shared entries in
+  separate groups ("Project"/"Shared"), making it clear what's only available
+  in this project.
 
-**Ordnerverwaltung** (Bild-Bibliothek und SVG-Blasenkonturen, nicht Schriften): beide
-Bibliotheken lassen sich in beliebig tiefe Unterordner gliedern (z. B. "Effekte",
-"Icons"), um bei wachsender Sammlung schneller etwas wiederzufinden.
-- Im jeweiligen Bild-/SVG-Picker-Popover navigiert man per Breadcrumb + Ordner-Chips
-  durch die Struktur; ein Klick auf einen Ordner-Chip springt hinein, "+ Neuer Ordner"
-  legt einen neuen Unterordner auf der aktuellen Ebene an. Ein Ordner lässt sich nur
-  löschen, wenn er **auf beiden Seiten** (gemeinsame Bibliothek wie projekteigener
-  Ordner) leer ist.
-- Ein Upload landet automatisch im gerade geöffneten Ordner; bereits vorhandene Dateien
-  lassen sich nachträglich per "In Ordner verschieben…"-Aktion an der jeweiligen
-  Bild-Kachel einsortieren.
-- Ein bereits platziertes Bild/eine SVG-Kontur merkt sich beim Einfügen ihren vollen
-  Pfad (Ordner + Dateiname) — verschiebt man die Datei später in einen anderen Ordner,
-  verweisen bereits vorhandene Platzierungen weiterhin auf den alten Pfad (kein
-  automatisches Nachziehen aller Referenzen), genau wie beim Verschieben einer Datei
-  im Dateisystem, während ein anderes Dokument noch den alten Pfad kennt.
+**Folder management** (image library and SVG bubble contours, not fonts): both
+libraries can be organized into arbitrarily deep subfolders (e.g. "Effects",
+"Icons"), to find things faster as the collection grows.
+- In the respective image/SVG picker popover, navigation through the structure
+  is via breadcrumb + folder chips; clicking a folder chip jumps into it,
+  "+ New folder" creates a new subfolder at the current level. A folder can
+  only be deleted if it's empty **on both sides** (shared library as well as
+  project-specific folder).
+- An upload automatically lands in the currently open folder; already-existing
+  files can be sorted afterward via a "Move to folder…" action on the
+  respective image tile.
+- An already-placed image/SVG contour remembers its full path (folder +
+  filename) when inserted — if the file is later moved to a different folder,
+  already-existing placements still point at the old path (no automatic
+  updating of all references), just like moving a file in the filesystem while
+  another document still knows the old path.
 
-**Thumbnail-Ordner** (Cache der Seiten-Vorschaubilder) ist ein eigenes, unabhängiges
-Einstellungsfeld — kein Unterordner des Assets-Ordners, da reiner Rendering-Cache statt
-kuratiertes Asset. Bleibt er leer, verwendet das Tool automatisch einen `thumbnails/`-
-Ordner direkt neben der Projektdatei, statt (wie Fonts/Bilder/SVGs) auf eine gemeinsame
-globale Bibliothek zurückzufallen — jedes Projekt bekommt so ohne weitere Konfiguration
-seinen eigenen Cache-Ordner, unabhängig davon, ob überhaupt ein Assets-Ordner gesetzt ist.
+**Thumbnail folder** (cache of page thumbnails) is its own, independent
+settings field — not a subfolder of the asset folder, since it's a pure
+rendering cache rather than a curated asset. If left empty, the tool
+automatically uses a `thumbnails/` folder right next to the project file,
+instead of falling back to a shared global library (like fonts/images/SVGs) —
+every project thus gets its own cache folder without further configuration,
+regardless of whether an asset folder is set at all.
 
 ## Undo/Redo
 
-Ein einzelner Verlaufsstapel (max. 50 Einträge) aus vollständigen Seiten-Layout-
-Momentaufnahmen, für alle Undo/Redo-Vorgänge. Diskrete Aktionen (Element
-hinzufügen/entfernen, Auswahl löschen/duplizieren) sichern sofort eine
-Momentaufnahme; fortlaufende Aktionen (Text tippen, Ziehen/Skalieren,
-Pfeiltasten-Verschieben) werden gebündelt (600 ms Verzögerung), sodass ein ganzer
-Vorgangs-Schub ein einziger Undo-Schritt wird (Zustand von *vor* Beginn des Schubs),
-statt ein Schritt pro Tastendruck/Pixel. Undo/Redo hebt die aktuelle Auswahl auf.
-Duplizieren versetzt Kopien um 24 px, damit sie nicht exakt auf dem Original liegen.
+A single history stack (max. 50 entries) of complete page-layout snapshots, for
+all undo/redo operations. Discrete actions (add/remove element, delete/
+duplicate selection) save a snapshot immediately; continuous actions (typing
+text, dragging/scaling, arrow-key movement) are batched (600ms delay), so a
+whole burst of activity becomes a single undo step (the state from *before*
+the burst started), instead of one step per keystroke/pixel. Undo/redo clears
+the current selection. Duplicating offsets copies by 24px, so they don't sit
+exactly on top of the original.
 
-## Server-API
+## Server API
 
-| Route-Datei | Zuständigkeit |
+| Route file | Responsibility |
 |---|---|
-| `volumes.ts` | Erkannte Bände auflisten, inkl. vorhandener Sprachordner |
-| `pages.ts` | Seiten eines Bandes auflisten, Vollbild + zwischengespeichertes Vorschaubild ausliefern |
-| `layout.ts` | Seiten-Layout lesen/speichern (legt bei Bedarf ein leeres an), Band-weiter ZIP-Export/-Import, `/reports` für den Band-Bericht |
-| `comments.ts` | CRUD für [Review-Kommentare](#review-kommentare) (granulare Mutations-Routen statt Ganzdokument-PUT), `mentionable-members` für den @-Picker |
-| `export.ts` | Hochgeladenes PNG entgegennehmen und im Export-Ordner ablegen, Export-Ordner als ZIP oder CBZ herunterladen |
-| `languages.ts` | CRUD für die Sprachliste des Projekts, mit Konfliktprüfung auf doppelte Codes/Suffixe |
-| `characters.ts` | CRUD für die Charakterliste des Projekts |
-| `glossary.ts` | CRUD für die projektweite Glossarliste |
-| `presets.ts` | CRUD für die projektweite Lettering-Preset-Liste |
-| `settings.ts` | Projekteinstellungen lesen/ändern, inkl. Live-Prüfung der Scan-Wurzel |
-| `images.ts` | Bild-Bibliothek hoch-/auflisten/ausliefern, mit Maßermittlung (global + [Projekt-Assets-Ordner](#projekt-assets-ordner) gemergt) |
-| `fonts.ts` | Schriftdateien hoch-/auflisten/ausliefern (global + [Projekt-Assets-Ordner](#projekt-assets-ordner) gemergt) |
-| `bubbleSvgs.ts` | Eigene SVG-Blasenkonturen hoch-/auflisten/ausliefern (global + [Projekt-Assets-Ordner](#projekt-assets-ordner) gemergt) |
-| `browse.ts` | Serverseitiger Dateisystem-Browser (Laufwerke, Verzeichnislisten, optionaler `.json`-Filter) |
-| `project.ts` | Aktuelles Projekt abfragen, zuletzt geöffnete Projekte, Projekt öffnen/anlegen |
+| `volumes.ts` | List detected volumes, including existing language folders |
+| `pages.ts` | List a volume's pages, serve full-size + cached thumbnail image |
+| `layout.ts` | Read/save a page layout (creates an empty one if needed), volume-wide ZIP export/import, `/reports` for the volume report |
+| `comments.ts` | CRUD for [Review Comments](#review-comments) (granular mutation routes instead of whole-document PUT), `mentionable-members` for the @-picker |
+| `export.ts` | Accept an uploaded PNG and store it in the export folder, download the export folder as ZIP or CBZ |
+| `languages.ts` | CRUD for the project's language list, with conflict checking for duplicate codes/suffixes |
+| `characters.ts` | CRUD for the project's character list |
+| `glossary.ts` | CRUD for the project-wide glossary list |
+| `presets.ts` | CRUD for the project-wide lettering preset list |
+| `settings.ts` | Read/change project settings, including a live check of the scan root |
+| `images.ts` | Upload/list/serve the image library, with dimension detection (merged global + [project asset folder](#project-asset-folder)) |
+| `fonts.ts` | Upload/list/serve font files (merged global + [project asset folder](#project-asset-folder)) |
+| `bubbleSvgs.ts` | Upload/list/serve custom SVG bubble contours (merged global + [project asset folder](#project-asset-folder)) |
+| `browse.ts` | Server-side filesystem browser (drives, directory listings, optional `.json` filter) |
+| `project.ts` | Query the current project, recently opened projects, open/create a project |
 
-## Fehlerbehandlung & Sicherheit
+## Error Handling & Security
 
-- **`asyncHandler`**: Umschließt jeden Express-Routen-Handler, damit ein
-  geworfener/abgelehnter Fehler in einer async-Funktion tatsächlich bei `next()`
-  landet — sonst würde die Anfrage einfach hängen bleiben statt eine Antwort zu
-  liefern.
-- **Globale Fehler-Middleware**: Ein spezieller "kein aktives Projekt"-Fehler wird zu
-  einer 409-Antwort (damit der Client zum Projekt-Umschalter umleiten kann), alles
-  andere wird serverseitig geloggt und als generischer 500-Fehler beantwortet.
-- **Schutz vor Path-Traversal**: Jede datei-ausliefernde Route (Schriften, Bilder,
-  SVG-Konturen) lehnt Dateinamen ab, die `..`, Pfadtrenner oder einen reinen
-  `.`/`..`-Namen enthalten, bevor sie mit dem festen Speicherordner kombiniert werden —
-  ein präparierter Dateiname kann so nicht auf beliebige andere Dateien zugreifen.
-  Hochgeladene Dateinamen werden zusätzlich bereinigt, bevor sie geschrieben werden.
+- **`asyncHandler`**: wraps every Express route handler so a thrown/rejected
+  error in an async function actually reaches `next()` — otherwise the request
+  would simply hang instead of returning a response.
+- **Global error middleware**: a special "no active project" error becomes a
+  409 response (so the client can redirect to the project switcher), everything
+  else is logged server-side and answered with a generic 500 error.
+- **Path-traversal protection**: every file-serving route (fonts, images, SVG
+  contours) rejects filenames containing `..`, path separators, or a bare
+  `.`/`..` name, before combining them with the fixed storage folder — a
+  crafted filename therefore can't reach arbitrary other files. Uploaded
+  filenames are additionally sanitized before being written.
 
 ## Tests
 
-Vitest, aktuell 34 Server- + 4 Client-Testdateien (345 + 78 Tests, Stand aktueller Code):
+Vitest, currently 34 server + 4 client test files (345 + 78 tests, as of the
+current code):
 
-- **Server — Routen-Ebene** (`server/src/routes/*.test.ts`, per `supertest` gegen eine
-  echte, temporäre Projekt-/Datenverzeichnis-Instanz — nie das reale `server/data/` oder
-  echte Projektdaten): für praktisch jede Route-Datei eine eigene Testdatei, u. a.
-  `volumes`, `pages`, `layout`, `export`, `script`, `comments`, `auth`, `project`,
-  `characters`, `glossary`, `presets`, `settings`, `languages`, `fonts`, `images`,
-  `bubbleSvgs`.
-- **Server — Lib-Ebene** (`server/src/lib/**/*.test.ts`): Schema-Validierung/
-  Default-Werte (`sharedSchemas`, `layoutSchema`), Pfad-/Ordnernamen-Vorlagen und die
-  Path-Traversal-Prüfung (`paths`), Rendering-Geometrie und -Typografie
-  (`rendering/textLayout`, `rendering/verticalTypesetting`, `rendering/curvedText`,
-  `rendering/bubbleBackground`, `rendering/perspective`, `rendering/cutPanel` — inkl.
-  der Regressionsprüfung, dass beim Cut-Panel-Rendern alle Loch-Füllungen vor allen
-  Inhalts-Zeichnungen passieren, siehe [Cut-Panel](#cut-panel)), Seiten-Rasterung
-  (`pageRaster`), Schriftauflösung (`fontResolver`), Vektor-PDF-/PSD-Aufbau
-  (`vectorPdf/buildPdfPage`, `psdExport`), Auth-Store, Papierkorb-Sweep (`trash`) und
-  den optionalen Mailer für Kommentar-@-Erwähnungen (`mailer`).
-- **Client** (`client/src/**/*.test.ts`): reine Geometrie-/Auswahl-/Report-Logik, die
-  sich Live-Vorschau und Export teilen — `export/pageSelection` (Seitenbereichs-Parsing),
-  `editor/geometry`, `editor/reportUtils`, `state/editorStore`.
+- **Server — route level** (`server/src/routes/*.test.ts`, via `supertest`
+  against a real, temporary project/data-directory instance — never the real
+  `server/data/` or real project data): a dedicated test file for practically
+  every route file, including `volumes`, `pages`, `layout`, `export`, `script`,
+  `comments`, `auth`, `project`, `characters`, `glossary`, `presets`,
+  `settings`, `languages`, `fonts`, `images`, `bubbleSvgs`.
+- **Server — lib level** (`server/src/lib/**/*.test.ts`): schema
+  validation/default values (`sharedSchemas`, `layoutSchema`), path/folder-name
+  templates and path-traversal checking (`paths`), rendering geometry and
+  typography (`rendering/textLayout`, `rendering/verticalTypesetting`,
+  `rendering/curvedText`, `rendering/bubbleBackground`, `rendering/perspective`,
+  `rendering/cutPanel` — including the regression check that, when rendering a
+  cut panel, all hole fills happen before all content drawing, see
+  [Cut Panel](#cut-panel)), page rasterization (`pageRaster`), font resolution
+  (`fontResolver`), vector PDF/PSD construction (`vectorPdf/buildPdfPage`,
+  `psdExport`), the auth store, trash sweep (`trash`), and the optional mailer
+  for comment @-mentions (`mailer`).
+- **Client** (`client/src/**/*.test.ts`): pure geometry/selection/report logic
+  shared by the live preview and export — `export/pageSelection` (page-range
+  parsing), `editor/geometry`, `editor/reportUtils`, `state/editorStore`.
 
-- **E2E** (`e2e/`, Playwright, eigenes Paket — nicht Teil von `npm test`): vier
-  Kern-Abläufe im echten Browser gegen eine eigens dafür gestartete, isolierte
-  Server-/Client-Instanz (eigene Ports 3101/4173, eigener `LETTERING_DATA_DIR`/
-  Scan-Root unter `e2e/tmp-run/`, per `e2e/global-setup.ts` einmalig vor der Suite
-  provisioniert über die bestehende Projekt-API, nicht die UI) — UI-Login, Projekt
-  über den Projekt-Umschalter öffnen, eine Bubble anlegen/Text setzen/speichern (inkl.
-  Reload-Check, dass es wirklich persistiert wurde), PNG-Export auslösen (geprüft per
-  UI-Meldung **und** tatsächlicher Datei auf der Platte). Kein vollständiges Netz über
-  jedes Feature — ein Grundgerüst für die wichtigsten Abläufe, auf dem sich gezielt
-  weitere Specs ergänzen lassen (z. B. Kommentare, Cut-Panel, Reader). Siehe
-  `README.md`'s "E2E tests"-Abschnitt für die Ausführung.
+- **E2E** (`e2e/`, Playwright, its own package — not part of `npm test`): four
+  core flows in a real browser against a dedicated, isolated server/client
+  instance started for this purpose (its own ports 3101/4173, its own
+  `LETTERING_DATA_DIR`/scan root under `e2e/tmp-run/`, provisioned once before
+  the suite by `e2e/global-setup.ts` via the existing project API, not the UI)
+  — UI login, opening a project via the project switcher, creating a
+  bubble/setting text/saving (including a reload check that it actually
+  persisted), triggering a PNG export (checked via both the UI message **and**
+  the actual file on disk). Not full coverage of every feature — a foundation
+  for the most important flows, on which further specs can be added in a
+  targeted way (e.g. comments, cut panel, reader). See the README.md's "E2E
+  tests" section for how to run it.
