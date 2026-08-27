@@ -306,7 +306,13 @@
     "deletePage": "Delete page",
     "deletePageConfirm": "Delete page \"{{page}}\"? The source file moves to trash (not immediately permanent) — a lettering file already saved for this page is kept either way.",
     "pagesCount_one": "{{count}} page",
-    "pagesCount_other": "{{count}} pages"
+    "pagesCount_other": "{{count}} pages",
+    "dragHandle": "Drag to reorder this page",
+    "insertHere": "Insert a page here",
+    "orderConflictTitle": "The page order was changed by someone else",
+    "orderConflictMessage": "Someone else changed the page order while you were editing it. Keep your version (overwrites theirs) or load their version (discards your unsaved reordering)?",
+    "orderConflictKeepMine": "Keep my version",
+    "orderConflictReload": "Load their version"
   },
   "projectSwitcher": {
     "heading": "Open project",

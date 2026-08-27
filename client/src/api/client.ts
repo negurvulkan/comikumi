@@ -245,6 +245,39 @@ export const api = {
       method: "DELETE",
     }).then((r) => json<{ ok: true }>(r)),
 
+  /** Same GET+ETag shape as getLayoutWithEtag() — the returned `order` is always a
+   * complete, immediately usable array (derived from the natural filename sort when no
+   * order has been saved yet, see server/src/routes/pageOrder.ts), so the page grid
+   * never needs a separate "no order yet" branch. */
+  getPageOrder: async (volumeId: string): Promise<{ order: string[]; etag: string | null }> => {
+    const res = await authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/order`));
+    const body = await json<{ order: string[] }>(res);
+    return { order: body.order, etag: res.headers.get("ETag") };
+  },
+
+  /** Same conflict-handling shape as saveLayout() — `ifMatch`, when given, is sent as
+   * an If-Match header, and a 409 (someone else saved a different order since `ifMatch`
+   * was read) is returned to the caller rather than thrown, since it's an expected,
+   * recoverable outcome the page grid needs to react to (conflict modal), not a hard
+   * error. */
+  savePageOrder: async (
+    volumeId: string,
+    order: string[],
+    ifMatch?: string
+  ): Promise<{ conflict: false; etag: string | null } | { conflict: true; currentOrder: string[] }> => {
+    const res = await authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/order`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(ifMatch ? { "If-Match": ifMatch } : {}) },
+      body: JSON.stringify({ order }),
+    });
+    if (res.status === 409) {
+      const body = (await res.json()) as { currentOrder: string[] };
+      return { conflict: true, currentOrder: body.currentOrder };
+    }
+    if (!res.ok) await throwApiError(res);
+    return { conflict: false, etag: res.headers.get("ETag") };
+  },
+
   getLayout: (volumeId: string, page: string) =>
     authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`)).then((r) =>
       json<PageLayout>(r)

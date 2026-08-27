@@ -328,6 +328,23 @@ exportRouter.get(
       return;
     }
 
+    // Order recognized page images by the volume's actual page order (same source of
+    // truth as the CBZ export above), then append everything else (stray PDFs/PSDs/
+    // etc. this generic export also zips up) unchanged, in whatever order fs.readdir
+    // returned them — those have no page-order concept to sort by.
+    const imagesByPage = new Map<string, string>();
+    for (const file of files) {
+      const ext = path.extname(file.name).toLowerCase();
+      if (!PAGE_IMAGE_EXTENSIONS.has(ext)) continue;
+      imagesByPage.set(path.basename(file.name, ext), file.name);
+    }
+    const pages = await listPages(volume);
+    const orderedPageFileNames = new Set(pages.map((p) => imagesByPage.get(p.page)).filter((f): f is string => !!f));
+    const orderedFileNames = [
+      ...pages.map((p) => imagesByPage.get(p.page)).filter((f): f is string => !!f),
+      ...files.map((f) => f.name).filter((name) => !orderedPageFileNames.has(name)),
+    ];
+
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", `attachment; filename="${volume.bookFolderName}_${folderSuffix}_exports.zip"`);
 
@@ -338,8 +355,8 @@ exportRouter.get(
       }
     });
     archive.pipe(res);
-    for (const file of files) {
-      archive.file(path.join(dir, file.name), { name: file.name });
+    for (const name of orderedFileNames) {
+      archive.file(path.join(dir, name), { name });
     }
     await archive.finalize();
   })

@@ -28,7 +28,12 @@ function loadHtmlImage(url: string): Promise<HTMLImageElement> {
     // the demo broker's session-routing cookie is sent on this cross-origin load too.
     img.crossOrigin = "use-credentials";
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    // img.onerror fires with a raw DOM Event, not an Error — translateApiError()
+    // only special-cases actual Error instances, so a bare `reject(event)` here would
+    // surface as an opaque "[object Event]" instead of something diagnosable. Include
+    // the failing URL (with the auth token stripped — see authUrl() — since this
+    // message can end up in an error banner the user might screenshot/share).
+    img.onerror = () => reject(new Error(`Bild konnte nicht geladen werden: ${url.replace(/([?&]token=)[^&]+/, "$1***")}`));
     img.src = url;
   });
 }

@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readSettings, type ActiveProject } from "./projectStore.js";
+import { pageOrderFileName } from "./paths.js";
+import { PageOrderDocumentSchema } from "../../../shared/src/pageOrder.js";
 
 export interface VolumeInfo {
   /** Stable id derived from the path relative to 04_Comic_Production, e.g. "Volume_01/volume_01" */
@@ -118,7 +120,23 @@ export interface PageInfo {
  * the pages.ts upload route (writing), so both sides agree on what counts as a page. */
 export const PAGE_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
-export async function listPages(volume: VolumeInfo): Promise<PageInfo[]> {
+export function pageOrderFilePathFor(volume: VolumeInfo): string {
+  return path.join(volume.parentDir, pageOrderFileName(volume.bookFolderName));
+}
+
+/** Reads the volume's saved page-display-order document — [] if it doesn't exist yet
+ * or fails to parse (same silent-tolerance idiom as findEmptyDirs() above: an order
+ * file is optional bookkeeping, never a hard requirement for a volume to function). */
+async function readPageOrder(volume: VolumeInfo): Promise<string[]> {
+  try {
+    const raw = await fs.readFile(pageOrderFilePathFor(volume), "utf-8");
+    return PageOrderDocumentSchema.parse(JSON.parse(raw)).order;
+  } catch {
+    return [];
+  }
+}
+
+async function scanPageFiles(volume: VolumeInfo): Promise<PageInfo[]> {
   let entries: import("node:fs").Dirent[];
   try {
     entries = await fs.readdir(volume.emptyDir, { withFileTypes: true });
@@ -133,4 +151,27 @@ export async function listPages(volume: VolumeInfo): Promise<PageInfo[]> {
       absolutePath: path.join(volume.emptyDir, e.name),
     }))
     .sort((a, b) => a.page.localeCompare(b.page, undefined, { numeric: true }));
+}
+
+/** The single source of truth for a volume's page display order — every other caller
+ * (page list/image/thumbnail routes, reports, CBZ/ZIP export, volume stats) must go
+ * through this function rather than re-deriving order itself, so they can never
+ * disagree. Order comes from the saved page-order document when one exists, applied
+ * on top of a plain disk scan: any name in the stored order no longer present on disk
+ * is silently dropped (a deleted page — matches the "stale reference is harmless"
+ * convention used for Bubble.panelId/characterId/presetId elsewhere), and any page on
+ * disk but missing from the stored order (freshly uploaded, or no order file saved
+ * yet) is appended at the end, in the same natural/numeric filename order this
+ * function used exclusively before the order document existed — so a volume with no
+ * order file behaves identically to before, with no migration needed. */
+export async function listPages(volume: VolumeInfo): Promise<PageInfo[]> {
+  const diskPages = await scanPageFiles(volume);
+  const storedOrder = await readPageOrder(volume);
+  if (storedOrder.length === 0) return diskPages;
+
+  const byName = new Map(diskPages.map((p) => [p.page, p]));
+  const ordered = storedOrder.filter((name) => byName.has(name)).map((name) => byName.get(name)!);
+  const orderedNames = new Set(ordered.map((p) => p.page));
+  const stragglers = diskPages.filter((p) => !orderedNames.has(p.page));
+  return [...ordered, ...stragglers];
 }

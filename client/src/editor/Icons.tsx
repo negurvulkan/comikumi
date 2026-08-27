@@ -233,6 +233,21 @@ export function ChevronDownIcon() {
   );
 }
 
+/** Six-dot grip — the draggable handle on a PageGrid.tsx card, kept small and separate
+ * from the rest of the card so dragging doesn't fight the card's own click-to-open. */
+export function DragHandleIcon() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 14 14" fill="currentColor" stroke="none">
+      <circle cx="4" cy="3" r="1.3" />
+      <circle cx="10" cy="3" r="1.3" />
+      <circle cx="4" cy="7" r="1.3" />
+      <circle cx="10" cy="7" r="1.3" />
+      <circle cx="4" cy="11" r="1.3" />
+      <circle cx="10" cy="11" r="1.3" />
+    </svg>
+  );
+}
+
 /** A four-point sparkle — used for the AI-assistant panel toggle. */
 export function AIAssistantIcon() {
   return (

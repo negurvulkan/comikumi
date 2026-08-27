@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
@@ -18,11 +21,13 @@ import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { VolumeReportModal } from "../editor/VolumeReportModal";
 import { NewBlankPageDialog } from "../editor/NewBlankPageDialog";
+import { PageOrderConflictModal } from "../editor/PageOrderConflictModal";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
-import { ReadIcon } from "../editor/Icons";
+import { ReadIcon, DragHandleIcon } from "../editor/Icons";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
 import { nextPageName } from "./pageNaming";
+import { movePage, insertPageAt } from "./pageOrdering";
 
 const DEFAULT_BLANK_PAGE_WIDTH = 2000;
 const DEFAULT_BLANK_PAGE_HEIGHT = 3000;
@@ -48,6 +53,79 @@ function blankPagePngFile(width: number, height: number, fileName: string): Prom
   });
 }
 
+interface PageCardProps {
+  page: PageSummary;
+  volumeId: string;
+  href: string;
+  readHref: string;
+  canDrag: boolean;
+  canManage: boolean;
+  onDelete: () => void;
+  onInsertBefore: () => void;
+  readTitle: string;
+  deleteTitle: string;
+  insertTitle: string;
+  dragTitle: string;
+}
+
+/** One page card — a stable, module-level component (not defined inline in a `.map`)
+ * so dnd-kit's useSortable() hook identity stays consistent across renders. Drag
+ * listeners live only on the small grip handle, never the whole card, so the existing
+ * click-to-open-editor behavior on the card body keeps working unchanged. */
+function PageCard({ page, volumeId, href, readHref, canDrag, canManage, onDelete, onInsertBefore, readTitle, deleteTitle, insertTitle, dragTitle }: PageCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.page, disabled: !canDrag });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="card-wrap">
+      <Link to={href} className="card">
+        <img src={api.pageThumbnailUrl(volumeId, page.page)} alt={page.page} loading="lazy" />
+        <div className="label">{page.page}</div>
+      </Link>
+      <Link to={readHref} className="card-read-btn" title={readTitle}>
+        <ReadIcon />
+      </Link>
+      {canManage && (
+        <button
+          type="button"
+          className="card-delete-btn"
+          title={deleteTitle}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
+          ×
+        </button>
+      )}
+      {canManage && (
+        <button
+          type="button"
+          className="card-insert-btn"
+          title={insertTitle}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onInsertBefore();
+          }}
+        >
+          +
+        </button>
+      )}
+      {canDrag && (
+        <button type="button" className="card-drag-handle" title={dragTitle} {...attributes} {...listeners}>
+          <DragHandleIcon />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function PageGrid() {
   const { t } = useTranslation();
   const { volumeId = "", projectId = "" } = useParams();
@@ -55,7 +133,10 @@ export function PageGrid() {
   const pBase = `/p/${encodeURIComponent(projectId)}`;
   const { project } = useProject();
   const { hasAtLeast } = useProjectRole();
+  const canManagePages = hasAtLeast("letterer");
   const [pages, setPages] = useState<PageSummary[] | null>(null);
+  const [orderEtag, setOrderEtag] = useState<string | null>(null);
+  const [orderConflict, setOrderConflict] = useState<{ currentOrder: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -70,14 +151,29 @@ export function PageGrid() {
   const [showPresets, setShowPresets] = useState(false);
   const [showVolumeReport, setShowVolumeReport] = useState(false);
   const [showNewBlankPage, setShowNewBlankPage] = useState(false);
+  const [insertPickerIndex, setInsertPickerIndex] = useState<number | null>(null);
+  // Where the next upload/blank-page creation should be spliced into the order —
+  // null means "append at the end", the pre-existing (and still default) behavior.
+  const insertAtIndexRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const uploadPagesInputRef = useRef<HTMLInputElement>(null);
   const { exporting, exportMsg, runExport } = useExportRun(volumeId, languages);
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  async function refreshPagesAndOrder() {
+    const [nextPages, order] = await Promise.all([api.listPages(volumeId), api.getPageOrder(volumeId)]);
+    setPages(nextPages);
+    setOrderEtag(order.etag);
+  }
+
   useEffect(() => {
     setPages(null);
-    api.listPages(volumeId).then(setPages).catch((e) => setError(translateApiError(e, t)));
+    setOrderEtag(null);
+    setOrderConflict(null);
+    refreshPagesAndOrder().catch((e) => setError(translateApiError(e, t)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [volumeId, t]);
 
   useEffect(() => {
@@ -131,6 +227,28 @@ export function PageGrid() {
     }
   }
 
+  /** After a page (or pages) lands on disk via upload/blank-create, either just
+   * refetch (append-at-end — listPages() already puts unseen pages there naturally,
+   * no order write needed) or, if an insert position was chosen, splice the new names
+   * in at that position and save the order explicitly. */
+  async function placeNewPages(newPageNames: string[]) {
+    const at = insertAtIndexRef.current;
+    insertAtIndexRef.current = null;
+    if (at === null) {
+      await refreshPagesAndOrder();
+      return;
+    }
+    const currentOrder = (pages ?? []).map((p) => p.page);
+    const nextOrder = insertPageAt(currentOrder, newPageNames, at);
+    const result = await api.savePageOrder(volumeId, nextOrder, orderEtag ?? undefined);
+    if (result.conflict) {
+      setOrderConflict({ currentOrder: result.currentOrder });
+    } else {
+      setOrderEtag(result.etag);
+    }
+    await refreshPagesAndOrder();
+  }
+
   async function handleUploadPagesFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
@@ -140,6 +258,7 @@ export function PageGrid() {
     try {
       const result = await api.uploadPages(volumeId, files);
       let totalWritten = result.written.length;
+      let writtenNames = result.written.map((f) => f.replace(/\.[^.]+$/, ""));
       if (result.conflicts.length > 0) {
         const overwrite = await confirm({
           title: t("pageGrid.uploadConflictTitle"),
@@ -150,10 +269,11 @@ export function PageGrid() {
           const conflictingFiles = files.filter((f) => result.conflicts.includes(f.name.replace(/[^\w.\- ]/g, "_")));
           const retry = await api.uploadPages(volumeId, conflictingFiles, result.conflicts);
           totalWritten += retry.written.length;
+          writtenNames = [...writtenNames, ...retry.written.map((f) => f.replace(/\.[^.]+$/, ""))];
         }
       }
       setMessage(t("pageGrid.uploadedMsg", { count: totalWritten }));
-      setPages(await api.listPages(volumeId));
+      await placeNewPages(writtenNames);
     } catch (e) {
       setMessage(t("pageGrid.uploadErrorPrefix", { message: translateApiError(e, t) }));
     } finally {
@@ -170,7 +290,11 @@ export function PageGrid() {
       const name = nextPageName(currentPages);
       const file = await blankPagePngFile(width, height, name);
       await api.uploadPages(volumeId, [file]);
-      navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(name)}`);
+      if (insertAtIndexRef.current === null) {
+        navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(name)}`);
+      } else {
+        await placeNewPages([name]);
+      }
     } catch (e) {
       setMessage(t("pageGrid.uploadErrorPrefix", { message: translateApiError(e, t) }));
       setBusy(false);
@@ -184,12 +308,47 @@ export function PageGrid() {
     setMessage(null);
     try {
       await api.deletePage(volumeId, page);
-      setPages(await api.listPages(volumeId));
+      await refreshPagesAndOrder();
     } catch (e) {
       setMessage(t("pageGrid.uploadErrorPrefix", { message: translateApiError(e, t) }));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!pages || !over || active.id === over.id) return;
+    const targetIndex = pages.findIndex((p) => p.page === over.id);
+    if (targetIndex === -1) return;
+    const currentOrder = pages.map((p) => p.page);
+    const nextOrder = movePage(currentOrder, String(active.id), targetIndex);
+
+    // Optimistic reorder for instant feedback.
+    const byName = new Map(pages.map((p) => [p.page, p]));
+    setPages(nextOrder.map((name) => byName.get(name)!));
+
+    const result = await api.savePageOrder(volumeId, nextOrder, orderEtag ?? undefined);
+    if (result.conflict) {
+      // Keep the optimistic local reorder visible until the user resolves the
+      // conflict — discarding it now would be surprising given the drag just
+      // happened right in front of them.
+      setOrderConflict({ currentOrder: result.currentOrder });
+    } else {
+      setOrderEtag(result.etag);
+    }
+  }
+
+  async function resolveOrderConflictKeepMine() {
+    if (!pages) return;
+    setOrderConflict(null);
+    const result = await api.savePageOrder(volumeId, pages.map((p) => p.page));
+    if (!result.conflict) setOrderEtag(result.etag);
+  }
+
+  async function resolveOrderConflictReload() {
+    setOrderConflict(null);
+    await refreshPagesAndOrder();
   }
 
   if (error) return <div className="error-banner">{error}</div>;
@@ -328,7 +487,10 @@ export function PageGrid() {
           defaultWidth={pages && pages.length > 0 ? pages[pages.length - 1].width : DEFAULT_BLANK_PAGE_WIDTH}
           defaultHeight={pages && pages.length > 0 ? pages[pages.length - 1].height : DEFAULT_BLANK_PAGE_HEIGHT}
           onCreate={handleCreateBlankPage}
-          onClose={() => setShowNewBlankPage(false)}
+          onClose={() => {
+            insertAtIndexRef.current = null;
+            setShowNewBlankPage(false);
+          }}
         />
       )}
       {showVolumeReport && (
@@ -341,38 +503,61 @@ export function PageGrid() {
           />
         </Modal>
       )}
-      <div className="page-scroll" style={{ padding: 16 }}>
-        <div className="card-grid">
-          {pages.map((p) => (
-            <div key={p.page} className="card-wrap">
-              <Link to={`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`} className="card">
-                <img src={api.pageThumbnailUrl(volumeId, p.page)} alt={p.page} loading="lazy" />
-                <div className="label">{p.page}</div>
-              </Link>
-              <Link
-                to={`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
-                className="card-read-btn"
-                title={t("reader.menuEntry")}
+      {insertPickerIndex !== null && (
+        <Modal onClose={() => setInsertPickerIndex(null)}>
+          <div className="inspector" style={{ maxWidth: 320 }}>
+            <p style={{ margin: 0, fontWeight: 600 }}>{t("pageGrid.insertHere")}</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+              <button
+                type="button"
+                className="primary"
+                onClick={() => {
+                  insertAtIndexRef.current = insertPickerIndex;
+                  setInsertPickerIndex(null);
+                  uploadPagesInputRef.current?.click();
+                }}
               >
-                <ReadIcon />
-              </Link>
-              {hasAtLeast("letterer") && (
-                <button
-                  type="button"
-                  className="card-delete-btn"
-                  title={t("pageGrid.deletePage")}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDeletePage(p.page);
-                  }}
-                >
-                  ×
-                </button>
-              )}
+                {t("pageGrid.menuUploadPages")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  insertAtIndexRef.current = insertPickerIndex;
+                  setInsertPickerIndex(null);
+                  setShowNewBlankPage(true);
+                }}
+              >
+                {t("pageGrid.menuNewBlankPage")}
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        </Modal>
+      )}
+      {orderConflict && <PageOrderConflictModal onKeepMine={resolveOrderConflictKeepMine} onReload={resolveOrderConflictReload} />}
+      <div className="page-scroll" style={{ padding: 16 }}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={pages.map((p) => p.page)} strategy={rectSortingStrategy}>
+            <div className="card-grid">
+              {pages.map((p, i) => (
+                <PageCard
+                  key={p.page}
+                  page={p}
+                  volumeId={volumeId}
+                  href={`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`}
+                  readHref={`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
+                  canDrag={canManagePages}
+                  canManage={canManagePages}
+                  onDelete={() => handleDeletePage(p.page)}
+                  onInsertBefore={() => setInsertPickerIndex(i)}
+                  readTitle={t("reader.menuEntry")}
+                  deleteTitle={t("pageGrid.deletePage")}
+                  insertTitle={t("pageGrid.insertHere")}
+                  dragTitle={t("pageGrid.dragHandle")}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
       <div className="canvas-statusbar">
         <span>{t("pageGrid.pagesCount", { count: pages.length })}</span>

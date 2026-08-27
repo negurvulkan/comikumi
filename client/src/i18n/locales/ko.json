@@ -302,7 +302,13 @@
     "uploadErrorPrefix": "오류: {{message}}",
     "deletePage": "페이지 삭제",
     "deletePageConfirm": "페이지 \"{{page}}\"를 삭제하시겠습니까? 원본 파일은 휴지통으로 이동합니다(즉시 영구 삭제되지 않음) — 이 페이지에 이미 저장된 레터링 파일은 어느 경우든 그대로 유지됩니다.",
-    "pagesCount_other": "{{count}}페이지"
+    "pagesCount_other": "{{count}}페이지",
+    "dragHandle": "드래그하여 이 페이지 순서 변경",
+    "insertHere": "여기에 페이지 삽입",
+    "orderConflictTitle": "다른 사람이 페이지 순서를 변경했습니다",
+    "orderConflictMessage": "편집하는 동안 다른 사람이 페이지 순서를 변경했습니다. 내 버전을 유지할까요(상대방 것을 덮어씀), 아니면 상대방 버전을 불러올까요(저장하지 않은 순서 변경을 버림)?",
+    "orderConflictKeepMine": "내 버전 유지",
+    "orderConflictReload": "상대방 버전 불러오기"
   },
   "projectSwitcher": {
     "heading": "프로젝트 열기",

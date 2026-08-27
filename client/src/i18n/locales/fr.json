@@ -303,7 +303,13 @@
     "deletePage": "Supprimer la page",
     "deletePageConfirm": "Supprimer la page « {{page}} » ? Le fichier source est déplacé vers la corbeille (pas immédiatement définitif) — un fichier de lettrage déjà enregistré pour cette page est conservé dans tous les cas.",
     "pagesCount_one": "{{count}} page",
-    "pagesCount_other": "{{count}} pages"
+    "pagesCount_other": "{{count}} pages",
+    "dragHandle": "Faire glisser pour réorganiser cette page",
+    "insertHere": "Insérer une page ici",
+    "orderConflictTitle": "L'ordre des pages a été modifié par quelqu'un d'autre",
+    "orderConflictMessage": "Quelqu'un d'autre a modifié l'ordre des pages pendant que vous le modifiiez. Conserver votre version (écrase l'autre) ou charger l'autre version (annule votre réorganisation non enregistrée) ?",
+    "orderConflictKeepMine": "Conserver ma version",
+    "orderConflictReload": "Charger l'autre version"
   },
   "projectSwitcher": {
     "heading": "Ouvrir un projet",

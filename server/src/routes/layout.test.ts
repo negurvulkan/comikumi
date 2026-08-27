@@ -183,6 +183,44 @@ describe("GET /:id/reports", () => {
       expect.arrayContaining([expect.objectContaining({ page: "page_01" })])
     );
   });
+
+  it("respects a saved page order instead of the plain natural filename sort, and still includes an orphaned layout (no matching source image) as a trailing straggler", async () => {
+    await api.post(`/api/volumes/${VOLUME_ID}/pages`).attach("pages", Buffer.from("not a real image, but pages.ts only checks the extension"), "page_02.png");
+    await api.put(`/api/volumes/${VOLUME_ID}/pages/page_02/layout`).send({
+      page: "page_02",
+      sourceImage: "page_02.png",
+      imageWidth: 4,
+      imageHeight: 4,
+      bubbles: [],
+      images: [],
+      curvedTexts: [],
+      panels: [],
+    });
+    // An orphan: a saved layout with no matching page_orphan.png on disk at all.
+    await api.put(`/api/volumes/${VOLUME_ID}/pages/page_orphan/layout`).send({
+      page: "page_orphan",
+      sourceImage: "page_orphan.png",
+      imageWidth: 4,
+      imageHeight: 4,
+      bubbles: [],
+      images: [],
+      curvedTexts: [],
+      panels: [],
+    });
+
+    await api.put(`/api/volumes/${VOLUME_ID}/pages/order`).send({ order: ["page_02", "page_01"] });
+
+    const res = await api.get(`/api/volumes/${VOLUME_ID}/reports`);
+    expect(res.status).toBe(200);
+    const pages = (res.body as { page: string }[]).map((p) => p.page);
+    // page_02 before page_01 per the saved order; the orphan (not in listPages() at
+    // all) falls through to the natural-sort fallback and lands after every ordered
+    // page, instead of being dropped from the report. Other pages/layouts written by
+    // earlier tests in this file may also be present — only these three's relative
+    // order is asserted.
+    expect(pages.indexOf("page_02")).toBeLessThan(pages.indexOf("page_01"));
+    expect(pages.indexOf("page_orphan")).toBe(pages.length - 1);
+  });
 });
 
 describe("POST /:id/layouts/import-zip", () => {

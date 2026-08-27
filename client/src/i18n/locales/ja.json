@@ -302,7 +302,13 @@
     "uploadErrorPrefix": "エラー: {{message}}",
     "deletePage": "ページを削除",
     "deletePageConfirm": "ページ「{{page}}」を削除しますか？元ファイルはゴミ箱に移動します（即座に完全削除はされません）。このページの既存のレタリングファイルはいずれにせよそのまま残ります。",
-    "pagesCount_other": "{{count}} ページ"
+    "pagesCount_other": "{{count}} ページ",
+    "dragHandle": "ドラッグしてこのページを並べ替え",
+    "insertHere": "ここにページを挿入",
+    "orderConflictTitle": "ページの順序が他の人によって変更されました",
+    "orderConflictMessage": "編集中に他の人がページの順序を変更しました。自分のバージョンを保持しますか（相手を上書き）、それとも相手のバージョンを読み込みますか（未保存の並べ替えを破棄）？",
+    "orderConflictKeepMine": "自分のバージョンを保持",
+    "orderConflictReload": "相手のバージョンを読み込む"
   },
   "projectSwitcher": {
     "heading": "プロジェクトを開く",

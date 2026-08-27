@@ -303,7 +303,13 @@
     "deletePage": "Eliminar página",
     "deletePageConfirm": "¿Eliminar la página «{{page}}»? El archivo pasa a la papelera (no es permanente de inmediato); un archivo de rotulación ya guardado para esta página se conserva en cualquier caso.",
     "pagesCount_one": "{{count}} página",
-    "pagesCount_other": "{{count}} páginas"
+    "pagesCount_other": "{{count}} páginas",
+    "dragHandle": "Arrastra para reordenar esta página",
+    "insertHere": "Insertar una página aquí",
+    "orderConflictTitle": "Otra persona cambió el orden de las páginas",
+    "orderConflictMessage": "Otra persona cambió el orden de las páginas mientras lo editabas. ¿Conservar tu versión (sobrescribe la otra) o cargar la otra versión (descarta tu reordenación sin guardar)?",
+    "orderConflictKeepMine": "Conservar mi versión",
+    "orderConflictReload": "Cargar la otra versión"
   },
   "projectSwitcher": {
     "heading": "Abrir proyecto",

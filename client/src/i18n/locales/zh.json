@@ -302,7 +302,13 @@
     "uploadErrorPrefix": "错误：{{message}}",
     "deletePage": "删除页面",
     "deletePageConfirm": "删除页面“{{page}}”？源文件会移入回收站（不会立即永久删除）——该页面已保存的嵌字文件无论如何都会被保留。",
-    "pagesCount_other": "{{count}} 页"
+    "pagesCount_other": "{{count}} 页",
+    "dragHandle": "拖动以重新排序此页",
+    "insertHere": "在此处插入页面",
+    "orderConflictTitle": "页面顺序已被他人更改",
+    "orderConflictMessage": "在你编辑页面顺序时，其他人也更改了它。保留你的版本（覆盖对方的）还是加载对方的版本（放弃你未保存的排序）？",
+    "orderConflictKeepMine": "保留我的版本",
+    "orderConflictReload": "加载对方的版本"
   },
   "projectSwitcher": {
     "heading": "打开项目",

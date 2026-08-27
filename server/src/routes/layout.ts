@@ -205,7 +205,17 @@ layoutRouter.get(
         // Corrupt/foreign JSON in the folder — skip it rather than fail the whole report.
       }
     }
-    pages.sort((a, b) => a.page.localeCompare(b.page, undefined, { numeric: true }));
+    // Order by the volume's actual page order (see projectScanner.ts's listPages(),
+    // the single source of truth) rather than re-deriving a filename sort here — a
+    // lettering JSON with no matching source image anymore (an orphaned page, e.g.
+    // after a delete) isn't in that order, so it falls through to the natural-sort
+    // fallback and is appended at the end instead of being dropped from the report.
+    const orderIndex = new Map((await listPages(volume)).map((p, i) => [p.page, i]));
+    pages.sort((a, b) => {
+      const ai = orderIndex.get(a.page) ?? Number.MAX_SAFE_INTEGER;
+      const bi = orderIndex.get(b.page) ?? Number.MAX_SAFE_INTEGER;
+      return ai !== bi ? ai - bi : a.page.localeCompare(b.page, undefined, { numeric: true });
+    });
     res.json(pages);
   })
 );

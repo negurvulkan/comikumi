@@ -108,6 +108,14 @@ export function commentsFileName(bookFolderName: string, commentsSuffix: string)
   return `${bookFolderName}${commentsSuffix}.json`;
 }
 
+/** e.g. "volume_01" -> "volume_01_order.json" — same single-JSON-per-volume convention
+ * as scriptFileName()/commentsFileName(), but the suffix is fixed rather than a
+ * ProjectSettings field: unlike scripts/comments, this file is pure internal
+ * bookkeeping (page display order) that no user ever opens or needs to rename. */
+export function pageOrderFileName(bookFolderName: string): string {
+  return `${bookFolderName}_order.json`;
+}
+
 /** Rejects any single-segment file name that could escape its storage directory
  * (path separators, "..", or ".") — used by every "/file/:fileName" route before
  * joining it onto a fixed storage dir, so a request can't read arbitrary files

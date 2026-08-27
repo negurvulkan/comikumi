@@ -306,7 +306,13 @@
     "deletePage": "Seite löschen",
     "deletePageConfirm": "Seite „{{page}}“ löschen? Die Quelldatei landet im Papierkorb (nicht sofort endgültig) — eine bereits gespeicherte Lettering-Datei für diese Seite bleibt in jedem Fall erhalten.",
     "pagesCount_one": "{{count}} Seite",
-    "pagesCount_other": "{{count}} Seiten"
+    "pagesCount_other": "{{count}} Seiten",
+    "dragHandle": "Ziehen, um die Seite umzusortieren",
+    "insertHere": "Seite hier einfügen",
+    "orderConflictTitle": "Die Reihenfolge wurde von jemand anderem geändert",
+    "orderConflictMessage": "Jemand anderes hat die Seitenreihenfolge geändert, während du sie bearbeitet hast. Deine Version behalten (überschreibt die andere) oder die andere Version laden (verwirft deine ungespeicherte Umsortierung)?",
+    "orderConflictKeepMine": "Meine Version behalten",
+    "orderConflictReload": "Andere Version laden"
   },
   "projectSwitcher": {
     "heading": "Projekt öffnen",

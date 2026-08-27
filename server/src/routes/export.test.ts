@@ -409,6 +409,68 @@ describe("Export-Viewer Routes", () => {
     });
   });
 
+  describe("page order awareness (CBZ and plain ZIP export)", () => {
+    async function bufferedGet(url: string) {
+      return api
+        .get(url)
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+    }
+
+    beforeAll(async () => {
+      // A second page, both as a real source scan (so listPages() — the shared order
+      // source of truth — knows about it) and as an already-exported file (so it's
+      // something to actually zip).
+      await api.post(`/api/volumes/${VOLUME_ID}/pages`).attach("pages", await tinyPngBuffer(), "page_02.png");
+      const dir = path.join(env.scanRoot, "Volume_01", "volume_01_german");
+      await fs.writeFile(path.join(dir, "page_02.png"), "dummy png content 2");
+      await api.put(`/api/volumes/${VOLUME_ID}/pages/order`).send({ order: ["page_02", "page_01"] });
+    });
+
+    it("CBZ export archives page images in the saved order, not the plain filename sort", async () => {
+      const res = await api
+        .post(`/api/volumes/${VOLUME_ID}/exports/german/cbz`)
+        .send({})
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+      expect(res.status).toBe(200);
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const pageEntries = zip
+        .getEntries()
+        .map((e) => e.entryName)
+        .filter((name) => name !== "ComicInfo.xml")
+        .sort();
+      // Sequentially renamed 0001/0002 by archive position (see export.ts's CBZ
+      // route) — 0001 must be page_02's content ("page_02" sorts before "page_01" in
+      // the saved order), 0002 must be page_01's.
+      expect(pageEntries).toEqual(["0001.png", "0002.png"]);
+      expect(zip.readFile("0001.png")!.toString()).toBe("dummy png content 2"); // page_02
+      expect(zip.readFile("0002.png")!.toString()).toBe("dummy png content"); // page_01
+    });
+
+    it("plain ZIP export orders recognized page images by the saved order too", async () => {
+      const res = await bufferedGet(`/api/volumes/${VOLUME_ID}/exports/german/zip`);
+      expect(res.status).toBe(200);
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const names = zip.getEntries().map((e) => e.entryName);
+      // Unlike CBZ, the plain ZIP keeps original filenames (no sequential rename) —
+      // just assert page_02.png comes before page_01.png in archive order.
+      expect(names.indexOf("page_02.png")).toBeLessThan(names.indexOf("page_01.png"));
+    });
+  });
+
   describe("DELETE /api/volumes/:id/exports/:folderSuffix/:fileName", () => {
     it("blocks a translator from deleting files", async () => {
       const res = await translatorApi.delete(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png`);

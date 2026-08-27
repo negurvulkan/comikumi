@@ -15,6 +15,7 @@ import { entityImagesRouter } from "./routes/entityImages.js";
 import { glossaryRouter } from "./routes/glossary.js";
 import { presetsRouter } from "./routes/presets.js";
 import { scriptRouter } from "./routes/script.js";
+import { pageOrderRouter } from "./routes/pageOrder.js";
 import { commentsRouter } from "./routes/comments.js";
 import { settingsRouter } from "./routes/settings.js";
 import { projectRouter } from "./routes/project.js";
@@ -68,6 +69,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/volumes", requireAuth, requireViewer, layoutRouter);
   app.use("/api/volumes", requireAuth, requireViewer, exportRouter);
   app.use("/api/volumes", requireAuth, requireViewer, scriptRouter);
+  app.use("/api/volumes", requireAuth, requireViewer, pageOrderRouter);
   // No stricter per-route role needed inside commentsRouter itself — every project
   // member (viewer and up) is allowed to read/write comments (see comments.ts's own
   // doc comment); the router-mount baseline above is the only gate required.
@@ -96,6 +98,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, layoutRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, exportRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, scriptRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pageOrderRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, commentsRouter);
   app.use("/api/p/:projectId/fonts", requireAuth, resolveProjectParam, requireViewerScoped, fontsRouter);
   app.use("/api/p/:projectId/images", requireAuth, resolveProjectParam, requireViewerScoped, imagesRouter);

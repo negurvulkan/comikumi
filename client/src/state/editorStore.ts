@@ -106,6 +106,11 @@ interface EditorState {
    * jumps. `newPanelId: null` detaches back to absolute. */
   reassignBubblePanel: (bubbleId: string, newPanelId: string | null) => void;
   importBubbles: (bubbles: Bubble[]) => void;
+  /** Appends `bubbles` to the layout (unlike importBubbles(), which replaces the whole
+   * array) as ONE undo step, and selects all of them — for batch inserts like accepted
+   * Auto-Bubbles/OCR detections, where "detected 12 bubbles" should undo in one Ctrl+Z,
+   * not twelve. */
+  addBubbles: (bubbles: Bubble[]) => void;
   save: () => Promise<void>;
   /** Resolves a save conflict by overwriting the server's version with the current
    * local layout — an unconditional save (no If-Match), then refreshes layoutEtag from
@@ -491,6 +496,18 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (!layout) return;
       pushHistory(true);
       set({ layout: { ...layout, bubbles }, ...clearSelection(), dirty: true });
+    },
+
+    addBubbles(bubbles) {
+      const layout = get().layout;
+      if (!layout || bubbles.length === 0) return;
+      pushHistory(true);
+      set({
+        layout: { ...layout, bubbles: [...layout.bubbles, ...bubbles] },
+        ...clearSelection(),
+        selectedBubbleIds: bubbles.map((b) => b.id),
+        dirty: true,
+      });
     },
 
     async save() {
