@@ -15,3 +15,18 @@ export interface DetectedRegion {
    * never written into the resulting Bubble. */
   confidence: number;
 }
+
+/** worker.ts <-> workerClient.ts message protocol. `RunRequest.imageBitmap` is
+ * transferred (not cloned) — see workerClient.ts's postMessage() call. */
+export interface RunRequest {
+  type: "run";
+  imageBitmap: ImageBitmap;
+  detectorModel: ArrayBuffer;
+}
+
+export type WorkerProgressStage = "loading-runtime" | "detecting" | "recognizing";
+
+export type WorkerMessage =
+  | { type: "progress"; stage: WorkerProgressStage; current: number; total: number }
+  | { type: "done"; regions: DetectedRegion[] }
+  | { type: "error"; message: string };

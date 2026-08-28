@@ -248,6 +248,15 @@
       "segmentShapeDiamond": "다이아몬드",
       "segmentsCountLabel": "세그먼트 수",
       "segmentSpacingLabel": "세그먼트 간격"
+    },
+    "chapters": {
+      "title": "챕터",
+      "remove": "챕터 삭제",
+      "confirmDelete": "챕터를 삭제할까요? 할당된 페이지는 연결이 해제됩니다.",
+      "empty": "아직 챕터가 없습니다.",
+      "nameLabel": "이름",
+      "namePlaceholder": "예: 3장",
+      "conflict": "다른 사람이 챕터 목록을 변경했습니다 — 다시 시도해 주세요."
     }
   },
   "menu": {
@@ -308,7 +317,30 @@
     "orderConflictTitle": "다른 사람이 페이지 순서를 변경했습니다",
     "orderConflictMessage": "편집하는 동안 다른 사람이 페이지 순서를 변경했습니다. 내 버전을 유지할까요(상대방 것을 덮어씀), 아니면 상대방 버전을 불러올까요(저장하지 않은 순서 변경을 버림)?",
     "orderConflictKeepMine": "내 버전 유지",
-    "orderConflictReload": "상대방 버전 불러오기"
+    "orderConflictReload": "상대방 버전 불러오기",
+    "menuManageChapters": "챕터 관리…",
+    "pageType_cover": "표지",
+    "pageType_chapterInterstitial": "챕터 구분 페이지",
+    "pageType_story": "본문 페이지",
+    "pageTypeLabel": "페이지 유형",
+    "chapterLabel": "챕터",
+    "noChapter": "– 챕터 없음 –",
+    "pageNumberLabel": "p. {{number}}",
+    "metaConflict": "다른 사람이 페이지 태그를 변경했습니다 — 화면이 새로고침되었습니다."
+  },
+  "ocr": {
+    "progress": {
+      "loading-runtime": "인식 모델 로드 중…",
+      "detecting": "말풍선 인식 중…",
+      "recognizing": "텍스트 읽는 중…"
+    },
+    "noneFound": "인식된 말풍선이 없습니다.",
+    "reviewTitle": "{{count}}개의 말풍선 인식됨",
+    "reviewHint": "삽입 전에 텍스트를 확인/수정하고 원치 않는 제안은 선택을 해제하세요.",
+    "acceptRegion": "채택",
+    "regionLabel": "제안 {{index}}",
+    "textPlaceholder": "텍스트 입력…",
+    "insertCount": "{{count}}개 삽입"
   },
   "projectSwitcher": {
     "heading": "프로젝트 열기",
@@ -519,6 +551,7 @@
     "toolStrip": {
       "storyBible": "스토리 바이블",
       "aiAssistant": "AI 어시스턴트",
+      "autoBubbles": "말풍선 자동 인식",
       "bubbleOval": "말풍선 (타원)",
       "rect": "사각형",
       "quadPerspective": "사각형 (원근)",

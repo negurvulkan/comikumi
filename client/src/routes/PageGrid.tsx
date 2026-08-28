@@ -8,6 +8,7 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import { EMPTY_PAGE_META_DOCUMENT, PAGE_TYPES, type PageMetaDocument, type PageType } from "../../../shared/src/pageMeta";
 import { api, downloadBlob, type PageSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useExportRun } from "../export/useExportRun";
@@ -23,11 +24,13 @@ import { VolumeReportModal } from "../editor/VolumeReportModal";
 import { NewBlankPageDialog } from "../editor/NewBlankPageDialog";
 import { PageOrderConflictModal } from "../editor/PageOrderConflictModal";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
+import { ChapterManager } from "../editor/ChapterManager";
 import { ReadIcon, DragHandleIcon } from "../editor/Icons";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
 import { nextPageName } from "./pageNaming";
 import { movePage, insertPageAt } from "./pageOrdering";
+import { computePageNumbers } from "./pageNumbering";
 
 const DEFAULT_BLANK_PAGE_WIDTH = 2000;
 const DEFAULT_BLANK_PAGE_HEIGHT = 3000;
@@ -66,13 +69,39 @@ interface PageCardProps {
   deleteTitle: string;
   insertTitle: string;
   dragTitle: string;
+  pageType: PageType;
+  pageNumber: number | undefined;
+  chapterId: string | undefined;
+  chapters: { id: string; name: string }[];
+  onChangeType: (type: PageType) => void;
+  onChangeChapter: (chapterId: string | undefined) => void;
 }
 
 /** One page card — a stable, module-level component (not defined inline in a `.map`)
  * so dnd-kit's useSortable() hook identity stays consistent across renders. Drag
  * listeners live only on the small grip handle, never the whole card, so the existing
  * click-to-open-editor behavior on the card body keeps working unchanged. */
-function PageCard({ page, volumeId, href, readHref, canDrag, canManage, onDelete, onInsertBefore, readTitle, deleteTitle, insertTitle, dragTitle }: PageCardProps) {
+function PageCard({
+  page,
+  volumeId,
+  href,
+  readHref,
+  canDrag,
+  canManage,
+  onDelete,
+  onInsertBefore,
+  readTitle,
+  deleteTitle,
+  insertTitle,
+  dragTitle,
+  pageType,
+  pageNumber,
+  chapterId,
+  chapters,
+  onChangeType,
+  onChangeChapter,
+}: PageCardProps) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.page, disabled: !canDrag });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -85,7 +114,48 @@ function PageCard({ page, volumeId, href, readHref, canDrag, canManage, onDelete
       <Link to={href} className="card">
         <img src={api.pageThumbnailUrl(volumeId, page.page)} alt={page.page} loading="lazy" />
         <div className="label">{page.page}</div>
+        <div className="label" style={{ opacity: 0.75, fontSize: 11 }}>
+          {t(`pageGrid.pageType_${pageType}`)}
+          {pageNumber !== undefined ? ` · ${t("pageGrid.pageNumberLabel", { number: pageNumber })}` : ""}
+        </div>
       </Link>
+      {canManage ? (
+        <div className="card-tagging" onClick={(e) => e.preventDefault()} style={{ display: "flex", gap: 4, padding: "0 4px 4px" }}>
+          <select
+            value={pageType}
+            onChange={(e) => onChangeType(e.target.value as PageType)}
+            title={t("pageGrid.pageTypeLabel")}
+            style={{ fontSize: 11, flex: 1, minWidth: 0 }}
+          >
+            {PAGE_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {t(`pageGrid.pageType_${type}`)}
+              </option>
+            ))}
+          </select>
+          {chapters.length > 0 && (
+            <select
+              value={chapterId ?? ""}
+              onChange={(e) => onChangeChapter(e.target.value || undefined)}
+              title={t("pageGrid.chapterLabel")}
+              style={{ fontSize: 11, flex: 1, minWidth: 0 }}
+            >
+              <option value="">{t("pageGrid.noChapter")}</option>
+              {chapters.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      ) : (
+        chapterId && chapters.find((c) => c.id === chapterId) && (
+          <div className="label" style={{ opacity: 0.6, fontSize: 11, padding: "0 4px 4px" }}>
+            {chapters.find((c) => c.id === chapterId)!.name}
+          </div>
+        )
+      )}
       <Link to={readHref} className="card-read-btn" title={readTitle}>
         <ReadIcon />
       </Link>
@@ -137,6 +207,9 @@ export function PageGrid() {
   const [pages, setPages] = useState<PageSummary[] | null>(null);
   const [orderEtag, setOrderEtag] = useState<string | null>(null);
   const [orderConflict, setOrderConflict] = useState<{ currentOrder: string[] } | null>(null);
+  const [pageMeta, setPageMeta] = useState<PageMetaDocument>(EMPTY_PAGE_META_DOCUMENT);
+  const [metaEtag, setMetaEtag] = useState<string | null>(null);
+  const [showChapterManager, setShowChapterManager] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -163,9 +236,11 @@ export function PageGrid() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   async function refreshPagesAndOrder() {
-    const [nextPages, order] = await Promise.all([api.listPages(volumeId), api.getPageOrder(volumeId)]);
+    const [nextPages, order, meta] = await Promise.all([api.listPages(volumeId), api.getPageOrder(volumeId), api.getPageMeta(volumeId)]);
     setPages(nextPages);
     setOrderEtag(order.etag);
+    setPageMeta(meta.meta);
+    setMetaEtag(meta.etag);
   }
 
   useEffect(() => {
@@ -175,6 +250,25 @@ export function PageGrid() {
     refreshPagesAndOrder().catch((e) => setError(translateApiError(e, t)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [volumeId, t]);
+
+  /** Optimistic per-page tagging update — writes the new pageMeta immediately for
+   * instant UI feedback, same shape as handleDragEnd()'s optimistic reorder. On a 409
+   * (someone else saved different tagging meanwhile) just adopt their version and
+   * surface an error, rather than a dedicated conflict modal — tagging edits are quick,
+   * single-field changes with no in-progress drag state worth preserving. */
+  async function updatePageMeta(page: string, patch: { type?: PageType; chapterId?: string | undefined }) {
+    const nextEntry = { ...pageMeta.pages[page], ...patch };
+    const nextMeta: PageMetaDocument = { ...pageMeta, pages: { ...pageMeta.pages, [page]: nextEntry } };
+    setPageMeta(nextMeta);
+    const result = await api.savePageMeta(volumeId, nextMeta, metaEtag ?? undefined);
+    if (result.conflict) {
+      setPageMeta(result.current);
+      setMetaEtag(null);
+      setMessage(t("pageGrid.metaConflict"));
+    } else {
+      setMetaEtag(result.etag);
+    }
+  }
 
   useEffect(() => {
     api.listLanguages().then(setLanguages);
@@ -388,6 +482,7 @@ export function PageGrid() {
           onClick: () => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/exports`),
         },
         { type: "separator" },
+        { type: "action", label: t("pageGrid.menuManageChapters"), onClick: () => setShowChapterManager(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("pageGrid.menuVolumeReport"), onClick: () => setShowVolumeReport(true) },
         {
           type: "action",
@@ -493,6 +588,20 @@ export function PageGrid() {
           }}
         />
       )}
+      {showChapterManager && (
+        <Modal onClose={() => setShowChapterManager(false)}>
+          <ChapterManager
+            volumeId={volumeId}
+            meta={pageMeta}
+            etag={metaEtag}
+            onChange={(nextMeta, nextEtag) => {
+              setPageMeta(nextMeta);
+              setMetaEtag(nextEtag);
+            }}
+            onClose={() => setShowChapterManager(false)}
+          />
+        </Modal>
+      )}
       {showVolumeReport && (
         <Modal onClose={() => setShowVolumeReport(false)}>
           <VolumeReportModal
@@ -538,23 +647,32 @@ export function PageGrid() {
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={pages.map((p) => p.page)} strategy={rectSortingStrategy}>
             <div className="card-grid">
-              {pages.map((p, i) => (
-                <PageCard
-                  key={p.page}
-                  page={p}
-                  volumeId={volumeId}
-                  href={`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`}
-                  readHref={`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
-                  canDrag={canManagePages}
-                  canManage={canManagePages}
-                  onDelete={() => handleDeletePage(p.page)}
-                  onInsertBefore={() => setInsertPickerIndex(i)}
-                  readTitle={t("reader.menuEntry")}
-                  deleteTitle={t("pageGrid.deletePage")}
-                  insertTitle={t("pageGrid.insertHere")}
-                  dragTitle={t("pageGrid.dragHandle")}
-                />
-              ))}
+              {(() => {
+                const pageNumbers = computePageNumbers(pages, pageMeta);
+                return pages.map((p, i) => (
+                  <PageCard
+                    key={p.page}
+                    page={p}
+                    volumeId={volumeId}
+                    href={`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`}
+                    readHref={`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
+                    canDrag={canManagePages}
+                    canManage={canManagePages}
+                    onDelete={() => handleDeletePage(p.page)}
+                    onInsertBefore={() => setInsertPickerIndex(i)}
+                    readTitle={t("reader.menuEntry")}
+                    deleteTitle={t("pageGrid.deletePage")}
+                    insertTitle={t("pageGrid.insertHere")}
+                    dragTitle={t("pageGrid.dragHandle")}
+                    pageType={pageMeta.pages[p.page]?.type ?? "story"}
+                    pageNumber={pageNumbers.get(p.page)}
+                    chapterId={pageMeta.pages[p.page]?.chapterId}
+                    chapters={pageMeta.chapters}
+                    onChangeType={(type) => updatePageMeta(p.page, { type })}
+                    onChangeChapter={(chapterId) => updatePageMeta(p.page, { chapterId })}
+                  />
+                ));
+              })()}
             </div>
           </SortableContext>
         </DndContext>

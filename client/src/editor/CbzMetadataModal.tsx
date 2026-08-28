@@ -11,6 +11,7 @@ import {
   type CbzPageEntry,
   type CbzPageType,
 } from "../../../shared/src/cbz";
+import type { PageMetaDocument, PageType } from "../../../shared/src/pageMeta";
 
 interface Props {
   /** Ordered list of page names that will actually be packaged into the CBZ (already
@@ -18,9 +19,21 @@ interface Props {
    * ExportViewer.tsx's orderedExportedPages, which mirrors the server's own filtering
    * in export.ts so the `image` indices sent back line up with what the server builds. */
   pages: string[];
+  /** Page tagging from the page grid (Cover/Kapitel-Zwischenseite/Storyseite) — used
+   * only to seed each page's default ComicInfo Type below; still freely editable per
+   * export via the Pages tab. Omitted (or a page with no entry) falls back to the old
+   * first/last-page heuristic. */
+  pageMeta?: PageMetaDocument;
   initial: Partial<CbzMetadata>;
   onConfirm: (metadata: CbzMetadata) => void;
   onClose: () => void;
+}
+
+/** Cover→FrontCover is the only tagged type with a direct ComicInfo counterpart;
+ * chapter-interstitials have no matching standard type, so they're seeded as Story like
+ * regular story pages (still just a default — freely overridable per page below). */
+function cbzTypeFor(pageType: PageType): CbzPageType {
+  return pageType === "cover" ? "FrontCover" : "Story";
 }
 
 type Tab = "basic" | "credits" | "publication" | "categorization" | "pages";
@@ -56,16 +69,22 @@ function textField(
  * dialog stays navigable instead of one long scroll. PageCount is always server-derived
  * and has no field here; Manga defaults to the project's actual reading direction
  * (passed in via `initial`) but stays editable per-export. */
-export function CbzMetadataModal({ pages, initial, onConfirm, onClose }: Props) {
+export function CbzMetadataModal({ pages, pageMeta, initial, onConfirm, onClose }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("basic");
   const [metadata, setMetadata] = useState<CbzMetadata>(initial);
   const [pageEntries, setPageEntries] = useState<CbzPageEntry[]>(() =>
-    pages.map((_, index) => ({
-      image: index,
-      type: index === 0 ? "FrontCover" : index === pages.length - 1 ? "BackCover" : "Story",
-      doublePage: false,
-    }))
+    pages.map((page, index) => {
+      const taggedType = pageMeta?.pages[page]?.type;
+      const type = taggedType
+        ? cbzTypeFor(taggedType)
+        : index === 0
+          ? "FrontCover"
+          : index === pages.length - 1
+            ? "BackCover"
+            : "Story";
+      return { image: index, type, doublePage: false };
+    })
   );
 
   function set(key: StringFieldKey, value: string) {

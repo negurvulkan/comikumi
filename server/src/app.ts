@@ -16,12 +16,14 @@ import { glossaryRouter } from "./routes/glossary.js";
 import { presetsRouter } from "./routes/presets.js";
 import { scriptRouter } from "./routes/script.js";
 import { pageOrderRouter } from "./routes/pageOrder.js";
+import { pageMetaRouter } from "./routes/pageMeta.js";
 import { commentsRouter } from "./routes/comments.js";
 import { settingsRouter } from "./routes/settings.js";
 import { projectRouter } from "./routes/project.js";
 import { browseRouter } from "./routes/browse.js";
 import { authRouter } from "./routes/auth.js";
 import { aiRouter } from "./routes/ai.js";
+import { ocrModelsRouter } from "./routes/ocrModels.js";
 import { demoRouter, demoRateLimiter } from "./routes/demo.js";
 import { requireAuth, requireProjectRole, requireSystemAdmin } from "./lib/auth.js";
 import { resolveProjectParam, requireProjectRoleScoped } from "./lib/projectContext.js";
@@ -70,6 +72,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/volumes", requireAuth, requireViewer, exportRouter);
   app.use("/api/volumes", requireAuth, requireViewer, scriptRouter);
   app.use("/api/volumes", requireAuth, requireViewer, pageOrderRouter);
+  app.use("/api/volumes", requireAuth, requireViewer, pageMetaRouter);
   // No stricter per-route role needed inside commentsRouter itself — every project
   // member (viewer and up) is allowed to read/write comments (see comments.ts's own
   // doc comment); the router-mount baseline above is the only gate required.
@@ -84,6 +87,10 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/glossary", requireAuth, requireViewer, glossaryRouter);
   app.use("/api/presets", requireAuth, requireViewer, presetsRouter);
   app.use("/api/settings", requireAuth, requireViewer, settingsRouter);
+  // Not project-scoped — the Auto-Bubbles/OCR models are fixed, app-versioned static
+  // content (see paths.ts's OCR_MODELS_DIR doc comment), not per-project data, so this
+  // has no /api/p/:projectId/... counterpart below.
+  app.use("/api/ocr-models", requireAuth, requireViewer, ocrModelsRouter);
 
   // Project-scoped routes (see docs/FEATURES.md's Mehrbenutzerbetrieb section) — same
   // router files as the legacy `/api/...` mounts above (their handlers thread
@@ -99,6 +106,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, exportRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, scriptRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pageOrderRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pageMetaRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, commentsRouter);
   app.use("/api/p/:projectId/fonts", requireAuth, resolveProjectParam, requireViewerScoped, fontsRouter);
   app.use("/api/p/:projectId/images", requireAuth, resolveProjectParam, requireViewerScoped, imagesRouter);

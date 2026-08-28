@@ -248,6 +248,18 @@ export function DragHandleIcon() {
   );
 }
 
+/** A dashed rectangle (detected region) with a small sparkle at its corner — the
+ * Auto-Bubbles/OCR tool: run text detection on the current page and review the
+ * proposed bubble boxes before inserting them (see ocr/useAutoBubblesRun.ts). */
+export function AutoBubblesToolIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <rect x="3" y="5" width="10" height="10" rx="1.5" strokeDasharray="2.5 2" />
+      <path d="M15.5 3 C15.8 4.5 16.5 5.2 18 5.5 C16.5 5.8 15.8 6.5 15.5 8 C15.2 6.5 14.5 5.8 13 5.5 C14.5 5.2 15.2 4.5 15.5 3 Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 /** A four-point sparkle — used for the AI-assistant panel toggle. */
 export function AIAssistantIcon() {
   return (

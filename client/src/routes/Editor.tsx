@@ -35,6 +35,9 @@ import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { ReportModal } from "../editor/ReportModal";
+import { AutoBubblesReviewPanel } from "../editor/AutoBubblesReviewPanel";
+import { useAutoBubblesRun } from "../ocr/useAutoBubblesRun";
+import { detectionToBubble } from "../ocr/detectionToBubble";
 import { characterName, groupBubblesByPanel, moveBubbleInReadingOrder } from "../editor/reportUtils";
 import { api, downloadBlob } from "../api/client";
 import { useExportRun } from "../export/useExportRun";
@@ -295,6 +298,20 @@ export function Editor() {
   const selectedPanel = selectedPanelIndex >= 0 ? layout?.panels[selectedPanelIndex] ?? null : null;
   const activeLangDef = languages.find((l) => l.code === activeLanguage) ?? languages[0];
   const { exporting, exportMsg, setExportMsg, runExport } = useExportRun(volumeId, languages);
+  const autoBubbles = useAutoBubblesRun();
+
+  /** Loads the current page's already-rendered <img> pixels into a fresh ImageBitmap
+   * for the detector — same source image the export pipeline already uses
+   * (api.pageImageUrl), so "what Auto-Bubbles sees" always matches "what's on screen",
+   * not a stale/cached copy. */
+  async function handleRunAutoBubbles() {
+    const img = new Image();
+    img.crossOrigin = "use-credentials";
+    img.src = api.pageImageUrl(volumeId, page);
+    await img.decode();
+    const bitmap = await createImageBitmap(img);
+    await autoBubbles.start(bitmap);
+  }
 
   /** Transcript of the current page for the AI panel's context — panels in reading
    * order, each bubble's speaker + text, plus curved (title/effect) text. Reuses the
@@ -480,8 +497,21 @@ export function Editor() {
         style={{ display: "none" }}
       />
       {exportMsg && <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{exportMsg}</div>}
+      {autoBubbles.progressMsg && (
+        <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{autoBubbles.progressMsg}</div>
+      )}
       {store.conflict && (
         <LayoutConflictModal onKeepMine={() => store.resolveConflictOverwrite()} onReload={() => store.resolveConflictReload()} />
+      )}
+      {autoBubbles.pendingRegions && (
+        <AutoBubblesReviewPanel
+          regions={autoBubbles.pendingRegions}
+          onCancel={autoBubbles.cancel}
+          onInsert={(accepted) => {
+            store.addBubbles(accepted.map((r) => detectionToBubble(r, activeLanguage)));
+            autoBubbles.cancel();
+          }}
+        />
       )}
       {showExportPanel && (
         <Modal onClose={() => setShowExportPanel(false)}>
@@ -534,6 +564,8 @@ export function Editor() {
           onSetDrawTool={setDrawTool}
           onInsertImage={(fileName, w, h) => store.addImage(fileName, w, h, languages.map((l) => l.code))}
           onAddCurvedText={() => store.addCurvedText()}
+          onRunAutoBubbles={handleRunAutoBubbles}
+          autoBubblesRunning={autoBubbles.running}
           creationDisabled={isTranslatorOnly}
           textPanelOpen={showTextPanel}
           onToggleTextPanel={() => {

@@ -250,6 +250,15 @@
       "segmentShapeDiamond": "Diamond",
       "segmentsCountLabel": "Number of segments",
       "segmentSpacingLabel": "Segment spacing"
+    },
+    "chapters": {
+      "title": "Chapters",
+      "remove": "Remove chapter",
+      "confirmDelete": "Remove chapter? Pages assigned to it will lose the assignment.",
+      "empty": "No chapters yet.",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Chapter 3",
+      "conflict": "Someone else changed the chapter list in the meantime — please try again."
     }
   },
   "menu": {
@@ -312,7 +321,30 @@
     "orderConflictTitle": "The page order was changed by someone else",
     "orderConflictMessage": "Someone else changed the page order while you were editing it. Keep your version (overwrites theirs) or load their version (discards your unsaved reordering)?",
     "orderConflictKeepMine": "Keep my version",
-    "orderConflictReload": "Load their version"
+    "orderConflictReload": "Load their version",
+    "menuManageChapters": "Manage chapters…",
+    "pageType_cover": "Cover",
+    "pageType_chapterInterstitial": "Chapter divider",
+    "pageType_story": "Story page",
+    "pageTypeLabel": "Page type",
+    "chapterLabel": "Chapter",
+    "noChapter": "– no chapter –",
+    "pageNumberLabel": "p. {{number}}",
+    "metaConflict": "Someone else changed the page tagging in the meantime — view refreshed."
+  },
+  "ocr": {
+    "progress": {
+      "loading-runtime": "Loading detection model…",
+      "detecting": "Detecting speech bubbles…",
+      "recognizing": "Reading text…"
+    },
+    "noneFound": "No speech bubbles detected.",
+    "reviewTitle": "{{count}} bubble(s) detected",
+    "reviewHint": "Review/correct the text before inserting, and deselect any unwanted suggestions.",
+    "acceptRegion": "Accept",
+    "regionLabel": "Suggestion {{index}}",
+    "textPlaceholder": "Enter text…",
+    "insertCount": "Insert {{count}}"
   },
   "projectSwitcher": {
     "heading": "Open project",
@@ -532,6 +564,7 @@
     "toolStrip": {
       "storyBible": "Story Bible",
       "aiAssistant": "AI Assistant",
+      "autoBubbles": "Auto-Bubbles",
       "bubbleOval": "Bubble (oval)",
       "rect": "Rectangle",
       "quadPerspective": "Quad (perspective)",

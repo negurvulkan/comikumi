@@ -248,6 +248,15 @@
       "segmentShapeDiamond": "Rombo",
       "segmentsCountLabel": "Número de segmentos",
       "segmentSpacingLabel": "Espaciado de segmentos"
+    },
+    "chapters": {
+      "title": "Capítulos",
+      "remove": "Eliminar capítulo",
+      "confirmDelete": "¿Eliminar capítulo? Las páginas asignadas perderán la asignación.",
+      "empty": "Aún no hay capítulos.",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "p. ej. Capítulo 3",
+      "conflict": "Otra persona cambió la lista de capítulos mientras tanto — inténtalo de nuevo."
     }
   },
   "menu": {
@@ -309,7 +318,30 @@
     "orderConflictTitle": "Otra persona cambió el orden de las páginas",
     "orderConflictMessage": "Otra persona cambió el orden de las páginas mientras lo editabas. ¿Conservar tu versión (sobrescribe la otra) o cargar la otra versión (descarta tu reordenación sin guardar)?",
     "orderConflictKeepMine": "Conservar mi versión",
-    "orderConflictReload": "Cargar la otra versión"
+    "orderConflictReload": "Cargar la otra versión",
+    "menuManageChapters": "Gestionar capítulos…",
+    "pageType_cover": "Portada",
+    "pageType_chapterInterstitial": "Página de capítulo",
+    "pageType_story": "Página de historia",
+    "pageTypeLabel": "Tipo de página",
+    "chapterLabel": "Capítulo",
+    "noChapter": "– sin capítulo –",
+    "pageNumberLabel": "pág. {{number}}",
+    "metaConflict": "Otra persona cambió el etiquetado de páginas mientras tanto — vista actualizada."
+  },
+  "ocr": {
+    "progress": {
+      "loading-runtime": "Cargando el modelo de detección…",
+      "detecting": "Detectando globos de diálogo…",
+      "recognizing": "Leyendo el texto…"
+    },
+    "noneFound": "No se detectaron globos de diálogo.",
+    "reviewTitle": "{{count}} globo(s) detectado(s)",
+    "reviewHint": "Revisa/corrige el texto antes de insertarlo y deselecciona las sugerencias no deseadas.",
+    "acceptRegion": "Aceptar",
+    "regionLabel": "Sugerencia {{index}}",
+    "textPlaceholder": "Introduce el texto…",
+    "insertCount": "Insertar {{count}}"
   },
   "projectSwitcher": {
     "heading": "Abrir proyecto",
@@ -527,6 +559,7 @@
     "toolStrip": {
       "storyBible": "Biblia narrativa",
       "aiAssistant": "Asistente de IA",
+      "autoBubbles": "Globos automáticos",
       "bubbleOval": "Bocadillo (ovalado)",
       "rect": "Rectángulo",
       "quadPerspective": "Cuadrilátero (perspectiva)",

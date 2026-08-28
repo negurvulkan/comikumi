@@ -248,6 +248,15 @@
       "segmentShapeDiamond": "Losange",
       "segmentsCountLabel": "Nombre de segments",
       "segmentSpacingLabel": "Espacement des segments"
+    },
+    "chapters": {
+      "title": "Chapitres",
+      "remove": "Supprimer le chapitre",
+      "confirmDelete": "Supprimer le chapitre ? Les pages qui lui sont assignées perdront cette assignation.",
+      "empty": "Aucun chapitre pour le moment.",
+      "nameLabel": "Nom",
+      "namePlaceholder": "p. ex. Chapitre 3",
+      "conflict": "Quelqu'un d'autre a modifié la liste des chapitres entre-temps — veuillez réessayer."
     }
   },
   "menu": {
@@ -309,7 +318,30 @@
     "orderConflictTitle": "L'ordre des pages a été modifié par quelqu'un d'autre",
     "orderConflictMessage": "Quelqu'un d'autre a modifié l'ordre des pages pendant que vous le modifiiez. Conserver votre version (écrase l'autre) ou charger l'autre version (annule votre réorganisation non enregistrée) ?",
     "orderConflictKeepMine": "Conserver ma version",
-    "orderConflictReload": "Charger l'autre version"
+    "orderConflictReload": "Charger l'autre version",
+    "menuManageChapters": "Gérer les chapitres…",
+    "pageType_cover": "Couverture",
+    "pageType_chapterInterstitial": "Page de chapitre",
+    "pageType_story": "Page d'histoire",
+    "pageTypeLabel": "Type de page",
+    "chapterLabel": "Chapitre",
+    "noChapter": "– aucun chapitre –",
+    "pageNumberLabel": "p. {{number}}",
+    "metaConflict": "Quelqu'un d'autre a modifié l'étiquetage des pages entre-temps — vue actualisée."
+  },
+  "ocr": {
+    "progress": {
+      "loading-runtime": "Chargement du modèle de détection…",
+      "detecting": "Détection des bulles de dialogue…",
+      "recognizing": "Lecture du texte…"
+    },
+    "noneFound": "Aucune bulle de dialogue détectée.",
+    "reviewTitle": "{{count}} bulle(s) détectée(s)",
+    "reviewHint": "Vérifiez/corrigez le texte avant l'insertion et désélectionnez les suggestions non désirées.",
+    "acceptRegion": "Accepter",
+    "regionLabel": "Suggestion {{index}}",
+    "textPlaceholder": "Saisir le texte…",
+    "insertCount": "Insérer {{count}}"
   },
   "projectSwitcher": {
     "heading": "Ouvrir un projet",
@@ -527,6 +559,7 @@
     "toolStrip": {
       "storyBible": "Bible narrative",
       "aiAssistant": "Assistant IA",
+      "autoBubbles": "Bulles automatiques",
       "bubbleOval": "Bulle (ovale)",
       "rect": "Rectangle",
       "quadPerspective": "Quadrilatère (perspective)",

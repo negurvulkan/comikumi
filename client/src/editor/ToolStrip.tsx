@@ -13,6 +13,7 @@ import {
   ScriptToolIcon,
   BookIcon,
   AIAssistantIcon,
+  AutoBubblesToolIcon,
   CommentPinToolIcon,
   CommentBoxToolIcon,
   CommentFreehandToolIcon,
@@ -33,6 +34,11 @@ interface Props {
   onSetDrawTool: (tool: DrawTool | null) => void;
   onInsertImage: (fileName: string, width: number, height: number) => void;
   onAddCurvedText: () => void;
+  /** Runs text detection on the current page and opens the review panel — one-shot
+   * action, not a `drawTool` toggle (see ocr/useAutoBubblesRun.ts). Omitted entirely
+   * (no button rendered) where the host screen has no page image to detect on. */
+  onRunAutoBubbles?: () => void;
+  autoBubblesRunning?: boolean;
   /** Disables every element-creation tool (bubble/rect/quad/image/curved-text/panel) —
    * used for the "translator" project role, which may only edit existing bubble text,
    * not introduce new geometry (see server/src/routes/layout.ts's diff guard, which
@@ -65,6 +71,8 @@ export function ToolStrip({
   onSetDrawTool,
   onInsertImage,
   onAddCurvedText,
+  onRunAutoBubbles,
+  autoBubblesRunning,
   creationDisabled,
   textPanelOpen,
   onToggleTextPanel,
@@ -114,6 +122,16 @@ export function ToolStrip({
       <button className="tool-btn" onClick={onAddCurvedText} title={t("editor.textListPanel.typeCurvedText")} disabled={creationDisabled}>
         <CurvedTextToolIcon />
       </button>
+      {onRunAutoBubbles && (
+        <button
+          className="tool-btn"
+          onClick={onRunAutoBubbles}
+          title={t("editor.toolStrip.autoBubbles")}
+          disabled={creationDisabled || autoBubblesRunning}
+        >
+          <AutoBubblesToolIcon />
+        </button>
+      )}
       <button
         className={`tool-btn${drawTool === "panel" ? " active" : ""}`}
         onClick={() => onSetDrawTool(drawTool === "panel" ? null : "panel")}

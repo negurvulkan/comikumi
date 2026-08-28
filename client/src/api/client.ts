@@ -10,6 +10,7 @@ import type { ScriptDocument } from "../../../shared/src/script";
 import type { Comment, CommentDocument, CommentTarget } from "../../../shared/src/comments";
 import type { ProjectRole, PublicUser } from "../../../shared/src/users";
 import type { CbzMetadata } from "../../../shared/src/cbz";
+import type { PageMetaDocument } from "../../../shared/src/pageMeta";
 import { apiUrl } from "./apiBase";
 import { authFetch, authUrl } from "./authFetch";
 import { getCurrentProjectId } from "./projectScope";
@@ -273,6 +274,35 @@ export const api = {
     if (res.status === 409) {
       const body = (await res.json()) as { currentOrder: string[] };
       return { conflict: true, currentOrder: body.currentOrder };
+    }
+    if (!res.ok) await throwApiError(res);
+    return { conflict: false, etag: res.headers.get("ETag") };
+  },
+
+  /** Same GET+ETag shape as getPageOrder() — the returned document is always complete
+   * ({ chapters: [], pages: {} } when nothing has been saved yet, see
+   * server/src/routes/pageMeta.ts), so callers never need a separate "no document yet"
+   * branch. */
+  getPageMeta: async (volumeId: string): Promise<{ meta: PageMetaDocument; etag: string | null }> => {
+    const res = await authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/meta`));
+    const meta = await json<PageMetaDocument>(res);
+    return { meta, etag: res.headers.get("ETag") };
+  },
+
+  /** Same conflict-handling shape as savePageOrder(). */
+  savePageMeta: async (
+    volumeId: string,
+    meta: PageMetaDocument,
+    ifMatch?: string
+  ): Promise<{ conflict: false; etag: string | null } | { conflict: true; current: PageMetaDocument }> => {
+    const res = await authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/meta`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(ifMatch ? { "If-Match": ifMatch } : {}) },
+      body: JSON.stringify(meta),
+    });
+    if (res.status === 409) {
+      const body = (await res.json()) as { current: PageMetaDocument };
+      return { conflict: true, current: body.current };
     }
     if (!res.ok) await throwApiError(res);
     return { conflict: false, etag: res.headers.get("ETag") };

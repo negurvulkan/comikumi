@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readSettings, type ActiveProject } from "./projectStore.js";
-import { pageOrderFileName } from "./paths.js";
+import { pageOrderFileName, pageMetaFileName } from "./paths.js";
 import { PageOrderDocumentSchema } from "../../../shared/src/pageOrder.js";
 
 export interface VolumeInfo {
@@ -122,6 +122,10 @@ export const PAGE_IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"])
 
 export function pageOrderFilePathFor(volume: VolumeInfo): string {
   return path.join(volume.parentDir, pageOrderFileName(volume.bookFolderName));
+}
+
+export function pageMetaFilePathFor(volume: VolumeInfo): string {
+  return path.join(volume.parentDir, pageMetaFileName(volume.bookFolderName));
 }
 
 /** Reads the volume's saved page-display-order document — [] if it doesn't exist yet

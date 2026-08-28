@@ -9,6 +9,7 @@ import { useProjectRole } from "../state/useProjectRole";
 import { CbzMetadataModal } from "../editor/CbzMetadataModal";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { CbzMetadata } from "../../../shared/src/cbz";
+import type { PageMetaDocument } from "../../../shared/src/pageMeta";
 
 interface ExportFile {
   name: string;
@@ -48,19 +49,22 @@ export function ExportViewer() {
   const [busy, setBusy] = useState(false);
   const [inspectingFile, setInspectingFile] = useState<ExportFile | null>(null);
   const [cbzModalOpen, setCbzModalOpen] = useState(false);
+  const [pageMeta, setPageMeta] = useState<PageMetaDocument | undefined>(undefined);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [pagesData, exportsData, languagesData] = await Promise.all([
+      const [pagesData, exportsData, languagesData, pageMetaData] = await Promise.all([
         api.listPages(volumeId),
         api.listExports(volumeId),
-        api.listLanguages()
+        api.listLanguages(),
+        api.getPageMeta(volumeId)
       ]);
       setPages(pagesData);
       setExportsSummary(exportsData.exports);
       setLanguages(languagesData);
+      setPageMeta(pageMetaData.meta);
 
       // Auto-select first language suffix from exports, or fallback to first project language
       if (exportsData.exports.length > 0 && !selectedLanguage) {
@@ -340,6 +344,7 @@ export function ExportViewer() {
       {cbzModalOpen && (
         <CbzMetadataModal
           pages={orderedExportedPages}
+          pageMeta={pageMeta}
           initial={{
             series: project?.name,
             languageIso: languages.find((l) => l.folderSuffix === selectedLanguage)?.code,

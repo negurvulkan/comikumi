@@ -248,6 +248,15 @@
       "segmentShapeDiamond": "菱形",
       "segmentsCountLabel": "分段数量",
       "segmentSpacingLabel": "分段间距"
+    },
+    "chapters": {
+      "title": "章节",
+      "remove": "移除章节",
+      "confirmDelete": "移除章节？分配到该章节的页面将取消关联。",
+      "empty": "尚未创建章节。",
+      "nameLabel": "名称",
+      "namePlaceholder": "例如：第三章",
+      "conflict": "其他人同时修改了章节列表 — 请重试。"
     }
   },
   "menu": {
@@ -308,7 +317,30 @@
     "orderConflictTitle": "页面顺序已被他人更改",
     "orderConflictMessage": "在你编辑页面顺序时，其他人也更改了它。保留你的版本（覆盖对方的）还是加载对方的版本（放弃你未保存的排序）？",
     "orderConflictKeepMine": "保留我的版本",
-    "orderConflictReload": "加载对方的版本"
+    "orderConflictReload": "加载对方的版本",
+    "menuManageChapters": "管理章节…",
+    "pageType_cover": "封面",
+    "pageType_chapterInterstitial": "章节扉页",
+    "pageType_story": "正文页",
+    "pageTypeLabel": "页面类型",
+    "chapterLabel": "章节",
+    "noChapter": "– 无章节 –",
+    "pageNumberLabel": "第 {{number}} 页",
+    "metaConflict": "其他人同时修改了页面标记 — 视图已刷新。"
+  },
+  "ocr": {
+    "progress": {
+      "loading-runtime": "正在加载检测模型…",
+      "detecting": "正在检测对话气泡…",
+      "recognizing": "正在识别文字…"
+    },
+    "noneFound": "未检测到对话气泡。",
+    "reviewTitle": "检测到 {{count}} 个气泡",
+    "reviewHint": "插入前请检查/修正文字，并取消勾选不需要的建议。",
+    "acceptRegion": "采用",
+    "regionLabel": "建议 {{index}}",
+    "textPlaceholder": "输入文字…",
+    "insertCount": "插入 {{count}} 个"
   },
   "projectSwitcher": {
     "heading": "打开项目",
@@ -519,6 +551,7 @@
     "toolStrip": {
       "storyBible": "故事设定集",
       "aiAssistant": "AI 助手",
+      "autoBubbles": "自动识别气泡",
       "bubbleOval": "气泡（椭圆）",
       "rect": "矩形",
       "quadPerspective": "四边形（透视）",

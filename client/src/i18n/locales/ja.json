@@ -248,6 +248,15 @@
       "segmentShapeDiamond": "ひし形",
       "segmentsCountLabel": "セグメント数",
       "segmentSpacingLabel": "セグメント間隔"
+    },
+    "chapters": {
+      "title": "章",
+      "remove": "章を削除",
+      "confirmDelete": "章を削除しますか?割り当てられたページは関連付けが解除されます。",
+      "empty": "まだ章がありません。",
+      "nameLabel": "名前",
+      "namePlaceholder": "例: 第3章",
+      "conflict": "他の人が章のリストを変更しました — もう一度お試しください。"
     }
   },
   "menu": {
@@ -308,7 +317,30 @@
     "orderConflictTitle": "ページの順序が他の人によって変更されました",
     "orderConflictMessage": "編集中に他の人がページの順序を変更しました。自分のバージョンを保持しますか（相手を上書き）、それとも相手のバージョンを読み込みますか（未保存の並べ替えを破棄）？",
     "orderConflictKeepMine": "自分のバージョンを保持",
-    "orderConflictReload": "相手のバージョンを読み込む"
+    "orderConflictReload": "相手のバージョンを読み込む",
+    "menuManageChapters": "章を管理…",
+    "pageType_cover": "表紙",
+    "pageType_chapterInterstitial": "章扉ページ",
+    "pageType_story": "本編ページ",
+    "pageTypeLabel": "ページの種類",
+    "chapterLabel": "章",
+    "noChapter": "– 章なし –",
+    "pageNumberLabel": "p. {{number}}",
+    "metaConflict": "他の人がページのタグ付けを変更しました — 表示を更新しました。"
+  },
+  "ocr": {
+    "progress": {
+      "loading-runtime": "検出モデルを読み込み中…",
+      "detecting": "吹き出しを検出中…",
+      "recognizing": "テキストを読み取り中…"
+    },
+    "noneFound": "吹き出しが検出されませんでした。",
+    "reviewTitle": "{{count}} 個の吹き出しを検出",
+    "reviewHint": "挿入前にテキストを確認・修正し、不要な候補は選択を外してください。",
+    "acceptRegion": "採用",
+    "regionLabel": "候補 {{index}}",
+    "textPlaceholder": "テキストを入力…",
+    "insertCount": "{{count}} 件を挿入"
   },
   "projectSwitcher": {
     "heading": "プロジェクトを開く",
@@ -519,6 +551,7 @@
     "toolStrip": {
       "storyBible": "ストーリーバイブル",
       "aiAssistant": "AIアシスタント",
+      "autoBubbles": "自動吹き出し検出",
       "bubbleOval": "吹き出し（楕円）",
       "rect": "四角形",
       "quadPerspective": "四辺形（遠近）",

@@ -86,6 +86,17 @@ export const SECRETS_KEY_FILE = path.join(DATA_DIR, "secrets-key.txt");
  * all run on the same shared ComiKumi server/OS user. */
 export const CODEX_HOME_DIR = path.join(DATA_DIR, "codex-home");
 
+/** Optional self-hosted mirror for the Auto-Bubbles/OCR ONNX models (see
+ * client/src/ocr/modelLoader.ts) — an operator manually drops the model file(s) here
+ * (no upload endpoint; this is fixed, app-versioned content, not user-managed content
+ * like fonts/images) so the client can fetch from its own server instead of the
+ * external CDN, for offline/air-gapped deployments. Same DATA_DIR-relative,
+ * gitignored, "safe to delete" convention as every other cache dir here — empty by
+ * default, nothing breaks if it's never populated (see docs/deploy-runbook.md and
+ * docs/ocr-model-provenance.md for what to put here and its GPL-3.0 attribution
+ * requirement). */
+export const OCR_MODELS_DIR = path.join(DATA_DIR, "models");
+
 /** e.g. "volume_01" + "_empty" -> "volume_01_empty" */
 export function emptyFolderName(bookFolderName: string, emptySuffix: string): string {
   return `${bookFolderName}${emptySuffix}`;
@@ -114,6 +125,12 @@ export function commentsFileName(bookFolderName: string, commentsSuffix: string)
  * bookkeeping (page display order) that no user ever opens or needs to rename. */
 export function pageOrderFileName(bookFolderName: string): string {
   return `${bookFolderName}_order.json`;
+}
+
+/** e.g. "volume_01" -> "volume_01_meta.json" — page tagging (type + chapter), same
+ * single-JSON-per-volume convention as pageOrderFileName(), see shared/src/pageMeta.ts. */
+export function pageMetaFileName(bookFolderName: string): string {
+  return `${bookFolderName}_meta.json`;
 }
 
 /** Rejects any single-segment file name that could escape its storage directory

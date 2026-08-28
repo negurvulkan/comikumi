@@ -250,6 +250,15 @@
       "segmentShapeDiamond": "Raute",
       "segmentsCountLabel": "Anzahl Segmente",
       "segmentSpacingLabel": "Abstand der Segmente"
+    },
+    "chapters": {
+      "title": "Kapitel",
+      "remove": "Kapitel entfernen",
+      "confirmDelete": "Kapitel entfernen? Seiten, die ihm zugeordnet sind, verlieren die Zuordnung.",
+      "empty": "Noch keine Kapitel angelegt.",
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Kapitel 3",
+      "conflict": "Jemand anderes hat die Kapitelliste zwischenzeitlich geändert — bitte erneut versuchen."
     }
   },
   "menu": {
@@ -312,7 +321,30 @@
     "orderConflictTitle": "Die Reihenfolge wurde von jemand anderem geändert",
     "orderConflictMessage": "Jemand anderes hat die Seitenreihenfolge geändert, während du sie bearbeitet hast. Deine Version behalten (überschreibt die andere) oder die andere Version laden (verwirft deine ungespeicherte Umsortierung)?",
     "orderConflictKeepMine": "Meine Version behalten",
-    "orderConflictReload": "Andere Version laden"
+    "orderConflictReload": "Andere Version laden",
+    "menuManageChapters": "Kapitel verwalten…",
+    "pageType_cover": "Cover",
+    "pageType_chapterInterstitial": "Kapitel-Zwischenseite",
+    "pageType_story": "Storyseite",
+    "pageTypeLabel": "Seitenart",
+    "chapterLabel": "Kapitel",
+    "noChapter": "– kein Kapitel –",
+    "pageNumberLabel": "S. {{number}}",
+    "metaConflict": "Jemand anderes hat die Seiten-Tags zwischenzeitlich geändert — Ansicht wurde aktualisiert."
+  },
+  "ocr": {
+    "progress": {
+      "loading-runtime": "Erkennungs-Modell wird geladen…",
+      "detecting": "Sprechblasen werden erkannt…",
+      "recognizing": "Text wird gelesen…"
+    },
+    "noneFound": "Keine Sprechblasen erkannt.",
+    "reviewTitle": "{{count}} Blase(n) erkannt",
+    "reviewHint": "Text vor der Übernahme prüfen/korrigieren und nicht gewünschte Vorschläge abwählen.",
+    "acceptRegion": "Übernehmen",
+    "regionLabel": "Vorschlag {{index}}",
+    "textPlaceholder": "Text eingeben…",
+    "insertCount": "{{count}} übernehmen"
   },
   "projectSwitcher": {
     "heading": "Projekt öffnen",
@@ -532,6 +564,7 @@
     "toolStrip": {
       "storyBible": "Story Bible",
       "aiAssistant": "KI-Assistent",
+      "autoBubbles": "Automatische Blasenerkennung",
       "bubbleOval": "Blase (oval)",
       "rect": "Rechteck",
       "quadPerspective": "Raute (Perspektive)",
