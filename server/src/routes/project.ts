@@ -4,6 +4,7 @@ import path from "node:path";
 import { z } from "zod";
 import {
   getCurrentProjectInfo,
+  getActiveProject,
   listRecentProjects,
   listArchivedProjects,
   openProject,
@@ -18,6 +19,7 @@ import {
   readMembersByPath,
   writeMembersByPath,
 } from "../lib/projectStore.js";
+import { exportProjectPackage, importProjectPackage } from "../lib/projectPackage.js";
 import { countVolumesUnder, invalidateVolumesCache } from "../lib/projectScanner.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireSystemAdmin, requireProjectRole, requireAuth } from "../lib/auth.js";
@@ -361,6 +363,78 @@ projectRouter.post(
       res.status(201).json({ createdPaths: targets });
     } catch (err) {
       res.status(400).json({ error: "folder_create_failed", params: { reason: (err as Error).message } });
+    }
+  })
+);
+
+/** Strips characters that are unsafe in a file name across Windows/macOS/Linux,
+ * collapsing runs of them into a single "_" — used only to derive a default zip file
+ * name from the project's (free-text) name field. */
+function sanitizeFileName(name: string): string {
+  return name.replace(/[\\/:*?"<>|]+/g, "_").trim() || "projekt";
+}
+
+const ExportPackageSchema = z.object({ destDir: z.string().min(1), fileName: z.string().optional() });
+
+/** Packs the currently active project (its JSON, scanRoot page scans, optional
+ * assetsDir, optional cover image) into a single self-contained zip written directly
+ * to the server's filesystem at `destDir` — see lib/projectPackage.ts for why this
+ * exists (projects otherwise carry machine-specific absolute paths and can't be moved
+ * or backed up as a unit). System-admin-only, same as every other project-mutating/
+ * export-adjacent route below. */
+projectRouter.post(
+  "/export-package",
+  requireSystemAdmin,
+  asyncHandler(async (req, res) => {
+    const parsed = ExportPackageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    try {
+      const project = await getActiveProject();
+      const fileName = parsed.data.fileName?.trim() || `${sanitizeFileName(project.data.name)}.zip`;
+      const destPath = path.join(parsed.data.destDir, fileName);
+      await exportProjectPackage(project, destPath);
+      res.status(201).json({ filePath: destPath });
+    } catch (err) {
+      res.status(400).json({ error: "project_export_failed", params: { reason: (err as Error).message } });
+    }
+  })
+);
+
+const ImportPackageSchema = z.object({
+  zipFilePath: z.string().min(1),
+  destDir: z.string().min(1),
+  createDestDirIfMissing: z.boolean().optional(),
+  force: z.boolean().optional(),
+});
+
+/** Unpacks a package written by /export-package into `destDir` as a brand-new,
+ * independent project, then opens/activates it — same switch-guard as /new and /open,
+ * since this always changes the server's active project. */
+projectRouter.post(
+  "/import-package",
+  requireSystemAdmin,
+  asyncHandler(async (req, res) => {
+    const parsed = ImportPackageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    const blocked = blockedBySwitchGuard(req, parsed.data.force);
+    if (blocked) {
+      res.status(409).json({ error: "project_switch_blocked", ...blocked });
+      return;
+    }
+    try {
+      const { filePath } = await importProjectPackage(parsed.data.zipFilePath, parsed.data.destDir, {
+        createDestDirIfMissing: parsed.data.createDestDirIfMissing,
+      });
+      const data = await openProject(filePath);
+      res.status(201).json({ filePath, ...data });
+    } catch (err) {
+      res.status(400).json({ error: "project_import_failed", params: { reason: (err as Error).message } });
     }
   })
 );

@@ -22,6 +22,7 @@ declare module "archiver" {
     constructor(options?: ZipArchiveOptions);
     file(filepath: string, data: ZipEntryData): this;
     append(source: string | Buffer, data: ZipEntryData): this;
+    directory(dirpath: string, destpath: string | false): this;
     finalize(): Promise<void>;
   }
 }

@@ -19,7 +19,7 @@ import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 
-type BrowserTarget = "openPath" | null;
+type BrowserTarget = "openPath" | "exportDestDir" | "importZip" | "importDestDir" | null;
 
 /** "Datei öffnen"-artiger Projektwechsler: zeigt zuletzt geöffnete Projekte, erlaubt
  * das Öffnen einer Projektdatei per Pfad, und das Anlegen eines neuen Projekts. Trägt
@@ -48,6 +48,13 @@ export function ProjectSwitcher() {
 
   const [archived, setArchived] = useState<RecentProject[] | null>(null);
   const [openPath, setOpenPath] = useState("");
+
+  const [exportDestDir, setExportDestDir] = useState("");
+  const [importZipPath, setImportZipPath] = useState("");
+  const [importDestDir, setImportDestDir] = useState("");
+  const [packageBusy, setPackageBusy] = useState(false);
+  const [packageError, setPackageError] = useState<string | null>(null);
+  const [packageMessage, setPackageMessage] = useState<string | null>(null);
 
   function refreshRecent() {
     return api.listRecentProjects().then(setRecent).catch((e) => setError(translateApiError(e, t)));
@@ -131,8 +138,65 @@ export function ProjectSwitcher() {
   }
 
   function handleBrowserSelect(selectedPath: string) {
+    const target = browserTarget;
     setBrowserTarget(null);
-    handleOpen(selectedPath); // "Projektdatei direkt aufrufen" — no extra click needed
+    if (target === "exportDestDir") {
+      setExportDestDir(selectedPath);
+    } else if (target === "importZip") {
+      setImportZipPath(selectedPath);
+    } else if (target === "importDestDir") {
+      setImportDestDir(selectedPath);
+    } else {
+      handleOpen(selectedPath); // "Projektdatei direkt aufrufen" — no extra click needed
+    }
+  }
+
+  async function handleExportPackage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!exportDestDir.trim()) return;
+    setPackageBusy(true);
+    setPackageError(null);
+    setPackageMessage(null);
+    try {
+      const { filePath } = await api.exportProjectPackage(exportDestDir.trim());
+      setPackageMessage(t("projectSwitcher.exportSuccess", { filePath }));
+    } catch (err) {
+      setPackageError(translateApiError(err, t));
+    } finally {
+      setPackageBusy(false);
+    }
+  }
+
+  async function handleImportPackage(e: React.FormEvent, force = false) {
+    e.preventDefault();
+    if (!importZipPath.trim() || !importDestDir.trim()) return;
+    setPackageBusy(true);
+    setPackageError(null);
+    setPackageMessage(null);
+    try {
+      const result = await api.importProjectPackage(importZipPath.trim(), importDestDir.trim(), {
+        createDestDirIfMissing: true,
+        force,
+      });
+      if (result.blocked) {
+        setPackageBusy(false);
+        const names = result.activeUsers.map((u) => u.username).join(", ");
+        const ok = await confirm({
+          title: t("projectSwitcher.switchBlockedTitle"),
+          message: t("projectSwitcher.switchBlockedMessage", { names }),
+          danger: true,
+        });
+        if (ok) await handleImportPackage(e, true);
+        return;
+      }
+      invalidateFontsCache();
+      setPackageMessage(t("projectSwitcher.importSuccess"));
+      navigate(`/p/${encodeURIComponent(result.id!)}`);
+    } catch (err) {
+      setPackageError(translateApiError(err, t));
+    } finally {
+      setPackageBusy(false);
+    }
   }
 
   async function handleArchive(filePath: string) {
@@ -337,9 +401,68 @@ export function ProjectSwitcher() {
             </button>
           </div>
         </div>
+
+        <div style={{ marginTop: 24 }}>
+          <p style={{ margin: "0 0 4px", fontWeight: 600 }}>{t("projectSwitcher.packageHeading")}</p>
+          <p style={{ margin: "0 0 12px", color: "var(--text-muted)", fontSize: 13, maxWidth: 640 }}>{t("projectSwitcher.packageHint")}</p>
+          {packageError && <div className="error-banner">{packageError}</div>}
+          {packageMessage && <div className="info-banner">{packageMessage}</div>}
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+            <form onSubmit={handleExportPackage} className="inspector" style={{ maxWidth: 420 }}>
+              <label>
+                {t("projectSwitcher.exportDestDirLabel")}
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input style={{ flex: 1 }} value={exportDestDir} onChange={(e) => setExportDestDir(e.target.value)} required disabled={!project} />
+                  <button type="button" onClick={() => setBrowserTarget("exportDestDir")} disabled={!project}>
+                    {t("common.browse")}
+                  </button>
+                </div>
+              </label>
+              <button type="submit" className="primary" disabled={packageBusy || !project}>
+                {t("projectSwitcher.exportButton")}
+              </button>
+            </form>
+
+            <form
+              onSubmit={(e) => {
+                void handleImportPackage(e);
+              }}
+              className="inspector"
+              style={{ maxWidth: 420 }}
+            >
+              <label>
+                {t("projectSwitcher.importZipPathLabel")}
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input style={{ flex: 1 }} value={importZipPath} onChange={(e) => setImportZipPath(e.target.value)} required />
+                  <button type="button" onClick={() => setBrowserTarget("importZip")}>
+                    {t("common.browse")}
+                  </button>
+                </div>
+              </label>
+              <label>
+                {t("projectSwitcher.importDestDirLabel")}
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input style={{ flex: 1 }} value={importDestDir} onChange={(e) => setImportDestDir(e.target.value)} required />
+                  <button type="button" onClick={() => setBrowserTarget("importDestDir")}>
+                    {t("common.browse")}
+                  </button>
+                </div>
+              </label>
+              <button type="submit" className="primary" disabled={packageBusy}>
+                {t("projectSwitcher.importButton")}
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
 
-      {browserTarget && <FileBrowserModal mode="file" onSelect={handleBrowserSelect} onClose={() => setBrowserTarget(null)} />}
+      {browserTarget === "openPath" && <FileBrowserModal mode="file" onSelect={handleBrowserSelect} onClose={() => setBrowserTarget(null)} />}
+      {browserTarget === "importZip" && (
+        <FileBrowserModal mode="file" fileFilter="zip" onSelect={handleBrowserSelect} onClose={() => setBrowserTarget(null)} />
+      )}
+      {(browserTarget === "exportDestDir" || browserTarget === "importDestDir") && (
+        <FileBrowserModal mode="directory" onSelect={handleBrowserSelect} onClose={() => setBrowserTarget(null)} />
+      )}
     </div>
   );
 }

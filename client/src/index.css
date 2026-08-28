@@ -1080,6 +1080,15 @@ button.active {
   margin-bottom: 12px;
 }
 
+.info-banner {
+  background: #1f3a2e;
+  border: 1px solid #2f6a4a;
+  color: #b3ffcf;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
 /* Menu bar — Photoshop-style "Seite / Bearbeiten / Hilfe" row directly under the
    app header, filled so it reads as a distinct bar rather than floating text. */
 .menubar {

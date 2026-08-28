@@ -10,7 +10,7 @@ interface Props {
   mode: "directory" | "file";
   /** Only meaningful with mode="file" — which files show up as selectable. Defaults to
    * "json" (the original, and still most common, use: picking a project file). */
-  fileFilter?: "json" | "image";
+  fileFilter?: "json" | "image" | "zip";
   startPath?: string;
   onSelect: (path: string) => void;
   onClose: () => void;

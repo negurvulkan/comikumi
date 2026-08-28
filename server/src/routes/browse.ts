@@ -37,7 +37,14 @@ browseRouter.get(
   "/",
   asyncHandler(async (req, res) => {
     const rawPath = typeof req.query.path === "string" ? req.query.path : "";
-    const filter = req.query.filter === "json" ? "json" : req.query.filter === "image" ? "image" : "directories";
+    const filter =
+      req.query.filter === "json"
+        ? "json"
+        : req.query.filter === "image"
+          ? "image"
+          : req.query.filter === "zip"
+            ? "zip"
+            : "directories";
 
     if (!rawPath) {
       res.json({ path: null, parent: null, entries: await listRoots() });
@@ -57,7 +64,8 @@ browseRouter.get(
         (e) =>
           e.isDirectory() ||
           (filter === "json" && e.isFile() && e.name.toLowerCase().endsWith(".json")) ||
-          (filter === "image" && e.isFile() && IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
+          (filter === "image" && e.isFile() && IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase())) ||
+          (filter === "zip" && e.isFile() && e.name.toLowerCase().endsWith(".zip"))
       )
       .map((e) => ({ name: e.name, path: path.join(rawPath, e.name), isDirectory: e.isDirectory() }))
       .sort((a, b) => Number(b.isDirectory) - Number(a.isDirectory) || a.name.localeCompare(b.name));

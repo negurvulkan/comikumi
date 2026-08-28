@@ -727,6 +727,31 @@ export const api = {
     return handleProjectSwitchResponse(res);
   },
 
+  /** Bundles the currently active project (JSON + scan folder + assets + cover) into a
+   * single zip written server-side into `destDir` — see server/src/lib/projectPackage.ts.
+   * Makes the project transportable: no more machine-specific absolute paths baked in. */
+  exportProjectPackage: (destDir: string, fileName?: string) =>
+    authFetch(apiUrl("/api/project/export-package"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destDir, fileName }),
+    }).then((r) => json<{ filePath: string }>(r)),
+
+  /** Unpacks a package written by exportProjectPackage() into `destDir` as a new,
+   * independent project and opens it. */
+  importProjectPackage: async (
+    zipFilePath: string,
+    destDir: string,
+    opts?: { createDestDirIfMissing?: boolean; force?: boolean }
+  ): Promise<ProjectSwitchResult> => {
+    const res = await authFetch(apiUrl("/api/project/import-package"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ zipFilePath, destDir, ...opts }),
+    });
+    return handleProjectSwitchResponse(res);
+  },
+
   getScanRootStatus: (scanRoot: string, emptySuffix: string) =>
     authFetch(apiUrl(`/api/project/scan-root-status?${new URLSearchParams({ scanRoot, emptySuffix })}`)).then((r) =>
       json<{ exists: boolean; volumeCount: number }>(r)
@@ -746,7 +771,7 @@ export const api = {
       body: JSON.stringify(data),
     }).then((r) => json<{ createdPaths: string[] }>(r)),
 
-  browse: (path?: string, filter?: "directories" | "json" | "image") => {
+  browse: (path?: string, filter?: "directories" | "json" | "image" | "zip") => {
     const params = new URLSearchParams();
     if (path) params.set("path", path);
     if (filter) params.set("filter", filter);

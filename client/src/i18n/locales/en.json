@@ -369,7 +369,16 @@
     "archivedHeading": "Archived projects",
     "confirmRemove": "Remove this project from the overview? The project file itself stays untouched on disk — you can still reopen it later by its file path.",
     "confirmDeleteFileTitle": "Permanently delete project file?",
-    "confirmDeleteFile": "Also permanently delete the project file from disk? This cannot be undone — make sure you have a backup if you might still need it. The scan folder with the actual scanned pages/artwork is never touched."
+    "confirmDeleteFile": "Also permanently delete the project file from disk? This cannot be undone — make sure you have a backup if you might still need it. The scan folder with the actual scanned pages/artwork is never touched.",
+    "packageHeading": "Export / import project",
+    "packageHint": "Bundles the project data, scans, fonts/images, and cover into a single zip file — no hardcoded paths, so it can be moved to another machine or used as a backup.",
+    "exportDestDirLabel": "Destination folder for the zip file",
+    "exportButton": "Export current project",
+    "exportSuccess": "Project exported to: {{filePath}}",
+    "importZipPathLabel": "Zip file",
+    "importDestDirLabel": "Destination folder (must be empty)",
+    "importButton": "Import project",
+    "importSuccess": "Project imported and opened."
   },
   "projectWizard": {
     "heading": "New project",

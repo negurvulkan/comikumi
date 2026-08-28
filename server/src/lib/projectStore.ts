@@ -238,7 +238,7 @@ async function ensureInitialized(): Promise<void> {
   await initPromise;
 }
 
-async function getActiveProject(): Promise<ActiveProject> {
+export async function getActiveProject(): Promise<ActiveProject> {
   await ensureInitialized();
   const project = legacyActive();
   if (!project) throw new NoActiveProjectError();
