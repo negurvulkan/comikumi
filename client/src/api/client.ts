@@ -415,11 +415,12 @@ export const api = {
     return authFetch(projectApiUrl("/fonts"), { method: "POST", body: form }).then((r) => json<{ ok: true; fileName: string; scope: AssetScope }>(r));
   },
 
-  exportPage: (volumeId: string, page: string, folderSuffix: string, blob: Blob) => {
+  exportPage: (volumeId: string, page: string, folderSuffix: string, blob: Blob, extension: string = "png") => {
     const form = new FormData();
-    form.append("png", blob, `${page}.png`);
+    form.append("png", blob, `${page}.${extension}`);
     form.append("folderSuffix", folderSuffix);
     form.append("page", page);
+    form.append("extension", extension);
     return authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/export`), { method: "POST", body: form }).then((r) =>
       json<{ ok: true; path: string }>(r)
     );

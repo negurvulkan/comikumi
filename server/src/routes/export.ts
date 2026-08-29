@@ -23,6 +23,11 @@ const requireLetterer = requireProjectRole("letterer");
  * why this never resamples pixels). 300dpi is the standard comic/manga print convention. */
 const PRINT_DPI = 300;
 
+/** Extensions the raster "/export" route accepts for the web-image path (format/quality/
+ * resolution are all decided client-side when rendering the blob — this only guards the
+ * output file name against an arbitrary/unsafe extension). */
+const RASTER_EXPORT_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp"]);
+
 function escapeXml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]!);
 }
@@ -37,15 +42,20 @@ exportRouter.post(
       res.status(404).json({ error: "volume_not_found" });
       return;
     }
-    const { folderSuffix, page } = req.body as { folderSuffix?: string; page?: string };
+    const { folderSuffix, page, extension } = req.body as { folderSuffix?: string; page?: string; extension?: string };
     if (!folderSuffix || !page || !req.file) {
       res.status(400).json({ error: "export_fields_required" });
+      return;
+    }
+    const normalizedExtension = (extension ?? "png").toLowerCase();
+    if (!RASTER_EXPORT_EXTENSIONS.has(normalizedExtension)) {
+      res.status(400).json({ error: "export_invalid_extension" });
       return;
     }
     const settings = await readSettings(req.activeProject);
     const dir = path.join(volume.parentDir, languageFolderName(volume.bookFolderName, folderSuffix, settings.exportFolderTemplate));
     await fs.mkdir(dir, { recursive: true });
-    const file = path.join(dir, `${page}.png`);
+    const file = path.join(dir, `${page}.${normalizedExtension}`);
     await fs.writeFile(file, req.file.buffer);
     res.json({ ok: true, path: path.relative(volume.parentDir, file) });
   })

@@ -5,9 +5,15 @@ import type { PageLayout } from "../../../shared/src/layoutSchema";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ensureFontsLoaded } from "../editor/fontLoader";
-import { renderPageToPng } from "./renderPageToPng";
+import { renderPageToPng, type RasterExportOptions } from "./renderPageToPng";
 import { selectPages, type PageSelection } from "./pageSelection";
 import type { ExportFormat, PdfXVersion } from "../editor/ExportPanel";
+
+const EXTENSION_BY_IMAGE_FORMAT: Record<NonNullable<RasterExportOptions["format"]>, string> = {
+  png: "png",
+  jpeg: "jpg",
+  webp: "webp",
+};
 
 // A page counts as "translated" for a language if at least one bubble has
 // non-empty text for it, or a placed image has a file assigned for it —
@@ -59,7 +65,9 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
     languageFilter: "all" | string,
     format: ExportFormat = "png",
     preloadedLayout?: { page: string; layout: PageLayout } | null,
-    pdfxVersion: PdfXVersion = "x4"
+    pdfxVersion: PdfXVersion = "x4",
+    /** Only consulted when `format === "png"` — the raster (client-rendered) export path. */
+    imageOptions: RasterExportOptions = {}
   ) {
     if (languages.length === 0) return;
     setExporting(true);
@@ -104,11 +112,15 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
 
         const img = await loadHtmlImage(api.pageImageUrl(volumeId, p.page));
         for (const lang of langsForPage) {
-          const blob = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets);
           if (format === "print") {
+            // Print export always needs a lossless full-resolution source to convert to CMYK TIFF —
+            // the image format/quality/resolution controls are for the "png" web-image path only.
+            const blob = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets);
             await api.exportPrintPage(volumeId, p.page, lang.folderSuffix, blob);
           } else {
-            await api.exportPage(volumeId, p.page, lang.folderSuffix, blob);
+            const blob = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets, imageOptions);
+            const extension = EXTENSION_BY_IMAGE_FORMAT[imageOptions.format ?? "png"];
+            await api.exportPage(volumeId, p.page, lang.folderSuffix, blob, extension);
           }
           exportCount++;
           setExportMsg(t("useExportRun.progress", { count: exportCount }));

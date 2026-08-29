@@ -680,7 +680,18 @@
     "exporting": "Export en cours…",
     "exportButton": "Exporter",
     "formatLabel": "Format",
-    "formatPng": "PNG (web)",
+    "formatPng": "Web (PNG/JPG,WEBP)",
+    "imageFormatLabel": "Format d'image",
+    "imageFormatPng": "PNG (sans perte)",
+    "imageFormatJpeg": "JPEG",
+    "imageFormatWebp": "WebP",
+    "resolutionLabel": "Résolution",
+    "resolutionNative": "native",
+    "qualityLabel": "Qualité ({{value}} %)",
+    "formatUniform": "Format uniforme",
+    "targetWidthLabel": "Largeur cible (px)",
+    "targetHeightLabel": "Hauteur cible (px)",
+    "uniformHint": "Chaque page exportée est ramenée exactement à cette taille. Les pages dont le rapport largeur/hauteur s'écarte trop sont signalées pour vérification avec un aperçu avant tout export.",
     "formatPrint": "Impression (TIFF, CMJN)",
     "formatPrintHint": "Uniquement une balise 300dpi, sans rééchantillonnage — un scan basse résolution reste en basse résolution. Conversion CMJN générique, pas encore de profil ICC d'imprimerie personnalisé.",
     "formatVectorPdf": "PDF vectoriel (impression)",
@@ -699,6 +710,19 @@
     "noneFound": "Aucune page correspondante trouvée.",
     "done": "{{count}} export(s) page/langue terminé(s).",
     "pdfxNotStamped": "Remarque : au moins un fichier n'est pas un PDF/X certifié (aucun profil ICC configuré sur le serveur) — vrai texte vectoriel, mais non conforme PDF/X au sens strict."
+  },
+  "normalizePreview": {
+    "title": "Pages nécessitant une décision",
+    "intro": "{{count}} page(s) s'écartent trop du rapport d'aspect cible pour être étirées sans distorsion visible. Choisissez comment ajuster chacune, ou ignorez-la.",
+    "distortion": "{{value}} % de distorsion en cas d'étirement",
+    "fitMode": {
+      "stretch": "Étirer quand même",
+      "pad": "Remplir (letterbox)",
+      "crop": "Recadrer"
+    },
+    "skipPage": "Ignorer cette page",
+    "confirm": "Appliquer et exporter",
+    "doneWithSkipped": "{{count}} exports page-langue terminés, {{skipped}} page(s) ignorée(s)."
   },
   "volumeReport": {
     "title": "Rapport pour tout le volume",

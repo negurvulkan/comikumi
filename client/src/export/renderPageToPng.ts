@@ -86,6 +86,38 @@ function drawVerticalBubble(ctx: CanvasRenderingContext2D, bubble: Bubble, form:
   });
 }
 
+export type RasterImageFormat = "png" | "jpeg" | "webp";
+
+export interface RasterExportOptions {
+  /** Output container/codec. Defaults to "png" (lossless, matches prior behavior). */
+  format?: RasterImageFormat;
+  /** 0-1, only meaningful for "jpeg"/"webp" — browsers ignore it for "png". */
+  quality?: number;
+  /** Resolution multiplier applied to the layout's native pixel size (e.g. 2 = 2x/"retina"). */
+  scale?: number;
+}
+
+const MIME_TYPE_BY_FORMAT: Record<RasterImageFormat, string> = {
+  png: "image/png",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+};
+
+/** Shared by renderPageToPng and the uniform-format export path (useNormalizeRun.ts),
+ * which needs a second toBlob() call after resizing the already-rendered canvas. */
+export function canvasToBlob(canvas: HTMLCanvasElement, format: RasterImageFormat = "png", quality?: number): Promise<Blob> {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Bild-Export fehlgeschlagen"));
+      },
+      MIME_TYPE_BY_FORMAT[format],
+      quality
+    );
+  });
+}
+
 export async function renderPageToPng(
   baseImage: HTMLImageElement,
   layout: PageLayout,
@@ -94,13 +126,19 @@ export async function renderPageToPng(
   loadPlacedImage?: (fileName: string) => Promise<HTMLImageElement>,
   /** Projectwide style presets — must match what the live editor preview resolves
    * against, or the exported PNG would visually diverge from what the translator saw. */
-  presets: LetteringPreset[] = []
+  presets: LetteringPreset[] = [],
+  exportOptions: RasterExportOptions = {}
 ): Promise<Blob> {
+  const { format = "png", quality, scale = 1 } = exportOptions;
   const canvas = document.createElement("canvas");
-  canvas.width = layout.imageWidth;
-  canvas.height = layout.imageHeight;
+  canvas.width = Math.round(layout.imageWidth * scale);
+  canvas.height = Math.round(layout.imageHeight * scale);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("2D-Canvas-Kontext konnte nicht erstellt werden");
+  // Every drawing call below works in the layout's native pixel units — scaling the
+  // context once up front (rather than threading a scale factor through every draw
+  // call) lets the whole render pipeline stay resolution-agnostic.
+  if (scale !== 1) ctx.scale(scale, scale);
 
   ctx.drawImage(baseImage, 0, 0, layout.imageWidth, layout.imageHeight);
 
@@ -237,10 +275,5 @@ export async function renderPageToPng(
     }, 1);
   }
 
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error("PNG-Export fehlgeschlagen"));
-    }, "image/png");
-  });
+  return canvasToBlob(canvas, format, quality);
 }

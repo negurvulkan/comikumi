@@ -673,6 +673,17 @@
     "exportButton": "내보내기",
     "formatLabel": "형식",
     "formatPng": "PNG (웹용)",
+    "imageFormatLabel": "이미지 형식",
+    "imageFormatPng": "PNG (무손실)",
+    "imageFormatJpeg": "JPEG",
+    "imageFormatWebp": "WebP",
+    "resolutionLabel": "해상도",
+    "resolutionNative": "원본",
+    "qualityLabel": "품질 ({{value}}%)",
+    "formatUniform": "통일된 형식",
+    "targetWidthLabel": "목표 너비 (px)",
+    "targetHeightLabel": "목표 높이 (px)",
+    "uniformHint": "내보내는 모든 페이지가 이 크기로 정확히 맞춰집니다. 목표 화면비와 차이가 너무 큰 페이지는 내보내기 전에 미리보기와 함께 검토 대상으로 표시됩니다.",
     "formatPrint": "인쇄용 (TIFF, CMYK)",
     "formatPrintHint": "300dpi는 메타데이터로만 표시되며 픽셀을 다시 계산하지 않습니다 — 저해상도 스캔은 그대로 저해상도로 남습니다. 범용 CMYK 변환이며, 아직 인쇄소 전용 ICC 프로필은 지원하지 않습니다.",
     "formatVectorPdf": "벡터 PDF (인쇄용)",
@@ -691,6 +702,19 @@
     "noneFound": "일치하는 페이지를 찾을 수 없습니다.",
     "done": "{{count}}개의 페이지-언어 내보내기가 완료되었습니다.",
     "pdfxNotStamped": "참고: 하나 이상의 파일이 인증된 PDF/X가 아닙니다(서버에 ICC 프로필이 설정되지 않음) — 실제 벡터 텍스트이지만 공식적으로 PDF/X를 준수하지는 않습니다."
+  },
+  "normalizePreview": {
+    "title": "결정이 필요한 페이지",
+    "intro": "{{count}}개 페이지가 목표 화면비와 차이가 너무 커서 눈에 띄는 왜곡 없이 늘릴 수 없습니다. 각 페이지를 어떻게 맞출지 선택하거나 건너뛰세요.",
+    "distortion": "늘릴 경우 왜곡 {{value}}%",
+    "fitMode": {
+      "stretch": "그래도 늘리기",
+      "pad": "여백 채우기 (레터박스)",
+      "crop": "잘라내기"
+    },
+    "skipPage": "이 페이지 건너뛰기",
+    "confirm": "적용하고 내보내기",
+    "doneWithSkipped": "{{count}}개 페이지-언어 내보내기 완료, {{skipped}}개 페이지 건너뜀."
   },
   "volumeReport": {
     "title": "전체 권 리포트",

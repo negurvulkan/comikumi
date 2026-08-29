@@ -267,22 +267,22 @@ export function ExportViewer() {
                   <tbody>
                     {pages?.map((p) => {
                       const pageFiles = filesMap.get(p.page) || [];
-                      const pngFile = pageFiles.find((f) => f.extension === ".png");
+                      const imageFile = pageFiles.find((f) => CBZ_IMAGE_EXTENSIONS.has(f.extension.toLowerCase()));
                       return (
                         <tr key={p.page} style={{ borderBottom: "1px solid var(--border)", verticalAlign: "middle" }}>
                           <td style={{ padding: "12px", fontWeight: 600 }}>{p.page}</td>
                           <td style={{ padding: "12px" }}>
-                            {pngFile ? (
+                            {imageFile ? (
                               <img
-                                src={api.exportFileUrl(volumeId, selectedLanguage, pngFile.name)}
+                                src={api.exportFileUrl(volumeId, selectedLanguage, imageFile.name)}
                                 alt=""
                                 style={{ width: 80, height: "auto", borderRadius: 4, cursor: "pointer", border: "1px solid var(--border)" }}
-                                onClick={() => setInspectingFile(pngFile)}
+                                onClick={() => setInspectingFile(imageFile)}
                                 title={t("exportViewer.inspect")}
                               />
                             ) : (
                               <div style={{ width: 80, height: 110, background: "rgba(255,255,255,0.02)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 4, border: "1px dashed var(--border)", color: "var(--text-muted)", fontSize: 11 }}>
-                                No PNG
+                                No image
                               </div>
                             )}
                           </td>
@@ -299,7 +299,7 @@ export function ExportViewer() {
                                         fontSize: 10,
                                         padding: "2px 6px",
                                         borderRadius: 4,
-                                        background: file.extension === ".png" ? "#1b5e20" : file.extension === ".pdf" ? "#b71c1c" : file.extension === ".psd" ? "#0d47a1" : "#e65100"
+                                        background: CBZ_IMAGE_EXTENSIONS.has(file.extension.toLowerCase()) ? "#1b5e20" : file.extension === ".pdf" ? "#b71c1c" : file.extension === ".psd" ? "#0d47a1" : "#e65100"
                                       }}>
                                         {file.extension.slice(1).toUpperCase()}
                                       </span>
@@ -307,7 +307,7 @@ export function ExportViewer() {
                                       <span className="hint" style={{ fontSize: 11 }}>({formatSize(file.size)})</span>
                                     </div>
                                     <div style={{ display: "flex", gap: 6 }}>
-                                      {file.extension === ".png" && (
+                                      {CBZ_IMAGE_EXTENSIONS.has(file.extension.toLowerCase()) && (
                                         <button type="button" onClick={() => setInspectingFile(file)}>
                                           {t("exportViewer.inspect")}
                                         </button>

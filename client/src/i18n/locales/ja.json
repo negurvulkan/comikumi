@@ -672,7 +672,18 @@
     "exporting": "書き出し中…",
     "exportButton": "書き出す",
     "formatLabel": "形式",
-    "formatPng": "PNG（Web用）",
+    "formatPng": "Web用 (PNG/JPG,WEBP)",
+    "imageFormatLabel": "画像形式",
+    "imageFormatPng": "PNG（可逆）",
+    "imageFormatJpeg": "JPEG",
+    "imageFormatWebp": "WebP",
+    "resolutionLabel": "解像度",
+    "resolutionNative": "ネイティブ",
+    "qualityLabel": "画質（{{value}}%）",
+    "formatUniform": "統一フォーマット",
+    "targetWidthLabel": "目標の幅（px）",
+    "targetHeightLabel": "目標の高さ（px）",
+    "uniformHint": "書き出す各ページはこのサイズちょうどに合わせられます。アスペクト比が目標から大きく外れるページは、書き出し前にプレビュー付きで確認を求められます。",
     "formatPrint": "印刷用（TIFF、CMYK）",
     "formatPrintHint": "300dpiはメタデータとして付与するのみで、ピクセルの再計算は行いません — 低解像度のスキャンはそのまま低解像度です。CMYK変換は汎用的なもので、印刷所独自のICCプロファイルにはまだ対応していません。",
     "formatVectorPdf": "ベクターPDF（印刷用）",
@@ -691,6 +702,19 @@
     "noneFound": "該当するページが見つかりません。",
     "done": "{{count}} 件のページ・言語エクスポートが完了しました。",
     "pdfxNotStamped": "注意: 少なくとも1件のファイルは認証済みPDF/Xではありません（サーバーにICCプロファイルが設定されていません）— 実際のベクターテキストですが、正式にはPDF/X準拠ではありません。"
+  },
+  "normalizePreview": {
+    "title": "確認が必要なページ",
+    "intro": "{{count}}件のページは目標のアスペクト比との差が大きく、目立つ歪みなしに引き伸ばせません。各ページの処理方法を選ぶか、スキップしてください。",
+    "distortion": "引き伸ばした場合の歪み {{value}}%",
+    "fitMode": {
+      "stretch": "そのまま引き伸ばす",
+      "pad": "余白を追加（レターボックス）",
+      "crop": "切り抜き"
+    },
+    "skipPage": "このページをスキップ",
+    "confirm": "適用して書き出す",
+    "doneWithSkipped": "{{count}}件のページ・言語の書き出しが完了、{{skipped}}件のページをスキップしました。"
   },
   "volumeReport": {
     "title": "巻全体のレポート",

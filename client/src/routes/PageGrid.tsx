@@ -12,7 +12,11 @@ import { EMPTY_PAGE_META_DOCUMENT, PAGE_TYPES, type PageMetaDocument, type PageT
 import { api, downloadBlob, type PageSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useExportRun } from "../export/useExportRun";
+import { useNormalizeRun, type FlaggedPage } from "../export/useNormalizeRun";
+import type { RasterExportOptions } from "../export/renderPageToPng";
+import type { UniformFitMode } from "../export/uniformFormat";
 import { ExportPanel } from "../editor/ExportPanel";
+import { NormalizePreviewDialog } from "../editor/NormalizePreviewDialog";
 import { Modal } from "../editor/Modal";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuGroup } from "../editor/MenuBar";
@@ -231,7 +235,50 @@ export function PageGrid() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const uploadPagesInputRef = useRef<HTMLInputElement>(null);
   const { exporting, exportMsg, runExport } = useExportRun(volumeId, languages);
+  const { exporting: normalizing, exportMsg: normalizeMsg, analyze: analyzeNormalize, run: runNormalize } = useNormalizeRun(volumeId, languages);
+  const [pendingNormalize, setPendingNormalize] = useState<{
+    autoPages: PageSummary[];
+    flaggedPages: FlaggedPage[];
+    targetWidth: number;
+    targetHeight: number;
+    imageOptions: RasterExportOptions;
+    languageFilter: "all" | string;
+    onlyTranslated: boolean;
+  } | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
+
+  async function handleAnalyzeUniform(
+    selection: Parameters<typeof analyzeNormalize>[0],
+    onlyTranslated: boolean,
+    languageFilter: "all" | string,
+    targetWidth: number,
+    targetHeight: number,
+    imageOptions: RasterExportOptions
+  ) {
+    const { autoPages, flaggedPages } = await analyzeNormalize(selection, "", targetWidth, targetHeight);
+    if (flaggedPages.length === 0) {
+      setShowExportPanel(false);
+      await runNormalize(autoPages, new Map(), targetWidth, targetHeight, imageOptions, languageFilter, onlyTranslated);
+      return;
+    }
+    setShowExportPanel(false);
+    setPendingNormalize({ autoPages, flaggedPages, targetWidth, targetHeight, imageOptions, languageFilter, onlyTranslated });
+  }
+
+  async function handleConfirmNormalize(resolutions: Map<string, UniformFitMode | "skip">) {
+    if (!pendingNormalize) return;
+    const { autoPages, flaggedPages, targetWidth, targetHeight, imageOptions, languageFilter, onlyTranslated } = pendingNormalize;
+    setPendingNormalize(null);
+    await runNormalize(
+      [...autoPages, ...flaggedPages],
+      resolutions,
+      targetWidth,
+      targetHeight,
+      imageOptions,
+      languageFilter,
+      onlyTranslated
+    );
+  }
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
@@ -537,23 +584,37 @@ export function PageGrid() {
         <span className="canvas-titlebar-name">{t("pageGrid.titlebarPages")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
       </Link>
-      {(message || exportMsg) && (
+      {(message || exportMsg || normalizeMsg) && (
         <div
           className="error-banner"
           style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", margin: "10px 12px 0" }}
         >
-          {message ?? exportMsg}
+          {message ?? exportMsg ?? normalizeMsg}
         </div>
       )}
       {showExportPanel && (
         <Modal onClose={() => setShowExportPanel(false)}>
           <ExportPanel
+            volumeId={volumeId}
             languages={languages}
-            exporting={exporting}
-            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion) =>
-              runExport(selection, onlyTranslated, languageFilter, format, null, pdfxVersion)
+            exporting={exporting || normalizing}
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions) =>
+              runExport(selection, onlyTranslated, languageFilter, format, null, pdfxVersion, imageOptions)
             }
+            onAnalyzeUniform={handleAnalyzeUniform}
             onClose={() => setShowExportPanel(false)}
+          />
+        </Modal>
+      )}
+      {pendingNormalize && (
+        <Modal onClose={() => setPendingNormalize(null)}>
+          <NormalizePreviewDialog
+            volumeId={volumeId}
+            flaggedPages={pendingNormalize.flaggedPages}
+            targetWidth={pendingNormalize.targetWidth}
+            targetHeight={pendingNormalize.targetHeight}
+            onConfirm={handleConfirmNormalize}
+            onCancel={() => setPendingNormalize(null)}
           />
         </Modal>
       )}

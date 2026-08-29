@@ -16,6 +16,10 @@ import { CurvedTextInspector } from "../editor/CurvedTextInspector";
 import { PanelInspector } from "../editor/PanelInspector";
 import { MultiSelectInspector } from "../editor/MultiSelectInspector";
 import { ExportPanel } from "../editor/ExportPanel";
+import { NormalizePreviewDialog } from "../editor/NormalizePreviewDialog";
+import { useNormalizeRun, type FlaggedPage } from "../export/useNormalizeRun";
+import type { RasterExportOptions } from "../export/renderPageToPng";
+import type { UniformFitMode } from "../export/uniformFormat";
 import { TextListPanel } from "../editor/TextListPanel";
 import { TranslatorContextPanel } from "../editor/TranslatorContextPanel";
 import { ScriptSidebar } from "../editor/ScriptSidebar";
@@ -39,7 +43,7 @@ import { AutoBubblesReviewPanel } from "../editor/AutoBubblesReviewPanel";
 import { useAutoBubblesRun } from "../ocr/useAutoBubblesRun";
 import { detectionToBubble } from "../ocr/detectionToBubble";
 import { characterName, groupBubblesByPanel, moveBubbleInReadingOrder } from "../editor/reportUtils";
-import { api, downloadBlob } from "../api/client";
+import { api, downloadBlob, type PageSummary } from "../api/client";
 import { useExportRun } from "../export/useExportRun";
 import { ensureFontsLoaded } from "../editor/fontLoader";
 import { ensureSvgBubbleBoundaryLoaded, isSvgBubbleBoundaryCached } from "../export/svgBubbleGeometry";
@@ -298,7 +302,50 @@ export function Editor() {
   const selectedPanel = selectedPanelIndex >= 0 ? layout?.panels[selectedPanelIndex] ?? null : null;
   const activeLangDef = languages.find((l) => l.code === activeLanguage) ?? languages[0];
   const { exporting, exportMsg, setExportMsg, runExport } = useExportRun(volumeId, languages);
+  const { exporting: normalizing, exportMsg: normalizeMsg, analyze: analyzeNormalize, run: runNormalize } = useNormalizeRun(volumeId, languages);
+  const [pendingNormalize, setPendingNormalize] = useState<{
+    autoPages: PageSummary[];
+    flaggedPages: FlaggedPage[];
+    targetWidth: number;
+    targetHeight: number;
+    imageOptions: RasterExportOptions;
+    languageFilter: "all" | string;
+    onlyTranslated: boolean;
+  } | null>(null);
   const autoBubbles = useAutoBubblesRun();
+
+  async function handleAnalyzeUniform(
+    selection: Parameters<typeof analyzeNormalize>[0],
+    onlyTranslated: boolean,
+    languageFilter: "all" | string,
+    targetWidth: number,
+    targetHeight: number,
+    imageOptions: RasterExportOptions
+  ) {
+    const { autoPages, flaggedPages } = await analyzeNormalize(selection, page, targetWidth, targetHeight);
+    if (flaggedPages.length === 0) {
+      setShowExportPanel(false);
+      await runNormalize(autoPages, new Map(), targetWidth, targetHeight, imageOptions, languageFilter, onlyTranslated);
+      return;
+    }
+    setShowExportPanel(false);
+    setPendingNormalize({ autoPages, flaggedPages, targetWidth, targetHeight, imageOptions, languageFilter, onlyTranslated });
+  }
+
+  async function handleConfirmNormalize(resolutions: Map<string, UniformFitMode | "skip">) {
+    if (!pendingNormalize) return;
+    const { autoPages, flaggedPages, targetWidth, targetHeight, imageOptions, languageFilter, onlyTranslated } = pendingNormalize;
+    setPendingNormalize(null);
+    await runNormalize(
+      [...autoPages, ...flaggedPages],
+      resolutions,
+      targetWidth,
+      targetHeight,
+      imageOptions,
+      languageFilter,
+      onlyTranslated
+    );
+  }
 
   /** Loads the current page's already-rendered <img> pixels into a fresh ImageBitmap
    * for the detector — same source image the export pipeline already uses
@@ -496,7 +543,7 @@ export function Editor() {
         onChange={handleImportJsonFile}
         style={{ display: "none" }}
       />
-      {exportMsg && <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{exportMsg}</div>}
+      {(exportMsg || normalizeMsg) && <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{exportMsg ?? normalizeMsg}</div>}
       {autoBubbles.progressMsg && (
         <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{autoBubbles.progressMsg}</div>
       )}
@@ -516,13 +563,27 @@ export function Editor() {
       {showExportPanel && (
         <Modal onClose={() => setShowExportPanel(false)}>
           <ExportPanel
+            volumeId={volumeId}
             languages={languages}
             currentPage={page}
-            exporting={exporting}
-            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion) =>
-              runExport(selection, onlyTranslated, languageFilter, format, layout ? { page, layout } : null, pdfxVersion)
+            exporting={exporting || normalizing}
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions) =>
+              runExport(selection, onlyTranslated, languageFilter, format, layout ? { page, layout } : null, pdfxVersion, imageOptions)
             }
+            onAnalyzeUniform={handleAnalyzeUniform}
             onClose={() => setShowExportPanel(false)}
+          />
+        </Modal>
+      )}
+      {pendingNormalize && (
+        <Modal onClose={() => setPendingNormalize(null)}>
+          <NormalizePreviewDialog
+            volumeId={volumeId}
+            flaggedPages={pendingNormalize.flaggedPages}
+            targetWidth={pendingNormalize.targetWidth}
+            targetHeight={pendingNormalize.targetHeight}
+            onConfirm={handleConfirmNormalize}
+            onCancel={() => setPendingNormalize(null)}
           />
         </Modal>
       )}

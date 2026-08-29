@@ -700,7 +700,18 @@
     "exporting": "Exportiert…",
     "exportButton": "Exportieren",
     "formatLabel": "Format",
-    "formatPng": "PNG (Web)",
+    "formatPng": "Web (PNG/JPG,WEBP)",
+    "imageFormatLabel": "Bildformat",
+    "imageFormatPng": "PNG (verlustfrei)",
+    "imageFormatJpeg": "JPEG",
+    "imageFormatWebp": "WebP",
+    "resolutionLabel": "Auflösung",
+    "resolutionNative": "nativ",
+    "qualityLabel": "Qualität ({{value}}%)",
+    "formatUniform": "Einheitliches Format",
+    "targetWidthLabel": "Zielbreite (px)",
+    "targetHeightLabel": "Zielhöhe (px)",
+    "uniformHint": "Jede exportierte Seite wird auf genau diese Größe gebracht. Seiten mit zu stark abweichendem Seitenverhältnis werden vor dem Export zur Prüfung mit Vorschau markiert.",
     "formatPrint": "Druck (TIFF, CMYK)",
     "formatPrintHint": "Nur 300dpi-Metadaten, keine Neuberechnung der Pixel — ein niedrig aufgelöster Scan bleibt niedrig aufgelöst. Generische CMYK-Konvertierung, noch kein eigenes Druckerei-ICC-Profil.",
     "formatVectorPdf": "Vektor-PDF (Druck)",
@@ -719,6 +730,19 @@
     "noneFound": "Keine passenden Seiten gefunden.",
     "done": "{{count}} Seiten-Sprach-Exporte abgeschlossen.",
     "pdfxNotStamped": "Hinweis: Mindestens eine Datei ist kein zertifiziertes PDF/X (kein ICC-Profil auf dem Server hinterlegt) — echter Vektortext, aber nicht formal PDF/X-konform."
+  },
+  "normalizePreview": {
+    "title": "Seiten mit Entscheidungsbedarf",
+    "intro": "{{count}} Seite(n) weichen zu stark vom Ziel-Seitenverhältnis ab, um sie ohne sichtbare Verzerrung zu strecken. Wähle pro Seite eine Anpassung oder überspringe sie.",
+    "distortion": "{{value}}% Verzerrung beim Strecken",
+    "fitMode": {
+      "stretch": "Trotzdem strecken",
+      "pad": "Auffüllen (Letterbox)",
+      "crop": "Zuschneiden"
+    },
+    "skipPage": "Diese Seite überspringen",
+    "confirm": "Übernehmen und exportieren",
+    "doneWithSkipped": "{{count}} Seiten-Sprach-Exporte abgeschlossen, {{skipped}} Seite(n) übersprungen."
   },
   "volumeReport": {
     "title": "Bericht für den ganzen Band",

@@ -680,7 +680,18 @@
     "exporting": "Exportando…",
     "exportButton": "Exportar",
     "formatLabel": "Formato",
-    "formatPng": "PNG (web)",
+    "formatPng": "Web (PNG/JPG,WEBP)",
+    "imageFormatLabel": "Formato de imagen",
+    "imageFormatPng": "PNG (sin pérdida)",
+    "imageFormatJpeg": "JPEG",
+    "imageFormatWebp": "WebP",
+    "resolutionLabel": "Resolución",
+    "resolutionNative": "nativa",
+    "qualityLabel": "Calidad ({{value}}%)",
+    "formatUniform": "Formato uniforme",
+    "targetWidthLabel": "Ancho objetivo (px)",
+    "targetHeightLabel": "Alto objetivo (px)",
+    "uniformHint": "Cada página exportada se ajusta exactamente a este tamaño. Las páginas cuya relación de aspecto se desvía demasiado se marcan para revisión con una vista previa antes de exportar nada.",
     "formatPrint": "Impresión (TIFF, CMYK)",
     "formatPrintHint": "Solo una etiqueta de 300dpi, sin remuestreo — un escaneo de baja resolución sigue siendo de baja resolución. Conversión CMYK genérica, todavía sin perfil ICC propio de imprenta.",
     "formatVectorPdf": "PDF vectorial (imprenta)",
@@ -699,6 +710,19 @@
     "noneFound": "No se encontraron páginas coincidentes.",
     "done": "{{count}} exportación(es) de página/idioma completada(s).",
     "pdfxNotStamped": "Nota: al menos un archivo no es un PDF/X certificado (no hay perfil ICC configurado en el servidor) — texto vectorial real, pero no formalmente conforme con PDF/X."
+  },
+  "normalizePreview": {
+    "title": "Páginas que requieren una decisión",
+    "intro": "{{count}} página(s) se desvían demasiado de la relación de aspecto objetivo para estirarlas sin distorsión visible. Elige cómo ajustar cada una, u omítela.",
+    "distortion": "{{value}}% de distorsión al estirar",
+    "fitMode": {
+      "stretch": "Estirar de todos modos",
+      "pad": "Rellenar (letterbox)",
+      "crop": "Recortar"
+    },
+    "skipPage": "Omitir esta página",
+    "confirm": "Aplicar y exportar",
+    "doneWithSkipped": "{{count}} exportaciones de página-idioma completadas, {{skipped}} página(s) omitidas."
   },
   "volumeReport": {
     "title": "Informe de todo el volumen",
