@@ -567,8 +567,8 @@ export function Editor() {
             languages={languages}
             currentPage={page}
             exporting={exporting || normalizing}
-            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions) =>
-              runExport(selection, onlyTranslated, languageFilter, format, layout ? { page, layout } : null, pdfxVersion, imageOptions)
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions) =>
+              runExport(selection, onlyTranslated, languageFilter, format, layout ? { page, layout } : null, pdfxVersion, imageOptions, finalFormatOptions)
             }
             onAnalyzeUniform={handleAnalyzeUniform}
             onClose={() => setShowExportPanel(false)}

@@ -6,9 +6,12 @@ import type { PageSelection, PageSelectionMode } from "../export/pageSelection";
 import { parseCustomSelection, PageSelectionError } from "../export/pageSelection";
 import type { RasterExportOptions, RasterImageFormat } from "../export/renderPageToPng";
 import { suggestUniformTarget } from "../export/uniformFormat";
+import { COMIC_PAGE_PRESETS, toPx, type LengthUnit } from "../export/finalFormat";
+import type { FinalFormatOptions } from "../export/useExportRun";
 
-export type ExportFormat = "png" | "uniform" | "print" | "vector-pdf" | "psd";
+export type ExportFormat = "png" | "uniform" | "final-format" | "print" | "vector-pdf" | "psd";
 export type PdfXVersion = "x1a" | "x4";
+const DEFAULT_FINAL_FORMAT_DPI = 300;
 
 // Resolution presets relative to the page's native pixel size — kept modest (0.25x-3x) since
 // upscaling beyond the source image's real detail just produces a larger, not sharper, file.
@@ -21,14 +24,16 @@ interface Props {
   currentPage?: string;
   exporting: boolean;
   /** `pdfxVersion` is only meaningful when `format === "vector-pdf"`; `imageOptions` only when
-   * `format === "png"` — always passed for a uniform signature, ignored otherwise by callers. */
+   * `format === "png"`/`"final-format"`; `finalFormatOptions` only when `format === "final-format"`
+   * — always passed for a uniform signature, ignored otherwise by callers. */
   onExport: (
     selection: PageSelection,
     onlyTranslated: boolean,
     languageFilter: "all" | string,
     format: ExportFormat,
     pdfxVersion: PdfXVersion,
-    imageOptions: RasterExportOptions
+    imageOptions: RasterExportOptions,
+    finalFormatOptions?: FinalFormatOptions
   ) => void;
   /** Only called for `format === "uniform"` — the caller runs a distortion analysis
    * first (see useNormalizeRun.ts's analyze()) before any page is actually rendered,
@@ -74,6 +79,11 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
   const [targetWidth, setTargetWidth] = useState(0);
   const [targetHeight, setTargetHeight] = useState(0);
   const [targetSuggested, setTargetSuggested] = useState(false);
+  const [unit, setUnit] = useState<LengthUnit>("mm");
+  const [finalWidth, setFinalWidth] = useState(COMIC_PAGE_PRESETS[0].widthMm);
+  const [finalHeight, setFinalHeight] = useState(COMIC_PAGE_PRESETS[0].heightMm);
+  const [margin, setMargin] = useState(10);
+  const [dpi, setDpi] = useState(DEFAULT_FINAL_FORMAT_DPI);
 
   // The target size is only meaningful once — computed lazily on first switch to
   // "uniform" so opening the panel for any other format never pays for a listPages()
@@ -96,7 +106,38 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
       customError = translateSelectionError(e, t);
     }
   }
-  const canSubmit = !exporting && (mode !== "custom" || customError === null) && (format !== "uniform" || (targetWidth > 0 && targetHeight > 0));
+
+  // Recomputed on every render from the physical inputs — cheap, and keeps the live
+  // pixel-size hint (and validation) always in sync with width/height/margin/dpi/unit.
+  const finalWidthPx = Math.round(toPx(finalWidth, unit, dpi));
+  const finalHeightPx = Math.round(toPx(finalHeight, unit, dpi));
+  const finalMarginPx = Math.round(toPx(margin, unit, dpi));
+  const finalFormatMarginTooLarge = finalMarginPx * 2 >= finalWidthPx || finalMarginPx * 2 >= finalHeightPx;
+
+  const canSubmit =
+    !exporting &&
+    (mode !== "custom" || customError === null) &&
+    (format !== "uniform" || (targetWidth > 0 && targetHeight > 0)) &&
+    (format !== "final-format" || (finalWidthPx > 0 && finalHeightPx > 0 && !finalFormatMarginTooLarge));
+
+  function convertLength(value: number, from: LengthUnit, to: LengthUnit): number {
+    if (from === to) return value;
+    const mm = from === "mm" ? value : value * 25.4;
+    return Math.round((to === "mm" ? mm : mm / 25.4) * 100) / 100;
+  }
+
+  function handleUnitChange(nextUnit: LengthUnit) {
+    if (nextUnit === unit) return;
+    setFinalWidth((w) => convertLength(w, unit, nextUnit));
+    setFinalHeight((h) => convertLength(h, unit, nextUnit));
+    setMargin((m) => convertLength(m, unit, nextUnit));
+    setUnit(nextUnit);
+  }
+
+  function applyPreset(preset: (typeof COMIC_PAGE_PRESETS)[number]) {
+    setFinalWidth(convertLength(preset.widthMm, "mm", unit));
+    setFinalHeight(convertLength(preset.heightMm, "mm", unit));
+  }
 
   function buildSelection(): PageSelection {
     if (mode === "range") return { mode, rangeFrom, rangeTo };
@@ -109,6 +150,14 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
     const imageOptions: RasterExportOptions = { format: imageFormat, scale, quality: quality / 100 };
     if (format === "uniform") {
       onAnalyzeUniform(buildSelection(), onlyTranslated, languageFilter, targetWidth, targetHeight, imageOptions);
+      return;
+    }
+    if (format === "final-format") {
+      onExport(buildSelection(), onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, {
+        targetWidthPx: finalWidthPx,
+        targetHeightPx: finalHeightPx,
+        marginPx: finalMarginPx,
+      });
       return;
     }
     onExport(buildSelection(), onlyTranslated, languageFilter, format, pdfxVersion, imageOptions);
@@ -183,6 +232,9 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
         <button className={format === "uniform" ? "active" : ""} onClick={() => setFormat("uniform")}>
           {t("exportPanel.formatUniform")}
         </button>
+        <button className={format === "final-format" ? "active" : ""} onClick={() => setFormat("final-format")}>
+          {t("exportPanel.formatFinalFormat")}
+        </button>
         <button className={format === "print" ? "active" : ""} onClick={() => setFormat("print")}>
           {t("exportPanel.formatPrint")}
         </button>
@@ -193,7 +245,7 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
           {t("exportPanel.formatPsd")}
         </button>
       </div>
-      {(format === "png" || format === "uniform") && (
+      {(format === "png" || format === "uniform" || format === "final-format") && (
         <>
           <label>{t("exportPanel.imageFormatLabel")}</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -234,6 +286,57 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
                 </label>
               </div>
               <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.uniformHint")}</p>
+            </>
+          )}
+
+          {format === "final-format" && (
+            <>
+              <label>{t("exportPanel.unitLabel")}</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <button className={unit === "mm" ? "active" : ""} onClick={() => handleUnitChange("mm")}>
+                  {t("exportPanel.unitMm")}
+                </button>
+                <button className={unit === "inch" ? "active" : ""} onClick={() => handleUnitChange("inch")}>
+                  {t("exportPanel.unitInch")}
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {COMIC_PAGE_PRESETS.map((preset) => (
+                  <button key={preset.labelKey} onClick={() => applyPreset(preset)}>
+                    {t(`exportPanel.${preset.labelKey}`)}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <label style={{ flex: 1 }}>
+                  {t("exportPanel.finalWidthLabel")}
+                  <input type="number" min={0} step={0.1} value={finalWidth} onChange={(e) => setFinalWidth(Number(e.target.value))} />
+                </label>
+                <label style={{ flex: 1 }}>
+                  {t("exportPanel.finalHeightLabel")}
+                  <input type="number" min={0} step={0.1} value={finalHeight} onChange={(e) => setFinalHeight(Number(e.target.value))} />
+                </label>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <label style={{ flex: 1 }}>
+                  {t("exportPanel.marginLabel")}
+                  <input type="number" min={0} step={0.1} value={margin} onChange={(e) => setMargin(Number(e.target.value))} />
+                </label>
+                <label style={{ flex: 1 }}>
+                  {t("exportPanel.dpiLabel")}
+                  <input type="number" min={1} value={dpi} onChange={(e) => setDpi(Number(e.target.value))} />
+                </label>
+              </div>
+
+              <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>
+                {t("exportPanel.finalFormatPixelHint", { width: finalWidthPx, height: finalHeightPx, margin: finalMarginPx })}
+              </p>
+              {finalFormatMarginTooLarge && (
+                <p style={{ color: "#ff8a95", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.finalFormatMarginTooLarge")}</p>
+              )}
             </>
           )}
 

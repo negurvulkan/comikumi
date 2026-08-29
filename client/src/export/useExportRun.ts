@@ -5,9 +5,16 @@ import type { PageLayout } from "../../../shared/src/layoutSchema";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ensureFontsLoaded } from "../editor/fontLoader";
-import { renderPageToPng, type RasterExportOptions } from "./renderPageToPng";
+import { canvasToBlob, renderPageToPng, type RasterExportOptions } from "./renderPageToPng";
+import { placeInFinalFormat } from "./finalFormat";
 import { selectPages, type PageSelection } from "./pageSelection";
 import type { ExportFormat, PdfXVersion } from "../editor/ExportPanel";
+
+export interface FinalFormatOptions {
+  targetWidthPx: number;
+  targetHeightPx: number;
+  marginPx: number;
+}
 
 const EXTENSION_BY_IMAGE_FORMAT: Record<NonNullable<RasterExportOptions["format"]>, string> = {
   png: "png",
@@ -67,7 +74,9 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
     preloadedLayout?: { page: string; layout: PageLayout } | null,
     pdfxVersion: PdfXVersion = "x4",
     /** Only consulted when `format === "png"` — the raster (client-rendered) export path. */
-    imageOptions: RasterExportOptions = {}
+    imageOptions: RasterExportOptions = {},
+    /** Only consulted when `format === "final-format"`. */
+    finalFormatOptions?: FinalFormatOptions
   ) {
     if (languages.length === 0) return;
     setExporting(true);
@@ -117,6 +126,28 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
             // the image format/quality/resolution controls are for the "png" web-image path only.
             const blob = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets);
             await api.exportPrintPage(volumeId, p.page, lang.folderSuffix, blob);
+          } else if (format === "final-format" && finalFormatOptions) {
+            // Renders at native resolution first (scale left at 1 — the final pixel size
+            // comes entirely from the target format + DPI, not a resolution multiplier),
+            // then places the result centered inside the target page with a guaranteed
+            // margin on all sides (see finalFormat.ts's placeInFinalFormat).
+            const rendered = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets, {
+              format: imageOptions.format,
+              quality: imageOptions.quality,
+            });
+            const bitmap = await createImageBitmap(rendered);
+            const placed = placeInFinalFormat(
+              bitmap,
+              bitmap.width,
+              bitmap.height,
+              finalFormatOptions.targetWidthPx,
+              finalFormatOptions.targetHeightPx,
+              finalFormatOptions.marginPx
+            );
+            bitmap.close();
+            const imageFormat = imageOptions.format ?? "png";
+            const blob = await canvasToBlob(placed, imageFormat, imageOptions.quality);
+            await api.exportPage(volumeId, p.page, lang.folderSuffix, blob, EXTENSION_BY_IMAGE_FORMAT[imageFormat]);
           } else {
             const blob = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets, imageOptions);
             const extension = EXTENSION_BY_IMAGE_FORMAT[imageOptions.format ?? "png"];

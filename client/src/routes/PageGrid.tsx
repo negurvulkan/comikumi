@@ -598,8 +598,8 @@ export function PageGrid() {
             volumeId={volumeId}
             languages={languages}
             exporting={exporting || normalizing}
-            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions) =>
-              runExport(selection, onlyTranslated, languageFilter, format, null, pdfxVersion, imageOptions)
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions) =>
+              runExport(selection, onlyTranslated, languageFilter, format, null, pdfxVersion, imageOptions, finalFormatOptions)
             }
             onAnalyzeUniform={handleAnalyzeUniform}
             onClose={() => setShowExportPanel(false)}
