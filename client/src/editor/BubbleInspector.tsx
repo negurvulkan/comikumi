@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   Bubble,
@@ -48,14 +49,77 @@ interface Props {
    * (unlike every other field here, this can't be a plain onChange patch). */
   onReassignPanel: (panelId: string | null) => void;
   onDelete: () => void;
+  /** Keyboard-workflow mode (see Editor.tsx's navigateBubble) — Tab/Shift+Tab in the text
+   * field jumps to the next/previous bubble in reading order instead of leaving the
+   * field via the browser's default tab-order. Optional: omitting it just leaves Tab at
+   * its native browser behavior. */
+  onNavigate?: (direction: 1 | -1) => void;
+  /** Bumped (any value change, e.g. an incrementing counter) by Editor.tsx right after an
+   * onNavigate-triggered selection change, to focus+select this bubble's text field for
+   * immediate typing — a plain mouse-click selection must NOT do this (would steal focus
+   * from whatever the user was doing), so this is deliberately a separate signal from
+   * `bubble` itself changing. */
+  autoFocusSignal?: number;
 }
 
 type TabId = "text" | "form" | "textStyle" | "effects";
 
-export function BubbleInspector({ bubble, activeLanguage, panels, characters, glossary, presets, onChange, onReassignPanel, onDelete }: Props) {
+export function BubbleInspector({
+  bubble,
+  activeLanguage,
+  panels,
+  characters,
+  glossary,
+  presets,
+  onChange,
+  onReassignPanel,
+  onDelete,
+  onNavigate,
+  autoFocusSignal,
+}: Props) {
   const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [activeTab, setActiveTab] = useState<TabId>("text");
+
+  // Two effects, not one: the text field only exists in the DOM while the "text" tab is
+  // active, so switching tabs (if a different one was open) and focusing the now-mounted
+  // textarea can't happen in the same synchronous pass — the second effect re-runs once
+  // `activeTab` itself has actually flipped and the textarea has mounted. `lastFocusedSignalRef`
+  // tracks which signal value has already been handled, so the second effect's `activeTab`
+  // dependency doesn't also fire it on a later MANUAL tab click (which must never steal focus).
+  const lastFocusedSignalRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (autoFocusSignal === undefined) return;
+    setActiveTab("text");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFocusSignal]);
+
+  useEffect(() => {
+    if (autoFocusSignal === undefined || activeTab !== "text") return;
+    if (lastFocusedSignalRef.current === autoFocusSignal) return;
+    lastFocusedSignalRef.current = autoFocusSignal;
+    textareaRef.current?.focus();
+    textareaRef.current?.select();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFocusSignal, activeTab]);
+
+  function handleTextareaKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (!onNavigate) return;
+    // Tab already leaves the textarea natively (browsers don't insert a tab character in
+    // a plain <textarea>), so hijacking it here doesn't take away any existing behavior —
+    // it just redirects "leave this field" to "the next bubble" instead of "whatever's
+    // next in the DOM's tab order". Ctrl/Cmd+Enter is the escape hatch for "done typing,
+    // move on" without sacrificing plain Enter, which must stay a newline (dialogue is
+    // frequently multi-line).
+    if (e.key === "Tab") {
+      e.preventDefault();
+      onNavigate(e.shiftKey ? -1 : 1);
+    } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      onNavigate(1);
+    }
+  }
   const style = resolveBubbleStyle(bubble, activeLanguage, presets);
   const form = resolveBubbleForm(bubble, activeLanguage, presets);
   const hasFormOverride = !!bubble.formOverride?.[activeLanguage];
@@ -350,6 +414,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
               glossary={glossary}
               activeLanguage={activeLanguage}
               vertical={style.direction === "vertical-rl"}
+              onKeyDown={handleTextareaKeyDown}
               style={{
                 fontFamily: style.fontFamily,
                 writingMode: style.direction === "vertical-rl" ? "vertical-rl" : "horizontal-tb",

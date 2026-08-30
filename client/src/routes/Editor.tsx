@@ -15,6 +15,8 @@ import { ImageInspector } from "../editor/ImageInspector";
 import { CurvedTextInspector } from "../editor/CurvedTextInspector";
 import { PanelInspector } from "../editor/PanelInspector";
 import { MultiSelectInspector } from "../editor/MultiSelectInspector";
+import { ShortcutsModal } from "../editor/ShortcutsModal";
+import { CommandPalette, type CommandItem } from "../editor/CommandPalette";
 import { ExportPanel } from "../editor/ExportPanel";
 import { NormalizePreviewDialog } from "../editor/NormalizePreviewDialog";
 import { useNormalizeRun, type FlaggedPage } from "../export/useNormalizeRun";
@@ -42,7 +44,7 @@ import { ReportModal } from "../editor/ReportModal";
 import { AutoBubblesReviewPanel } from "../editor/AutoBubblesReviewPanel";
 import { useAutoBubblesRun } from "../ocr/useAutoBubblesRun";
 import { detectionToBubble } from "../ocr/detectionToBubble";
-import { characterName, groupBubblesByPanel, moveBubbleInReadingOrder } from "../editor/reportUtils";
+import { characterName, getPageReadingOrder, groupBubblesByPanel, moveBubbleInReadingOrder } from "../editor/reportUtils";
 import { api, downloadBlob, type PageSummary } from "../api/client";
 import { useExportRun } from "../export/useExportRun";
 import { ensureFontsLoaded } from "../editor/fontLoader";
@@ -93,6 +95,14 @@ export function Editor() {
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  // Bumped on every keyboard-workflow navigation (see navigateBubble below) — passed to
+  // BubbleInspector as autoFocusSignal so it focuses+selects the new bubble's text field.
+  // A plain counter (not a boolean) so two navigations to the same neighboring bubble in
+  // a row (e.g. Tab, Tab, Shift+Tab back) still each produce a distinct "value changed"
+  // signal for BubbleInspector's effect to react to.
+  const [focusTextSignal, setFocusTextSignal] = useState(0);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
@@ -213,6 +223,14 @@ export function Editor() {
     }
 
     function handleKeyDown(e: KeyboardEvent) {
+      // Command palette: deliberately checked BEFORE the isTypingTarget bail-out below —
+      // Ctrl/Cmd+K is meant to work everywhere, including while typing in a bubble's text
+      // field (same convention as Slack/VS Code's own command palettes).
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowCommandPalette(true);
+        return;
+      }
       // While a text field has focus, let the browser's own native
       // undo/typing/selection behavior handle every key — none of these
       // shortcuts should hijack e.g. Ctrl+Z while editing bubble text.
@@ -412,6 +430,24 @@ export function Editor() {
     downloadBlob(blob, `${page}.json`);
   }
 
+  /** Keyboard-workflow mode: Tab/Shift+Tab in BubbleInspector's text field jumps to the
+   * next/previous bubble in the same reading order the context sidebar and reports use
+   * (getPageReadingOrder — panels top-to-bottom, each panel's own bubbles in order, then
+   * "Ohne Panel"), wrapping around at either end so repeated Tab cycles the whole page.
+   * With nothing selected yet, starts at the first bubble in that order. Bumps
+   * focusTextSignal so the newly-selected bubble's text field gets focus automatically —
+   * the whole point is never needing the mouse to move to the next line of dialogue. */
+  function navigateBubble(direction: 1 | -1) {
+    if (!layout) return;
+    const order = getPageReadingOrder(layout.bubbles, layout.panels, activeLanguage, readingDirection);
+    if (order.length === 0) return;
+    const currentId = selectedBubbleIds[0];
+    const idx = currentId ? order.findIndex((b) => b.id === currentId) : -1;
+    const nextIdx = idx === -1 ? 0 : (idx + direction + order.length) % order.length;
+    store.selectBubble(order[nextIdx].id);
+    setFocusTextSignal((v) => v + 1);
+  }
+
   async function handleImportJsonFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -542,9 +578,57 @@ export function Editor() {
     {
       key: "hilfe",
       label: t("menu.help"),
-      entries: [{ type: "action", label: t("menu.noEntriesYet"), onClick: () => {}, disabled: true }],
+      entries: [
+        { type: "action", label: t("editor.shortcuts.menuEntry"), onClick: () => setShowShortcuts(true) },
+        { type: "action", label: t("editor.commandPalette.menuEntry"), onClick: () => setShowCommandPalette(true) },
+      ],
     },
   ];
+
+  // Command palette (Ctrl/Cmd+K) content — every enabled menu action for free (reusing
+  // menuGroups above instead of a second hand-maintained action list), plus bubbles on
+  // this page searchable by their text, plus (only with exactly one bubble selected, same
+  // condition BubbleInspector's own single-element view uses) quick preset/character
+  // assignment without opening the inspector tabs at all.
+  const menuCommandItems: CommandItem[] = menuGroups.flatMap((group) =>
+    (group.entries ?? []).flatMap((entry, i) =>
+      entry.type === "action" && !entry.disabled
+        ? [{ id: `menu-${group.key}-${i}`, category: group.label, label: entry.label, onSelect: entry.onClick }]
+        : []
+    )
+  );
+  const bubbleCommandItems: CommandItem[] = layout.bubbles.flatMap((b) => {
+    const text = (b.text[activeLanguage] ?? "").trim();
+    if (!text) return [];
+    return [
+      {
+        id: `bubble-${b.id}`,
+        category: t("editor.commandPalette.categoryBubble"),
+        label: text.length > 60 ? `${text.slice(0, 60)}…` : text,
+        onSelect: () => {
+          store.selectBubble(b.id);
+          setFocusTextSignal((v) => v + 1);
+        },
+      },
+    ];
+  });
+  const presetCommandItems: CommandItem[] = selectedBubble
+    ? presets.map((p) => ({
+        id: `preset-${p.id}`,
+        category: t("editor.commandPalette.categoryPreset"),
+        label: t("editor.commandPalette.assignPreset", { name: p.name }),
+        onSelect: () => store.updateBubble(selectedBubble.id, { presetId: p.id }),
+      }))
+    : [];
+  const characterCommandItems: CommandItem[] = selectedBubble
+    ? characters.map((c) => ({
+        id: `character-${c.id}`,
+        category: t("editor.commandPalette.categoryCharacter"),
+        label: t("editor.commandPalette.assignCharacter", { name: c.name }),
+        onSelect: () => store.updateBubble(selectedBubble.id, { characterId: c.id }),
+      }))
+    : [];
+  const commandItems: CommandItem[] = [...menuCommandItems, ...bubbleCommandItems, ...presetCommandItems, ...characterCommandItems];
 
   return (
     <div className="page">
@@ -627,6 +711,12 @@ export function Editor() {
           <PresetManager presets={presets} onChange={setPresets} onClose={() => setShowPresets(false)} />
         </Modal>
       )}
+      {showShortcuts && (
+        <Modal onClose={() => setShowShortcuts(false)}>
+          <ShortcutsModal onClose={() => setShowShortcuts(false)} />
+        </Modal>
+      )}
+      <CommandPalette open={showCommandPalette} onClose={() => setShowCommandPalette(false)} items={commandItems} />
       {showReport && (
         <Modal onClose={() => setShowReport(false)}>
           <ReportModal
@@ -840,6 +930,8 @@ export function Editor() {
               onMerge={() => store.mergeSelectedBubbles()}
               canUnmerge={layout != null && layout.bubbles.some((b) => selectedBubbleIds.includes(b.id) && !!b.mergeGroupId)}
               onUnmerge={() => store.unmergeSelectedBubbles()}
+              presets={presets}
+              onApplyToSelectedBubbles={(patch) => store.updateSelectedBubbles(patch)}
             />
           ) : selectedBubble ? (
             <BubbleInspector
@@ -852,6 +944,8 @@ export function Editor() {
               onChange={(patch) => store.updateBubble(selectedBubble.id, patch)}
               onReassignPanel={(panelId) => store.reassignBubblePanel(selectedBubble.id, panelId)}
               onDelete={() => store.removeBubble(selectedBubble.id)}
+              onNavigate={navigateBubble}
+              autoFocusSignal={focusTextSignal}
             />
           ) : selectedImage ? (
             <ImageInspector

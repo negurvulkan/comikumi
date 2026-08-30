@@ -1,5 +1,5 @@
 import { forwardRef, useMemo, useRef } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, KeyboardEvent } from "react";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 
 interface Props {
@@ -14,6 +14,10 @@ interface Props {
    * different axis — highlighting it is a meaningfully harder problem than the
    * horizontal case, so it's out of scope for v1: just render a plain textarea. */
   vertical?: boolean;
+  /** Forwarded straight to the underlying textarea — used by BubbleInspector.tsx's
+   * keyboard-workflow mode (Tab/Shift+Tab to jump to the next/previous bubble in
+   * reading order without leaving the keyboard). */
+  onKeyDown?: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 function escapeRegExp(s: string): string {
@@ -74,7 +78,7 @@ export function findGlossaryReading(selected: string, glossary: GlossaryEntry[],
  * the wrapper's only in-flow child, so the backdrop's `inset: 0` automatically tracks a
  * user resize (`resize: vertical`) with no ResizeObserver needed. */
 export const GlossaryHighlightedTextarea = forwardRef<HTMLTextAreaElement, Props>(function GlossaryHighlightedTextarea(
-  { value, onChange, glossary, activeLanguage, style, vertical },
+  { value, onChange, glossary, activeLanguage, style, vertical, onKeyDown },
   ref
 ) {
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -86,7 +90,7 @@ export const GlossaryHighlightedTextarea = forwardRef<HTMLTextAreaElement, Props
 
   if (vertical || ranges.length === 0) {
     // No highlight possible/needed — plain textarea, byte-for-byte the old behavior.
-    return <textarea ref={ref} value={value} onChange={(e) => onChange(e.target.value)} style={style} />;
+    return <textarea ref={ref} value={value} onChange={(e) => onChange(e.target.value)} style={style} onKeyDown={onKeyDown} />;
   }
 
   const fragments: { text: string; marked: boolean }[] = [];
@@ -144,6 +148,7 @@ export const GlossaryHighlightedTextarea = forwardRef<HTMLTextAreaElement, Props
         ref={ref}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         onScroll={(e) => {
           if (backdropRef.current) {
             backdropRef.current.scrollTop = e.currentTarget.scrollTop;

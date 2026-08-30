@@ -62,3 +62,46 @@ describe("addBubbles", () => {
     expect(useEditorStore.getState().layout).toBeNull();
   });
 });
+
+describe("updateSelectedBubbles", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("applies the patch to every selected bubble, skips unselected and locked ones", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    const b = createBubble({ id: "b", x: 0, y: 0, width: 10, height: 10 });
+    const lockedC = createBubble({ id: "c", x: 0, y: 0, width: 10, height: 10, locked: true });
+    const untouched = createBubble({ id: "d", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({
+      layout: { ...s.layout!, bubbles: [a, b, lockedC, untouched] },
+      selectedBubbleIds: ["a", "b", "c"],
+    }));
+
+    useEditorStore.getState().updateSelectedBubbles({ fontSize: 40 });
+
+    const bubbles = useEditorStore.getState().layout!.bubbles;
+    expect(bubbles.find((x) => x.id === "a")!.fontSize).toBe(40);
+    expect(bubbles.find((x) => x.id === "b")!.fontSize).toBe(40);
+    expect(bubbles.find((x) => x.id === "c")!.fontSize).not.toBe(40); // locked
+    expect(bubbles.find((x) => x.id === "d")!.fontSize).not.toBe(40); // not selected
+  });
+
+  it("creates one undo step and marks the layout dirty", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a] }, selectedBubbleIds: ["a"] }));
+
+    useEditorStore.getState().updateSelectedBubbles({ presetId: "preset-1" });
+
+    expect(useEditorStore.getState().past.length).toBe(1);
+    expect(useEditorStore.getState().dirty).toBe(true);
+  });
+
+  it("is a no-op (no history entry) when nothing selected qualifies", () => {
+    const lockedOnly = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10, locked: true });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [lockedOnly] }, selectedBubbleIds: ["a"] }));
+
+    useEditorStore.getState().updateSelectedBubbles({ fontSize: 40 });
+
+    expect(useEditorStore.getState().past.length).toBe(0);
+    expect(useEditorStore.getState().layout!.bubbles[0].fontSize).not.toBe(40);
+  });
+});

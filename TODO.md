@@ -41,15 +41,21 @@ Menüs zu navigieren — teilt sich potenziell eine gemeinsame Tastatur-/
 Befehls-Infrastruktur (Command Palette + Keyboard-Workflow + Shortcuts-Übersicht
 sind natürliche Begleiter).
 
-- [ ] **Command Palette (Strg+K)** — Schnellsuche/-sprung zu Seite, Bubble, Preset,
-      Charakter, Export-Aktion.
-- [ ] **Keyboard-Workflow-Modus** — Tab/Enter springt zur nächsten Bubble in
-      Lesereihenfolge, für schnelles Lettering ganzer Seiten ohne Maus.
-- [ ] **Sichtbare Tastenkürzel-Übersicht** — Cheat-Sheet für Canvas-Shortcuts,
-      aufrufbar über das Menü „Hilfe".
-- [ ] **Mehrfachauswahl-Bulk-Edit** — ein Preset, Padding oder Schriftgröße auf
-      mehrere ausgewählte Bubbles gleichzeitig anwenden (Feature + sichtbares
-      UI-Panel dafür).
+- [x] **Command Palette (Strg+K)** — `CommandPalette.tsx`, öffnet global (auch während im
+      Textfeld getippt wird). Durchsucht alle aktivierten Menüaktionen (aus `menuGroups`
+      übernommen, keine zweite Liste zu pflegen), Bubbles auf der Seite (nach Text),
+      sowie — bei genau einer ausgewählten Bubble — Preset/Charakter-Schnellzuweisung.
+      Export-Aktionen sind über die Menüaktionen bereits mit drin (Export-Panel/-Viewer/
+      JSON-Export/Report zählen als Menüeinträge).
+- [x] **Keyboard-Workflow-Modus** — Tab/Shift+Tab im Textfeld springt zur nächsten/
+      vorherigen Bubble in Lesereihenfolge (wiederverwendet `getPageReadingOrder`),
+      fokussiert automatisch das neue Textfeld. Bewusst NICHT auf reines Enter gelegt
+      (Dialogtext ist oft mehrzeilig) — Ctrl/Cmd+Enter ist der Zusatzweg dafür.
+- [x] **Sichtbare Tastenkürzel-Übersicht** — `ShortcutsModal.tsx`, aufrufbar über das
+      Menü „Hilfe" (ersetzt den bisherigen Platzhalter-Eintrag).
+- [x] **Mehrfachauswahl-Bulk-Edit** — `MultiSelectInspector.tsx` erweitert um Preset-
+      Zuweisung, Padding- und Schriftgrößen-Bulk-Apply; neue `editorStore.updateSelectedBubbles()`-
+      Mutation (unlocked-only, ein Undo-Schritt), mit Tests abgesichert.
 
 ## Batch C — Projektweite Textanalyse
 

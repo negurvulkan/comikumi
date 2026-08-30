@@ -134,6 +134,12 @@ interface EditorState {
   duplicateSelected: () => void;
   /** Moves every currently-selected element by (dx, dy) image px — used for arrow-key nudging. */
   nudgeSelected: (dx: number, dy: number) => void;
+  /** Applies the same field patch to every currently-selected, unlocked bubble at once —
+   * the bulk-edit primitive behind MultiSelectInspector's preset/padding/font-size
+   * controls. A no-op (no history entry) if no selected bubble qualifies. Deliberately
+   * bubble-only (not images/curved texts/panels) — the fields it's used for (presetId,
+   * paddingRatio, fontSize) only exist on Bubble. */
+  updateSelectedBubbles: (patch: Partial<Bubble>) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => {
@@ -717,6 +723,22 @@ export const useEditorStore = create<EditorState>((set, get) => {
           images: layout.images.map((img) => (selectedImageIds.includes(img.id) && !img.locked ? offsetImage(img, dx, dy) : img)),
           curvedTexts: layout.curvedTexts.map((el) => (selectedCurvedTextIds.includes(el.id) && !el.locked ? offsetCurvedText(el, dx, dy) : el)),
           panels: layout.panels.map((p) => (selectedPanelIds.includes(p.id) && !p.locked ? offsetPanel(p, dx, dy, activeLanguage) : p)),
+        },
+        dirty: true,
+      });
+    },
+
+    updateSelectedBubbles(patch) {
+      const layout = get().layout;
+      if (!layout) return;
+      const { selectedBubbleIds } = get();
+      const targetIds = new Set(layout.bubbles.filter((b) => selectedBubbleIds.includes(b.id) && !b.locked).map((b) => b.id));
+      if (targetIds.size === 0) return;
+      pushHistory(true);
+      set({
+        layout: {
+          ...layout,
+          bubbles: layout.bubbles.map((b) => (targetIds.has(b.id) ? { ...b, ...patch } : b)),
         },
         dirty: true,
       });
