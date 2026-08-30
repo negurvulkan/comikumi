@@ -425,6 +425,26 @@ instead of a solid color. Every one of these style fields (and the entire
 shape/position/size/rotation/background) can be overridden per language.
 Bubbles can be assigned to a panel and a character.
 
+**Clipping**: a rect/oval/thought/shout/SVG bubble can be cut along a straight
+line — dragged freely on the canvas via two handles, with a "Snap to panel
+edge" button in the bubble inspector that suggests a starting line from the
+nearest edge of the bubble's assigned panel (a one-time suggestion, not a
+persistent binding — the panel can move afterward without dragging the line
+along). A "Flip" toggle switches which side of the line is kept. Text
+automatically insets away from the clipped-off side so it never overflows into
+it. Not available for "quad" bubbles.
+
+**Merging**: two or more rect/oval/thought/shout/SVG bubbles can be merged
+into one continuous outline (the geometric union of their individual shapes —
+e.g. two overlapping ovals become one waisted "figure-8" outline) via
+"Merge bubbles" in the multi-selection inspector, non-destructively: the
+source bubbles keep their own data, only one (the "primary", the first bubble
+selected) carries the merged shape's shared, continuous text and tail — the
+other members' own text/tail are hidden while merged, not deleted. "Undo
+merge" restores every original bubble exactly as it was, including any text
+they held before merging. Not available for "quad" bubbles; only supported by
+the live editor and the PNG export (not the vector-PDF/PSD export paths).
+
 ### Images
 
 A placed raster image, warped into a free quad (same corner-drag mechanism as

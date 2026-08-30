@@ -7,6 +7,8 @@
 
 <p align="center">A local-first lettering &amp; typesetting tool for manga/comic translation projects.</p>
 
+<p align="center"><a href="https://discord.gg/DZ7nnaFzn">Join the Discord</a></p>
+
 <p align="center">
   <img alt="ComiKumi Editor Overview" src="docs/screenshot/03_editor_page_26.png" width="100%">
 </p>
@@ -31,6 +33,10 @@ React + Konva canvas editor.
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
   (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
   panel-reference polygons for reporting.
+- **Bubble clipping & merging** — cut a bubble along a straight line (with a one-click
+  suggestion from the nearest panel edge) so it sits flush against a panel border, or
+  non-destructively merge several bubbles into one continuous outline with a single
+  shared line of dialogue; ungrouping restores the original bubbles untouched.
 - **Lettering presets** — define a reusable style ("SFX Style", "Narration", …) that
   live-updates every bubble/curved text linked to it, field by field, without
   overwriting values a preset doesn't define.

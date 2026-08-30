@@ -423,6 +423,30 @@ dieser Stil-Felder (und die komplette Form/Position/Größe/Rotation/Hintergrund
 per Sprach-Umschalter überschreibbar. Blasen können einem Panel und einem Charakter
 zugeordnet werden.
 
+**Anschneiden**: eine Rechteck-/Oval-/Denk-/Schrei-/SVG-Blase lässt sich an einer
+geraden Linie anschneiden — frei auf dem Canvas per zwei Greifern gezogen, mit
+einem „An Panelkante ausrichten"-Button im Blasen-Inspector, der eine
+Start-Linie von der nächstgelegenen Kante des zugewiesenen Panels vorschlägt
+(ein einmaliger Vorschlag, keine dauerhafte Bindung — das Panel kann sich
+danach bewegen, ohne dass die Linie mitgezogen wird). Ein „Flip"-Umschalter
+kehrt um, welche Seite der Linie behalten wird. Text rückt automatisch von der
+abgeschnittenen Seite ab, damit er nie in sie hineinläuft. Nicht verfügbar für
+„Quad"-Blasen.
+
+**Verschmelzen**: zwei oder mehr Rechteck-/Oval-/Denk-/Schrei-/SVG-Blasen
+lassen sich zu einem durchgehenden Umriss verschmelzen (die geometrische
+Vereinigung ihrer Einzelformen — z. B. werden zwei überlappende Ovale zu einer
+tailliert eingezogenen „Achter"-Form) über „Blasen verschmelzen" im
+Mehrfachauswahl-Inspector, nicht-destruktiv: die Ursprungsblasen behalten ihre
+eigenen Daten, nur eine (die „Primär-Blase", die zuerst ausgewählte) trägt den
+gemeinsamen, durchlaufenden Text und das Schwänzchen der verschmolzenen Form —
+der eigene Text/das eigene Schwänzchen der übrigen Mitglieder wird während der
+Verschmelzung nur ausgeblendet, nicht gelöscht. „Verschmelzung aufheben"
+stellt jede Ursprungsblase exakt wieder her, inklusive jedes Texts, den sie
+vor der Verschmelzung trug. Nicht verfügbar für „Quad"-Blasen; nur im
+Live-Editor und beim PNG-Export unterstützt (nicht in den Vektor-PDF-/PSD-
+Exportpfaden).
+
 ### Bilder
 
 Ein platziertes Rasterbild, in ein freies Viereck verzerrt (gleicher
