@@ -658,6 +658,8 @@
       "furiganaHintSuffix": "· Zahlen-/Lateinpaare (z. B. „21“) werden automatisch quer gesetzt.",
       "monoRubyHintPrefix": "Lesung pro Zeichen:",
       "monoRubyHintSuffix": "— bleibt beim Spaltenumbruch zusammen.",
+      "boutenHintPrefix": "Betonung (Bōten):",
+      "boutenHintSuffix": "— ein kleiner Punkt statt Fett/Kursiv.",
       "characterLabel": "Charakter",
       "voiceNotesFor": "Voice Notes ({{name}}):",
       "presetLinkedHint": "Verknüpft mit „{{name}}“ — legt fest, was unten deaktiviert ist.",

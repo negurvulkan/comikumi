@@ -638,6 +638,8 @@
       "furiganaHintSuffix": "· Les paires chiffres/latin (p. ex. « 21 ») sont automatiquement mises en travers.",
       "monoRubyHintPrefix": "Lecture par caractère :",
       "monoRubyHintSuffix": "— reste groupé lors d'un saut de colonne.",
+      "boutenHintPrefix": "Emphase (bōten) :",
+      "boutenHintSuffix": "— un petit point au lieu du gras/italique.",
       "characterLabel": "Personnage",
       "voiceNotesFor": "Notes de voix ({{name}}) :",
       "presetLinkedHint": "Lié à « {{name}} » — détermine ce qui est désactivé ci-dessous.",

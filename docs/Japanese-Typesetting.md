@@ -46,6 +46,9 @@ normal `text` field at render time.
   together across a column break the same way — e.g. `{東|とう}{京|きょう}`
   never splits into 東 at the end of one column and 京 at the start of
   the next.
+- **Word cohesion (bōten).** The same protection applies to a multi-character
+  bōten emphasis marker (see "Manual: bōten" below) — `{最悪*}` stays together
+  across a column break too.
 - **Uniform alignment.** All columns of a text block share a common
   top starting point, instead of (as before) each vertically centering
   itself based on its own character count — this used to make columns
@@ -91,6 +94,23 @@ column-breaking purposes (see "Word cohesion (mono-ruby)" above), so
 
 Unrecognized/incomplete `{...}` expressions (e.g. a forgotten `|`) are
 treated as normal text — there is no crash.
+
+## Manual: bōten (emphasis)
+
+Bōten (圏点) — small dots beside each character, the traditional Japanese
+equivalent of bold/italic — are marked with a `*` instead of a reading:
+
+```
+{最悪*}
+```
+
+Every character in `最悪` gets its own small filled dot drawn beside it (same
+side as furigana). A single marked character (`{猫*}`) works the same way.
+Since the marker reuses the `{...}` syntax but requires no `|`, it can never
+collide with the furigana syntax above. This is vertical-text only — bōten has
+no real equivalent in horizontal typesetting, and combining it with furigana
+on the exact same character isn't specially handled (real manga lettering
+essentially never does this).
 
 ## Deliberate simplifications
 

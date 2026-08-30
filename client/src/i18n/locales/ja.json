@@ -630,6 +630,8 @@
       "furiganaHintSuffix": "・数字/ラテン文字のペア（例:「21」）は自動的に横並びになります。",
       "monoRubyHintPrefix": "文字ごとのルビ:",
       "monoRubyHintSuffix": "・段の折り返しでもまとまって表示されます。",
+      "boutenHintPrefix": "強調（傍点）:",
+      "boutenHintSuffix": "・太字/斜体の代わりに小さな点を打ちます。",
       "characterLabel": "キャラクター",
       "voiceNotesFor": "ボイスノート ({{name}}):",
       "presetLinkedHint": "「{{name}}」に関連付けられています — 下記で無効になっている項目を決定します。",

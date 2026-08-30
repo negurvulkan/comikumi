@@ -423,7 +423,11 @@ mehrzeichige Basis verteilt, z. B. `{大人|おとな}`) als auch Mono-Ruby (ein
 eigener `{basis|lesung}`-Block je Zeichen, z. B. `{東|とう}{京|きょう}`) — 2
 oder mehr solcher Blöcke direkt hintereinander geschrieben bleiben automatisch
 als ein Wort über einen Spaltenumbruch hinweg zusammen, derselbe Schutz, den
-reine Mehrfach-Kanji-Wörter schon hatten. Text kann eine
+reine Mehrfach-Kanji-Wörter schon hatten. Vertikaler Text unterstützt außerdem
+Bōten (圏点) — traditionelle japanische Betonungspunkte, das Äquivalent zu
+Fett/Kursiv — über `{text*}` (z. B. `{最悪*}`), gezeichnet als kleiner Punkt
+neben jedem markierten Zeichen; derselbe Wortzusammenhalt-Schutz für
+mehrzeichige Läufe gilt auch hier. Text kann eine
 Umrandung und/oder einen linearen Farbverlauf statt Volltonfarbe bekommen. Jedes
 dieser Stil-Felder (und die komplette Form/Position/Größe/Rotation/Hintergrund) ist
 per Sprach-Umschalter überschreibbar. Blasen können einem Panel und einem Charakter

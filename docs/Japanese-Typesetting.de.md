@@ -46,6 +46,9 @@ normalen `text`-Feld herausgelesen.
   Furigana“ unten) werden beim Spaltenumbruch genauso zusammengehalten —
   z. B. trennt sich `{東|とう}{京|きょう}` nie in 東 am Spaltenende und 京
   am Anfang der nächsten Spalte auf.
+- **Wortzusammenhalt (Bōten).** Derselbe Schutz gilt für eine mehrzeichige
+  Bōten-Emphase-Markierung (siehe „Manuell: Bōten“ unten) — auch `{最悪*}`
+  bleibt über einen Spaltenumbruch hinweg zusammen.
 - **Einheitliche Ausrichtung.** Alle Spalten eines Textblocks teilen sich einen
   gemeinsamen oberen Startpunkt, statt sich (wie zuvor) jede für sich an ihrer
   eigenen Zeichenzahl vertikal zu zentrieren — das verhinderte, dass Spalten
@@ -90,6 +93,25 @@ nie auf zwei Spalten aufgeteilt werden können.
 
 Nicht erkannte/unvollständige `{...}`-Ausdrücke (z. B. vergessene `|`) werden
 als normaler Text behandelt, es gibt keinen Absturz.
+
+## Manuell: Bōten (Emphase)
+
+Bōten (圏点) — kleine Punkte neben jedem Zeichen, das traditionelle
+japanische Äquivalent zu Fett/Kursiv — werden mit einem `*` statt einer
+Lesung markiert:
+
+```
+{最悪*}
+```
+
+Jedes Zeichen in `最悪` bekommt seinen eigenen kleinen ausgefüllten Punkt
+daneben (dieselbe Seite wie Furigana). Ein einzelnes markiertes Zeichen
+(`{猫*}`) funktioniert genauso. Da die Markierung dieselbe `{...}`-Syntax
+wiederverwendet, aber kein `|` verlangt, kann sie nie mit der
+Furigana-Syntax oben kollidieren. Das ist nur für vertikalen Text gedacht —
+Bōten hat keine echte Entsprechung im horizontalen Satz — und die
+Kombination mit Furigana auf demselben Zeichen wird nicht gesondert
+behandelt (im echten Manga-Lettering kommt das praktisch nie vor).
 
 ## Bewusste Vereinfachungen
 

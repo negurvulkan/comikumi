@@ -24,6 +24,21 @@ describe("tokenizeVertical", () => {
     expect(tokens).toEqual([{ kind: "ruby", base: "猫", reading: "ねこ" }]);
   });
 
+  it("parses a single-character bōten emphasis marker {text*} as a char token with emphasis: true", () => {
+    const tokens = tokenizeVertical("{猫*}");
+    expect(tokens).toEqual([{ kind: "char", text: "猫", rotate: undefined, smallOffset: undefined, smallKana: undefined, emphasis: true }]);
+  });
+
+  it("parses a multi-character bōten emphasis marker {text*} as a word token with emphasis on every char", () => {
+    const tokens = tokenizeVertical("{最悪*}");
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0].kind).toBe("word");
+    if (tokens[0].kind === "word") {
+      expect(tokens[0].chars.map((c) => c.text)).toEqual(["最", "悪"]);
+      expect(tokens[0].chars.every((c) => c.emphasis)).toBe(true);
+    }
+  });
+
   it("does not group a group-ruby token (multi-character base) with a neighboring mono-ruby pair", () => {
     const tokens = tokenizeVertical("{東京|とうきょう}{猫|ねこ}");
     expect(tokens).toEqual([
@@ -122,6 +137,22 @@ describe("fitVerticalText", () => {
     const result = fitVerticalText("あ{東|とう}{京|きょう}い", 1, 10000, 24, 24);
     const columnKinds = result.columns.map((col) => col.map((t) => t.kind));
     expect(columnKinds).toContainEqual(["rubyWord"]);
+  });
+
+  it("keeps a grouped bōten emphasis word together across a column break instead of splitting it", () => {
+    const result = fitVerticalText("あ{最悪*}い", 1, 10000, 24, 24);
+    const wordColumn = result.columns.find((col) => col.length === 1 && col[0].kind === "word");
+    expect(wordColumn).toBeDefined();
+    if (wordColumn && wordColumn[0].kind === "word") {
+      expect(wordColumn[0].chars.map((c) => c.text)).toEqual(["最", "悪"]);
+    }
+  });
+
+  it("reserves extra column pitch for bōten emphasis, same as for ruby", () => {
+    const plain = fitVerticalText("あ", 1.2, 500, 500, 24);
+    const withBouten = fitVerticalText("{あ*}", 1.2, 500, 500, 24);
+    expect(withBouten.colPitch).toBeGreaterThan(plain.colPitch);
+    expect(withBouten.rowStep).toBe(plain.rowStep);
   });
 
   it("kinsoku shori pulls a leading-prohibited character back into the previous column", () => {

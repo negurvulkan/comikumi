@@ -30,6 +30,10 @@ export interface VerticalCharToken {
    *  ~25% smaller than surrounding characters, matching how real vertical
    *  fonts render sokuon/yōon glyphs noticeably reduced in size. */
   smallKana?: boolean;
+  /** Bōten (圏点): draws a small filled dot beside this character — set via the
+   *  `{text*}` emphasis marker in tokenizeVertical(), the app's equivalent of
+   *  bold/italic for vertical Japanese text. */
+  emphasis?: boolean;
 }
 export interface VerticalTcyToken {
   /** Tate-chū-yoko: a short (2-char) run of half-width digits/Latin letters
@@ -222,6 +226,15 @@ export function tokenizeVertical(text: string): VerticalToken[] {
         i += [...match[0]].length;
         continue;
       }
+      // Bōten (圏点) emphasis marker — {text*}, no reading, deliberately disjoint from
+      // the ruby regex above (which requires a "|") so the two can never collide.
+      const boutenMatch = rest.match(/^\{([^{}|*]+)\*\}/);
+      if (boutenMatch) {
+        const emphasized = [...boutenMatch[1]].map((c) => ({ ...charToken(c), emphasis: true }));
+        tokens.push(emphasized.length >= 2 ? { kind: "word", chars: emphasized } : emphasized[0]);
+        i += [...boutenMatch[0]].length;
+        continue;
+      }
     }
 
     if (ALNUM_RE.test(ch)) {
@@ -400,12 +413,18 @@ export function fitVerticalText(
   baseFontSize: number
 ): VerticalFitResult {
   const tokens = tokenizeVertical(text);
-  const hasRuby = tokens.some((t) => t.kind === "ruby" || t.kind === "rubyWord");
-  // Ruby needs room to the side of its base column for the reading — reserving
-  // extra pitch uniformly for the whole block is far simpler than computing a
-  // gap only next to columns that actually carry a ruby run, at the cost of
-  // slightly looser spacing elsewhere when only some columns have furigana.
-  const gapFactor = hasRuby ? 1.4 : 1;
+  // Both ruby (furigana) and bōten (emphasis dots) draw something to the side of the
+  // base column — reserving extra pitch uniformly for the whole block is far simpler
+  // than computing a gap only next to columns that actually need it, at the cost of
+  // slightly looser spacing elsewhere when only some columns carry either mark.
+  const hasWideGap = tokens.some(
+    (t) =>
+      t.kind === "ruby" ||
+      t.kind === "rubyWord" ||
+      (t.kind === "char" && t.emphasis) ||
+      (t.kind === "word" && t.chars.some((c) => c.emphasis))
+  );
+  const gapFactor = hasWideGap ? 1.4 : 1;
 
   let size = baseFontSize;
   let columns: VerticalToken[][] = [];
@@ -467,6 +486,15 @@ function drawCharToken(
   }
   if (token.smallKana) {
     ctx.font = `${fontSize}px "${opts.fontFamily}"`;
+  }
+  if (token.emphasis) {
+    // Bōten (圏点): a small filled dot beside the character, same side as furigana.
+    // Reuses ctx.fillStyle as already set up (once, for the whole block) by
+    // drawVerticalText()'s applyTextFillStyle() call — picks up solid color or
+    // gradient automatically, no separate style handling needed.
+    ctx.beginPath();
+    ctx.arc(x + rowStep * 0.38, y, Math.max(1, rowStep * 0.06), 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 

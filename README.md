@@ -28,7 +28,8 @@ React + Konva canvas editor.
   languages as you configure.
 - **Full vertical Japanese typesetting** (tategaki) — forced line breaks, both group-
   and mono-ruby furigana (`{漢字|かんじ}` or per-character `{東|とう}{京|きょう}`, the
-  latter word-protected across column breaks), automatic tate-chū-yoko for digit/Latin
+  latter word-protected across column breaks), bōten emphasis dots (`{最悪*}`, the
+  traditional alternative to bold/italic), automatic tate-chū-yoko for digit/Latin
   runs, and kinsoku shori line-breaking rules (see [screenshot](docs/screenshot/04_bubble_inspector_jp_tategaki.png)). See [`docs/Japanese-Typesetting.md`](docs/Japanese-Typesetting.md).
 - **Four element types**: speech bubbles (rect/oval/free perspective quad, with
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images

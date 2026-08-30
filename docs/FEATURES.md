@@ -425,7 +425,10 @@ spread evenly across a multi-character base, e.g. `{大人|おとな}`) and
 mono-ruby (a separate `{base|reading}` block per character, e.g.
 `{東|とう}{京|きょう}`) — writing 2+ of these blocks back to back automatically
 keeps them together as one word across a column break, the same protection
-plain multi-kanji words already had. Text can have an outline and/or a linear gradient
+plain multi-kanji words already had. Vertical text also supports bōten (圏点)
+emphasis dots — the traditional Japanese equivalent of bold/italic — via
+`{text*}` (e.g. `{最悪*}`), drawn as a small dot beside each marked character;
+the same multi-character word-cohesion protection applies. Text can have an outline and/or a linear gradient
 instead of a solid color. Every one of these style fields (and the entire
 shape/position/size/rotation/background) can be overridden per language.
 Bubbles can be assigned to a panel and a character.

@@ -638,6 +638,8 @@
       "furiganaHintSuffix": "· Los pares de números/latín (p. ej. «21») se colocan automáticamente en horizontal.",
       "monoRubyHintPrefix": "Lectura por carácter:",
       "monoRubyHintSuffix": "— permanece unido al saltar de columna.",
+      "boutenHintPrefix": "Énfasis (bōten):",
+      "boutenHintSuffix": "— un pequeño punto en lugar de negrita/cursiva.",
       "characterLabel": "Personaje",
       "voiceNotesFor": "Notas de voz ({{name}}):",
       "presetLinkedHint": "Vinculado a «{{name}}» — determina qué está desactivado abajo.",

@@ -658,6 +658,8 @@
       "furiganaHintSuffix": "· Number/Latin pairs (e.g. \"21\") are automatically set sideways.",
       "monoRubyHintPrefix": "Per-character reading:",
       "monoRubyHintSuffix": "— stays together across a column break.",
+      "boutenHintPrefix": "Emphasis (bōten):",
+      "boutenHintSuffix": "— a small dot instead of bold/italic.",
       "characterLabel": "Character",
       "voiceNotesFor": "Voice Notes ({{name}}):",
       "presetLinkedHint": "Linked to \"{{name}}\" — determines what's disabled below.",
