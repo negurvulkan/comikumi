@@ -12,21 +12,27 @@ Betrifft Code, auf dem mehrere der späteren Batches aufbauen bzw. der die exakt
 Bug-Klasse verhindert, die in dieser Session zweimal auftrat (Clip/Padding bei
 „none“-Bubbles). Sinnvoll zuerst, weil er das Risiko für alles Weitere senkt.
 
-- [ ] **Visuelle Regressionstests** — automatisierte Snapshot-Vergleiche des
-      gerenderten PNG/PDF-Outputs (Konva/Canvas/pdf-lib müssen identisch bleiben) —
-      idealerweise vor den übrigen Refactors, damit sie ihre eigene Absicherung sind.
-- [ ] **Generischer Preset-Resolver** — das `preset?.background.X ?? bubble.X`-Muster
-      ist mehrfach von Hand dupliziert; ein typisierter Resolver verhindert diese
-      Bug-Klasse strukturell.
-- [ ] **Gemeinsame `<GovernedField>`-Komponente** — ScopeSwitch + PresetLock + Label
-      sind aktuell an ~15 Stellen in BubbleInspector.tsx identisch verdrahtet.
-- [ ] **Command-Pattern fürs Undo** — einheitliche Undo/Redo-Historie statt Feld für
-      Feld ad hoc verdrahtet.
-- [ ] **DOM-freies Shared-Rendering** — Layout-/Textmathematik in
-      `shared/src/rendering` weiter von allem trennen, was einen Canvas/DOM-Shim
-      braucht, für Testbarkeit ohne node-canvas-Overhead.
-- [ ] **Code-Splitting** — AI/OCR-lastige Pfade per `dynamic import()` nachladen statt
-      beim ersten Seitenaufruf (Client-Build meldet aktuell Chunks >500 kB).
+- [x] **Visuelle Regressionstests** — `server/src/lib/pageRaster.visual.test.ts`,
+      pixel-diff gegen eine eingecheckte Baseline-PNG (pixelmatch), deckt Bubble-
+      Formen/Tail/Padding/Quad-Warp/Curved-Text in einem Render ab. Deterministisch
+      bestätigt (zwei Läufe, 0 Pixel Abweichung) — @napi-rs/canvas bündelt seinen
+      eigenen Skia-Rasterizer, daher OS-unabhängig, anders als ein Browser-Screenshot.
+- [x] **Generischer Preset-Resolver** — `resolveLangField`/`resolvePresetField` in
+      `shared/src/layoutSchema.ts` ersetzen die handgeschriebenen
+      `override?.[lang] ?? preset?.X ?? base.X`-Ketten in resolveBubbleStyle/
+      resolveBubbleForm/resolveCurvedTextStyle.
+- [x] **Gemeinsame `<GovernedField>`-Komponente** — `client/src/editor/GovernedField.tsx`,
+      in BubbleInspector.tsx **und** CurvedTextInspector.tsx eingesetzt (Letzteres hatte
+      bisher gar keine Preset-Lock-Anzeige).
+- [ ] **Command-Pattern fürs Undo** — noch nicht begonnen. Laut Recherche kein dünner
+      Wrapper: `editorStore.ts` nutzt volle State-Snapshots (`past`/`future`-Arrays,
+      `pushHistory()` vor jedem `set(...)`), kein Command-Objekt/execute-Interface —
+      ein echtes Command-Pattern wäre ein Umbau aller ~15 Mutatoren, kein Aufsatz.
+- [ ] **DOM-freies Shared-Rendering** — noch nicht begonnen.
+- [x] **Code-Splitting** — alle Routen in `client/src/main.tsx` per React-Router-`lazy`
+      statt statischem Import; Haupt-JS-Chunk von ~1,47 MB auf ~512 kB reduziert.
+      AIPanel/OCR waren bereits eigene Chunks (Worker/dynamic import), nicht Teil
+      dieser Änderung. `HydrateFallback` + Route-Loading-Indikator ergänzt.
 
 ## Batch B — Schnelles Arbeiten / Workflow-Tools
 
