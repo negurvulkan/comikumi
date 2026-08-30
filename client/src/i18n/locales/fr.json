@@ -15,6 +15,7 @@
     "scopeShared": "Commun"
   },
   "appShell": {
+    "loadingRoute": "Chargement…",
     "switchProject": "Changer de projet",
     "settings": "Paramètres",
     "projectLabel": "Projet : {{name}}",
@@ -638,6 +639,7 @@
       "selectOrCreateHint": "Sélectionnez une bulle, une image ou un texte courbe, ou créez-en un avec un outil à gauche."
     },
     "bubbleInspector": {
+      "textTabLabel": "Texte",
       "textLabel": "Texte ({{language}})",
       "furiganaHintPrefix": "Furigana :",
       "furiganaHintSuffix": "· Les paires chiffres/latin (p. ex. « 21 ») sont automatiquement mises en travers.",
@@ -669,6 +671,8 @@
       "clipFromPanel": "Aligner sur le bord de la case",
       "presetGovernsHint": "Défini par le préréglage « {{name}} ».",
       "directionVerticalRtl": "Vertical, colonnes droite → gauche (JP)",
+      "textStyleSectionTitle": "Style du texte",
+      "textEffectsSectionTitle": "Effets de texte",
       "deleteBubble": "Supprimer la bulle"
     },
     "curvedTextInspector": {

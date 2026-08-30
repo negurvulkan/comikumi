@@ -6,6 +6,7 @@ import type { LetteringPreset } from "../../../shared/src/presets";
 import { FontPicker } from "./FontPicker";
 import { TextEffectsFields } from "./TextEffectsFields";
 import { ScopeSwitch } from "./ScopeSwitch";
+import { GovernedField } from "./GovernedField";
 import { GlossaryHighlightedTextarea } from "./GlossaryHighlightedTextarea";
 
 interface Props {
@@ -160,23 +161,33 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
         onChange={(v) => (fontFamilyOverride !== undefined ? setFontFamilyOverride(v) : onChange({ fontFamily: v }))}
         disabled={textPresetGoverns("fontFamily", fontFamilyOverride !== undefined)}
         labelExtra={
-          <ScopeSwitch
-            activeLanguage={activeLanguage}
-            scope={fontFamilyOverride !== undefined ? "language" : "all"}
-            onChange={(s) => toggleFontFamilyOverride(s === "language")}
-          />
+          <>
+            <ScopeSwitch
+              activeLanguage={activeLanguage}
+              scope={fontFamilyOverride !== undefined ? "language" : "all"}
+              onChange={(s) => toggleFontFamilyOverride(s === "language")}
+            />
+            {textPresetGoverns("fontFamily", fontFamilyOverride !== undefined) && preset && (
+              <span className="preset-lock" title={t("editor.bubbleInspector.presetGovernsHint", { name: preset.name })}>
+                🔒
+              </span>
+            )}
+          </>
         }
       />
 
-      <label>
-        <span className="field-label-row">
-          {t("editor.curvedTextInspector.fontSizeBaseLabel")}
+      <GovernedField
+        label={t("editor.curvedTextInspector.fontSizeBaseLabel")}
+        governed={textPresetGoverns("fontSize", fontSizeOverride !== undefined)}
+        lockTitle={preset ? t("editor.bubbleInspector.presetGovernsHint", { name: preset.name }) : undefined}
+        extra={
           <ScopeSwitch
             activeLanguage={activeLanguage}
             scope={fontSizeOverride !== undefined ? "language" : "all"}
             onChange={(s) => toggleFontSizeOverride(s === "language")}
           />
-        </span>
+        }
+      >
         <input
           type="number"
           min={4}
@@ -188,20 +199,23 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
             else onChange({ fontSize: v });
           }}
         />
-      </label>
+      </GovernedField>
       <p className="hint" style={{ margin: "-4px 0 8px" }}>
         {t("editor.curvedTextInspector.shrinkHint")}
       </p>
 
-      <label>
-        <span className="field-label-row">
-          {t("editor.curvedTextInspector.alignOnCurveLabel")}
+      <GovernedField
+        label={t("editor.curvedTextInspector.alignOnCurveLabel")}
+        governed={textPresetGoverns("align", alignOverride !== undefined)}
+        lockTitle={preset ? t("editor.bubbleInspector.presetGovernsHint", { name: preset.name }) : undefined}
+        extra={
           <ScopeSwitch
             activeLanguage={activeLanguage}
             scope={alignOverride !== undefined ? "language" : "all"}
             onChange={(s) => toggleAlignOverride(s === "language")}
           />
-        </span>
+        }
+      >
         <select
           value={style.align}
           disabled={textPresetGoverns("align", alignOverride !== undefined)}
@@ -215,7 +229,7 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
           <option value="center">{t("managers.presets.alignCenter")}</option>
           <option value="right">{t("editor.curvedTextInspector.alignEnd")}</option>
         </select>
-      </label>
+      </GovernedField>
 
       <TextEffectsFields
         color={style.color}

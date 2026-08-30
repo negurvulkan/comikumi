@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   Bubble,
@@ -30,6 +30,9 @@ import { FontPicker } from "./FontPicker";
 import { TextEffectsFields } from "./TextEffectsFields";
 import { SvgBubblePicker } from "./SvgBubblePicker";
 import { ScopeSwitch } from "./ScopeSwitch";
+import { OptionalToggleField } from "./OptionalToggleField";
+import { GovernedField } from "./GovernedField";
+import { IconTabs } from "./IconTabs";
 import { GlossaryHighlightedTextarea, findGlossaryReading } from "./GlossaryHighlightedTextarea";
 
 interface Props {
@@ -47,9 +50,12 @@ interface Props {
   onDelete: () => void;
 }
 
+type TabId = "text" | "form" | "textStyle" | "effects";
+
 export function BubbleInspector({ bubble, activeLanguage, panels, characters, glossary, presets, onChange, onReassignPanel, onDelete }: Props) {
   const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [activeTab, setActiveTab] = useState<TabId>("text");
   const style = resolveBubbleStyle(bubble, activeLanguage, presets);
   const form = resolveBubbleForm(bubble, activeLanguage, presets);
   const hasFormOverride = !!bubble.formOverride?.[activeLanguage];
@@ -68,6 +74,12 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
   function backgroundPresetGoverns(field: keyof LetteringPreset["background"]): boolean {
     return !hasFormOverride && preset?.background[field] !== undefined;
   }
+
+  /** Tooltip text for GovernedField's 🔒 badge — the top-level "Linked to X" banner
+   * (see the preset <select> below) says a preset is involved at all, but gives no
+   * per-field signal for which of the many fields below it actually touches; this
+   * fills that gap without repeating the full explanation at every field. */
+  const lockTitle = preset ? t("editor.bubbleInspector.presetGovernsHint", { name: preset.name }) : undefined;
 
   /** "Vom Preset lösen" — freezes every currently preset-governed field's resolved value
    * into the bubble's own base fields (so nothing visually jumps), then clears presetId.
@@ -316,426 +328,476 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
     onChange({ shape });
   }
 
+  const tabs: { id: TabId; icon: string; label: string }[] = [
+    { id: "text", icon: "💬", label: t("editor.bubbleInspector.textTabLabel") },
+    { id: "form", icon: "🎨", label: t("editor.bubbleInspector.formAndStyleLabel") },
+    { id: "textStyle", icon: "🔤", label: t("editor.bubbleInspector.textStyleSectionTitle") },
+    { id: "effects", icon: "✨", label: t("editor.bubbleInspector.textEffectsSectionTitle") },
+  ];
+
   return (
     <div className="inspector">
-      <label>
-        {t("editor.bubbleInspector.textLabel", { language: activeLanguage })}
-        <GlossaryHighlightedTextarea
-          ref={textareaRef}
-          value={bubble.text[activeLanguage] ?? ""}
-          onChange={setText}
-          glossary={glossary}
-          activeLanguage={activeLanguage}
-          vertical={style.direction === "vertical-rl"}
-          style={{
-            fontFamily: style.fontFamily,
-            writingMode: style.direction === "vertical-rl" ? "vertical-rl" : "horizontal-tb",
-            direction: style.direction === "rtl" ? "rtl" : "ltr",
-          }}
-        />
-      </label>
-      {style.direction === "vertical-rl" && (
+      <IconTabs tabs={tabs} active={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
+
+      {activeTab === "text" && (
         <>
-          <div className="field-row" style={{ marginBottom: 4 }}>
-            <button type="button" onClick={insertFurigana}>
-              {t("editor.bubbleInspector.insertFuriganaButton")}
-            </button>
-            <button type="button" onClick={insertBouten}>
-              {t("editor.bubbleInspector.insertBoutenButton")}
-            </button>
-          </div>
-          <p style={{ color: "var(--text-muted)", margin: "-4px 0 4px", fontSize: 12 }}>
-            {t("editor.bubbleInspector.furiganaHintPrefix")} <code>{"{漢字|かんじ}"}</code> {t("editor.bubbleInspector.furiganaHintSuffix")}
-          </p>
-          <p style={{ color: "var(--text-muted)", margin: "-4px 0 4px", fontSize: 12 }}>
-            {t("editor.bubbleInspector.monoRubyHintPrefix")} <code>{"{東|とう}{京|きょう}"}</code> {t("editor.bubbleInspector.monoRubyHintSuffix")}
-          </p>
-          <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
-            {t("editor.bubbleInspector.boutenHintPrefix")} <code>{"{text*}"}</code> {t("editor.bubbleInspector.boutenHintSuffix")}
-          </p>
-        </>
-      )}
-
-      <div className="field-row">
-        <label>
-          Panel
-          <select
-            value={bubble.panelId ?? ""}
-            onChange={(e) => onReassignPanel(e.target.value || null)}
-          >
-            <option value="">{t("editor.contextMenu.noPanel")}</option>
-            {panels.map((p, i) => (
-              <option key={p.id} value={p.id}>
-                {panelDisplayLabel(p, i)}
-                {resolvePanelForLanguage(p, activeLanguage).cut?.removed ? ` ${t("editor.panelInspector.removedSuffix")}` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t("editor.bubbleInspector.characterLabel")}
-          <select value={bubble.characterId ?? ""} onChange={(e) => onChange({ characterId: e.target.value || null })}>
-            <option value="">{t("editor.contextMenu.noCharacter")}</option>
-            {characters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {(() => {
-        const speaker = characters.find((c) => c.id === bubble.characterId);
-        if (!speaker?.voiceNotes.trim()) return null;
-        return (
-          <p className="hint" style={{ margin: "-4px 0 8px", whiteSpace: "pre-wrap" }}>
-            <strong style={{ color: "var(--text)" }}>{t("editor.bubbleInspector.voiceNotesFor", { name: speaker.name })}</strong> {speaker.voiceNotes}
-          </p>
-        );
-      })()}
-
-      <label>
-        {t("managers.presets.title")}
-        <select value={bubble.presetId ?? ""} onChange={(e) => onChange({ presetId: e.target.value || null })}>
-          <option value="">{t("editor.contextMenu.noPreset")}</option>
-          {presets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      {preset && (
-        <p className="hint" style={{ margin: "-4px 0 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span>{t("editor.bubbleInspector.presetLinkedHint", { name: preset.name })}</span>
-          <button type="button" onClick={detachFromPreset}>
-            {t("editor.bubbleInspector.detachFromPreset")}
-          </button>
-        </p>
-      )}
-
-      <label>
-        {t("editor.bubbleInspector.shapeLabel")}
-        <select value={bubble.shape} onChange={(e) => changeShape(e.target.value as BubbleShapeKind)}>
-          <option value="rect">{t("editor.toolStrip.rect")}</option>
-          <option value="oval">{t("editor.bubbleInspector.shapeOval")}</option>
-          <option value="quad">{t("editor.bubbleInspector.shapeQuad")}</option>
-        </select>
-      </label>
-
-      {bubble.shape !== "quad" && (
-        <>
-          <div className="field-label-row">
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("editor.bubbleInspector.formAndStyleLabel")}</span>
-            <ScopeSwitch
-              activeLanguage={activeLanguage}
-              scope={hasFormOverride ? "language" : "all"}
-              onChange={(s) => toggleFormOverride(s === "language")}
-            />
-          </div>
-          {hasFormOverride && (
-            <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>
-              {t("editor.bubbleInspector.formOverrideHint", { language: activeLanguage })}
-            </p>
-          )}
-
           <label>
-            {t("managers.presets.bubbleStyleLabel")}
-            <select
-              value={form.bubbleStyle}
-              onChange={(e) => setFormField({ bubbleStyle: e.target.value as BubbleVisualStyle })}
-              disabled={backgroundPresetGoverns("bubbleStyle")}
-            >
-              <option value="none">{t("editor.bubbleInspector.bubbleStyleNoneWithArt")}</option>
-              <option value="speech">{t("managers.presets.bubbleStyleSpeech")}</option>
-              <option value="thought">{t("managers.presets.bubbleStyleThought")}</option>
-              <option value="shout">{t("managers.presets.bubbleStyleShout")}</option>
-              <option value="svg">{t("managers.presets.bubbleStyleSvg")}</option>
-            </select>
+            {t("editor.bubbleInspector.textLabel", { language: activeLanguage })}
+            <GlossaryHighlightedTextarea
+              ref={textareaRef}
+              value={bubble.text[activeLanguage] ?? ""}
+              onChange={setText}
+              glossary={glossary}
+              activeLanguage={activeLanguage}
+              vertical={style.direction === "vertical-rl"}
+              style={{
+                fontFamily: style.fontFamily,
+                writingMode: style.direction === "vertical-rl" ? "vertical-rl" : "horizontal-tb",
+                direction: style.direction === "rtl" ? "rtl" : "ltr",
+              }}
+            />
           </label>
-
-          {form.bubbleStyle === "svg" && (
+          {style.direction === "vertical-rl" && (
             <>
-              <SvgBubblePicker onPick={(svgFileName) => setFormField({ svgFileName })} />
-              {form.svgFileName ? (
-                <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>
-                  {t("editor.bubbleInspector.svgChosen", { name: form.svgFileName })}
-                </p>
-              ) : (
-                <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>{t("editor.bubbleInspector.noSvgChosen")}</p>
-              )}
+              <div className="field-row" style={{ marginBottom: 4 }}>
+                <button type="button" onClick={insertFurigana}>
+                  {t("editor.bubbleInspector.insertFuriganaButton")}
+                </button>
+                <button type="button" onClick={insertBouten}>
+                  {t("editor.bubbleInspector.insertBoutenButton")}
+                </button>
+              </div>
+              <p style={{ color: "var(--text-muted)", margin: "-4px 0 4px", fontSize: 12 }}>
+                {t("editor.bubbleInspector.furiganaHintPrefix")} <code>{"{漢字|かんじ}"}</code> {t("editor.bubbleInspector.furiganaHintSuffix")}
+              </p>
+              <p style={{ color: "var(--text-muted)", margin: "-4px 0 4px", fontSize: 12 }}>
+                {t("editor.bubbleInspector.monoRubyHintPrefix")} <code>{"{東|とう}{京|きょう}"}</code> {t("editor.bubbleInspector.monoRubyHintSuffix")}
+              </p>
+              <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
+                {t("editor.bubbleInspector.boutenHintPrefix")} <code>{"{text*}"}</code> {t("editor.bubbleInspector.boutenHintSuffix")}
+              </p>
             </>
           )}
 
-          {form.bubbleStyle !== "none" && (
+          <div className="field-row">
+            <label>
+              Panel
+              <select value={bubble.panelId ?? ""} onChange={(e) => onReassignPanel(e.target.value || null)}>
+                <option value="">{t("editor.contextMenu.noPanel")}</option>
+                {panels.map((p, i) => (
+                  <option key={p.id} value={p.id}>
+                    {panelDisplayLabel(p, i)}
+                    {resolvePanelForLanguage(p, activeLanguage).cut?.removed ? ` ${t("editor.panelInspector.removedSuffix")}` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t("editor.bubbleInspector.characterLabel")}
+              <select value={bubble.characterId ?? ""} onChange={(e) => onChange({ characterId: e.target.value || null })}>
+                <option value="">{t("editor.contextMenu.noCharacter")}</option>
+                {characters.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {(() => {
+            const speaker = characters.find((c) => c.id === bubble.characterId);
+            if (!speaker?.voiceNotes.trim()) return null;
+            return (
+              <p className="hint" style={{ margin: "-4px 0 8px", whiteSpace: "pre-wrap" }}>
+                <strong style={{ color: "var(--text)" }}>{t("editor.bubbleInspector.voiceNotesFor", { name: speaker.name })}</strong>{" "}
+                {speaker.voiceNotes}
+              </p>
+            );
+          })()}
+
+          <label>
+            {t("managers.presets.title")}
+            <select value={bubble.presetId ?? ""} onChange={(e) => onChange({ presetId: e.target.value || null })}>
+              <option value="">{t("editor.contextMenu.noPreset")}</option>
+              {presets.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {preset && (
+            <p className="hint" style={{ margin: "-4px 0 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span>{t("editor.bubbleInspector.presetLinkedHint", { name: preset.name })}</span>
+              <button type="button" onClick={detachFromPreset}>
+                {t("editor.bubbleInspector.detachFromPreset")}
+              </button>
+            </p>
+          )}
+        </>
+      )}
+
+      {activeTab === "form" && (
+        <>
+          <label>
+            {t("editor.bubbleInspector.shapeLabel")}
+            <select value={bubble.shape} onChange={(e) => changeShape(e.target.value as BubbleShapeKind)}>
+              <option value="rect">{t("editor.toolStrip.rect")}</option>
+              <option value="oval">{t("editor.bubbleInspector.shapeOval")}</option>
+              <option value="quad">{t("editor.bubbleInspector.shapeQuad")}</option>
+            </select>
+          </label>
+
+          {bubble.shape !== "quad" && (
             <>
-              <div className="field-row">
-                <label>
-                  {t("managers.presets.fillColorLabel")}
-                  <input
-                    type="color"
-                    value={form.fillColor}
-                    onChange={(e) => setFormField({ fillColor: e.target.value })}
-                    disabled={backgroundPresetGoverns("fillColor")}
-                  />
-                </label>
-                <label>
-                  {t("managers.presets.strokeColorLabel")}
-                  <input
-                    type="color"
-                    value={form.strokeColor}
-                    onChange={(e) => setFormField({ strokeColor: e.target.value })}
-                    disabled={backgroundPresetGoverns("strokeColor")}
-                  />
-                </label>
-              </div>
-              <label>
-                {t("managers.presets.strokeWidthLabel")}
-                <input
-                  type="number"
-                  min={0}
-                  value={form.strokeWidthPx}
-                  onChange={(e) => setFormField({ strokeWidthPx: Number(e.target.value) })}
-                  disabled={backgroundPresetGoverns("strokeWidthPx")}
+              <div className="field-label-row">
+                <ScopeSwitch
+                  activeLanguage={activeLanguage}
+                  scope={hasFormOverride ? "language" : "all"}
+                  onChange={(s) => toggleFormOverride(s === "language")}
                 />
-              </label>
-              {(form.bubbleStyle === "speech" || form.bubbleStyle === "shout" || form.bubbleStyle === "thought" || form.bubbleStyle === "svg") && (
-                <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <input type="checkbox" checked={!!form.tail} onChange={(e) => toggleTail(e.target.checked)} />
-                  {t("editor.bubbleInspector.showTail")}
-                </label>
+              </div>
+              {hasFormOverride && (
+                <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>
+                  {t("editor.bubbleInspector.formOverrideHint", { language: activeLanguage })}
+                </p>
               )}
-              {form.tail && (
+
+              <GovernedField
+                label={t("managers.presets.bubbleStyleLabel")}
+                governed={backgroundPresetGoverns("bubbleStyle")}
+                lockTitle={lockTitle}
+              >
+                <select
+                  value={form.bubbleStyle}
+                  onChange={(e) => setFormField({ bubbleStyle: e.target.value as BubbleVisualStyle })}
+                  disabled={backgroundPresetGoverns("bubbleStyle")}
+                >
+                  <option value="none">{t("editor.bubbleInspector.bubbleStyleNoneWithArt")}</option>
+                  <option value="speech">{t("managers.presets.bubbleStyleSpeech")}</option>
+                  <option value="thought">{t("managers.presets.bubbleStyleThought")}</option>
+                  <option value="shout">{t("managers.presets.bubbleStyleShout")}</option>
+                  <option value="svg">{t("managers.presets.bubbleStyleSvg")}</option>
+                </select>
+              </GovernedField>
+
+              {form.bubbleStyle === "svg" && (
                 <>
-                  <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>
-                    {t("editor.bubbleInspector.tailDragHint")}
-                  </p>
-                  <label>
-                    {t("managers.presets.tailStyleLabel")}
-                    <select
-                      value={effectiveTailStyle}
-                      onChange={(e) => setFormField({ tailStyle: e.target.value as TailStyle })}
-                      disabled={backgroundPresetGoverns("tailStyle")}
-                    >
-                      <option value="point">{t("managers.presets.tailStylePoint")}</option>
-                      <option value="point-detached">{t("managers.presets.tailStylePointDetached")}</option>
-                      <option value="chain">{t("managers.presets.tailStyleChain")}</option>
-                    </select>
-                  </label>
-                  {effectiveTailStyle === "chain" && (
-                    <>
-                      <label>
-                        {t("managers.presets.segmentShapeLabel")}
-                        <select
-                          value={form.tailChainSegmentShape}
-                          onChange={(e) => setFormField({ tailChainSegmentShape: e.target.value as TailChainSegmentShape })}
-                          disabled={backgroundPresetGoverns("tailChainSegmentShape")}
-                        >
-                          <option value="circle">{t("managers.presets.segmentShapeCircle")}</option>
-                          <option value="rect">{t("managers.presets.segmentShapeRect")}</option>
-                          <option value="diamond">{t("managers.presets.segmentShapeDiamond")}</option>
-                        </select>
-                      </label>
-                      <label>
-                        {t("managers.presets.segmentsCountLabel")}
-                        <input
-                          type="number"
-                          min={1}
-                          max={8}
-                          value={form.tailChainSegments}
-                          onChange={(e) => setFormField({ tailChainSegments: Number(e.target.value) })}
-                          disabled={backgroundPresetGoverns("tailChainSegments")}
-                        />
-                      </label>
-                      <label>
-                        {t("managers.presets.segmentSpacingLabel")}
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={0.1}
-                          value={form.tailChainSpacing}
-                          onChange={(e) => setFormField({ tailChainSpacing: Number(e.target.value) })}
-                          disabled={backgroundPresetGoverns("tailChainSpacing")}
-                        />
-                      </label>
-                    </>
+                  <SvgBubblePicker onPick={(svgFileName) => setFormField({ svgFileName })} />
+                  {form.svgFileName ? (
+                    <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>
+                      {t("editor.bubbleInspector.svgChosen", { name: form.svgFileName })}
+                    </p>
+                  ) : (
+                    <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>{t("editor.bubbleInspector.noSvgChosen")}</p>
                   )}
                 </>
               )}
 
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <input type="checkbox" checked={!!(form.clipA && form.clipB)} onChange={(e) => toggleClip(e.target.checked)} />
-                {t("editor.bubbleInspector.clipEnabled")}
-              </label>
-              {form.clipA && form.clipB && (
+              {form.bubbleStyle !== "none" && (
                 <>
-                  <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>{t("editor.bubbleInspector.clipDragHint")}</p>
                   <div className="field-row">
-                    <button type="button" onClick={() => setFormField({ clipFlip: !form.clipFlip })}>
-                      {t("editor.bubbleInspector.clipFlip")}
-                    </button>
-                    <button type="button" onClick={suggestClipFromPanelEdge} disabled={!bubble.panelId}>
-                      {t("editor.bubbleInspector.clipFromPanel")}
-                    </button>
+                    <GovernedField
+                      label={t("managers.presets.fillColorLabel")}
+                      governed={backgroundPresetGoverns("fillColor")}
+                      lockTitle={lockTitle}
+                    >
+                      <input
+                        type="color"
+                        value={form.fillColor}
+                        onChange={(e) => setFormField({ fillColor: e.target.value })}
+                        disabled={backgroundPresetGoverns("fillColor")}
+                      />
+                    </GovernedField>
+                    <GovernedField
+                      label={t("managers.presets.strokeColorLabel")}
+                      governed={backgroundPresetGoverns("strokeColor")}
+                      lockTitle={lockTitle}
+                    >
+                      <input
+                        type="color"
+                        value={form.strokeColor}
+                        onChange={(e) => setFormField({ strokeColor: e.target.value })}
+                        disabled={backgroundPresetGoverns("strokeColor")}
+                      />
+                    </GovernedField>
                   </div>
+                  <GovernedField
+                    label={t("managers.presets.strokeWidthLabel")}
+                    governed={backgroundPresetGoverns("strokeWidthPx")}
+                    lockTitle={lockTitle}
+                  >
+                    <input
+                      type="number"
+                      min={0}
+                      value={form.strokeWidthPx}
+                      onChange={(e) => setFormField({ strokeWidthPx: Number(e.target.value) })}
+                      disabled={backgroundPresetGoverns("strokeWidthPx")}
+                    />
+                  </GovernedField>
+                  {(form.bubbleStyle === "speech" ||
+                    form.bubbleStyle === "shout" ||
+                    form.bubbleStyle === "thought" ||
+                    form.bubbleStyle === "svg") && (
+                    <OptionalToggleField label={t("editor.bubbleInspector.showTail")} checked={!!form.tail} onToggle={toggleTail}>
+                      <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>{t("editor.bubbleInspector.tailDragHint")}</p>
+                      <GovernedField
+                        label={t("managers.presets.tailStyleLabel")}
+                        governed={backgroundPresetGoverns("tailStyle")}
+                        lockTitle={lockTitle}
+                      >
+                        <select
+                          value={effectiveTailStyle}
+                          onChange={(e) => setFormField({ tailStyle: e.target.value as TailStyle })}
+                          disabled={backgroundPresetGoverns("tailStyle")}
+                        >
+                          <option value="point">{t("managers.presets.tailStylePoint")}</option>
+                          <option value="point-detached">{t("managers.presets.tailStylePointDetached")}</option>
+                          <option value="chain">{t("managers.presets.tailStyleChain")}</option>
+                        </select>
+                      </GovernedField>
+                      {effectiveTailStyle === "chain" && (
+                        <>
+                          <GovernedField
+                            label={t("managers.presets.segmentShapeLabel")}
+                            governed={backgroundPresetGoverns("tailChainSegmentShape")}
+                            lockTitle={lockTitle}
+                          >
+                            <select
+                              value={form.tailChainSegmentShape}
+                              onChange={(e) => setFormField({ tailChainSegmentShape: e.target.value as TailChainSegmentShape })}
+                              disabled={backgroundPresetGoverns("tailChainSegmentShape")}
+                            >
+                              <option value="circle">{t("managers.presets.segmentShapeCircle")}</option>
+                              <option value="rect">{t("managers.presets.segmentShapeRect")}</option>
+                              <option value="diamond">{t("managers.presets.segmentShapeDiamond")}</option>
+                            </select>
+                          </GovernedField>
+                          <GovernedField
+                            label={t("managers.presets.segmentsCountLabel")}
+                            governed={backgroundPresetGoverns("tailChainSegments")}
+                            lockTitle={lockTitle}
+                          >
+                            <input
+                              type="number"
+                              min={1}
+                              max={8}
+                              value={form.tailChainSegments}
+                              onChange={(e) => setFormField({ tailChainSegments: Number(e.target.value) })}
+                              disabled={backgroundPresetGoverns("tailChainSegments")}
+                            />
+                          </GovernedField>
+                          <GovernedField
+                            label={t("managers.presets.segmentSpacingLabel")}
+                            governed={backgroundPresetGoverns("tailChainSpacing")}
+                            lockTitle={lockTitle}
+                          >
+                            <input
+                              type="number"
+                              step={0.1}
+                              min={0.1}
+                              value={form.tailChainSpacing}
+                              onChange={(e) => setFormField({ tailChainSpacing: Number(e.target.value) })}
+                              disabled={backgroundPresetGoverns("tailChainSpacing")}
+                            />
+                          </GovernedField>
+                        </>
+                      )}
+                    </OptionalToggleField>
+                  )}
                 </>
               )}
-            </>
-          )}
-          <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={form.paddingRatio !== null}
-              disabled={backgroundPresetGoverns("paddingRatio")}
-              onChange={(e) =>
-                setFormField({ paddingRatio: e.target.checked ? paddingRatioFor(form.bubbleStyle, bubble.shape) : null })
-              }
-            />
-            {t("editor.bubbleInspector.customPaddingLabel")}
-          </label>
-          {form.paddingRatio !== null && (
-            <label>
-              {t("editor.bubbleInspector.paddingRatioLabel", { value: Math.round(form.paddingRatio * 100) })}
-              <input
-                type="range"
-                min={0}
-                max={90}
-                value={Math.round(form.paddingRatio * 100)}
+
+              <OptionalToggleField label={t("editor.bubbleInspector.clipEnabled")} checked={!!(form.clipA && form.clipB)} onToggle={toggleClip}>
+                <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>{t("editor.bubbleInspector.clipDragHint")}</p>
+                <div className="field-row">
+                  <button type="button" onClick={() => setFormField({ clipFlip: !form.clipFlip })}>
+                    {t("editor.bubbleInspector.clipFlip")}
+                  </button>
+                  <button type="button" onClick={suggestClipFromPanelEdge} disabled={!bubble.panelId}>
+                    {t("editor.bubbleInspector.clipFromPanel")}
+                  </button>
+                </div>
+              </OptionalToggleField>
+
+              <OptionalToggleField
+                label={t("editor.bubbleInspector.customPaddingLabel")}
+                checked={form.paddingRatio !== null}
                 disabled={backgroundPresetGoverns("paddingRatio")}
-                onChange={(e) => setFormField({ paddingRatio: Number(e.target.value) / 100 })}
-              />
-            </label>
+                onToggle={(checked) => setFormField({ paddingRatio: checked ? paddingRatioFor(form.bubbleStyle, bubble.shape) : null })}
+              >
+                <GovernedField
+                  label={t("editor.bubbleInspector.paddingRatioLabel", { value: Math.round((form.paddingRatio ?? 0) * 100) })}
+                  governed={backgroundPresetGoverns("paddingRatio")}
+                  lockTitle={lockTitle}
+                >
+                  <input
+                    type="range"
+                    min={0}
+                    max={90}
+                    value={Math.round((form.paddingRatio ?? 0) * 100)}
+                    disabled={backgroundPresetGoverns("paddingRatio")}
+                    onChange={(e) => setFormField({ paddingRatio: Number(e.target.value) / 100 })}
+                  />
+                </GovernedField>
+              </OptionalToggleField>
+            </>
           )}
         </>
       )}
 
-      <FontPicker
-        value={style.fontFamily}
-        onChange={(v) => (fontFamilyOverride !== undefined ? setFontFamilyOverride(v) : onChange({ fontFamily: v }))}
-        disabled={textPresetGoverns("fontFamily", fontFamilyOverride !== undefined)}
-        labelExtra={
-          <ScopeSwitch
-            activeLanguage={activeLanguage}
-            scope={fontFamilyOverride !== undefined ? "language" : "all"}
-            onChange={(s) => toggleFontFamilyOverride(s === "language")}
+      {activeTab === "textStyle" && (
+        <>
+          <FontPicker
+            value={style.fontFamily}
+            onChange={(v) => (fontFamilyOverride !== undefined ? setFontFamilyOverride(v) : onChange({ fontFamily: v }))}
+            disabled={textPresetGoverns("fontFamily", fontFamilyOverride !== undefined)}
+            labelExtra={
+              <>
+                <ScopeSwitch
+                  activeLanguage={activeLanguage}
+                  scope={fontFamilyOverride !== undefined ? "language" : "all"}
+                  onChange={(s) => toggleFontFamilyOverride(s === "language")}
+                />
+                {textPresetGoverns("fontFamily", fontFamilyOverride !== undefined) && (
+                  <span className="preset-lock" title={lockTitle}>
+                    🔒
+                  </span>
+                )}
+              </>
+            }
           />
-        }
-      />
-      {textPresetGoverns("fontFamily", fontFamilyOverride !== undefined) && (
-        <p className="hint" style={{ margin: "-4px 0 8px" }}>
-          {t("editor.bubbleInspector.presetGovernsHint", { name: preset?.name })}
-        </p>
+          {textPresetGoverns("fontFamily", fontFamilyOverride !== undefined) && (
+            <p className="hint" style={{ margin: "-4px 0 8px" }}>
+              {t("editor.bubbleInspector.presetGovernsHint", { name: preset?.name })}
+            </p>
+          )}
+
+          <div className="field-row">
+            <GovernedField
+              label={t("managers.presets.fontSizeLabel")}
+              governed={textPresetGoverns("fontSize", fontSizeOverride !== undefined)}
+              lockTitle={lockTitle}
+              extra={
+                <ScopeSwitch
+                  activeLanguage={activeLanguage}
+                  scope={fontSizeOverride !== undefined ? "language" : "all"}
+                  onChange={(s) => toggleFontSizeOverride(s === "language")}
+                />
+              }
+            >
+              <input
+                type="number"
+                min={4}
+                value={style.fontSize}
+                disabled={textPresetGoverns("fontSize", fontSizeOverride !== undefined)}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (fontSizeOverride !== undefined) setFontSizeOverride(v);
+                  else onChange({ fontSize: v });
+                }}
+              />
+            </GovernedField>
+            <GovernedField
+              label={t("managers.presets.lineHeightLabel")}
+              governed={textPresetGoverns("lineHeight", lineHeightOverride !== undefined)}
+              lockTitle={lockTitle}
+              extra={
+                <ScopeSwitch
+                  activeLanguage={activeLanguage}
+                  scope={lineHeightOverride !== undefined ? "language" : "all"}
+                  onChange={(s) => toggleLineHeightOverride(s === "language")}
+                />
+              }
+            >
+              <input
+                type="number"
+                step={0.1}
+                min={0.8}
+                value={style.lineHeight}
+                disabled={textPresetGoverns("lineHeight", lineHeightOverride !== undefined)}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (lineHeightOverride !== undefined) setLineHeightOverride(v);
+                  else onChange({ lineHeight: v });
+                }}
+              />
+            </GovernedField>
+          </div>
+
+          <GovernedField
+            label={t("managers.presets.alignLabel")}
+            governed={textPresetGoverns("align", alignOverride !== undefined)}
+            lockTitle={lockTitle}
+            extra={
+              <ScopeSwitch
+                activeLanguage={activeLanguage}
+                scope={alignOverride !== undefined ? "language" : "all"}
+                onChange={(s) => toggleAlignOverride(s === "language")}
+              />
+            }
+          >
+            <select
+              value={style.align}
+              disabled={textPresetGoverns("align", alignOverride !== undefined)}
+              onChange={(e) => {
+                const v = e.target.value as TextAlign;
+                if (alignOverride !== undefined) setAlignOverride(v);
+                else onChange({ align: v });
+              }}
+            >
+              <option value="left">{t("managers.presets.alignLeft")}</option>
+              <option value="center">{t("managers.presets.alignCenter")}</option>
+              <option value="right">{t("managers.presets.alignRight")}</option>
+            </select>
+          </GovernedField>
+
+          <GovernedField
+            label={t("managers.presets.directionLabel")}
+            governed={textPresetGoverns("direction", directionOverride !== undefined)}
+            lockTitle={lockTitle}
+            extra={
+              <ScopeSwitch
+                activeLanguage={activeLanguage}
+                scope={directionOverride !== undefined ? "language" : "all"}
+                onChange={(s) => toggleDirectionOverride(s === "language")}
+              />
+            }
+          >
+            <select
+              value={style.direction}
+              disabled={textPresetGoverns("direction", directionOverride !== undefined)}
+              onChange={(e) => {
+                const v = e.target.value as TextDirection;
+                if (directionOverride !== undefined) setDirectionOverride(v);
+                else onChange({ direction: v });
+              }}
+            >
+              <option value="ltr">{t("managers.presets.directionLtr")}</option>
+              <option value="rtl">{t("managers.presets.directionRtl")}</option>
+              <option value="vertical-rl">{t("editor.bubbleInspector.directionVerticalRtl")}</option>
+            </select>
+          </GovernedField>
+        </>
       )}
 
-      <div className="field-row">
-        <label>
-          <span className="field-label-row">
-            {t("managers.presets.fontSizeLabel")}
-            <ScopeSwitch
-              activeLanguage={activeLanguage}
-              scope={fontSizeOverride !== undefined ? "language" : "all"}
-              onChange={(s) => toggleFontSizeOverride(s === "language")}
-            />
-          </span>
-          <input
-            type="number"
-            min={4}
-            value={style.fontSize}
-            disabled={textPresetGoverns("fontSize", fontSizeOverride !== undefined)}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (fontSizeOverride !== undefined) setFontSizeOverride(v);
-              else onChange({ fontSize: v });
-            }}
-          />
-        </label>
-        <label>
-          <span className="field-label-row">
-            {t("managers.presets.lineHeightLabel")}
-            <ScopeSwitch
-              activeLanguage={activeLanguage}
-              scope={lineHeightOverride !== undefined ? "language" : "all"}
-              onChange={(s) => toggleLineHeightOverride(s === "language")}
-            />
-          </span>
-          <input
-            type="number"
-            step={0.1}
-            min={0.8}
-            value={style.lineHeight}
-            disabled={textPresetGoverns("lineHeight", lineHeightOverride !== undefined)}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (lineHeightOverride !== undefined) setLineHeightOverride(v);
-              else onChange({ lineHeight: v });
-            }}
-          />
-        </label>
-      </div>
-
-      <label>
-        <span className="field-label-row">
-          {t("managers.presets.alignLabel")}
-          <ScopeSwitch
-            activeLanguage={activeLanguage}
-            scope={alignOverride !== undefined ? "language" : "all"}
-            onChange={(s) => toggleAlignOverride(s === "language")}
-          />
-        </span>
-        <select
-          value={style.align}
-          disabled={textPresetGoverns("align", alignOverride !== undefined)}
-          onChange={(e) => {
-            const v = e.target.value as TextAlign;
-            if (alignOverride !== undefined) setAlignOverride(v);
-            else onChange({ align: v });
-          }}
-        >
-          <option value="left">{t("managers.presets.alignLeft")}</option>
-          <option value="center">{t("managers.presets.alignCenter")}</option>
-          <option value="right">{t("managers.presets.alignRight")}</option>
-        </select>
-      </label>
-
-      <label>
-        <span className="field-label-row">
-          {t("managers.presets.directionLabel")}
-          <ScopeSwitch
-            activeLanguage={activeLanguage}
-            scope={directionOverride !== undefined ? "language" : "all"}
-            onChange={(s) => toggleDirectionOverride(s === "language")}
-          />
-        </span>
-        <select
-          value={style.direction}
-          disabled={textPresetGoverns("direction", directionOverride !== undefined)}
-          onChange={(e) => {
-            const v = e.target.value as TextDirection;
-            if (directionOverride !== undefined) setDirectionOverride(v);
-            else onChange({ direction: v });
-          }}
-        >
-          <option value="ltr">{t("managers.presets.directionLtr")}</option>
-          <option value="rtl">{t("managers.presets.directionRtl")}</option>
-          <option value="vertical-rl">{t("editor.bubbleInspector.directionVerticalRtl")}</option>
-        </select>
-      </label>
-
-      <TextEffectsFields
-        color={style.color}
-        onColorChange={(color) => onChange({ color })}
-        outline={effectiveOutline}
-        onOutlineChange={setTextOutline}
-        gradient={effectiveGradient}
-        onGradientChange={setTextGradient}
-        activeLanguage={activeLanguage}
-        hasLanguageOverride={hasEffectsOverride}
-        onToggleLanguageOverride={toggleEffectsOverride}
-        disabled={
-          preset?.text.color !== undefined ||
-          (!hasEffectsOverride && (preset?.text.textOutline !== undefined || preset?.text.textGradient !== undefined))
-        }
-      />
+      {activeTab === "effects" && (
+        <TextEffectsFields
+          color={style.color}
+          onColorChange={(color) => onChange({ color })}
+          outline={effectiveOutline}
+          onOutlineChange={setTextOutline}
+          gradient={effectiveGradient}
+          onGradientChange={setTextGradient}
+          activeLanguage={activeLanguage}
+          hasLanguageOverride={hasEffectsOverride}
+          onToggleLanguageOverride={toggleEffectsOverride}
+          disabled={
+            preset?.text.color !== undefined ||
+            (!hasEffectsOverride && (preset?.text.textOutline !== undefined || preset?.text.textGradient !== undefined))
+          }
+        />
+      )}
 
       <button onClick={onDelete} style={{ color: "#ff8a95" }}>
         {t("editor.bubbleInspector.deleteBubble")}

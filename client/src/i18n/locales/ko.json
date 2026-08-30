@@ -15,6 +15,7 @@
     "scopeShared": "공유"
   },
   "appShell": {
+    "loadingRoute": "불러오는 중…",
     "switchProject": "프로젝트 전환",
     "settings": "설정",
     "projectLabel": "프로젝트: {{name}}",
@@ -630,6 +631,7 @@
       "selectOrCreateHint": "말풍선, 이미지 또는 곡선 텍스트를 선택하거나 왼쪽 도구로 새로 만드세요."
     },
     "bubbleInspector": {
+      "textTabLabel": "텍스트",
       "textLabel": "텍스트 ({{language}})",
       "furiganaHintPrefix": "후리가나:",
       "furiganaHintSuffix": "· 숫자/라틴 문자 쌍(예: \"21\")은 자동으로 가로로 표시됩니다.",
@@ -661,6 +663,8 @@
       "clipFromPanel": "패널 가장자리에 맞추기",
       "presetGovernsHint": "프리셋 \"{{name}}\"에 의해 지정됨.",
       "directionVerticalRtl": "세로, 열이 오른쪽 → 왼쪽 (일본어)",
+      "textStyleSectionTitle": "텍스트 스타일",
+      "textEffectsSectionTitle": "텍스트 효과",
       "deleteBubble": "말풍선 삭제"
     },
     "curvedTextInspector": {

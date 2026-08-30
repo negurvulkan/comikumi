@@ -35,6 +35,29 @@ export function resolveEffectiveTailStyle(bubbleStyle: BubbleVisualStyle, tailSt
   return tailStyle ?? (bubbleStyle === "thought" ? "chain" : "point");
 }
 
+/**
+ * The two "which value actually applies" precedence chains reused across every
+ * resolve*() function below (resolveBubbleStyle, resolveBubbleForm,
+ * resolveCurvedTextStyle) — previously each field was hand-written as
+ * `override?.[languageCode] ?? preset?.field ?? base.field` (or the two-tier variant
+ * without a per-language override map), which meant the same three-way precedence had
+ * to be re-typed correctly at every single field. Centralizing it here means a new
+ * resolved field is one line, and can't accidentally get the precedence order wrong.
+ */
+/** Three-tier precedence: a per-language override map entry wins, then the linked
+ * preset's value, then the entity's own base value. For fields that support a
+ * per-language override (fontSize, align, textOutline, ...). */
+function resolveLangField<T>(overrideMap: Record<string, T> | undefined, languageCode: string, presetValue: T | undefined, baseValue: T): T {
+  return overrideMap?.[languageCode] ?? presetValue ?? baseValue;
+}
+
+/** Two-tier precedence: the linked preset's value wins, then the entity's own base
+ * value. For fields with no per-language override (bubble background style fields —
+ * geometry/tail-position skip preset resolution entirely, see resolveBubbleForm). */
+function resolvePresetField<T>(presetValue: T | undefined, baseValue: T): T {
+  return presetValue ?? baseValue;
+}
+
 /** Optional stroked border drawn around each glyph, behind the fill — same idea as strokeText/fillText layering. Per-language override available (e.g. a Latin translation wanting a heavier/lighter outline than the Japanese original) via textOutlineOverride on Bubble/CurvedTextElement. */
 export const TextOutlineSchema = z.object({
   enabled: z.boolean().default(false),
@@ -267,14 +290,14 @@ export function offsetBubble<T extends Pick<Bubble, "x" | "y" | "corners" | "for
 export function resolveBubbleStyle(bubble: Bubble, languageCode: string, presets: LetteringPreset[] = []) {
   const preset = presets.find((p) => p.id === bubble.presetId);
   return {
-    fontSize: bubble.fontSizeOverride?.[languageCode] ?? preset?.text.fontSize ?? bubble.fontSize,
-    fontFamily: bubble.fontFamilyOverride?.[languageCode] ?? preset?.text.fontFamily ?? bubble.fontFamily,
-    lineHeight: bubble.lineHeightOverride?.[languageCode] ?? preset?.text.lineHeight ?? bubble.lineHeight,
-    align: bubble.alignOverride?.[languageCode] ?? preset?.text.align ?? bubble.align,
-    direction: bubble.directionOverride?.[languageCode] ?? preset?.text.direction ?? bubble.direction,
-    color: preset?.text.color ?? bubble.color,
-    textOutline: bubble.textOutlineOverride?.[languageCode] ?? preset?.text.textOutline ?? bubble.textOutline,
-    textGradient: bubble.textGradientOverride?.[languageCode] ?? preset?.text.textGradient ?? bubble.textGradient,
+    fontSize: resolveLangField(bubble.fontSizeOverride, languageCode, preset?.text.fontSize, bubble.fontSize),
+    fontFamily: resolveLangField(bubble.fontFamilyOverride, languageCode, preset?.text.fontFamily, bubble.fontFamily),
+    lineHeight: resolveLangField(bubble.lineHeightOverride, languageCode, preset?.text.lineHeight, bubble.lineHeight),
+    align: resolveLangField(bubble.alignOverride, languageCode, preset?.text.align, bubble.align),
+    direction: resolveLangField(bubble.directionOverride, languageCode, preset?.text.direction, bubble.direction),
+    color: resolvePresetField(preset?.text.color, bubble.color),
+    textOutline: resolveLangField(bubble.textOutlineOverride, languageCode, preset?.text.textOutline, bubble.textOutline),
+    textGradient: resolveLangField(bubble.textGradientOverride, languageCode, preset?.text.textGradient, bubble.textGradient),
   };
 }
 
@@ -297,23 +320,23 @@ export function resolveBubbleForm(bubble: Bubble, languageCode: string, presets:
     width: bubble.width,
     height: bubble.height,
     rotation: bubble.rotation,
-    bubbleStyle: preset?.background.bubbleStyle ?? bubble.bubbleStyle,
-    fillColor: preset?.background.fillColor ?? bubble.fillColor,
-    strokeColor: preset?.background.strokeColor ?? bubble.strokeColor,
-    strokeWidthPx: preset?.background.strokeWidthPx ?? bubble.strokeWidthPx,
+    bubbleStyle: resolvePresetField(preset?.background.bubbleStyle, bubble.bubbleStyle),
+    fillColor: resolvePresetField(preset?.background.fillColor, bubble.fillColor),
+    strokeColor: resolvePresetField(preset?.background.strokeColor, bubble.strokeColor),
+    strokeWidthPx: resolvePresetField(preset?.background.strokeWidthPx, bubble.strokeWidthPx),
     tail: bubble.tail,
     tailAnchor: bubble.tailAnchor,
     tailWidth: bubble.tailWidth,
-    svgFileName: preset?.background.svgFileName ?? bubble.svgFileName,
-    tailStyle: preset?.background.tailStyle ?? bubble.tailStyle,
-    tailChainSegmentShape: preset?.background.tailChainSegmentShape ?? bubble.tailChainSegmentShape,
-    tailChainSegments: preset?.background.tailChainSegments ?? bubble.tailChainSegments,
-    tailChainSpacing: preset?.background.tailChainSpacing ?? bubble.tailChainSpacing,
+    svgFileName: resolvePresetField(preset?.background.svgFileName, bubble.svgFileName),
+    tailStyle: resolvePresetField(preset?.background.tailStyle, bubble.tailStyle),
+    tailChainSegmentShape: resolvePresetField(preset?.background.tailChainSegmentShape, bubble.tailChainSegmentShape),
+    tailChainSegments: resolvePresetField(preset?.background.tailChainSegments, bubble.tailChainSegments),
+    tailChainSpacing: resolvePresetField(preset?.background.tailChainSpacing, bubble.tailChainSpacing),
     tailCurve: bubble.tailCurve,
     clipA: bubble.clipA,
     clipB: bubble.clipB,
     clipFlip: bubble.clipFlip,
-    paddingRatio: preset?.background.paddingRatio ?? bubble.paddingRatio,
+    paddingRatio: resolvePresetField(preset?.background.paddingRatio, bubble.paddingRatio),
   };
 }
 
@@ -386,12 +409,12 @@ export type CurvedTextElement = z.infer<typeof CurvedTextElementSchema>;
 export function resolveCurvedTextStyle(el: CurvedTextElement, languageCode: string, presets: LetteringPreset[] = []) {
   const preset = presets.find((p) => p.id === el.presetId);
   return {
-    fontFamily: el.fontFamilyOverride?.[languageCode] ?? preset?.text.fontFamily ?? el.fontFamily,
-    fontSize: el.fontSizeOverride?.[languageCode] ?? preset?.text.fontSize ?? el.fontSize,
-    align: el.alignOverride?.[languageCode] ?? preset?.text.align ?? el.align,
-    color: preset?.text.color ?? el.color,
-    textOutline: el.textOutlineOverride?.[languageCode] ?? preset?.text.textOutline ?? el.textOutline,
-    textGradient: el.textGradientOverride?.[languageCode] ?? preset?.text.textGradient ?? el.textGradient,
+    fontFamily: resolveLangField(el.fontFamilyOverride, languageCode, preset?.text.fontFamily, el.fontFamily),
+    fontSize: resolveLangField(el.fontSizeOverride, languageCode, preset?.text.fontSize, el.fontSize),
+    align: resolveLangField(el.alignOverride, languageCode, preset?.text.align, el.align),
+    color: resolvePresetField(preset?.text.color, el.color),
+    textOutline: resolveLangField(el.textOutlineOverride, languageCode, preset?.text.textOutline, el.textOutline),
+    textGradient: resolveLangField(el.textGradientOverride, languageCode, preset?.text.textGradient, el.textGradient),
   };
 }
 

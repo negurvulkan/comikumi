@@ -15,6 +15,7 @@
     "scopeShared": "共有"
   },
   "appShell": {
+    "loadingRoute": "読み込み中…",
     "switchProject": "プロジェクトを切り替え",
     "settings": "設定",
     "projectLabel": "プロジェクト: {{name}}",
@@ -630,6 +631,7 @@
       "selectOrCreateHint": "吹き出し・画像・曲線テキストを選択するか、左側のツールで新規作成してください。"
     },
     "bubbleInspector": {
+      "textTabLabel": "テキスト",
       "textLabel": "テキスト ({{language}})",
       "furiganaHintPrefix": "ふりがな:",
       "furiganaHintSuffix": "・数字/ラテン文字のペア（例:「21」）は自動的に横並びになります。",
@@ -661,6 +663,8 @@
       "clipFromPanel": "コマの境界に合わせる",
       "presetGovernsHint": "プリセット「{{name}}」で指定されています。",
       "directionVerticalRtl": "縦書き、列は右→左（日本語）",
+      "textStyleSectionTitle": "テキストスタイル",
+      "textEffectsSectionTitle": "テキスト効果",
       "deleteBubble": "吹き出しを削除"
     },
     "curvedTextInspector": {

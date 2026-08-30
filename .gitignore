@@ -20,6 +20,10 @@ e2e/tmp-run/
 e2e/test-results/
 e2e/playwright-report/
 
+# Throwaway inputs/diff output for pageRaster.visual.test.ts — only the checked-in
+# baseline PNG itself belongs in git.
+server/src/lib/__fixtures__/.tmp/
+
 # Logs
 *.log
 

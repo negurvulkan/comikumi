@@ -15,6 +15,7 @@
     "scopeShared": "Compartido"
   },
   "appShell": {
+    "loadingRoute": "Cargando…",
     "switchProject": "Cambiar de proyecto",
     "settings": "Ajustes",
     "projectLabel": "Proyecto: {{name}}",
@@ -638,6 +639,7 @@
       "selectOrCreateHint": "Selecciona un bocadillo, una imagen o un texto curvo, o crea uno con una herramienta de la izquierda."
     },
     "bubbleInspector": {
+      "textTabLabel": "Texto",
       "textLabel": "Texto ({{language}})",
       "furiganaHintPrefix": "Furigana:",
       "furiganaHintSuffix": "· Los pares de números/latín (p. ej. «21») se colocan automáticamente en horizontal.",
@@ -669,6 +671,8 @@
       "clipFromPanel": "Ajustar al borde de la viñeta",
       "presetGovernsHint": "Definido por el preajuste «{{name}}».",
       "directionVerticalRtl": "Vertical, columnas derecha → izquierda (JP)",
+      "textStyleSectionTitle": "Estilo de texto",
+      "textEffectsSectionTitle": "Efectos de texto",
       "deleteBubble": "Eliminar bocadillo"
     },
     "curvedTextInspector": {

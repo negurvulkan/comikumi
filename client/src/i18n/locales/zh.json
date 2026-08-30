@@ -15,6 +15,7 @@
     "scopeShared": "共享"
   },
   "appShell": {
+    "loadingRoute": "加载中…",
     "switchProject": "切换项目",
     "settings": "设置",
     "projectLabel": "项目：{{name}}",
@@ -630,6 +631,7 @@
       "selectOrCreateHint": "选择一个气泡、图片或曲线文字，或使用左侧工具新建一个。"
     },
     "bubbleInspector": {
+      "textTabLabel": "文字",
       "textLabel": "文字（{{language}}）",
       "furiganaHintPrefix": "注音：",
       "furiganaHintSuffix": "· 数字/拉丁字母组合（例如“21”）会自动横排显示。",
@@ -661,6 +663,8 @@
       "clipFromPanel": "对齐到分格边缘",
       "presetGovernsHint": "由预设“{{name}}”指定。",
       "directionVerticalRtl": "竖排，从右到左分栏（日文）",
+      "textStyleSectionTitle": "文本样式",
+      "textEffectsSectionTitle": "文本效果",
       "deleteBubble": "删除气泡"
     },
     "curvedTextInspector": {

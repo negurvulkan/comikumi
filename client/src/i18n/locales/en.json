@@ -15,6 +15,7 @@
     "scopeShared": "Shared"
   },
   "appShell": {
+    "loadingRoute": "Loading…",
     "switchProject": "Switch project",
     "settings": "Settings",
     "projectLabel": "Project: {{name}}",
@@ -658,6 +659,7 @@
       "selectOrCreateHint": "Select a bubble, image, or curved text, or create one with a tool on the left."
     },
     "bubbleInspector": {
+      "textTabLabel": "Text",
       "textLabel": "Text ({{language}})",
       "furiganaHintPrefix": "Furigana:",
       "furiganaHintSuffix": "· Number/Latin pairs (e.g. \"21\") are automatically set sideways.",
@@ -689,6 +691,8 @@
       "clipFromPanel": "Snap to panel edge",
       "presetGovernsHint": "Set by preset \"{{name}}\".",
       "directionVerticalRtl": "Vertical, columns right → left (JP)",
+      "textStyleSectionTitle": "Text style",
+      "textEffectsSectionTitle": "Text effects",
       "deleteBubble": "Delete bubble"
     },
     "curvedTextInspector": {

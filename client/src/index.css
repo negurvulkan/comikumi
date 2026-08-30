@@ -786,6 +786,42 @@ button.active {
   min-width: 0;
 }
 
+/* Icon-only tab strip for a long inspector (see IconTabs.tsx/BubbleInspector.tsx) —
+ * sits above the tab content it controls, each tab a plain emoji glyph with a
+ * title/aria-label tooltip instead of a text label, so the strip stays compact. */
+.icon-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.icon-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  font-size: 16px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.icon-tab.active {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+}
+
+/* Small inline badge marking a field whose value is currently fixed by a linked
+ * preset (see BubbleInspector.tsx's PresetLock) — the hover/focus title carries the
+ * actual explanation, this just flags which fields it applies to at a glance. */
+.preset-lock {
+  cursor: help;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
 /* Section heading inside a report modal (ReportModal.tsx/VolumeReportModal.tsx). */
 .report-heading {
   margin: 4px 0 0;

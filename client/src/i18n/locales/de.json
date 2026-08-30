@@ -15,6 +15,7 @@
     "scopeShared": "Gemeinsam"
   },
   "appShell": {
+    "loadingRoute": "Lädt…",
     "switchProject": "Projekt wechseln",
     "settings": "Einstellungen",
     "projectLabel": "Projekt: {{name}}",
@@ -658,6 +659,7 @@
       "selectOrCreateHint": "Bubble, Bild oder Kurventext auswählen, oder mit einem der Werkzeuge links neu anlegen."
     },
     "bubbleInspector": {
+      "textTabLabel": "Text",
       "textLabel": "Text ({{language}})",
       "furiganaHintPrefix": "Furigana:",
       "furiganaHintSuffix": "· Zahlen-/Lateinpaare (z. B. „21“) werden automatisch quer gesetzt.",
@@ -689,6 +691,8 @@
       "clipFromPanel": "An Panelkante ausrichten",
       "presetGovernsHint": "Von Preset „{{name}}“ vorgegeben.",
       "directionVerticalRtl": "Vertikal, Spalten rechts → links (JP)",
+      "textStyleSectionTitle": "Textstil",
+      "textEffectsSectionTitle": "Texteffekte",
       "deleteBubble": "Bubble löschen"
     },
     "curvedTextInspector": {

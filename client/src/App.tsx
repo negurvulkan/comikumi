@@ -1,9 +1,25 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ProjectProvider, useProject } from "./state/ProjectContext";
 import { SessionProvider, useSession } from "./state/SessionContext";
 import { LanguageSwitcher } from "./editor/LanguageSwitcher";
 import { EmailGateModal } from "./demo/EmailGateModal";
+
+/** Every route is now its own lazy-loaded chunk (see main.tsx) — a slow connection or
+ * cold cache means a visible gap between clicking a link and the new screen mounting.
+ * `useNavigation().state === "loading"` covers exactly that window (route-module fetch
+ * + any route loader), so a translator on a slow line sees feedback instead of a
+ * silent blank pause. */
+function RouteLoadingIndicator() {
+  const navigation = useNavigation();
+  const { t } = useTranslation();
+  if (navigation.state !== "loading") return null;
+  return (
+    <p className="hint" style={{ position: "fixed", top: 8, right: 12, zIndex: 1000, margin: 0 }}>
+      {t("appShell.loadingRoute")}
+    </p>
+  );
+}
 
 function HeaderProjectLink() {
   const { project } = useProject();
@@ -55,6 +71,7 @@ export default function App() {
     <SessionProvider>
       <EmailGateModal />
       <ProjectProvider>
+        <RouteLoadingIndicator />
         <div className="app-shell">
           <header className="app-header" style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <Link to="/project" className="app-title">
