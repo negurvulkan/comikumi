@@ -18,7 +18,7 @@ import { MultiSelectInspector } from "../editor/MultiSelectInspector";
 import { ExportPanel } from "../editor/ExportPanel";
 import { NormalizePreviewDialog } from "../editor/NormalizePreviewDialog";
 import { useNormalizeRun, type FlaggedPage } from "../export/useNormalizeRun";
-import type { RasterExportOptions } from "../export/renderPageToPng";
+import { renderPageToPng, type RasterExportOptions } from "../export/renderPageToPng";
 import type { UniformFitMode } from "../export/uniformFormat";
 import { TextListPanel } from "../editor/TextListPanel";
 import { TranslatorContextPanel } from "../editor/TranslatorContextPanel";
@@ -358,6 +358,26 @@ export function Editor() {
     await img.decode();
     const bitmap = await createImageBitmap(img);
     await autoBubbles.start(bitmap);
+  }
+
+  /** Renders the current page WITH lettering baked in (same pipeline as the export
+   * feature — see renderPageToPng.ts) for the AI panel's "send rendered page" option,
+   * so the model can judge actual typesetting instead of just the bare background that
+   * `contextImageUrl` sends by default. Loaded on demand — only called once the user
+   * enables the option and actually sends a message. */
+  async function buildRenderedPageImage(): Promise<Blob> {
+    if (!layout) throw new Error("no layout loaded");
+    await ensureFontsLoaded();
+    const loadImage = (url: string) =>
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "use-credentials";
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("image_load_failed"));
+        img.src = url;
+      });
+    const baseImage = await loadImage(api.pageImageUrl(volumeId, page));
+    return renderPageToPng(baseImage, layout, activeLanguage, (fileName) => loadImage(api.imagesFileUrl(fileName)), presets);
   }
 
   /** Transcript of the current page for the AI panel's context — panels in reading
@@ -755,6 +775,7 @@ export function Editor() {
           contextLabel={selectedBubble ? t("editor.aiPanel.contextSelectedBubble") : t("editor.aiPanel.contextCurrentPage")}
           contextText={buildPageContextText()}
           contextImageUrl={api.pageImageUrl(volumeId, page)}
+          contextRenderedImage={buildRenderedPageImage}
         />
         <LanguageStrip languages={languages} active={activeLanguage} onChange={store.setActiveLanguage} onLanguagesChange={setLanguages} />
         <div className="editor-layout">

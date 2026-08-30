@@ -540,6 +540,7 @@
       "noProviderConfigured": "AIプロバイダーが設定されていません。",
       "configureLink": "今すぐ設定",
       "includeContext": "{{label}}を含める",
+      "useRenderedContext": "未加工の背景の代わりに、吹き出し・文字入りのレンダリング済みページを送信",
       "defaultContextLabel": "現在のコンテキスト",
       "contextSelectedBubble": "選択中の吹き出し",
       "contextCurrentPage": "現在のページ",

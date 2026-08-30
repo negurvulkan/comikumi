@@ -562,6 +562,7 @@
       "noProviderConfigured": "No AI provider configured.",
       "configureLink": "Set up now",
       "includeContext": "Include {{label}}",
+      "useRenderedContext": "Send rendered page (with bubbles/text) instead of the raw background",
       "defaultContextLabel": "current context",
       "contextSelectedBubble": "selected bubble",
       "contextCurrentPage": "current page",

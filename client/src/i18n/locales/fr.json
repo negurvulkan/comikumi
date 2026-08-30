@@ -548,6 +548,7 @@
       "noProviderConfigured": "Aucun fournisseur IA configuré.",
       "configureLink": "Configurer maintenant",
       "includeContext": "Inclure {{label}}",
+      "useRenderedContext": "Envoyer la page rendue (avec bulles/texte) au lieu du fond brut",
       "defaultContextLabel": "le contexte actuel",
       "contextSelectedBubble": "la bulle sélectionnée",
       "contextCurrentPage": "la page actuelle",

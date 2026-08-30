@@ -548,6 +548,7 @@
       "noProviderConfigured": "No hay ningún proveedor de IA configurado.",
       "configureLink": "Configurar ahora",
       "includeContext": "Incluir {{label}}",
+      "useRenderedContext": "Enviar la página renderizada (con globos/texto) en lugar del fondo sin editar",
       "defaultContextLabel": "el contexto actual",
       "contextSelectedBubble": "el bocadillo seleccionado",
       "contextCurrentPage": "la página actual",

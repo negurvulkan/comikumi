@@ -540,6 +540,7 @@
       "noProviderConfigured": "설정된 AI 제공자가 없습니다.",
       "configureLink": "지금 설정하기",
       "includeContext": "{{label}} 포함",
+      "useRenderedContext": "원본 배경 대신 말풍선/텍스트가 렌더링된 페이지 전송",
       "defaultContextLabel": "현재 컨텍스트",
       "contextSelectedBubble": "선택한 말풍선",
       "contextCurrentPage": "현재 페이지",

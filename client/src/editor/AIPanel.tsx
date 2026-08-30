@@ -19,20 +19,24 @@ interface Props {
   contextText?: string;
   /** Same-origin URL of the current page's image (e.g. `api.pageImageUrl(...)`) — sent
    * alongside `contextText` so the model can see silent/action panels that carry no
-   * bubble text. Omitted by hosts with no page image (e.g. the script editor, which
-   * has no artwork yet). */
+   * bubble text. This is the raw, un-lettered background scan — no bubbles/text baked
+   * in. Omitted by hosts with no page image (e.g. the script editor, which has no
+   * artwork yet). */
   contextImageUrl?: string;
+  /** Lazily renders the current page WITH lettering (bubbles/text/curved text) baked
+   * in — the same pipeline the export feature uses (see renderPageToPng.ts) — so the
+   * model can judge actual typesetting (overflow, cramped lines, alignment) instead of
+   * just the bare background. Only invoked when the user enables "send rendered page"
+   * and actually sends a message, since rendering is comparatively expensive (loads
+   * fonts/placed images). Omitted wherever `contextImageUrl` is omitted. */
+  contextRenderedImage?: () => Promise<Blob>;
 }
 
-/** Downscales an already-fetched image to at most `maxDim` px on its longest edge and
- * re-encodes it as a JPEG data URI — keeps the base64 payload small (both for the
- * request body and for the provider's own vision-token cost) without needing a
- * dedicated server-side resize endpoint. Same-origin fetch, so no canvas-tainting
- * concerns. */
-async function fetchAndDownscaleToDataUrl(url: string, maxDim = 1280): Promise<string> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`image_fetch_failed: ${res.status}`);
-  const blob = await res.blob();
+/** Downscales a blob to at most `maxDim` px on its longest edge and re-encodes it as a
+ * JPEG data URI — keeps the base64 payload small (both for the request body and for
+ * the provider's own vision-token cost) without needing a dedicated server-side resize
+ * endpoint. */
+async function downscaleBlobToDataUrl(blob: Blob, maxDim = 1280): Promise<string> {
   const bitmap = await createImageBitmap(blob);
   const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
@@ -43,6 +47,13 @@ async function fetchAndDownscaleToDataUrl(url: string, maxDim = 1280): Promise<s
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   return canvas.toDataURL("image/jpeg", 0.85);
+}
+
+/** Same-origin fetch, so no canvas-tainting concerns. */
+async function fetchAndDownscaleToDataUrl(url: string, maxDim = 1280): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`image_fetch_failed: ${res.status}`);
+  return downscaleBlobToDataUrl(await res.blob(), maxDim);
 }
 
 type ProviderId = "openai" | "codex";
@@ -75,7 +86,7 @@ const safeMarked = new Marked({
  * Provider-agnostic: the server normalizes OpenAI/Codex into the same SSE wire format
  * (see server/src/routes/ai.ts), so this component never needs to know which one it's
  * talking to beyond the id the user picked. */
-export function AIPanel({ open, onClose, contextLabel, contextText, contextImageUrl }: Props) {
+export function AIPanel({ open, onClose, contextLabel, contextText, contextImageUrl, contextRenderedImage }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const resize = useResizableSidebarWidth();
@@ -83,6 +94,7 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
   const [providerStatus, setProviderStatus] = useState<{ openai: boolean; codex: boolean } | null>(null);
   const [providerId, setProviderId] = useState<ProviderId | null>(null);
   const [includeContext, setIncludeContext] = useState(true);
+  const [useRenderedContext, setUseRenderedContext] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -123,7 +135,13 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
     setError(null);
     try {
       let contextImage: string | undefined;
-      if (includeContext && contextImageUrl) {
+      if (includeContext && useRenderedContext && contextRenderedImage) {
+        // Best-effort, same fallback rationale as the raw-image branch below — a render
+        // failure (e.g. a missing placed-image file) shouldn't block the whole question.
+        contextImage = await contextRenderedImage()
+          .then((blob) => downscaleBlobToDataUrl(blob))
+          .catch(() => undefined);
+      } else if (includeContext && contextImageUrl) {
         // Best-effort: a failed fetch/encode (network hiccup, etc.) shouldn't block the
         // whole question — just fall back to sending the text context alone, same as
         // contextText already being optional.
@@ -211,6 +229,13 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
               <input type="checkbox" checked={includeContext} onChange={(e) => setIncludeContext(e.target.checked)} />
               {t("editor.aiPanel.includeContext", { label: contextLabel ?? t("editor.aiPanel.defaultContextLabel") })}
+            </label>
+          )}
+
+          {includeContext && contextRenderedImage && (
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+              <input type="checkbox" checked={useRenderedContext} onChange={(e) => setUseRenderedContext(e.target.checked)} />
+              {t("editor.aiPanel.useRenderedContext")}
             </label>
           )}
 

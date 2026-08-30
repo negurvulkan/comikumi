@@ -540,6 +540,7 @@
       "noProviderConfigured": "尚未配置 AI 提供方。",
       "configureLink": "立即设置",
       "includeContext": "包含{{label}}",
+      "useRenderedContext": "发送已渲染的页面（含气泡/文字）而非原始背景图",
       "defaultContextLabel": "当前上下文",
       "contextSelectedBubble": "选中的气泡",
       "contextCurrentPage": "当前页面",

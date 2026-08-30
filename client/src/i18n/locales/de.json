@@ -562,6 +562,7 @@
       "noProviderConfigured": "Kein KI-Provider eingerichtet.",
       "configureLink": "Jetzt einrichten",
       "includeContext": "{{label}} einbeziehen",
+      "useRenderedContext": "Gerenderte Seite (mit Blasen/Text) statt Rohbild senden",
       "defaultContextLabel": "Aktueller Kontext",
       "contextSelectedBubble": "Ausgewählte Blase",
       "contextCurrentPage": "Aktuelle Seite",
