@@ -100,13 +100,27 @@ Server-seitige Export-Performance — Background-Jobs sind die Voraussetzung fü
 eine Batch-Queue (die Queue verwaltet ja mehrere solcher Jobs), Font-Caching
 zahlt in dieselbe „Export schneller/robuster machen"-Richtung ein.
 
-- [ ] **Export als Background-Job** — große Volume-Exporte (Raster/PDF/PSD) über
-      eine Job-Queue mit Fortschritts-Polling statt blockierendem Request —
-      Grundlage für die Batch-Queue unten.
-- [ ] **Batch-Export-Queue** — mehrere Volumes/Formate hintereinander exportieren
-      lassen, statt jedes einzeln manuell anzustoßen.
-- [ ] **Font-Registrierungs-Cache** — `registerFont` wird pro Export-Call erneut
-      aufgerufen; ein prozessweiter Cache senkt wiederholten Export-Overhead.
+- [x] **Export als Background-Job** — `server/src/lib/exportJobs.ts` +
+      `server/src/routes/exportJobs.ts` (`POST/GET .../export-jobs`), In-Memory-Job-Map
+      (kein Redis/Queue-Lib nötig, passt zur bestehenden „kleiner selbstgehosteter
+      Prozess"-Architektur). Bewusst nur für vector-pdf/psd — das sind die einzigen
+      Formate mit echter serverseitiger Render-Kosten pro Seite; Raster/Print rendern
+      client-seitig und bleiben auf den bestehenden synchronen Routen. Liest jede Seite
+      frisch von Platte (bereits gespeichertes Layout) statt vom Client alle Layouts auf
+      einmal zu verlangen. Getestet (7 Tests, inkl. „no_saved_layout" und
+      „page_not_found" als Skip statt Job-Abbruch).
+- [x] **Batch-Export-Queue** — `BatchExportQueueModal.tsx`, aufrufbar aus
+      VolumeList.tsx („Projekt"-Menü). Bewusst als NEUER, additiver Einstiegspunkt auf
+      Basis der Background-Job-Infrastruktur gebaut, statt den bestehenden, gut
+      funktionierenden Einzel-Export-Flow (ExportPanel.tsx/useExportRun.ts) anzufassen —
+      der bleibt für Editor.tsx/PageGrid.tsx unverändert. Wählt mehrere Bände + ein
+      Format/Sprache, startet pro Band einen Background-Job nacheinander mit
+      Fortschrittsanzeige je Band.
+- [x] **Font-Registrierungs-Cache** — `pageRaster.ts`'s `registerFont()` merkt sich
+      bereits registrierte (Alias, Pfad)-Paare prozessweit (`registeredFontKeys`-Set)
+      und überspringt `GlobalFonts.registerFromPath()` beim zweiten Mal — Font-Dateien
+      ändern sich nie unter demselben Dateinamen (Upload-Flow vergibt neue Namen), daher
+      sicher über die gesamte Prozesslaufzeit cachebar.
 
 ## Batch E — Canvas/Editor-Polish
 

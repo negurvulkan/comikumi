@@ -19,6 +19,7 @@ import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { ProjectInfoSidebar } from "../editor/ProjectInfoSidebar";
 import { BatchFindReplaceModal } from "../editor/BatchFindReplaceModal";
+import { BatchExportQueueModal } from "../editor/BatchExportQueueModal";
 import { PageIcon, PanelToolIcon, BubbleToolIcon } from "../editor/Icons";
 
 export function VolumeList() {
@@ -39,6 +40,7 @@ export function VolumeList() {
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showFindReplace, setShowFindReplace] = useState(false);
+  const [showBatchExport, setShowBatchExport] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
@@ -86,6 +88,12 @@ export function VolumeList() {
           onClick: () => setShowFindReplace(true),
           disabled: !hasAtLeast("letterer") || !volumes || volumes.length === 0,
         },
+        {
+          type: "action",
+          label: t("batchExportQueue.menuEntry"),
+          onClick: () => setShowBatchExport(true),
+          disabled: !hasAtLeast("letterer") || !volumes || volumes.length === 0,
+        },
         { type: "action", label: t("storyBible.menuEntry"), onClick: () => navigate(`/p/${encodeURIComponent(projectId!)}/story-bible`) },
         { type: "action", label: t("menu.members"), onClick: () => navigate("/admin?tab=projects"), disabled: !hasAtLeast("admin") },
         { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },
@@ -127,6 +135,11 @@ export function VolumeList() {
       {showFindReplace && volumes && (
         <Modal onClose={() => setShowFindReplace(false)}>
           <BatchFindReplaceModal volumes={volumes} onClose={() => setShowFindReplace(false)} />
+        </Modal>
+      )}
+      {showBatchExport && volumes && (
+        <Modal onClose={() => setShowBatchExport(false)}>
+          <BatchExportQueueModal volumes={volumes} onClose={() => setShowBatchExport(false)} />
         </Modal>
       )}
       <div style={{ display: "flex", flex: "1 1 auto", minHeight: 0 }}>

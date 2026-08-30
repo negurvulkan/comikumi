@@ -837,6 +837,21 @@
       "error": "오류"
     }
   },
+  "batchExportQueue": {
+    "menuEntry": "일괄 내보내기 (여러 권)",
+    "title": "일괄 내보내기 — 여러 권",
+    "scopeHint": "선택한 각 권의 모든 페이지에 대해 서버 측 백그라운드 내보내기를 순서대로 실행합니다.",
+    "formatLabel": "형식",
+    "languageLabel": "언어",
+    "volumesHeading": "권",
+    "startButton": "선택한 {{count}}개 내보내기",
+    "state": {
+      "pending": "대기 중…",
+      "running": "내보내는 중…",
+      "done": "완료",
+      "failed": "실패"
+    }
+  },
   "script": {
     "title": "대본",
     "menuEntry": "대본",

@@ -846,6 +846,21 @@
       "error": "error"
     }
   },
+  "batchExportQueue": {
+    "menuEntry": "Exportación por lotes (varios tomos)",
+    "title": "Exportación por lotes — varios tomos",
+    "scopeHint": "Ejecuta una exportación en segundo plano en el servidor para cada página de cada tomo seleccionado, uno tras otro.",
+    "formatLabel": "Formato",
+    "languageLabel": "Idioma",
+    "volumesHeading": "Tomos",
+    "startButton": "Exportar {{count}} seleccionados",
+    "state": {
+      "pending": "Esperando…",
+      "running": "Exportando…",
+      "done": "Listo",
+      "failed": "Fallido"
+    }
+  },
   "script": {
     "title": "Guion",
     "menuEntry": "Guion",

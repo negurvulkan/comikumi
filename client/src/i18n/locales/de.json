@@ -866,6 +866,21 @@
       "error": "Fehler"
     }
   },
+  "batchExportQueue": {
+    "menuEntry": "Sammel-Export (mehrere Bände)",
+    "title": "Sammel-Export — mehrere Bände",
+    "scopeHint": "Führt für jeden ausgewählten Band einen serverseitigen Hintergrund-Export aller Seiten aus, nacheinander.",
+    "formatLabel": "Format",
+    "languageLabel": "Sprache",
+    "volumesHeading": "Bände",
+    "startButton": "{{count}} ausgewählte exportieren",
+    "state": {
+      "pending": "Wartet…",
+      "running": "Exportiert…",
+      "done": "Fertig",
+      "failed": "Fehlgeschlagen"
+    }
+  },
   "script": {
     "title": "Skript",
     "menuEntry": "Skript",

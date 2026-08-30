@@ -866,6 +866,21 @@
       "error": "error"
     }
   },
+  "batchExportQueue": {
+    "menuEntry": "Batch export (multiple volumes)",
+    "title": "Batch export — multiple volumes",
+    "scopeHint": "Runs a server-side background export for every page of each selected volume, one volume after another.",
+    "formatLabel": "Format",
+    "languageLabel": "Language",
+    "volumesHeading": "Volumes",
+    "startButton": "Export {{count}} selected",
+    "state": {
+      "pending": "Waiting…",
+      "running": "Exporting…",
+      "done": "Done",
+      "failed": "Failed"
+    }
+  },
   "script": {
     "title": "Script",
     "menuEntry": "Script",

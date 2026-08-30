@@ -5,6 +5,7 @@ import { volumesRouter } from "./routes/volumes.js";
 import { pagesRouter } from "./routes/pages.js";
 import { layoutRouter } from "./routes/layout.js";
 import { exportRouter } from "./routes/export.js";
+import { exportJobsRouter } from "./routes/exportJobs.js";
 import { fontsRouter } from "./routes/fonts.js";
 import { imagesRouter } from "./routes/images.js";
 import { bubbleSvgsRouter } from "./routes/bubbleSvgs.js";
@@ -70,6 +71,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/volumes", requireAuth, requireViewer, pagesRouter);
   app.use("/api/volumes", requireAuth, requireViewer, layoutRouter);
   app.use("/api/volumes", requireAuth, requireViewer, exportRouter);
+  app.use("/api/volumes", requireAuth, requireViewer, exportJobsRouter);
   app.use("/api/volumes", requireAuth, requireViewer, scriptRouter);
   app.use("/api/volumes", requireAuth, requireViewer, pageOrderRouter);
   app.use("/api/volumes", requireAuth, requireViewer, pageMetaRouter);
@@ -104,6 +106,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pagesRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, layoutRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, exportRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, exportJobsRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, scriptRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pageOrderRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pageMetaRouter);

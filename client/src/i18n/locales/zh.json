@@ -837,6 +837,21 @@
       "error": "错误"
     }
   },
+  "batchExportQueue": {
+    "menuEntry": "批量导出（多卷）",
+    "title": "批量导出 — 多卷",
+    "scopeHint": "依次为每个所选卷的所有页面执行服务器端后台导出。",
+    "formatLabel": "格式",
+    "languageLabel": "语言",
+    "volumesHeading": "卷",
+    "startButton": "导出所选的 {{count}} 项",
+    "state": {
+      "pending": "等待中…",
+      "running": "导出中…",
+      "done": "已完成",
+      "failed": "失败"
+    }
+  },
   "script": {
     "title": "剧本",
     "menuEntry": "剧本",

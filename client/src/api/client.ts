@@ -466,6 +466,39 @@ export const api = {
       body: JSON.stringify({ folderSuffix, page, languageCode, layout }),
     }).then((r) => json<{ ok: true; path: string }>(r)),
 
+  /** Starts a background export job (server/src/lib/exportJobs.ts) covering every page
+   * in `pages` at once — the batch-export counterpart to exportVectorPdfPage/
+   * exportPsdPage's one-page-at-a-time calls, used by BatchExportQueueModal.tsx. The
+   * server re-reads each page's already-SAVED layout from disk itself, so this never
+   * sends layout JSON in the request body regardless of how many pages are queued. */
+  startExportJob: (
+    volumeId: string,
+    format: "vector-pdf" | "psd",
+    pages: string[],
+    languageCode: string,
+    folderSuffix: string,
+    pdfxVersion?: "x1a" | "x4"
+  ) =>
+    authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/export-jobs`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ format, pages, languageCode, folderSuffix, pdfxVersion }),
+    }).then((r) => json<{ jobId: string; total: number }>(r)),
+
+  /** One poll of a background export job's current state — ExportJobState's shape
+   * (server/src/lib/exportJobs.ts), returned as-is. */
+  getExportJob: (volumeId: string, jobId: string) =>
+    authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/export-jobs/${encodeURIComponent(jobId)}`)).then((r) =>
+      json<{
+        id: string;
+        status: "running" | "done" | "failed";
+        total: number;
+        completed: number;
+        results: { page: string; status: "done" | "skipped" | "error"; message?: string }[];
+        error?: string;
+      }>(r)
+    ),
+
   exportLayoutsZip: async (volumeId: string) => {
     const res = await authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/layouts/export-zip`));
     if (!res.ok) await throwApiError(res);

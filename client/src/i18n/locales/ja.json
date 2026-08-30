@@ -837,6 +837,21 @@
       "error": "エラー"
     }
   },
+  "batchExportQueue": {
+    "menuEntry": "一括エクスポート（複数の巻）",
+    "title": "一括エクスポート — 複数の巻",
+    "scopeHint": "選択した各巻のすべてのページについて、サーバー側でバックグラウンドエクスポートを順番に実行します。",
+    "formatLabel": "形式",
+    "languageLabel": "言語",
+    "volumesHeading": "巻",
+    "startButton": "選択した{{count}}件をエクスポート",
+    "state": {
+      "pending": "待機中…",
+      "running": "エクスポート中…",
+      "done": "完了",
+      "failed": "失敗"
+    }
+  },
   "script": {
     "title": "スクリプト",
     "menuEntry": "スクリプト",
