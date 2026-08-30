@@ -211,6 +211,20 @@ export function Editor() {
 
   const { layout, loading, error, selectedBubbleIds, selectedImageIds, selectedCurvedTextIds, selectedPanelIds, activeLanguage, dirty, saving, past } = store;
 
+  // Same deep-link idea as "?comment=<id>" above, for "?bubble=<id>" — used by
+  // QaCheckModal's "jump to bubble" button (PageGrid.tsx, which navigates here with
+  // this param since it has no open editor of its own to select into directly).
+  useEffect(() => {
+    const bubbleId = searchParams.get("bubble");
+    if (!bubbleId || !layout) return;
+    if (!layout.bubbles.some((b) => b.id === bubbleId)) return;
+    store.selectBubble(bubbleId);
+    const next = new URLSearchParams(searchParams);
+    next.delete("bubble");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout, searchParams]);
+
   // Global keyboard shortcuts — Escape/Delete/arrow-nudge/duplicate/undo-redo.
   // Reads fresh state via useEditorStore.getState() instead of closing over
   // the `store` snapshot from the hook, so this effect only needs to run

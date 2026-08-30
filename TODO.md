@@ -63,15 +63,36 @@ Braucht einen durchsuchbaren Index über alle Bubble-Texte als gemeinsame Basis 
 QA-Checker, Translation Memory und Batch Find & Replace scannen alle im Grunde
 dieselbe Datenmenge und profitieren von derselben Infrastruktur.
 
-- [ ] **Such-Index statt Datei-Scan** — Reports/Cross-Page-Suchen lesen aktuell
-      vermutlich pro Anfrage alle Page-JSONs; ab einer gewissen Projektgröße lohnt
-      ein leichter Index (SQLite/In-Memory) — Grundlage für die drei Punkte unten.
-- [ ] **QA-Checker** — automatischer Konsistenz-Scan pro Volume: leere
-      Übersetzungen, fehlende Sprachen, Glossar-Verstöße, doppelte Presets.
-- [ ] **Translation Memory** — Vorschläge aus bereits übersetzten, ähnlichen Sätzen
-      im selben Projekt, beim Tippen im Textfeld.
-- [ ] **Batch Find & Replace** — projektweite Suche/Ersetzen über alle
-      Bubbles/Volumes, mit Vorschau vor dem Anwenden.
+- [x] **Such-Index statt Datei-Scan** — `client/src/editor/projectSearchIndex.ts`
+      (`buildProjectSearchIndex`). Umgesetzt als client-seitige, parallelisierte
+      (Promise.all) Aggregation über `api.listVolumes()` + das bereits existierende
+      `api.getVolumeReport()` pro Band — passt zum bestehenden Muster (Reports werden
+      schon client-seitig aus rohen Layouts gebaut, siehe VolumeReportModal.tsx), statt
+      eine neue Server-Route/DB einzuführen. Bewusst ohne Cross-Request-Cache (immer
+      frisch) — Staleness-Bugs in einer Such-und-ERSETZEN-Funktion wiegen schwerer als
+      der Re-Scan-Aufwand. Basis für Translation Memory und Batch Find & Replace unten;
+      QA-Checker bleibt bewusst pro-Band und nutzt nur `getVolumeReport()` direkt.
+- [x] **QA-Checker** — `qaChecks.ts` (reine, getestete Funktion) + `QaCheckModal.tsx`,
+      aufrufbar aus PageGrid.tsx („Seite"-Menü). Drei Checks: fehlende/leere
+      Übersetzungen pro konfigurierter Sprache, unübersetzte Glossar-Begriffe (Quellbegriff
+      taucht noch wörtlich in einer Sprache auf, für die eine andere Übersetzung hinterlegt
+      ist), doppelte Preset-Namen. „Öffnen"-Button je Fund springt per neuem
+      `?bubble=<id>`-Deep-Link (Editor.tsx) direkt zur betroffenen Blase.
+- [x] **Translation Memory** — `translationMemory.ts` (Jaccard-Ähnlichkeit über
+      Wort-Tokens, unicode-fähig für Japanisch) + Button „Ähnliche Texte suchen" im
+      Textfeld-Tab von BubbleInspector.tsx. Bewusst kein Live-Vorschlag beim Tippen
+      (Projekt-Index-Aufbau ist zu teuer dafür) und bewusst NUR innerhalb derselben
+      Sprache verglichen (das Datenmodell kennt keine „Quellsprache" pro Blase, die man
+      sprachübergreifend alignen könnte) — „habe ich diese Zeile/dieses SFX schon einmal
+      irgendwo im Projekt übersetzt".
+- [x] **Batch Find & Replace** — `findReplace.ts` (reine, getestete Funktion) +
+      `BatchFindReplaceModal.tsx`, aufrufbar aus VolumeList.tsx („Projekt"-Menü, das
+      einzige Level, das alle Bände auf einmal sieht). Vorschau mit Checkboxen vor dem
+      Anwenden; beim Anwenden wird pro betroffener Seite frisch per
+      `getLayoutWithEtag`/`saveLayout` (If-Match) geschrieben und die Ersetzung erneut
+      gegen den frischen Text ausgeführt (nicht die Vorschau zurückgeschrieben) — dieselbe
+      Optimistic-Concurrency-Absicherung wie beim normalen Editor-Speichern, nur für
+      mehrere Seiten auf einmal.
 
 ## Batch D — Export-Pipeline
 

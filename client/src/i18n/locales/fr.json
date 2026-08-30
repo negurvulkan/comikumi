@@ -9,6 +9,7 @@
     "add": "Ajouter",
     "browse": "Parcourir…",
     "loading": "Chargement…",
+    "saving": "Enregistrement…",
     "yes": "Oui",
     "no": "Non",
     "scopeProject": "Projet",
@@ -686,6 +687,9 @@
       "boutenHintSuffix": "— un petit point au lieu du gras/italique.",
       "insertFuriganaButton": "Insérer furigana",
       "insertBoutenButton": "Insérer bōten",
+      "tmSearchButton": "Rechercher des textes similaires",
+      "tmNoSuggestions": "Aucun texte similaire trouvé dans ce projet.",
+      "tmUseButton": "Utiliser",
       "customPaddingLabel": "Marge intérieure personnalisée",
       "paddingRatioLabel": "Marge intérieure ({{value}} %)",
       "characterLabel": "Personnage",
@@ -805,6 +809,42 @@
     "noCharacters": "Aucun personnage assigné.",
     "whoSaysWhatHeading": "Qui dit quoi — par page",
     "noText": "(pas de texte)"
+  },
+  "qaChecker": {
+    "menuEntry": "Contrôle qualité",
+    "title": "Contrôle qualité de tout le tome",
+    "noIssues": "Aucun problème trouvé.",
+    "jumpButton": "Ouvrir",
+    "category": {
+      "missingTranslation": "Traductions manquantes ({{count}})",
+      "untranslatedGlossaryTerm": "Termes du glossaire non traduits ({{count}})",
+      "duplicatePreset": "Préréglages en double ({{count}})"
+    },
+    "issue": {
+      "missingTranslation": "{{page}} : traduction manquante pour {{language}}",
+      "untranslatedGlossaryTerm": "{{page}} ({{language}}) : le terme « {{term}} » n'est pas traduit (attendu : « {{translation}} »)",
+      "duplicatePreset": "« {{name}} » existe {{count}} fois"
+    }
+  },
+  "batchFindReplace": {
+    "menuEntry": "Rechercher et remplacer (tout le projet)",
+    "title": "Rechercher et remplacer — tout le projet",
+    "scopeHint": "Recherche dans le texte de chaque bulle, dans tous les tomes de ce projet.",
+    "searchLabel": "Rechercher",
+    "replaceLabel": "Remplacer par",
+    "caseSensitiveLabel": "Respecter la casse",
+    "searchButton": "Rechercher",
+    "matchesHeading": "Résultats ({{count}})",
+    "selectAll": "Tout sélectionner",
+    "deselectAll": "Tout désélectionner",
+    "noMatches": "Aucun résultat.",
+    "applyButton": "Remplacer {{count}} sélectionnés",
+    "conflictHint": "Cette page a été modifiée ailleurs depuis la recherche — relancez la recherche pour voir le texte actuel.",
+    "outcome": {
+      "saved": "enregistré",
+      "conflict": "conflit",
+      "error": "erreur"
+    }
   },
   "script": {
     "title": "Script",

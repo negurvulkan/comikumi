@@ -9,6 +9,7 @@
     "add": "添加",
     "browse": "浏览…",
     "loading": "加载中…",
+    "saving": "保存中…",
     "yes": "是",
     "no": "否",
     "scopeProject": "项目",
@@ -677,6 +678,9 @@
       "boutenHintSuffix": "——用小圆点代替粗体/斜体。",
       "insertFuriganaButton": "插入注音",
       "insertBoutenButton": "插入圈点",
+      "tmSearchButton": "查找相似文本",
+      "tmNoSuggestions": "在此项目中未找到相似文本。",
+      "tmUseButton": "使用",
       "customPaddingLabel": "自定义内边距",
       "paddingRatioLabel": "内边距（{{value}}%）",
       "characterLabel": "角色",
@@ -796,6 +800,42 @@
     "noCharacters": "未分配任何角色。",
     "whoSaysWhatHeading": "谁说了什么——按页面",
     "noText": "（无文本）"
+  },
+  "qaChecker": {
+    "menuEntry": "质量检查",
+    "title": "整卷质量检查",
+    "noIssues": "未发现问题。",
+    "jumpButton": "打开",
+    "category": {
+      "missingTranslation": "缺失的翻译（{{count}}项）",
+      "untranslatedGlossaryTerm": "未翻译的术语表条目（{{count}}项）",
+      "duplicatePreset": "重复的预设（{{count}}项）"
+    },
+    "issue": {
+      "missingTranslation": "{{page}}：缺少 {{language}} 的翻译",
+      "untranslatedGlossaryTerm": "{{page}}（{{language}}）：术语“{{term}}”未翻译（预期：“{{translation}}”）",
+      "duplicatePreset": "“{{name}}”重复了 {{count}} 次"
+    }
+  },
+  "batchFindReplace": {
+    "menuEntry": "查找和替换（整个项目）",
+    "title": "查找和替换 — 整个项目",
+    "scopeHint": "搜索此项目所有卷中每个气泡的文本。",
+    "searchLabel": "查找",
+    "replaceLabel": "替换为",
+    "caseSensitiveLabel": "区分大小写",
+    "searchButton": "搜索",
+    "matchesHeading": "匹配项（{{count}}）",
+    "selectAll": "全选",
+    "deselectAll": "全部取消选择",
+    "noMatches": "没有匹配项。",
+    "applyButton": "替换所选的 {{count}} 项",
+    "conflictHint": "此页面自搜索以来已被其他地方修改——请重新搜索以查看当前文本。",
+    "outcome": {
+      "saved": "已保存",
+      "conflict": "冲突",
+      "error": "错误"
+    }
   },
   "script": {
     "title": "剧本",

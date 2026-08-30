@@ -9,6 +9,7 @@
     "add": "Añadir",
     "browse": "Examinar…",
     "loading": "Cargando…",
+    "saving": "Guardando…",
     "yes": "Sí",
     "no": "No",
     "scopeProject": "Proyecto",
@@ -686,6 +687,9 @@
       "boutenHintSuffix": "— un pequeño punto en lugar de negrita/cursiva.",
       "insertFuriganaButton": "Insertar furigana",
       "insertBoutenButton": "Insertar bōten",
+      "tmSearchButton": "Buscar textos similares",
+      "tmNoSuggestions": "No se encontraron textos similares en este proyecto.",
+      "tmUseButton": "Usar",
       "customPaddingLabel": "Margen interno personalizado",
       "paddingRatioLabel": "Margen interno ({{value}}%)",
       "characterLabel": "Personaje",
@@ -805,6 +809,42 @@
     "noCharacters": "Ningún personaje asignado.",
     "whoSaysWhatHeading": "Quién dice qué — por página",
     "noText": "(sin texto)"
+  },
+  "qaChecker": {
+    "menuEntry": "Control de calidad",
+    "title": "Control de calidad de todo el tomo",
+    "noIssues": "No se encontraron problemas.",
+    "jumpButton": "Abrir",
+    "category": {
+      "missingTranslation": "Traducciones faltantes ({{count}})",
+      "untranslatedGlossaryTerm": "Términos del glosario sin traducir ({{count}})",
+      "duplicatePreset": "Preajustes duplicados ({{count}})"
+    },
+    "issue": {
+      "missingTranslation": "{{page}}: falta la traducción a {{language}}",
+      "untranslatedGlossaryTerm": "{{page}} ({{language}}): el término «{{term}}» no está traducido (se esperaba «{{translation}}»)",
+      "duplicatePreset": "«{{name}}» existe {{count}} veces"
+    }
+  },
+  "batchFindReplace": {
+    "menuEntry": "Buscar y reemplazar (todo el proyecto)",
+    "title": "Buscar y reemplazar — todo el proyecto",
+    "scopeHint": "Busca en el texto de cada globo en todos los tomos de este proyecto.",
+    "searchLabel": "Buscar",
+    "replaceLabel": "Reemplazar con",
+    "caseSensitiveLabel": "Distinguir mayúsculas/minúsculas",
+    "searchButton": "Buscar",
+    "matchesHeading": "Coincidencias ({{count}})",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "noMatches": "Sin coincidencias.",
+    "applyButton": "Reemplazar {{count}} seleccionadas",
+    "conflictHint": "Esta página cambió en otro lugar desde la búsqueda — vuelve a buscar para ver el texto actual.",
+    "outcome": {
+      "saved": "guardado",
+      "conflict": "conflicto",
+      "error": "error"
+    }
   },
   "script": {
     "title": "Guion",

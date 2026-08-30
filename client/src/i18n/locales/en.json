@@ -9,6 +9,7 @@
     "add": "Add",
     "browse": "Browse…",
     "loading": "Loading…",
+    "saving": "Saving…",
     "yes": "Yes",
     "no": "No",
     "scopeProject": "Project",
@@ -706,6 +707,9 @@
       "boutenHintSuffix": "— a small dot instead of bold/italic.",
       "insertFuriganaButton": "Insert furigana",
       "insertBoutenButton": "Insert bōten",
+      "tmSearchButton": "Find similar texts",
+      "tmNoSuggestions": "No similar texts found in this project.",
+      "tmUseButton": "Use",
       "customPaddingLabel": "Custom inner padding",
       "paddingRatioLabel": "Inner padding ({{value}}%)",
       "characterLabel": "Character",
@@ -825,6 +829,42 @@
     "noCharacters": "No characters assigned.",
     "whoSaysWhatHeading": "Who says what — by page",
     "noText": "(no text)"
+  },
+  "qaChecker": {
+    "menuEntry": "QA check",
+    "title": "QA check for the whole volume",
+    "noIssues": "No issues found.",
+    "jumpButton": "Open",
+    "category": {
+      "missingTranslation": "Missing translations ({{count}})",
+      "untranslatedGlossaryTerm": "Untranslated glossary terms ({{count}})",
+      "duplicatePreset": "Duplicate presets ({{count}})"
+    },
+    "issue": {
+      "missingTranslation": "{{page}}: translation missing for {{language}}",
+      "untranslatedGlossaryTerm": "{{page}} ({{language}}): term \"{{term}}\" not translated (expected \"{{translation}}\")",
+      "duplicatePreset": "\"{{name}}\" exists {{count}} times"
+    }
+  },
+  "batchFindReplace": {
+    "menuEntry": "Find & replace (whole project)",
+    "title": "Find & replace — whole project",
+    "scopeHint": "Searches every bubble's text across every volume in this project.",
+    "searchLabel": "Find",
+    "replaceLabel": "Replace with",
+    "caseSensitiveLabel": "Case-sensitive",
+    "searchButton": "Search",
+    "matchesHeading": "Matches ({{count}})",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "noMatches": "No matches.",
+    "applyButton": "Replace {{count}} selected",
+    "conflictHint": "This page changed elsewhere since the search — re-run the search to see the current text.",
+    "outcome": {
+      "saved": "saved",
+      "conflict": "conflict",
+      "error": "error"
+    }
   },
   "script": {
     "title": "Script",

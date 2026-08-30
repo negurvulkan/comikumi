@@ -35,6 +35,10 @@ import { OptionalToggleField } from "./OptionalToggleField";
 import { GovernedField } from "./GovernedField";
 import { IconTabs } from "./IconTabs";
 import { GlossaryHighlightedTextarea, findGlossaryReading } from "./GlossaryHighlightedTextarea";
+import { api } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
+import { buildProjectSearchIndex, type IndexedBubble } from "./projectSearchIndex";
+import { findSimilarBubbles, type TranslationMemorySuggestion } from "./translationMemory";
 
 interface Props {
   bubble: Bubble;
@@ -103,6 +107,34 @@ export function BubbleInspector({
     textareaRef.current?.select();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFocusSignal, activeTab]);
+
+  // Translation memory (see translationMemory.ts) — an opt-in "search" button rather
+  // than live-as-you-type: building the project-wide index (projectSearchIndex.ts)
+  // fetches every volume's every page, which is too expensive to redo on each
+  // keystroke. `tmIndexRef` caches the built index across searches within this
+  // component instance (a fresh mount — e.g. navigating to a different bubble — starts
+  // over; see the module doc comment for why no cross-request/session cache exists).
+  const tmIndexRef = useRef<IndexedBubble[] | null>(null);
+  const [tmSuggestions, setTmSuggestions] = useState<TranslationMemorySuggestion[] | null>(null);
+  const [tmLoading, setTmLoading] = useState(false);
+  const [tmError, setTmError] = useState<string | null>(null);
+
+  async function searchTranslationMemory() {
+    const query = bubble.text[activeLanguage] ?? "";
+    setTmLoading(true);
+    setTmError(null);
+    try {
+      if (!tmIndexRef.current) {
+        const volumes = await api.listVolumes();
+        tmIndexRef.current = await buildProjectSearchIndex(volumes);
+      }
+      setTmSuggestions(findSimilarBubbles(tmIndexRef.current, activeLanguage, query, bubble.id));
+    } catch (e) {
+      setTmError(translateApiError(e, t));
+    } finally {
+      setTmLoading(false);
+    }
+  }
 
   function handleTextareaKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (!onNavigate) return;
@@ -422,6 +454,35 @@ export function BubbleInspector({
               }}
             />
           </label>
+
+          <div className="field-row" style={{ marginBottom: 4 }}>
+            <button type="button" onClick={searchTranslationMemory} disabled={tmLoading || !(bubble.text[activeLanguage] ?? "").trim()}>
+              {tmLoading ? t("common.loading") : t("editor.bubbleInspector.tmSearchButton")}
+            </button>
+          </div>
+          {tmError && <div className="error-banner">{tmError}</div>}
+          {tmSuggestions && (
+            <div style={{ marginBottom: 4 }}>
+              {tmSuggestions.length === 0 ? (
+                <p className="hint" style={{ margin: 0 }}>
+                  {t("editor.bubbleInspector.tmNoSuggestions")}
+                </p>
+              ) : (
+                tmSuggestions.map((s) => (
+                  <div key={`${s.volumeId}-${s.page}-${s.bubbleId}`} className="text-list-row" style={{ cursor: "default" }}>
+                    <span className="text-list-type">
+                      {s.volumeLabel} / {s.page}
+                    </span>
+                    <span className="text-list-content">{s.text}</span>
+                    <button type="button" onClick={() => setText(s.text)}>
+                      {t("editor.bubbleInspector.tmUseButton")}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
           {style.direction === "vertical-rl" && (
             <>
               <div className="field-row" style={{ marginBottom: 4 }}>

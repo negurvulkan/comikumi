@@ -18,6 +18,7 @@ import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { ProjectInfoSidebar } from "../editor/ProjectInfoSidebar";
+import { BatchFindReplaceModal } from "../editor/BatchFindReplaceModal";
 import { PageIcon, PanelToolIcon, BubbleToolIcon } from "../editor/Icons";
 
 export function VolumeList() {
@@ -37,6 +38,7 @@ export function VolumeList() {
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showFindReplace, setShowFindReplace] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
@@ -78,6 +80,12 @@ export function VolumeList() {
         { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
+        {
+          type: "action",
+          label: t("batchFindReplace.menuEntry"),
+          onClick: () => setShowFindReplace(true),
+          disabled: !hasAtLeast("letterer") || !volumes || volumes.length === 0,
+        },
         { type: "action", label: t("storyBible.menuEntry"), onClick: () => navigate(`/p/${encodeURIComponent(projectId!)}/story-bible`) },
         { type: "action", label: t("menu.members"), onClick: () => navigate("/admin?tab=projects"), disabled: !hasAtLeast("admin") },
         { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },
@@ -114,6 +122,11 @@ export function VolumeList() {
       {showPresets && (
         <Modal onClose={() => setShowPresets(false)}>
           <PresetManager presets={presets} onChange={setPresets} onClose={() => setShowPresets(false)} />
+        </Modal>
+      )}
+      {showFindReplace && volumes && (
+        <Modal onClose={() => setShowFindReplace(false)}>
+          <BatchFindReplaceModal volumes={volumes} onClose={() => setShowFindReplace(false)} />
         </Modal>
       )}
       <div style={{ display: "flex", flex: "1 1 auto", minHeight: 0 }}>

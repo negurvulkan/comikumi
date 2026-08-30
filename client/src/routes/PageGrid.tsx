@@ -25,6 +25,7 @@ import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { VolumeReportModal } from "../editor/VolumeReportModal";
+import { QaCheckModal } from "../editor/QaCheckModal";
 import { NewBlankPageDialog } from "../editor/NewBlankPageDialog";
 import { PageOrderConflictModal } from "../editor/PageOrderConflictModal";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
@@ -227,6 +228,7 @@ export function PageGrid() {
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showVolumeReport, setShowVolumeReport] = useState(false);
+  const [showQaCheck, setShowQaCheck] = useState(false);
   const [showNewBlankPage, setShowNewBlankPage] = useState(false);
   const [insertPickerIndex, setInsertPickerIndex] = useState<number | null>(null);
   // Where the next upload/blank-page creation should be spliced into the order —
@@ -531,6 +533,7 @@ export function PageGrid() {
         { type: "separator" },
         { type: "action", label: t("pageGrid.menuManageChapters"), onClick: () => setShowChapterManager(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("pageGrid.menuVolumeReport"), onClick: () => setShowVolumeReport(true) },
+        { type: "action", label: t("qaChecker.menuEntry"), onClick: () => setShowQaCheck(true) },
         {
           type: "action",
           label: t("reader.menuEntry"),
@@ -670,6 +673,21 @@ export function PageGrid() {
             characters={characters}
             readingDirection={project?.readingDirection ?? "rtl"}
             onClose={() => setShowVolumeReport(false)}
+          />
+        </Modal>
+      )}
+      {showQaCheck && (
+        <Modal onClose={() => setShowQaCheck(false)}>
+          <QaCheckModal
+            volumeId={volumeId}
+            languages={languages}
+            glossary={glossary}
+            presets={presets}
+            onJumpToBubble={(page, bubbleId) => {
+              setShowQaCheck(false);
+              navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}?bubble=${encodeURIComponent(bubbleId)}`);
+            }}
+            onClose={() => setShowQaCheck(false)}
           />
         </Modal>
       )}

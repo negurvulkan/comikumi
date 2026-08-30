@@ -9,6 +9,7 @@
     "add": "Hinzufügen",
     "browse": "Durchsuchen…",
     "loading": "Lädt…",
+    "saving": "Speichert…",
     "yes": "Ja",
     "no": "Nein",
     "scopeProject": "Projekt",
@@ -706,6 +707,9 @@
       "boutenHintSuffix": "— ein kleiner Punkt statt Fett/Kursiv.",
       "insertFuriganaButton": "Furigana einfügen",
       "insertBoutenButton": "Bōten einfügen",
+      "tmSearchButton": "Ähnliche Texte suchen",
+      "tmNoSuggestions": "Keine ähnlichen Texte in diesem Projekt gefunden.",
+      "tmUseButton": "Übernehmen",
       "customPaddingLabel": "Eigenen Innenabstand verwenden",
       "paddingRatioLabel": "Innenabstand ({{value}}%)",
       "characterLabel": "Charakter",
@@ -825,6 +829,42 @@
     "noCharacters": "Keine Charaktere zugeordnet.",
     "whoSaysWhatHeading": "Wer sagt was — je Seite",
     "noText": "(kein Text)"
+  },
+  "qaChecker": {
+    "menuEntry": "QA-Check",
+    "title": "QA-Check für den ganzen Band",
+    "noIssues": "Keine Probleme gefunden.",
+    "jumpButton": "Öffnen",
+    "category": {
+      "missingTranslation": "Fehlende Übersetzungen ({{count}})",
+      "untranslatedGlossaryTerm": "Unübersetzte Glossar-Begriffe ({{count}})",
+      "duplicatePreset": "Doppelte Presets ({{count}})"
+    },
+    "issue": {
+      "missingTranslation": "{{page}}: Übersetzung für {{language}} fehlt",
+      "untranslatedGlossaryTerm": "{{page}} ({{language}}): Begriff „{{term}}“ nicht übersetzt (erwartet: „{{translation}}“)",
+      "duplicatePreset": "„{{name}}“ existiert {{count}}×"
+    }
+  },
+  "batchFindReplace": {
+    "menuEntry": "Suchen & Ersetzen (ganzes Projekt)",
+    "title": "Suchen & Ersetzen — ganzes Projekt",
+    "scopeHint": "Durchsucht den Text jeder Blase in jedem Band dieses Projekts.",
+    "searchLabel": "Suchen",
+    "replaceLabel": "Ersetzen durch",
+    "caseSensitiveLabel": "Groß-/Kleinschreibung beachten",
+    "searchButton": "Suchen",
+    "matchesHeading": "Treffer ({{count}})",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Alle abwählen",
+    "noMatches": "Keine Treffer.",
+    "applyButton": "{{count}} ausgewählte ersetzen",
+    "conflictHint": "Diese Seite wurde seit der Suche anderweitig geändert — Suche erneut ausführen, um den aktuellen Text zu sehen.",
+    "outcome": {
+      "saved": "gespeichert",
+      "conflict": "Konflikt",
+      "error": "Fehler"
+    }
   },
   "script": {
     "title": "Skript",

@@ -9,6 +9,7 @@
     "add": "追加",
     "browse": "参照…",
     "loading": "読み込み中…",
+    "saving": "保存中…",
     "yes": "はい",
     "no": "いいえ",
     "scopeProject": "プロジェクト",
@@ -677,6 +678,9 @@
       "boutenHintSuffix": "・太字/斜体の代わりに小さな点を打ちます。",
       "insertFuriganaButton": "ふりがなを挿入",
       "insertBoutenButton": "傍点を挿入",
+      "tmSearchButton": "類似テキストを検索",
+      "tmNoSuggestions": "このプロジェクトに類似テキストは見つかりませんでした。",
+      "tmUseButton": "使用",
       "customPaddingLabel": "内側の余白を個別に設定",
       "paddingRatioLabel": "内側の余白（{{value}}%）",
       "characterLabel": "キャラクター",
@@ -796,6 +800,42 @@
     "noCharacters": "割り当てられたキャラクターがありません。",
     "whoSaysWhatHeading": "誰が何を言うか — ページ別",
     "noText": "(テキストなし)"
+  },
+  "qaChecker": {
+    "menuEntry": "QAチェック",
+    "title": "巻全体のQAチェック",
+    "noIssues": "問題は見つかりませんでした。",
+    "jumpButton": "開く",
+    "category": {
+      "missingTranslation": "未翻訳の項目（{{count}}件）",
+      "untranslatedGlossaryTerm": "未翻訳の用語集エントリー（{{count}}件）",
+      "duplicatePreset": "重複したプリセット（{{count}}件）"
+    },
+    "issue": {
+      "missingTranslation": "{{page}}：{{language}}の翻訳がありません",
+      "untranslatedGlossaryTerm": "{{page}}（{{language}}）：用語「{{term}}」が未翻訳です（想定訳：「{{translation}}」）",
+      "duplicatePreset": "「{{name}}」が{{count}}件重複しています"
+    }
+  },
+  "batchFindReplace": {
+    "menuEntry": "検索と置換（プロジェクト全体）",
+    "title": "検索と置換 — プロジェクト全体",
+    "scopeHint": "このプロジェクトのすべての巻の、すべての吹き出しのテキストを検索します。",
+    "searchLabel": "検索",
+    "replaceLabel": "置換後",
+    "caseSensitiveLabel": "大文字と小文字を区別",
+    "searchButton": "検索",
+    "matchesHeading": "一致（{{count}}件）",
+    "selectAll": "すべて選択",
+    "deselectAll": "すべて解除",
+    "noMatches": "一致するものはありません。",
+    "applyButton": "選択した{{count}}件を置換",
+    "conflictHint": "このページは検索後に他で変更されています — 再検索して現在のテキストを確認してください。",
+    "outcome": {
+      "saved": "保存済み",
+      "conflict": "競合",
+      "error": "エラー"
+    }
   },
   "script": {
     "title": "スクリプト",

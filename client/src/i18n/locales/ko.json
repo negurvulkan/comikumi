@@ -9,6 +9,7 @@
     "add": "추가",
     "browse": "찾아보기…",
     "loading": "불러오는 중…",
+    "saving": "저장 중…",
     "yes": "예",
     "no": "아니요",
     "scopeProject": "프로젝트",
@@ -677,6 +678,9 @@
       "boutenHintSuffix": "— 굵게/기울임 대신 작은 점을 표시합니다.",
       "insertFuriganaButton": "후리가나 삽입",
       "insertBoutenButton": "방점 삽입",
+      "tmSearchButton": "유사한 텍스트 검색",
+      "tmNoSuggestions": "이 프로젝트에서 유사한 텍스트를 찾지 못했습니다.",
+      "tmUseButton": "사용",
       "customPaddingLabel": "내부 여백 직접 설정",
       "paddingRatioLabel": "내부 여백 ({{value}}%)",
       "characterLabel": "캐릭터",
@@ -796,6 +800,42 @@
     "noCharacters": "할당된 캐릭터가 없습니다.",
     "whoSaysWhatHeading": "누가 무엇을 말하는가 — 페이지별",
     "noText": "(텍스트 없음)"
+  },
+  "qaChecker": {
+    "menuEntry": "QA 검사",
+    "title": "전체 권 QA 검사",
+    "noIssues": "문제가 발견되지 않았습니다.",
+    "jumpButton": "열기",
+    "category": {
+      "missingTranslation": "누락된 번역 ({{count}}개)",
+      "untranslatedGlossaryTerm": "번역되지 않은 용어집 항목 ({{count}}개)",
+      "duplicatePreset": "중복된 프리셋 ({{count}}개)"
+    },
+    "issue": {
+      "missingTranslation": "{{page}}: {{language}} 번역 누락",
+      "untranslatedGlossaryTerm": "{{page}} ({{language}}): 용어 \"{{term}}\"이(가) 번역되지 않음 (예상: \"{{translation}}\")",
+      "duplicatePreset": "\"{{name}}\"이(가) {{count}}번 중복됨"
+    }
+  },
+  "batchFindReplace": {
+    "menuEntry": "찾기 및 바꾸기 (프로젝트 전체)",
+    "title": "찾기 및 바꾸기 — 프로젝트 전체",
+    "scopeHint": "이 프로젝트의 모든 권에서 모든 말풍선의 텍스트를 검색합니다.",
+    "searchLabel": "찾기",
+    "replaceLabel": "바꿀 내용",
+    "caseSensitiveLabel": "대소문자 구분",
+    "searchButton": "검색",
+    "matchesHeading": "일치 항목 ({{count}}개)",
+    "selectAll": "전체 선택",
+    "deselectAll": "전체 선택 해제",
+    "noMatches": "일치하는 항목이 없습니다.",
+    "applyButton": "선택한 {{count}}개 바꾸기",
+    "conflictHint": "검색 이후 이 페이지가 다른 곳에서 변경되었습니다 — 다시 검색하여 현재 텍스트를 확인하세요.",
+    "outcome": {
+      "saved": "저장됨",
+      "conflict": "충돌",
+      "error": "오류"
+    }
   },
   "script": {
     "title": "대본",
