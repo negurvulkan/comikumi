@@ -41,6 +41,11 @@ normalen `text`-Feld herausgelesen.
   „ケイ“/„ト“ auf zwei Spalten aufgeteilt zu werden. Einzelne Kanji oder
   Hiragana-Übergänge (z. B. bei 食べる zwischen 食べ und る) bleiben weiterhin
   reguläre, zulässige Umbruchstellen.
+- **Wortzusammenhalt (Mono-Ruby).** 2 oder mehr direkt hintereinander
+  geschriebene Einzelzeichen-Furigana-Markierungen (siehe „Manuell:
+  Furigana“ unten) werden beim Spaltenumbruch genauso zusammengehalten —
+  z. B. trennt sich `{東|とう}{京|きょう}` nie in 東 am Spaltenende und 京
+  am Anfang der nächsten Spalte auf.
 - **Einheitliche Ausrichtung.** Alle Spalten eines Textblocks teilen sich einen
   gemeinsamen oberen Startpunkt, statt sich (wie zuvor) jede für sich an ihrer
   eigenen Zeichenzahl vertikal zu zentrieren — das verhinderte, dass Spalten
@@ -64,6 +69,24 @@ verteilt. Enthält eine Bubble mindestens eine Furigana-Markierung, wird der
 Spaltenabstand für den gesamten Textblock etwas großzügiger reserviert, damit
 die Lesungen Platz haben (eine pauschale, nicht pro Spalte optimierte Lücke —
 einfacher und robuster als eine exakt bedarfsgerechte Berechnung).
+
+Das ist „Gruppen-Ruby“ (全体ルビ): eine Lesung, gleichmäßig über eine
+gesamte, ggf. mehrzeichige Basis verteilt — korrekt für Lesungen, die
+sich nicht 1:1 auf einzelne Kanji abbilden lassen (z. B. `{大人|おとな}`).
+Für eine Lesung, die jedem Kanji einzeln zugeordnet ist („Mono-Ruby“,
+モノルビ — der häufigere Stil bei Komposita wie Ortsnamen), einen
+`{basis|lesung}`-Block pro Zeichen schreiben:
+
+```
+{東|とう}{京|きょう}
+```
+
+Jeder Block rendert weiterhin als eigenständige Lesung direkt neben
+genau diesem einen Zeichen — nicht anders, als hätte man sie irgendwo
+sonst im Text getrennt geschrieben — nur dass das Tool 2 oder mehr davon
+direkt hintereinander jetzt auch als ein Wort für den Spaltenumbruch
+erkennt (siehe „Wortzusammenhalt (Mono-Ruby)“ oben), sodass 東 und 京
+nie auf zwei Spalten aufgeteilt werden können.
 
 Nicht erkannte/unvollständige `{...}`-Ausdrücke (z. B. vergessene `|`) werden
 als normaler Text behandelt, es gibt keinen Absturz.

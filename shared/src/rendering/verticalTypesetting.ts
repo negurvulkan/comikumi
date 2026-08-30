@@ -46,6 +46,18 @@ export interface VerticalRubyToken {
   base: string;
   reading: string;
 }
+export interface VerticalRubyWordToken {
+  /** 2+ directly consecutive mono-ruby pairs (each base exactly 1 character) kept
+   *  together across a column break — e.g. authoring `{東|とう}{京|きょう}` instead of
+   *  the group-ruby form `{東京|とうきょう}`. Each pair still renders individually,
+   *  positioned right beside just its own base character (see drawRubyToken); only the
+   *  column-fill bookkeeping treats the run as one unbreakable word, same idea as
+   *  VerticalWordToken for plain kanji/katakana runs. Produced by groupMonoRuby() as a
+   *  post-process over the token stream — a single, isolated mono-ruby pair (no
+   *  adjacent one) stays a plain "ruby" token. */
+  kind: "rubyWord";
+  pairs: { base: string; reading: string }[];
+}
 export interface VerticalBreakToken {
   /** An explicit `\n` in the source text — forces a new column instead of
    *  being silently dropped (the previous behavior). */
@@ -62,7 +74,7 @@ export interface VerticalWordToken {
   kind: "word";
   chars: VerticalCharToken[];
 }
-export type VerticalToken = VerticalCharToken | VerticalTcyToken | VerticalRubyToken | VerticalBreakToken | VerticalWordToken;
+export type VerticalToken = VerticalCharToken | VerticalTcyToken | VerticalRubyToken | VerticalRubyWordToken | VerticalBreakToken | VerticalWordToken;
 
 // Dash-like glyphs (rotated so a horizontal stroke reads as vertical) plus
 // colon/semicolon (rotated 90° so their two dots sit side-by-side on the
@@ -264,13 +276,48 @@ export function tokenizeVertical(text: string): VerticalToken[] {
     tokens.push(charToken(ch));
     i++;
   }
-  return tokens;
+  return groupMonoRuby(tokens);
+}
+
+/** Merges runs of 2+ directly consecutive single-character-base ruby tokens into one
+ *  atomic VerticalRubyWordToken (see its doc comment) — purely a column-break-safety
+ *  grouping, the individual pairs still render exactly as before. */
+function groupMonoRuby(tokens: VerticalToken[]): VerticalToken[] {
+  const result: VerticalToken[] = [];
+  let i = 0;
+  while (i < tokens.length) {
+    const t = tokens[i];
+    if (t.kind === "ruby" && [...t.base].length === 1) {
+      const pairs: { base: string; reading: string }[] = [{ base: t.base, reading: t.reading }];
+      let j = i + 1;
+      while (j < tokens.length) {
+        const next = tokens[j];
+        if (next.kind === "ruby" && [...next.base].length === 1) {
+          pairs.push({ base: next.base, reading: next.reading });
+          j++;
+        } else {
+          break;
+        }
+      }
+      if (pairs.length >= 2) {
+        result.push({ kind: "rubyWord", pairs });
+      } else {
+        result.push(t);
+      }
+      i = j;
+      continue;
+    }
+    result.push(t);
+    i++;
+  }
+  return result;
 }
 
 /** How many column "rows" a token occupies — a ruby run occupies one row per base character. */
 function tokenWeight(token: VerticalToken): number {
   if (token.kind === "break") return 0;
   if (token.kind === "ruby") return [...token.base].length;
+  if (token.kind === "rubyWord") return token.pairs.length;
   if (token.kind === "word") return token.chars.length;
   return 1;
 }
@@ -353,7 +400,7 @@ export function fitVerticalText(
   baseFontSize: number
 ): VerticalFitResult {
   const tokens = tokenizeVertical(text);
-  const hasRuby = tokens.some((t) => t.kind === "ruby");
+  const hasRuby = tokens.some((t) => t.kind === "ruby" || t.kind === "rubyWord");
   // Ruby needs room to the side of its base column for the reading — reserving
   // extra pitch uniformly for the whole block is far simpler than computing a
   // gap only next to columns that actually carry a ruby run, at the cost of
@@ -493,23 +540,47 @@ export function drawVerticalText(
         drawStyledText(ctx, token.text, x, y, style);
         y += rowStep;
       } else if (token.kind === "ruby") {
-        const baseChars = [...token.base];
-        const yStart = y;
-        ctx.font = `${fontSize}px "${opts.fontFamily}"`;
-        ctx.textAlign = "center";
-        baseChars.forEach((ch) => {
-          drawStyledText(ctx, ch, x, y, style);
-          y += rowStep;
-        });
-        const baseSpanHeight = baseChars.length * rowStep;
-        const readingChars = [...token.reading];
-        const readingStep = baseSpanHeight / readingChars.length;
-        ctx.font = `${fontSize * 0.5}px "${opts.fontFamily}"`;
-        readingChars.forEach((ch, i) => {
-          drawStyledText(ctx, ch, x + colPitch * 0.5, yStart + readingStep / 2 + i * readingStep, style);
-        });
+        y = drawRubyToken(ctx, token.base, token.reading, x, y, rowStep, colPitch, fontSize, opts, style);
+      } else if (token.kind === "rubyWord") {
+        for (const pair of token.pairs) {
+          y = drawRubyToken(ctx, pair.base, pair.reading, x, y, rowStep, colPitch, fontSize, opts, style);
+        }
       }
       // "break" tokens never appear inside a laid-out column.
     }
   });
+}
+
+/** Draws one ruby run (stacked base characters, reading spread evenly beside the whole
+ *  base span) at (x, y) and returns the y position just past it — shared by the "ruby"
+ *  token case (one run spanning the whole base string) and the "rubyWord" case (called
+ *  once per mono-ruby pair, each with a 1-character base — see VerticalRubyWordToken). */
+function drawRubyToken(
+  ctx: CanvasRenderingContext2D,
+  base: string,
+  reading: string,
+  x: number,
+  y: number,
+  rowStep: number,
+  colPitch: number,
+  fontSize: number,
+  opts: DrawVerticalTextOptions,
+  style: TextFillStyle
+): number {
+  const baseChars = [...base];
+  const yStart = y;
+  ctx.font = `${fontSize}px "${opts.fontFamily}"`;
+  ctx.textAlign = "center";
+  baseChars.forEach((ch) => {
+    drawStyledText(ctx, ch, x, y, style);
+    y += rowStep;
+  });
+  const baseSpanHeight = baseChars.length * rowStep;
+  const readingChars = [...reading];
+  const readingStep = baseSpanHeight / readingChars.length;
+  ctx.font = `${fontSize * 0.5}px "${opts.fontFamily}"`;
+  readingChars.forEach((ch, i) => {
+    drawStyledText(ctx, ch, x + colPitch * 0.5, yStart + readingStep / 2 + i * readingStep, style);
+  });
+  return y;
 }

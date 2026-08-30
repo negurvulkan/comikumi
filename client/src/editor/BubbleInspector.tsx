@@ -288,9 +288,14 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
         />
       </label>
       {style.direction === "vertical-rl" && (
-        <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
-          {t("editor.bubbleInspector.furiganaHintPrefix")} <code>{"{漢字|かんじ}"}</code> {t("editor.bubbleInspector.furiganaHintSuffix")}
-        </p>
+        <>
+          <p style={{ color: "var(--text-muted)", margin: "-4px 0 4px", fontSize: 12 }}>
+            {t("editor.bubbleInspector.furiganaHintPrefix")} <code>{"{漢字|かんじ}"}</code> {t("editor.bubbleInspector.furiganaHintSuffix")}
+          </p>
+          <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
+            {t("editor.bubbleInspector.monoRubyHintPrefix")} <code>{"{東|とう}{京|きょう}"}</code> {t("editor.bubbleInspector.monoRubyHintSuffix")}
+          </p>
+        </>
       )}
 
       <div className="field-row">

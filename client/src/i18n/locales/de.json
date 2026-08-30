@@ -656,6 +656,8 @@
       "textLabel": "Text ({{language}})",
       "furiganaHintPrefix": "Furigana:",
       "furiganaHintSuffix": "· Zahlen-/Lateinpaare (z. B. „21“) werden automatisch quer gesetzt.",
+      "monoRubyHintPrefix": "Lesung pro Zeichen:",
+      "monoRubyHintSuffix": "— bleibt beim Spaltenumbruch zusammen.",
       "characterLabel": "Charakter",
       "voiceNotesFor": "Voice Notes ({{name}}):",
       "presetLinkedHint": "Verknüpft mit „{{name}}“ — legt fest, was unten deaktiviert ist.",

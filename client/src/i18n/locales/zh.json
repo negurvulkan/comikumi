@@ -628,6 +628,8 @@
       "textLabel": "文字（{{language}}）",
       "furiganaHintPrefix": "注音：",
       "furiganaHintSuffix": "· 数字/拉丁字母组合（例如“21”）会自动横排显示。",
+      "monoRubyHintPrefix": "逐字注音：",
+      "monoRubyHintSuffix": "——换列时会保持在一起。",
       "characterLabel": "角色",
       "voiceNotesFor": "语音备注（{{name}}）：",
       "presetLinkedHint": "已关联到“{{name}}” — 决定下方哪些项被禁用。",

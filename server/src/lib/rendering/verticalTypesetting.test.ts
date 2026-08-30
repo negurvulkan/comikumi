@@ -12,6 +12,26 @@ describe("tokenizeVertical", () => {
     expect(tokens).toEqual([{ kind: "ruby", base: "漢字", reading: "かんじ" }]);
   });
 
+  it("groups 2+ consecutive single-character (mono-ruby) pairs into one rubyWord token", () => {
+    const tokens = tokenizeVertical("{東|とう}{京|きょう}");
+    expect(tokens).toEqual([
+      { kind: "rubyWord", pairs: [{ base: "東", reading: "とう" }, { base: "京", reading: "きょう" }] },
+    ]);
+  });
+
+  it("leaves a single, isolated mono-ruby pair as a plain ruby token", () => {
+    const tokens = tokenizeVertical("{猫|ねこ}");
+    expect(tokens).toEqual([{ kind: "ruby", base: "猫", reading: "ねこ" }]);
+  });
+
+  it("does not group a group-ruby token (multi-character base) with a neighboring mono-ruby pair", () => {
+    const tokens = tokenizeVertical("{東京|とうきょう}{猫|ねこ}");
+    expect(tokens).toEqual([
+      { kind: "ruby", base: "東京", reading: "とうきょう" },
+      { kind: "ruby", base: "猫", reading: "ねこ" },
+    ]);
+  });
+
   it("turns an explicit newline into a break token", () => {
     const tokens = tokenizeVertical("a\nb");
     expect(tokens[1]).toEqual({ kind: "break" });
@@ -93,6 +113,15 @@ describe("fitVerticalText", () => {
   it("respects an explicit line break as a forced column break", () => {
     const result = fitVerticalText("あ\nい", 1.2, 10000, 10000, 24);
     expect(result.columns).toHaveLength(2);
+  });
+
+  it("keeps a grouped mono-ruby word together across a column break instead of splitting it", () => {
+    // rowStep = 24 * 1 = 24, boxHeight 24 -> maxRowsPerColumn = 1, so plain chars would
+    // land one per column — but the 2-pair rubyWord token must still land whole in one
+    // column since layoutColumnsGreedy never splits a single token.
+    const result = fitVerticalText("あ{東|とう}{京|きょう}い", 1, 10000, 24, 24);
+    const columnKinds = result.columns.map((col) => col.map((t) => t.kind));
+    expect(columnKinds).toContainEqual(["rubyWord"]);
   });
 
   it("kinsoku shori pulls a leading-prohibited character back into the previous column", () => {

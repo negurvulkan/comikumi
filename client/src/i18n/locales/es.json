@@ -636,6 +636,8 @@
       "textLabel": "Texto ({{language}})",
       "furiganaHintPrefix": "Furigana:",
       "furiganaHintSuffix": "· Los pares de números/latín (p. ej. «21») se colocan automáticamente en horizontal.",
+      "monoRubyHintPrefix": "Lectura por carácter:",
+      "monoRubyHintSuffix": "— permanece unido al saltar de columna.",
       "characterLabel": "Personaje",
       "voiceNotesFor": "Notas de voz ({{name}}):",
       "presetLinkedHint": "Vinculado a «{{name}}» — determina qué está desactivado abajo.",

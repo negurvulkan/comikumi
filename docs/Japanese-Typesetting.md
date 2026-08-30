@@ -41,6 +41,11 @@ normal `text` field at render time.
   instead of being split into "ケイ"/"ト" across two columns. Individual
   kanji or hiragana transitions (e.g. in 食べる between 食べ and る) remain
   regular, permitted break points.
+- **Word cohesion (mono-ruby).** 2 or more single-character furigana
+  markers written back to back (see "Manual: furigana" below) are kept
+  together across a column break the same way — e.g. `{東|とう}{京|きょう}`
+  never splits into 東 at the end of one column and 京 at the start of
+  the next.
 - **Uniform alignment.** All columns of a text block share a common
   top starting point, instead of (as before) each vertically centering
   itself based on its own character count — this used to make columns
@@ -65,6 +70,24 @@ marker, the column spacing for the entire text block is reserved a
 little more generously so the readings have room (a flat, non-per-column-
 optimized gap — simpler and more robust than an exact needs-based
 calculation).
+
+This is "group-ruby" (全体ルビ): one reading spread evenly across a whole,
+possibly multi-character base — correct for readings that don't map
+1:1 onto individual kanji (e.g. `{大人|おとな}`). For a reading tied to
+each kanji individually ("mono-ruby", モノルビ — the more common style for
+compounds like place names), write one `{base|reading}` block per
+character instead:
+
+```
+{東|とう}{京|きょう}
+```
+
+Each block still renders as its own independent reading positioned
+right beside just that one character — no different from writing them
+separately anywhere else in the text — except that the tool now also
+recognizes 2 or more of them written back to back as one word for
+column-breaking purposes (see "Word cohesion (mono-ruby)" above), so
+東 and 京 can never end up split across two columns.
 
 Unrecognized/incomplete `{...}` expressions (e.g. a forgotten `|`) are
 treated as normal text — there is no crash.

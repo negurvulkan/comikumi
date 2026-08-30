@@ -420,7 +420,12 @@ drag handles.
 Text options: font (custom uploaded fonts), size, line height, horizontal
 alignment, and reading direction — horizontal LTR, horizontal RTL, or vertical
 (tategaki) including furigana (`{漢字|かんじ}`) and automatic tate-chū-yoko
-(sideways digit/Latin runs). Text can have an outline and/or a linear gradient
+(sideways digit/Latin runs). Furigana supports both group-ruby (one reading
+spread evenly across a multi-character base, e.g. `{大人|おとな}`) and
+mono-ruby (a separate `{base|reading}` block per character, e.g.
+`{東|とう}{京|きょう}`) — writing 2+ of these blocks back to back automatically
+keeps them together as one word across a column break, the same protection
+plain multi-kanji words already had. Text can have an outline and/or a linear gradient
 instead of a solid color. Every one of these style fields (and the entire
 shape/position/size/rotation/background) can be overridden per language.
 Bubbles can be assigned to a panel and a character.

@@ -628,6 +628,8 @@
       "textLabel": "텍스트 ({{language}})",
       "furiganaHintPrefix": "후리가나:",
       "furiganaHintSuffix": "· 숫자/라틴 문자 쌍(예: \"21\")은 자동으로 가로로 표시됩니다.",
+      "monoRubyHintPrefix": "글자별 읽기:",
+      "monoRubyHintSuffix": "— 단 나눔 시에도 함께 유지됩니다.",
       "characterLabel": "캐릭터",
       "voiceNotesFor": "보이스 노트 ({{name}}):",
       "presetLinkedHint": "\"{{name}}\"에 연결됨 — 아래에서 비활성화되는 항목을 결정합니다.",
