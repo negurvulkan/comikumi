@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -229,7 +229,6 @@ describe("buildVectorPdfPage", () => {
       text: { de: "Hallo" },
     });
     const layoutWithPanel = { ...createEmptyLayout("page_01", "page.png", 400, 300), panels: [panel], bubbles: [childBubble] };
-    const bytesWithPanel = await build({ baseImagePath, layout: layoutWithPanel, languageCode: "de", resolveImagePath: async () => null });
 
     const absoluteBubble = createBubble({
       id: "b1",
@@ -242,7 +241,19 @@ describe("buildVectorPdfPage", () => {
       text: { de: "Hallo" },
     });
     const layoutAbsolute = { ...createEmptyLayout("page_01", "page.png", 400, 300), bubbles: [absoluteBubble] };
-    const bytesAbsolute = await build({ baseImagePath, layout: layoutAbsolute, languageCode: "de", resolveImagePath: async () => null });
+
+    // applyPdfXMetadata() stamps a wall-clock CreationDate into every PDF (see
+    // pdfXMetadata.ts) — freeze time so the two builds below, which this test compares
+    // byte-for-byte, don't pick up different timestamps if they straddle a clock tick.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2024-01-01T00:00:00Z"));
+    let bytesWithPanel: Buffer, bytesAbsolute: Buffer;
+    try {
+      bytesWithPanel = await build({ baseImagePath, layout: layoutWithPanel, languageCode: "de", resolveImagePath: async () => null });
+      bytesAbsolute = await build({ baseImagePath, layout: layoutAbsolute, languageCode: "de", resolveImagePath: async () => null });
+    } finally {
+      vi.useRealTimers();
+    }
 
     expect(bytesWithPanel.equals(bytesAbsolute)).toBe(true);
   });

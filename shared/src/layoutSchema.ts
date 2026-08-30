@@ -115,6 +115,11 @@ export const BubbleFormSchema = z.object({
   /** Which side of clipA/clipB is kept — false (default) keeps the side containing the
    * form's own center, true keeps the other side. */
   clipFlip: z.boolean().default(false),
+  /** Overrides the automatic per-shape/style text-inset ratio (see paddingRatioFor in
+   * shared/src/rendering/textLayout.ts) — null (default) keeps the automatic value; an
+   * explicit 0-0.9 fraction lets the user dial in exactly how much breathing room text
+   * has inside the bubble, instead of only the fixed rect/oval/SVG defaults. */
+  paddingRatio: z.number().min(0).max(0.9).nullable().default(null),
 });
 export type BubbleForm = z.infer<typeof BubbleFormSchema>;
 
@@ -152,6 +157,8 @@ export const BubbleSchema = z.object({
   clipA: PointSchema.nullable().default(null),
   clipB: PointSchema.nullable().default(null),
   clipFlip: z.boolean().default(false),
+  /** See BubbleFormSchema's identically-named field. */
+  paddingRatio: z.number().min(0).max(0.9).nullable().default(null),
   /**
    * Non-destructive bubble merging: bubbles sharing the same `mergeGroupId` are drawn as
    * one continuous outline (the union of their individual boundaries) instead of
@@ -306,6 +313,7 @@ export function resolveBubbleForm(bubble: Bubble, languageCode: string, presets:
     clipA: bubble.clipA,
     clipB: bubble.clipB,
     clipFlip: bubble.clipFlip,
+    paddingRatio: preset?.background.paddingRatio ?? bubble.paddingRatio,
   };
 }
 

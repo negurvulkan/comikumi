@@ -34,7 +34,11 @@ normalen `text`-Feld herausgelesen.
 - **Tate-chū-yoko (縦中横).** Kurze Läufe aus genau 2 Halbbreite-Ziffern/
   Buchstaben (z. B. „21“, „MP“) werden aufrecht und nebeneinander in einer
   einzigen Zelle gesetzt statt einzeln gestapelt. Läufe mit ungerader Länge
-  behalten das letzte Zeichen als normales Einzelzeichen.
+  behalten das letzte Zeichen als normales Einzelzeichen. Vollbreite-Ziffern/
+  -Buchstaben (z. B. „２１“, „Ｍ“ — was japanische IMEs standardmäßig
+  erzeugen) werden zuerst auf ihr Halbbreite-Äquivalent normalisiert, sodass
+  sie genauso erkannt werden, statt stillschweigend einzeln groß gestapelt zu
+  werden.
 - **Wortzusammenhalt (Katakana/Kanji).** Zusammenhängende Katakana-Läufe (Namen,
   Lehnwörter) und Kanji-Läufe (Komplexbegriffe) werden beim Spaltenumbruch nie
   mitten getrennt — z. B. bleibt „ケイト“ als Ganzes in einer Spalte, statt als

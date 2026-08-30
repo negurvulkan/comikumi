@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { forwardRef, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 
@@ -24,7 +24,7 @@ function escapeRegExp(s: string): string {
  * whose translation in `activeLanguage` appears (case-insensitively) in the text — i.e.
  * highlights approved target-language terms as the translator types them, not the source
  * term. Overlapping matches are resolved by earliest-start-then-longest-first. */
-function buildMatchRanges(text: string, glossary: GlossaryEntry[], activeLanguage: string): { start: number; end: number }[] {
+export function buildMatchRanges(text: string, glossary: GlossaryEntry[], activeLanguage: string): { start: number; end: number }[] {
   const terms = glossary.map((e) => e.translations[activeLanguage]?.trim()).filter((t): t is string => !!t);
   if (terms.length === 0) return [];
   const pattern = new RegExp(terms.map(escapeRegExp).join("|"), "gi");
@@ -47,6 +47,25 @@ function buildMatchRanges(text: string, glossary: GlossaryEntry[], activeLanguag
   return merged;
 }
 
+/** Looks up the stored furigana reading (GlossaryEntry.readings) for a glossary entry
+ *  whose `activeLanguage` translation exactly matches `selected` (case-insensitive, exact
+ *  match — not a substring search like buildMatchRanges above, since this drives the
+ *  "Furigana" toolbar button's pre-fill for a specific user-made selection, not live
+ *  highlighting). Returns undefined if there's no matching entry or it has no reading for
+ *  this language. Used by BubbleInspector.tsx. */
+export function findGlossaryReading(selected: string, glossary: GlossaryEntry[], activeLanguage: string): string | undefined {
+  const target = selected.trim().toLowerCase();
+  if (!target) return undefined;
+  for (const entry of glossary) {
+    const translation = entry.translations[activeLanguage]?.trim();
+    if (translation && translation.toLowerCase() === target) {
+      const reading = entry.readings[activeLanguage]?.trim();
+      if (reading) return reading;
+    }
+  }
+  return undefined;
+}
+
 /** A `<textarea>` with glossary-term matches highlighted behind it — implemented as a
  * transparent-background textarea stacked over a non-interactive backdrop `<div>`
  * rendering the same text with `<mark>`-wrapped matches, rather than contentEditable
@@ -54,7 +73,10 @@ function buildMatchRanges(text: string, glossary: GlossaryEntry[], activeLanguag
  * textarea keeps native cursor/selection/IME/undo behavior for free). The textarea is
  * the wrapper's only in-flow child, so the backdrop's `inset: 0` automatically tracks a
  * user resize (`resize: vertical`) with no ResizeObserver needed. */
-export function GlossaryHighlightedTextarea({ value, onChange, glossary, activeLanguage, style, vertical }: Props) {
+export const GlossaryHighlightedTextarea = forwardRef<HTMLTextAreaElement, Props>(function GlossaryHighlightedTextarea(
+  { value, onChange, glossary, activeLanguage, style, vertical },
+  ref
+) {
   const backdropRef = useRef<HTMLDivElement>(null);
 
   const ranges = useMemo(
@@ -64,7 +86,7 @@ export function GlossaryHighlightedTextarea({ value, onChange, glossary, activeL
 
   if (vertical || ranges.length === 0) {
     // No highlight possible/needed — plain textarea, byte-for-byte the old behavior.
-    return <textarea value={value} onChange={(e) => onChange(e.target.value)} style={style} />;
+    return <textarea ref={ref} value={value} onChange={(e) => onChange(e.target.value)} style={style} />;
   }
 
   const fragments: { text: string; marked: boolean }[] = [];
@@ -119,6 +141,7 @@ export function GlossaryHighlightedTextarea({ value, onChange, glossary, activeL
         )}
       </div>
       <textarea
+        ref={ref}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onScroll={(e) => {
@@ -131,4 +154,4 @@ export function GlossaryHighlightedTextarea({ value, onChange, glossary, activeL
       />
     </div>
   );
-}
+});

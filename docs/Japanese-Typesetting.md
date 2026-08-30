@@ -34,7 +34,11 @@ normal `text` field at render time.
 - **Tate-chū-yoko (縦中横).** Short runs of exactly 2 half-width digits/
   letters (e.g. "21", "MP") are set upright and side by side in a
   single cell instead of stacked individually. Runs of odd length
-  keep the last character as a normal single character.
+  keep the last character as a normal single character. Fullwidth digit/
+  Latin variants (e.g. "２１", "Ｍ" — what Japanese IMEs commonly produce by
+  default) are normalized to their halfwidth equivalent first, so they're
+  recognized exactly the same way instead of silently falling back to
+  individually stacked full-size glyphs.
 - **Word cohesion (katakana/kanji).** Contiguous katakana runs (names,
   loanwords) and kanji runs (compound terms) are never split in the
   middle at a column break — e.g. "ケイト" stays together in one column

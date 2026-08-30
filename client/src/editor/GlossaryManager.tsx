@@ -26,6 +26,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [term, setTerm] = useState("");
   const [translations, setTranslations] = useState<Record<string, string>>(emptyTranslations(languages));
+  const [readings, setReadings] = useState<Record<string, string>>(emptyTranslations(languages));
   const [note, setNote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
   function resetForm() {
     setTerm("");
     setTranslations(emptyTranslations(languages));
+    setReadings(emptyTranslations(languages));
     setNote("");
     setEditingId(null);
   }
@@ -42,6 +44,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
     setEditingId(entry.id);
     setTerm(entry.term);
     setTranslations({ ...emptyTranslations(languages), ...entry.translations });
+    setReadings({ ...emptyTranslations(languages), ...entry.readings });
     setNote(entry.note);
   }
 
@@ -50,7 +53,7 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
     setError(null);
     setBusy(true);
     try {
-      const payload = { term: term.trim(), translations, note };
+      const payload = { term: term.trim(), translations, readings, note };
       const next = editingId ? await api.updateGlossaryEntry(editingId, payload) : await api.addGlossaryEntry(payload);
       onChange(next);
       resetForm();
@@ -109,13 +112,23 @@ export function GlossaryManager({ glossary, languages, onChange, onClose }: Prop
           <input placeholder={t("managers.glossary.termPlaceholder")} value={term} onChange={(e) => setTerm(e.target.value)} required />
         </label>
         {languages.map((l) => (
-          <label key={l.code}>
-            {t("managers.glossary.translationLabel", { language: l.label })}
-            <input
-              value={translations[l.code] ?? ""}
-              onChange={(e) => setTranslations((t) => ({ ...t, [l.code]: e.target.value }))}
-            />
-          </label>
+          <div key={l.code} className="field-row">
+            <label style={{ flex: 1 }}>
+              {t("managers.glossary.translationLabel", { language: l.label })}
+              <input
+                value={translations[l.code] ?? ""}
+                onChange={(e) => setTranslations((t) => ({ ...t, [l.code]: e.target.value }))}
+              />
+            </label>
+            <label style={{ flex: 1 }}>
+              {t("managers.glossary.readingLabel")}
+              <input
+                value={readings[l.code] ?? ""}
+                placeholder={t("managers.glossary.readingPlaceholder")}
+                onChange={(e) => setReadings((r) => ({ ...r, [l.code]: e.target.value }))}
+              />
+            </label>
+          </div>
         ))}
         <label>
           {t("managers.glossary.noteLabel")}

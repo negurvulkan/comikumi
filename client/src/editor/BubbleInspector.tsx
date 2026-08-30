@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   Bubble,
@@ -24,11 +25,12 @@ import {
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import { paddingRatioFor } from "../../../shared/src/rendering/textLayout";
 import { FontPicker } from "./FontPicker";
 import { TextEffectsFields } from "./TextEffectsFields";
 import { SvgBubblePicker } from "./SvgBubblePicker";
 import { ScopeSwitch } from "./ScopeSwitch";
-import { GlossaryHighlightedTextarea } from "./GlossaryHighlightedTextarea";
+import { GlossaryHighlightedTextarea, findGlossaryReading } from "./GlossaryHighlightedTextarea";
 
 interface Props {
   bubble: Bubble;
@@ -47,6 +49,7 @@ interface Props {
 
 export function BubbleInspector({ bubble, activeLanguage, panels, characters, glossary, presets, onChange, onReassignPanel, onDelete }: Props) {
   const { t } = useTranslation();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const style = resolveBubbleStyle(bubble, activeLanguage, presets);
   const form = resolveBubbleForm(bubble, activeLanguage, presets);
   const hasFormOverride = !!bubble.formOverride?.[activeLanguage];
@@ -91,6 +94,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
       if (preset.background.tailChainSegmentShape !== undefined) textPatch.tailChainSegmentShape = form.tailChainSegmentShape;
       if (preset.background.tailChainSegments !== undefined) textPatch.tailChainSegments = form.tailChainSegments;
       if (preset.background.tailChainSpacing !== undefined) textPatch.tailChainSpacing = form.tailChainSpacing;
+      if (preset.background.paddingRatio !== undefined) textPatch.paddingRatio = form.paddingRatio;
     }
     onChange({ ...textPatch, presetId: null });
   }
@@ -107,6 +111,48 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
 
   function setText(value: string) {
     onChange({ text: { ...bubble.text, [activeLanguage]: value } });
+  }
+
+  /** Wraps the current text-field selection in vertical-typesetting markup (furigana
+   * `{base|reading}` or bōten `{text*}`, see shared/src/rendering/verticalTypesetting.ts)
+   * — a no-op if nothing is selected. Mirrors MentionInput.tsx's insert-at-cursor recipe:
+   * commit the new full string via setText(), then on the next frame refocus the textarea
+   * and restore the caret at the position `wrap()` requested (mid-insertion for furigana
+   * with no known reading, so the translator can type it immediately; end-of-insertion
+   * once nothing further needs typing). */
+  function insertMarkup(wrap: (selected: string) => { text: string; caretOffset: number }) {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    if (start === end) return;
+    const value = bubble.text[activeLanguage] ?? "";
+    const selected = value.slice(start, end);
+    const { text: inserted, caretOffset } = wrap(selected);
+    setText(value.slice(0, start) + inserted + value.slice(end));
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + caretOffset;
+      el.setSelectionRange(pos, pos);
+    });
+  }
+
+  function insertFurigana() {
+    insertMarkup((selected) => {
+      const reading = findGlossaryReading(selected, glossary, activeLanguage);
+      if (reading) {
+        const text = `{${selected}|${reading}}`;
+        return { text, caretOffset: text.length };
+      }
+      return { text: `{${selected}|}`, caretOffset: selected.length + 2 };
+    });
+  }
+
+  function insertBouten() {
+    insertMarkup((selected) => {
+      const text = `{${selected}*}`;
+      return { text, caretOffset: text.length };
+    });
   }
 
   function toggleFontSizeOverride(checked: boolean) {
@@ -275,6 +321,7 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
       <label>
         {t("editor.bubbleInspector.textLabel", { language: activeLanguage })}
         <GlossaryHighlightedTextarea
+          ref={textareaRef}
           value={bubble.text[activeLanguage] ?? ""}
           onChange={setText}
           glossary={glossary}
@@ -289,6 +336,14 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
       </label>
       {style.direction === "vertical-rl" && (
         <>
+          <div className="field-row" style={{ marginBottom: 4 }}>
+            <button type="button" onClick={insertFurigana}>
+              {t("editor.bubbleInspector.insertFuriganaButton")}
+            </button>
+            <button type="button" onClick={insertBouten}>
+              {t("editor.bubbleInspector.insertBoutenButton")}
+            </button>
+          </div>
           <p style={{ color: "var(--text-muted)", margin: "-4px 0 4px", fontSize: 12 }}>
             {t("editor.bubbleInspector.furiganaHintPrefix")} <code>{"{漢字|かんじ}"}</code> {t("editor.bubbleInspector.furiganaHintSuffix")}
           </p>
@@ -526,6 +581,30 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
                 </>
               )}
             </>
+          )}
+          <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={form.paddingRatio !== null}
+              disabled={backgroundPresetGoverns("paddingRatio")}
+              onChange={(e) =>
+                setFormField({ paddingRatio: e.target.checked ? paddingRatioFor(form.bubbleStyle, bubble.shape) : null })
+              }
+            />
+            {t("editor.bubbleInspector.customPaddingLabel")}
+          </label>
+          {form.paddingRatio !== null && (
+            <label>
+              {t("editor.bubbleInspector.paddingRatioLabel", { value: Math.round(form.paddingRatio * 100) })}
+              <input
+                type="range"
+                min={0}
+                max={90}
+                value={Math.round(form.paddingRatio * 100)}
+                disabled={backgroundPresetGoverns("paddingRatio")}
+                onChange={(e) => setFormField({ paddingRatio: Number(e.target.value) / 100 })}
+              />
+            </label>
           )}
         </>
       )}

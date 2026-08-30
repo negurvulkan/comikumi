@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
-import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "../../../shared/src/presets";
+import { BUILTIN_PRESETS, type LetteringPreset, type PresetTextFields, type PresetBackgroundFields } from "../../../shared/src/presets";
 import type { BubbleVisualStyle, TailChainSegmentShape, TailStyle, TextAlign, TextDirection } from "../../../shared/src/layoutSchema";
 import { FontPicker } from "./FontPicker";
 import { useConfirmDialog } from "./ConfirmDialog";
@@ -34,6 +34,7 @@ const DEFAULT_BACKGROUND: Required<PresetBackgroundFields> = {
   tailChainSegmentShape: "circle",
   tailChainSegments: 3,
   tailChainSpacing: 1,
+  paddingRatio: 0.15,
 };
 
 function emptyForm() {
@@ -115,6 +116,19 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
     }
   }
 
+  async function handleAddFromLibrary(builtin: (typeof BUILTIN_PRESETS)[number]) {
+    setError(null);
+    setBusy(true);
+    try {
+      const next = await api.addPreset(builtin);
+      onChange(next);
+    } catch (err) {
+      setError(translateApiError(err, t));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!(await confirm({ message: t("managers.presets.confirmDelete"), danger: true, confirmLabel: t("common.delete") }))) return;
     setError(null);
@@ -156,6 +170,26 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
           </div>
         ))}
         {presets.length === 0 && <p className="hint">{t("managers.presets.empty")}</p>}
+      </div>
+
+      <p className="hint" style={{ margin: "0 0 4px" }}>
+        {t("managers.presets.libraryHeading")}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+        {BUILTIN_PRESETS.map((builtin) => {
+          const alreadyAdded = presets.some((p) => p.name === builtin.name);
+          return (
+            <button
+              key={builtin.name}
+              type="button"
+              disabled={busy || alreadyAdded}
+              onClick={() => handleAddFromLibrary(builtin)}
+              title={alreadyAdded ? t("managers.presets.libraryAlreadyAdded") : undefined}
+            >
+              {builtin.name}
+            </button>
+          );
+        })}
       </div>
 
       <form onSubmit={handleSubmit} className="language-manager-form">
@@ -271,6 +305,20 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
           onChange={(v) => setBackground("strokeWidthPx", v)}
         >
           {(v, set) => <input type="number" min={0} value={v} onChange={(e) => set(Number(e.target.value))} />}
+        </FieldToggle>
+
+        <FieldToggle
+          label={t("managers.presets.paddingRatioLabel")}
+          value={background.paddingRatio}
+          defaultValue={DEFAULT_BACKGROUND.paddingRatio}
+          onChange={(v) => setBackground("paddingRatio", v)}
+        >
+          {(v, set) => (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+              <input type="range" min={0} max={90} value={Math.round(v * 100)} onChange={(e) => set(Number(e.target.value) / 100)} style={{ flex: 1 }} />
+              <span className="hint">{Math.round(v * 100)}%</span>
+            </div>
+          )}
         </FieldToggle>
 
         <FieldToggle label={t("managers.presets.tailStyleLabel")} value={background.tailStyle} defaultValue={DEFAULT_BACKGROUND.tailStyle} onChange={(v) => setBackground("tailStyle", v)}>

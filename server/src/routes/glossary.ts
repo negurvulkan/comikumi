@@ -1,18 +1,16 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
 import { readGlossary, writeGlossary } from "../lib/projectStore.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
+import { GlossaryEntrySchema } from "../../../shared/src/glossary.js";
 
 export const glossaryRouter = Router();
 const requireTranslator = requireProjectRole("translator");
 
-const GlossaryInputSchema = z.object({
-  term: z.string().trim().min(1).max(60),
-  translations: z.record(z.string(), z.string()).default({}),
-  note: z.string().default(""),
-});
+// Reuses the same field list as the shared GlossaryEntry type (just without `id`, which
+// the server assigns) instead of hand-duplicating it — the two used to drift independently.
+const GlossaryInputSchema = GlossaryEntrySchema.omit({ id: true });
 
 glossaryRouter.get(
   "/",

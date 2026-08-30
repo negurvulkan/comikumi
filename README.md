@@ -30,7 +30,9 @@ React + Konva canvas editor.
   and mono-ruby furigana (`{漢字|かんじ}` or per-character `{東|とう}{京|きょう}`, the
   latter word-protected across column breaks), bōten emphasis dots (`{最悪*}`, the
   traditional alternative to bold/italic), automatic tate-chū-yoko for digit/Latin
-  runs, and kinsoku shori line-breaking rules (see [screenshot](docs/screenshot/04_bubble_inspector_jp_tategaki.png)). See [`docs/Japanese-Typesetting.md`](docs/Japanese-Typesetting.md).
+  runs (fullwidth-normalized, so IME-typed "２１" is recognized too), and kinsoku
+  shori line-breaking rules (see [screenshot](docs/screenshot/04_bubble_inspector_jp_tategaki.png)). Two toolbar buttons insert the furigana/bōten markup for you, with
+  furigana pre-filled from the glossary when available. See [`docs/Japanese-Typesetting.md`](docs/Japanese-Typesetting.md).
 - **Four element types**: speech bubbles (rect/oval/free perspective quad, with
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
   (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
@@ -38,14 +40,17 @@ React + Konva canvas editor.
 - **Bubble clipping & merging** — cut a bubble along a straight line (with a one-click
   suggestion from the nearest panel edge) so it sits flush against a panel border, or
   non-destructively merge several bubbles into one continuous outline with a single
-  shared line of dialogue; ungrouping restores the original bubbles untouched.
+  shared line of dialogue; ungrouping restores the original bubbles untouched. Text
+  inset (the gap between outline and text) defaults to a sensible per-shape value but
+  can be overridden per bubble or per preset with a 0–90% slider.
 - **Lettering presets** — define a reusable style ("SFX Style", "Narration", …) that
   live-updates every bubble/curved text linked to it, field by field, without
-  overwriting values a preset doesn't define.
+  overwriting values a preset doesn't define; a small built-in starter library ("Manga
+  SFX", "Whisper", "Shout") can be added with one click.
 - **Context view & glossary** — a reading-order-aware context sidebar (previous/current/
   next bubble, speaker + voice notes, panel crop; see [screenshot](docs/screenshot/05_editor_sidebar_context_view.png)) useful for lettering and writing just
-  as much as translation, a project glossary with live highlighting in the text field,
-  and "who says what" reports per page/volume.
+  as much as translation, a project glossary with live highlighting in the text field
+  and optional furigana readings, and "who says what" reports per page/volume.
 - **Script planning** — a standalone, volume-wide script editor (plot, panel layout,
   image composition, and per-language dialogue, independent of the scanned page) plus
   an in-editor sidebar that links a script page to a real page (see [screenshot](docs/screenshot/05_editor_sidebar_script.png)) and inserts dialogue

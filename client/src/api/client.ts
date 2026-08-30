@@ -856,14 +856,17 @@ export const api = {
 
   listGlossary: () => authFetch(projectApiUrl("/glossary")).then((r) => json<GlossaryEntry[]>(r)),
 
-  addGlossaryEntry: (entry: { term: string; translations: Record<string, string>; note?: string }) =>
+  addGlossaryEntry: (entry: { term: string; translations: Record<string, string>; readings?: Record<string, string>; note?: string }) =>
     authFetch(projectApiUrl("/glossary"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entry),
     }).then((r) => json<GlossaryEntry[]>(r)),
 
-  updateGlossaryEntry: (id: string, entry: { term: string; translations: Record<string, string>; note?: string }) =>
+  updateGlossaryEntry: (
+    id: string,
+    entry: { term: string; translations: Record<string, string>; readings?: Record<string, string>; note?: string }
+  ) =>
     authFetch(projectApiUrl(`/glossary/${encodeURIComponent(id)}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

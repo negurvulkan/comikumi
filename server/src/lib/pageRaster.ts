@@ -170,7 +170,7 @@ interface ResolvedTextStyle {
 }
 
 function drawHorizontalBubbleRaster(ctx: CanvasRenderingContext2D, bubble: Bubble, form: BubbleForm, text: string, style: ResolvedTextStyle): void {
-  const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape);
+  const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape, form.paddingRatio);
   const boxWidth = form.width * (1 - ratio);
   const boxHeight = form.height * (1 - ratio);
 
@@ -202,7 +202,7 @@ function drawHorizontalBubbleRaster(ctx: CanvasRenderingContext2D, bubble: Bubbl
 }
 
 function drawVerticalBubbleRaster(ctx: CanvasRenderingContext2D, bubble: Bubble, form: BubbleForm, text: string, style: ResolvedTextStyle): void {
-  const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape);
+  const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape, form.paddingRatio);
   const boxWidth = form.width * (1 - ratio);
   const boxHeight = form.height * (1 - ratio);
 

@@ -108,6 +108,16 @@ const TRAILING_PROHIBITED = new Set(["「", "『", "（", "［", "｛", "〈", "
 
 const TCY_MAX_LEN = 2;
 const ALNUM_RE = /[0-9A-Za-z]/;
+// Fullwidth digit/Latin codepoints (U+FF10-FF19, U+FF21-FF3A, U+FF41-FF5A) sit exactly
+// 0xFEE0 above their ASCII equivalents — Japanese IMEs commonly produce these by default
+// (e.g. "２１" instead of "21"), which would otherwise silently miss tate-chū-yoko grouping
+// entirely (ALNUM_RE only matches plain ASCII). A single character at a time, not a full
+// Unicode normalization (NFKC) pass — that would also rewrite fullwidth punctuation/symbols
+// this app already handles its own way (see VERTICAL_FORM_MAP above), which isn't wanted here.
+const FULLWIDTH_ALNUM_RE = /[０-９Ａ-Ｚａ-ｚ]/;
+function toHalfWidthAlnum(ch: string): string {
+  return FULLWIDTH_ALNUM_RE.test(ch) ? String.fromCharCode(ch.charCodeAt(0) - 0xfee0) : ch;
+}
 // Fullwidth ！/？ — paired as a compact tate-chū-yoko unit (！？, ！！, ？？)
 // exactly like a 2-digit number run; a single ！ or ？ falls through to the
 // normal full-width upright char case below.
@@ -237,11 +247,11 @@ export function tokenizeVertical(text: string): VerticalToken[] {
       }
     }
 
-    if (ALNUM_RE.test(ch)) {
-      let run = ch;
+    if (ALNUM_RE.test(ch) || FULLWIDTH_ALNUM_RE.test(ch)) {
+      let run = toHalfWidthAlnum(ch);
       let j = i + 1;
-      while (j < chars.length && run.length < TCY_MAX_LEN && ALNUM_RE.test(chars[j])) {
-        run += chars[j];
+      while (j < chars.length && run.length < TCY_MAX_LEN && (ALNUM_RE.test(chars[j]) || FULLWIDTH_ALNUM_RE.test(chars[j]))) {
+        run += toHalfWidthAlnum(chars[j]);
         j++;
       }
       if (run.length === TCY_MAX_LEN) {
@@ -249,7 +259,7 @@ export function tokenizeVertical(text: string): VerticalToken[] {
         i = j;
         continue;
       }
-      tokens.push({ kind: "char", text: ch });
+      tokens.push({ kind: "char", text: run });
       i++;
       continue;
     }

@@ -21,6 +21,16 @@ describe("paddingRatioFor", () => {
     expect(paddingRatioFor("thought", "oval")).toBe(PADDING_RATIO.oval);
     expect(paddingRatioFor("none", "quad")).toBe(PADDING_RATIO.quad);
   });
+
+  it("an explicit override wins over both the SVG ratio and the per-shape lookup", () => {
+    expect(paddingRatioFor("speech", "rect", 0.4)).toBe(0.4);
+    expect(paddingRatioFor("svg", "oval", 0)).toBe(0);
+  });
+
+  it("a null/undefined override falls back to the existing automatic behavior", () => {
+    expect(paddingRatioFor("speech", "rect", null)).toBe(PADDING_RATIO.rect);
+    expect(paddingRatioFor("speech", "rect", undefined)).toBe(PADDING_RATIO.rect);
+  });
 });
 
 describe("wrapHorizontal", () => {

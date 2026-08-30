@@ -232,7 +232,7 @@ export async function buildVectorPdfPage(opts: BuildPdfPageOptions): Promise<Bui
     const origin = panelOriginFor(bubble, layout.panels);
     const form: BubbleForm =
       origin.x || origin.y ? { ...resolvedForm, x: resolvedForm.x + origin.x, y: resolvedForm.y + origin.y } : resolvedForm;
-    const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape);
+    const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape, form.paddingRatio);
     const boxWidth = form.width * (1 - ratio);
     const boxHeight = form.height * (1 - ratio);
     const { fontSize, lines, lineStep, blockHeight } = fitHorizontalText(

@@ -58,6 +58,13 @@ describe("tokenizeVertical", () => {
     expect(tokenizeVertical("123")).toEqual([{ kind: "tcy", text: "12" }, { kind: "char", text: "3" }]);
   });
 
+  it("normalizes fullwidth digits/Latin (as produced by JP IMEs) to halfwidth before tate-chu-yoko pairing", () => {
+    expect(tokenizeVertical("２１")).toEqual([{ kind: "tcy", text: "21" }]);
+    expect(tokenizeVertical("Ｍ")).toEqual([{ kind: "char", text: "M" }]);
+    // Mixed halfwidth + fullwidth run still pairs and normalizes both.
+    expect(tokenizeVertical("2１")).toEqual([{ kind: "tcy", text: "21" }]);
+  });
+
   it("a lone alphanumeric character (no pair available) stays a plain char token", () => {
     expect(tokenizeVertical("a")).toEqual([{ kind: "char", text: "a" }]);
   });

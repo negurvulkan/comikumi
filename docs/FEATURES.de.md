@@ -362,6 +362,12 @@ Textstil-Teil, keinen Blasenhintergrund).
   aktiv, der gewinnt immer. Ein "Vom Preset lösen"-Button friert alle aktuell vom
   Preset übernommenen Werte einmalig in die Blase/den Kurventext ein und entfernt die
   Verknüpfung, ohne dass sich optisch etwas ändert.
+- **Starter-Bibliothek**: Eine "Aus Bibliothek hinzufügen"-Zeile bietet eine Handvoll
+  mitgelieferter Presets ("Manga SFX", "Whisper", "Shout") — ein Klick fügt eine Kopie
+  über denselben Preset-Erstellen-Aufruf in die projekteigene Preset-Liste ein, sofort
+  genauso bearbeit-/löschbar wie jedes andere Preset. Wird nicht automatisch in neue
+  Projekte vorbefüllt — ein Projekt bekommt diese Presets nur, wenn jemand explizit
+  darauf klickt.
 
 ## Editor — Canvas-Grundlagen
 
@@ -427,7 +433,13 @@ reine Mehrfach-Kanji-Wörter schon hatten. Vertikaler Text unterstützt außerde
 Bōten (圏点) — traditionelle japanische Betonungspunkte, das Äquivalent zu
 Fett/Kursiv — über `{text*}` (z. B. `{最悪*}`), gezeichnet als kleiner Punkt
 neben jedem markierten Zeichen; derselbe Wortzusammenhalt-Schutz für
-mehrzeichige Läufe gilt auch hier. Text kann eine
+mehrzeichige Läufe gilt auch hier. Bei einer vertikalen Blase fügen zwei
+Werkzeugleisten-Buttons ("Furigana einfügen"/"Bōten einfügen") die passende
+`{...}`-Syntax automatisch um die aktuelle Textmarkierung ein, statt sie von
+Hand zu tippen — der Furigana-Button prüft dabei zusätzlich das
+Projekt-Glossar (siehe [Glossar](#glossar)) und trägt eine hinterlegte Lesung
+automatisch ein, wenn die Markierung einem übersetzten Begriff entspricht.
+Text kann eine
 Umrandung und/oder einen linearen Farbverlauf statt Volltonfarbe bekommen. Jedes
 dieser Stil-Felder (und die komplette Form/Position/Größe/Rotation/Hintergrund) ist
 per Sprach-Umschalter überschreibbar. Blasen können einem Panel und einem Charakter
@@ -456,6 +468,15 @@ stellt jede Ursprungsblase exakt wieder her, inklusive jedes Texts, den sie
 vor der Verschmelzung trug. Nicht verfügbar für „Quad"-Blasen; nur im
 Live-Editor und beim PNG-Export unterstützt (nicht in den Vektor-PDF-/PSD-
 Exportpfaden).
+
+**Innenabstand**: der Abstand zwischen Blasenumriss und Text folgt normalerweise
+einem automatischen Standardwert pro Form. Eine Checkbox im Blasen-Inspector
+erlaubt es, diesen Wert pro Blase zu überschreiben — mit einem Schieberegler
+von 0–90 % statt nur dem festen Automatik-Wert, praktisch für Blasen, bei denen
+das automatische Padding zu eng oder zu großzügig wirkt. Dasselbe Feld lässt
+sich auch in einem [Preset](#lettering-presets) setzen, um einen Padding-Wert
+auf alle verknüpften Blasen gleichzeitig anzuwenden. Wirkt identisch in jedem
+Exportpfad (PNG, Vektor-PDF, PSD); nicht verfügbar für „Quad"-Blasen.
 
 ### Bilder
 
@@ -690,6 +711,12 @@ einem synchron mitscrollenden Hintergrund-Div (kein contentEditable — Cursor, 
 IME-Eingabe und Rückgängig funktionieren dadurch unverändert nativ). Bei vertikalem
 (japanischem) Text wird bewusst nicht hervorgehoben — nur eine normale Textarea, da
 vertikale Textumbrüche eine grundlegend andere Sonderbehandlung bräuchten.
+
+- **Furigana-Lesungen**: Ein Eintrag kann zusätzlich zur Übersetzung eine Lesung pro
+  Sprache hinterlegen. Wird vom "Furigana einfügen"-Button des Blasen-Inspectors genutzt
+  (siehe [Sprechblasen](#elementtypen)) — entspricht die Markierung einer
+  Glossar-Übersetzung mit hinterlegter Lesung, wird diese automatisch eingesetzt, statt
+  vom Übersetzer eingetippt werden zu müssen.
 
 ## Kontextansicht
 

@@ -21,8 +21,13 @@ export const MIN_FONT_SIZE = 6;
 // per-shape geometry analysis) keeps text comfortably inside most shapes.
 export const SVG_BUBBLE_PADDING_RATIO = 0.3;
 
-/** Text-box inset ratio for a bubble's resolved style/shape — SVG bubbles use a fixed ratio (their shape isn't one of the parametric PADDING_RATIO keys), everything else keeps the existing per-shape lookup. */
-export function paddingRatioFor(bubbleStyle: BubbleVisualStyle, shape: BubbleShapeKind): number {
+/** Text-box inset ratio for a bubble's resolved style/shape — SVG bubbles use a fixed ratio
+ * (their shape isn't one of the parametric PADDING_RATIO keys), everything else keeps the
+ * existing per-shape lookup. `override` (Bubble/BubbleForm.paddingRatio, resolved through
+ * any linked preset) wins over both when set — lets a user dial in exactly how much
+ * breathing room text has instead of only the fixed per-shape defaults. */
+export function paddingRatioFor(bubbleStyle: BubbleVisualStyle, shape: BubbleShapeKind, override?: number | null): number {
+  if (override != null) return override;
   if (bubbleStyle === "svg") return SVG_BUBBLE_PADDING_RATIO;
   return PADDING_RATIO[shape];
 }
@@ -174,11 +179,11 @@ export function clipBoxToLine(box: Box, clipA: Point | null, clipB: Point | null
 export function textBoxFor(
   bubbleStyle: BubbleVisualStyle,
   shape: BubbleShapeKind,
-  form: { width: number; height: number; clipA: Point | null; clipB: Point | null; clipFlip: boolean },
+  form: { width: number; height: number; clipA: Point | null; clipB: Point | null; clipFlip: boolean; paddingRatio: number | null },
   scale: number,
   mergedBounds?: Box
 ): Box {
-  const ratio = paddingRatioFor(bubbleStyle, shape);
+  const ratio = paddingRatioFor(bubbleStyle, shape, form.paddingRatio);
   const bounds = mergedBounds ?? { x: 0, y: 0, width: form.width * scale, height: form.height * scale };
   const insetWidth = bounds.width * (1 - ratio);
   const insetHeight = bounds.height * (1 - ratio);

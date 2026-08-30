@@ -48,6 +48,8 @@ export const PresetBackgroundFieldsSchema = z
     tailChainSegmentShape: TailChainSegmentShapeSchema.optional(),
     tailChainSegments: z.number().int().min(1).max(8).optional(),
     tailChainSpacing: z.number().positive().optional(),
+    /** See BubbleFormSchema's identically-named field in layoutSchema.ts. */
+    paddingRatio: z.number().min(0).max(0.9).optional(),
   })
   .default({});
 export type PresetBackgroundFields = z.infer<typeof PresetBackgroundFieldsSchema>;
@@ -67,3 +69,29 @@ export const LetteringPresetSchema = z.object({
 export type LetteringPreset = z.infer<typeof LetteringPresetSchema>;
 
 export const LetteringPresetListSchema = z.array(LetteringPresetSchema);
+
+/**
+ * A small starter library of ready-to-use manga/comic style presets — offered as an
+ * explicit "add from library" action in PresetManager.tsx rather than pre-populated at
+ * project creation (unlike DEFAULT_LANGUAGES in languages.ts): a preset name is a
+ * project-specific style bucket, not something every project equally wants. Each entry
+ * omits `id` (assigned by the server, same as any manually created preset) — added via
+ * the existing api.addPreset(...) call, no dedicated route needed.
+ */
+export const BUILTIN_PRESETS: { name: string; text: PresetTextFields; background: PresetBackgroundFields }[] = [
+  {
+    name: "Manga SFX",
+    text: { fontSize: 64, color: "#ffffff", textOutline: { enabled: true, color: "#000000", widthPx: 8 } },
+    background: { bubbleStyle: "none" },
+  },
+  {
+    name: "Whisper",
+    text: { fontSize: 16, color: "#555555" },
+    background: { bubbleStyle: "thought", fillColor: "#fafafa", strokeColor: "#cccccc" },
+  },
+  {
+    name: "Shout",
+    text: { fontSize: 32, color: "#ffffff", textOutline: { enabled: true, color: "#000000", widthPx: 4 } },
+    background: { bubbleStyle: "shout", fillColor: "#000000", strokeColor: "#000000" },
+  },
+];

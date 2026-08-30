@@ -363,6 +363,12 @@ texts only use the text-style part, no bubble background).
   override for it is active, which always wins. A "Detach from preset" button
   freezes every value currently taken from the preset into the bubble/curved
   text once and removes the link, without any visual change.
+- **Starter library**: an "Add from library" row offers a handful of built-in
+  presets ("Manga SFX", "Whisper", "Shout") — one click adds a copy to the
+  project's own preset list via the normal create-preset call, so it's
+  immediately editable/deletable like any other preset. Not pre-populated
+  into new projects automatically; a project only gets these if someone
+  explicitly clicks to add them.
 
 ## Editor — Canvas Basics
 
@@ -428,7 +434,12 @@ keeps them together as one word across a column break, the same protection
 plain multi-kanji words already had. Vertical text also supports bōten (圏点)
 emphasis dots — the traditional Japanese equivalent of bold/italic — via
 `{text*}` (e.g. `{最悪*}`), drawn as a small dot beside each marked character;
-the same multi-character word-cohesion protection applies. Text can have an outline and/or a linear gradient
+the same multi-character word-cohesion protection applies. For a vertical
+bubble, two toolbar buttons ("Insert furigana"/"Insert bōten") wrap the
+current text selection in the right markup automatically instead of typing
+the `{...}` syntax by hand — the furigana button also checks the project
+glossary (see [Glossary](#glossary)) and pre-fills a stored reading when the
+selection matches a translated term. Text can have an outline and/or a linear gradient
 instead of a solid color. Every one of these style fields (and the entire
 shape/position/size/rotation/background) can be overridden per language.
 Bubbles can be assigned to a panel and a character.
@@ -452,6 +463,14 @@ other members' own text/tail are hidden while merged, not deleted. "Undo
 merge" restores every original bubble exactly as it was, including any text
 they held before merging. Not available for "quad" bubbles; only supported by
 the live editor and the PNG export (not the vector-PDF/PSD export paths).
+
+**Inner padding**: the gap between a bubble's outline and its text normally
+follows an automatic per-shape default. A checkbox in the bubble inspector
+lets it be overridden per bubble with an explicit 0–90% slider instead — handy
+for a bubble whose auto padding leaves text feeling too cramped or too loose.
+The same field can also be set on a [preset](#lettering-presets) to apply one
+padding value across every linked bubble at once. Applies to every export
+path (PNG, vector PDF, PSD) identically; not available for "quad" bubbles.
 
 ### Images
 
@@ -691,6 +710,12 @@ selection, IME input, and undo therefore keep working natively unchanged). For
 vertical (Japanese) text, highlighting is deliberately not shown — just a plain
 textarea, since vertical text wrapping would need fundamentally different
 special handling.
+
+- **Furigana readings**: an entry can also store a reading per language,
+  alongside its translation. Used by the bubble inspector's "Insert furigana"
+  button (see [Speech Bubbles](#element-types)) — if the selected text
+  matches a glossary translation with a stored reading, the reading is filled
+  in automatically instead of left for the translator to type.
 
 ## Context View
 
