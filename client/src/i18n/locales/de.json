@@ -511,6 +511,8 @@
       "selectedTotal_other": "{{count}} Objekte ausgewählt",
       "keyboardHint": "Pfeiltasten zum Verschieben (Shift = größere Schritte) · Strg+D duplizieren · Entf löschen · Shift-Klick zum Hinzufügen/Entfernen",
       "duplicateButton": "Duplizieren",
+      "mergeButton": "Blasen verschmelzen",
+      "unmergeButton": "Verschmelzung aufheben",
       "deleteSelection": "Auswahl löschen"
     },
     "textListPanel": {
@@ -668,6 +670,10 @@
       "noSvgChosen": "Noch keine Kontur gewählt.",
       "showTail": "Zeiger anzeigen",
       "tailDragHint": "Position an der Blase (grün), Breite (orange), Krümmung (lila) und Spitze (blau) im Canvas per Greifer anpassen.",
+      "clipEnabled": "Blase an einer Linie anschneiden",
+      "clipDragHint": "Die beiden pinken Greifer im Canvas ziehen, um die Schnittlinie zu verschieben.",
+      "clipFlip": "Angeschnittene Seite umkehren",
+      "clipFromPanel": "An Panelkante ausrichten",
       "presetGovernsHint": "Von Preset „{{name}}“ vorgegeben.",
       "directionVerticalRtl": "Vertikal, Spalten rechts → links (JP)",
       "deleteBubble": "Bubble löschen"

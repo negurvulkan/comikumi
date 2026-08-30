@@ -8,7 +8,7 @@ import {
   resolvePanelForLanguage,
 } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { paddingRatioFor, fitHorizontalText } from "../../../shared/src/rendering/textLayout";
+import { fitHorizontalText, textBoxFor } from "../../../shared/src/rendering/textLayout";
 import { drawVerticalText, fitVerticalText } from "../../../shared/src/rendering/verticalTypesetting";
 import { renderPerspectiveText, warpImageIntoQuad } from "../../../shared/src/rendering/perspective";
 import { drawBubbleBackground } from "../../../shared/src/rendering/bubbleBackground";
@@ -16,6 +16,7 @@ import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../..
 import { drawCurvedText, fitCurvedText } from "../../../shared/src/rendering/curvedText";
 import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary } from "./svgBubbleGeometry";
 import { drawCutPanelForeground, fillCutPanelHole } from "../../../shared/src/rendering/cutPanel";
+import { resolveMergeGroups, computeMergedBoundary } from "./bubbleMerge";
 
 /** A child bubble's x/y/corners are relative to its parent panel's origin (see
  * PanelPointsSchema.origin) — unlike the live Konva canvas, this is a plain 2D-context
@@ -38,18 +39,23 @@ interface ResolvedStyle {
   textGradient: TextGradient;
 }
 
-function drawHorizontalBubble(ctx: CanvasRenderingContext2D, bubble: Bubble, form: BubbleForm, text: string, style: ResolvedStyle) {
-  const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape);
-  const boxWidth = form.width * (1 - ratio);
-  const boxHeight = form.height * (1 - ratio);
+function drawHorizontalBubble(
+  ctx: CanvasRenderingContext2D,
+  bubble: Bubble,
+  form: BubbleForm,
+  text: string,
+  style: ResolvedStyle,
+  mergedBounds?: { x: number; y: number; width: number; height: number }
+) {
+  const box = textBoxFor(form.bubbleStyle, bubble.shape, form, 1, mergedBounds);
 
   const { fontSize: size, lines, lineStep, blockHeight } = fitHorizontalText(
     ctx,
     text,
     style.fontFamily,
     style.lineHeight,
-    boxWidth,
-    boxHeight,
+    box.width,
+    box.height,
     style.fontSize
   );
 
@@ -58,9 +64,9 @@ function drawHorizontalBubble(ctx: CanvasRenderingContext2D, bubble: Bubble, for
   ctx.textAlign = style.align;
   ctx.direction = style.direction === "rtl" ? "rtl" : "ltr";
 
-  const startY = form.y + form.height / 2 - blockHeight / 2 + lineStep / 2;
-  const centerX = form.x + form.width / 2;
-  const anchorX = style.align === "left" ? form.x + (form.width - boxWidth) / 2 : style.align === "right" ? form.x + form.width - (form.width - boxWidth) / 2 : centerX;
+  const startY = form.y + box.y + box.height / 2 - blockHeight / 2 + lineStep / 2;
+  const centerX = form.x + box.x + box.width / 2;
+  const anchorX = style.align === "left" ? form.x + box.x : style.align === "right" ? form.x + box.x + box.width : centerX;
 
   const fillStyle: TextFillStyle = { color: style.color, outline: style.textOutline, gradient: style.textGradient };
   applyTextFillStyle(ctx, fillStyle, form.x, startY - lineStep / 2, form.width, blockHeight, 1);
@@ -70,13 +76,18 @@ function drawHorizontalBubble(ctx: CanvasRenderingContext2D, bubble: Bubble, for
   });
 }
 
-function drawVerticalBubble(ctx: CanvasRenderingContext2D, bubble: Bubble, form: BubbleForm, text: string, style: ResolvedStyle) {
-  const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape);
-  const boxWidth = form.width * (1 - ratio);
-  const boxHeight = form.height * (1 - ratio);
+function drawVerticalBubble(
+  ctx: CanvasRenderingContext2D,
+  bubble: Bubble,
+  form: BubbleForm,
+  text: string,
+  style: ResolvedStyle,
+  mergedBounds?: { x: number; y: number; width: number; height: number }
+) {
+  const box = textBoxFor(form.bubbleStyle, bubble.shape, form, 1, mergedBounds);
 
-  const fitted = fitVerticalText(text, style.lineHeight, boxWidth, boxHeight, style.fontSize);
-  drawVerticalText(ctx, fitted, form.x + form.width / 2, form.y + form.height / 2, boxWidth, {
+  const fitted = fitVerticalText(text, style.lineHeight, box.width, box.height, style.fontSize);
+  drawVerticalText(ctx, fitted, form.x + box.x + box.width / 2, form.y + box.y + box.height / 2, box.width, {
     fontFamily: style.fontFamily,
     color: style.color,
     align: style.align,
@@ -203,6 +214,19 @@ export async function renderPageToPng(
     }
   }
 
+  // Pre-resolve every non-quad bubble's absolute form (panel-origin baked in) up front —
+  // needed both by the main per-bubble draw loop below and by merge-group members, whose
+  // own geometry must be available even for the group members that aren't drawn
+  // individually (see resolveMergeGroups/computeMergedBoundary in bubbleMerge.ts).
+  const resolvedForms = new Map<string, BubbleForm>();
+  for (const b of layout.bubbles) {
+    if (b.shape === "quad") continue;
+    const resolved = resolveBubbleForm(b, languageCode, presets);
+    const origin = panelOriginFor(b, layout.panels);
+    resolvedForms.set(b.id, origin.x || origin.y ? { ...resolved, x: resolved.x + origin.x, y: resolved.y + origin.y } : resolved);
+  }
+  const mergeGroups = resolveMergeGroups(layout.bubbles);
+
   for (const bubble of layout.bubbles) {
     const text = bubble.text[languageCode];
     const hasText = !!text && !!text.trim();
@@ -228,14 +252,37 @@ export async function renderPageToPng(
       continue;
     }
 
-    const resolvedForm = resolveBubbleForm(bubble, languageCode, presets);
-    const origin = panelOriginFor(bubble, layout.panels);
-    const form = origin.x || origin.y ? { ...resolvedForm, x: resolvedForm.x + origin.x, y: resolvedForm.y + origin.y } : resolvedForm;
+    // Non-primary merge-group members contribute their geometry to the primary's unified
+    // outline (below) but are never drawn on their own — a stale/lone mergeGroupId (the
+    // other member deleted, or filtered out for being a "quad") falls back to drawing
+    // this bubble normally instead of silently vanishing.
+    const group = bubble.mergeGroupId ? mergeGroups.get(bubble.mergeGroupId) : undefined;
+    const isMerged = !!group && group.length >= 2;
+    if (isMerged && !bubble.mergePrimary) continue;
+
+    const form = resolvedForms.get(bubble.id)!;
     // A bubble with a visible background is real page artwork now, not just
     // an invisible text overlay — it must still be drawn even when this
     // language has no translation yet (e.g. a batch export of an
     // untranslated language shouldn't leave a newly-added bubble missing).
     if (form.bubbleStyle === "none" && !hasText) continue;
+
+    let precomputedBoundary: Point[] | undefined;
+    let mergedBounds: { x: number; y: number; width: number; height: number } | undefined;
+    if (isMerged) {
+      const members = group!.map((m) => ({
+        bubble: m,
+        form: resolvedForms.get(m.id)!,
+        svgBoundary: getCachedSvgBubbleBoundary(m.svgFileName),
+      }));
+      const primary = members.find((m) => m.bubble.id === bubble.id)!;
+      precomputedBoundary = computeMergedBoundary(members, primary);
+      const xs = precomputedBoundary.map((p) => p.x);
+      const ys = precomputedBoundary.map((p) => p.y);
+      const minX = Math.min(...xs);
+      const minY = Math.min(...ys);
+      mergedBounds = { x: minX, y: minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY };
+    }
 
     ctx.save();
     const cx = form.x + form.width / 2;
@@ -248,14 +295,14 @@ export async function renderPageToPng(
     if (form.bubbleStyle !== "none") {
       ctx.save();
       ctx.translate(form.x, form.y);
-      drawBubbleBackground(ctx, form, bubble.shape, 1, getCachedSvgBubbleBoundary(form.svgFileName));
+      drawBubbleBackground(ctx, form, bubble.shape, 1, getCachedSvgBubbleBoundary(form.svgFileName), precomputedBoundary);
       ctx.restore();
     }
     if (hasText) {
       if (style.direction === "vertical-rl") {
-        drawVerticalBubble(ctx, bubble, form, text, style);
+        drawVerticalBubble(ctx, bubble, form, text, style, mergedBounds);
       } else {
-        drawHorizontalBubble(ctx, bubble, form, text, style);
+        drawHorizontalBubble(ctx, bubble, form, text, style, mergedBounds);
       }
     }
     ctx.restore();

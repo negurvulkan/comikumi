@@ -24,7 +24,8 @@ export function cutPanelSourcePolygon(panel: ResolvedPanel): Point[] {
   return panel.points.map((p) => ({ x: p.x - d.x, y: p.y - d.y }));
 }
 
-function tracePolygonPath(ctx: CanvasRenderingContext2D, points: Point[]): void {
+/** Traces a closed polygon path (no fill/stroke/clip call) — shared with bubbleBackground.ts's clip-line support, which needs the identical primitive for an unrelated shape (a half-plane quad instead of a panel outline). */
+export function tracePolygonPath(ctx: CanvasRenderingContext2D, points: Point[]): void {
   ctx.beginPath();
   points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
   ctx.closePath();

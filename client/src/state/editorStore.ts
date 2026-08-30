@@ -111,6 +111,13 @@ interface EditorState {
    * Auto-Bubbles/OCR detections, where "detected 12 bubbles" should undo in one Ctrl+Z,
    * not twelve. */
   addBubbles: (bubbles: Bubble[]) => void;
+  /** Non-destructive merge of every selected, unlocked, non-"quad" bubble (see
+   * Bubble.mergeGroupId/mergePrimary in shared/src/layoutSchema.ts) — a no-op if fewer
+   * than 2 such bubbles are selected. */
+  mergeSelectedBubbles: () => void;
+  /** Un-merges every merge group touched by the current selection (the WHOLE group, not
+   * just the selected members — see the implementation's doc comment for why). */
+  unmergeSelectedBubbles: () => void;
   save: () => Promise<void>;
   /** Resolves a save conflict by overwriting the server's version with the current
    * local layout — an unconditional save (no If-Match), then refreshes layoutEtag from
@@ -639,6 +646,53 @@ export const useEditorStore = create<EditorState>((set, get) => {
         selectedImageIds: newImages.map((i) => i.id),
         selectedCurvedTextIds: newCurvedTexts.map((e) => e.id),
         selectedPanelIds: newPanels.map((p) => p.id),
+        dirty: true,
+      });
+    },
+
+    mergeSelectedBubbles() {
+      const layout = get().layout;
+      if (!layout) return;
+      const { selectedBubbleIds } = get();
+      const targets = layout.bubbles.filter((b) => selectedBubbleIds.includes(b.id) && b.shape !== "quad" && !b.locked);
+      if (targets.length < 2) return;
+      pushHistory(true);
+      const groupId = uuid();
+      const targetIds = new Set(targets.map((b) => b.id));
+      // The first selected bubble becomes the primary (carries the shared text/tail for
+      // the whole merged outline) — an arbitrary but stable choice; the user can always
+      // unmerge and re-merge in a different order if they wanted a different one.
+      const primaryId = targets[0].id;
+      set({
+        layout: {
+          ...layout,
+          bubbles: layout.bubbles.map((b) =>
+            targetIds.has(b.id) ? { ...b, mergeGroupId: groupId, mergePrimary: b.id === primaryId } : b
+          ),
+        },
+        dirty: true,
+      });
+    },
+
+    unmergeSelectedBubbles() {
+      const layout = get().layout;
+      if (!layout) return;
+      const { selectedBubbleIds } = get();
+      // Un-merges the WHOLE group(s) touched by the selection, not just the selected
+      // members — leaving a group half-merged (a member still mergeGroupId-tagged with no
+      // primary left to draw it) would silently stop rendering that member's own text.
+      const groupIds = new Set(
+        layout.bubbles.filter((b) => selectedBubbleIds.includes(b.id) && b.mergeGroupId).map((b) => b.mergeGroupId as string)
+      );
+      if (groupIds.size === 0) return;
+      pushHistory(true);
+      set({
+        layout: {
+          ...layout,
+          bubbles: layout.bubbles.map((b) =>
+            b.mergeGroupId && groupIds.has(b.mergeGroupId) ? { ...b, mergeGroupId: null, mergePrimary: false } : b
+          ),
+        },
         dirty: true,
       });
     },

@@ -511,6 +511,8 @@
       "selectedTotal_other": "{{count}} objects selected",
       "keyboardHint": "Arrow keys to move (Shift = larger steps) · Ctrl+D to duplicate · Del to delete · Shift-click to add/remove",
       "duplicateButton": "Duplicate",
+      "mergeButton": "Merge bubbles",
+      "unmergeButton": "Undo merge",
       "deleteSelection": "Delete selection"
     },
     "textListPanel": {
@@ -668,6 +670,10 @@
       "noSvgChosen": "No contour chosen yet.",
       "showTail": "Show tail",
       "tailDragHint": "Adjust the tail's position on the bubble (green), width (orange), curve (purple), and tip (blue) in the canvas via the handles.",
+      "clipEnabled": "Clip bubble at a line",
+      "clipDragHint": "Drag the two pink handles in the canvas to reposition the clip line.",
+      "clipFlip": "Flip clipped side",
+      "clipFromPanel": "Snap to panel edge",
       "presetGovernsHint": "Set by preset \"{{name}}\".",
       "directionVerticalRtl": "Vertical, columns right → left (JP)",
       "deleteBubble": "Delete bubble"

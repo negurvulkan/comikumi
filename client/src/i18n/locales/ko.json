@@ -489,6 +489,8 @@
       "selectedTotal_other": "{{count}}개 선택됨",
       "keyboardHint": "화살표 키로 이동 (Shift = 더 크게 이동) · Ctrl+D 복제 · Delete 삭제 · Shift 클릭으로 추가/제거",
       "duplicateButton": "복제",
+      "mergeButton": "말풍선 병합",
+      "unmergeButton": "병합 취소",
       "deleteSelection": "선택 항목 삭제"
     },
     "textListPanel": {
@@ -640,6 +642,10 @@
       "noSvgChosen": "아직 선택된 윤곽선이 없습니다.",
       "showTail": "꼬리 표시",
       "tailDragHint": "캔버스에서 핸들을 사용해 말풍선의 꼬리 위치(녹색), 너비(주황색), 곡률(보라색), 끝점(파란색)을 조정하세요.",
+      "clipEnabled": "말풍선을 선으로 자르기",
+      "clipDragHint": "캔버스의 분홍색 핸들 두 개를 드래그해 절단선을 이동하세요.",
+      "clipFlip": "잘린 쪽 반전",
+      "clipFromPanel": "패널 가장자리에 맞추기",
       "presetGovernsHint": "프리셋 \"{{name}}\"에 의해 지정됨.",
       "directionVerticalRtl": "세로, 열이 오른쪽 → 왼쪽 (일본어)",
       "deleteBubble": "말풍선 삭제"

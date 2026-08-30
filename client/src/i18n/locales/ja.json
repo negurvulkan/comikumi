@@ -489,6 +489,8 @@
       "selectedTotal_other": "{{count}} 個のオブジェクトを選択中",
       "keyboardHint": "矢印キーで移動（Shiftで大きく移動）・Ctrl+Dで複製・Deleteで削除・Shiftクリックで追加/解除",
       "duplicateButton": "複製",
+      "mergeButton": "吹き出しを結合",
+      "unmergeButton": "結合を解除",
       "deleteSelection": "選択を削除"
     },
     "textListPanel": {
@@ -640,6 +642,10 @@
       "noSvgChosen": "まだ輪郭が選択されていません。",
       "showTail": "しっぽを表示",
       "tailDragHint": "キャンバス上のハンドルで、しっぽの位置（緑）、太さ（オレンジ）、湾曲（紫）、先端（青）を調整します。",
+      "clipEnabled": "吹き出しを直線で切り取る",
+      "clipDragHint": "キャンバス上のピンクの2つのハンドルをドラッグして切り取り線を動かします。",
+      "clipFlip": "切り取る側を反転",
+      "clipFromPanel": "コマの境界に合わせる",
       "presetGovernsHint": "プリセット「{{name}}」で指定されています。",
       "directionVerticalRtl": "縦書き、列は右→左（日本語）",
       "deleteBubble": "吹き出しを削除"

@@ -4,7 +4,7 @@ import Konva from "konva";
 import type { Bubble, BubbleForm } from "../../../shared/src/layoutSchema";
 import { resolveBubbleForm, resolveBubbleStyle, resolveEffectiveTailStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { paddingRatioFor, fitHorizontalText } from "../../../shared/src/rendering/textLayout";
+import { fitHorizontalText, textBoxFor } from "../../../shared/src/rendering/textLayout";
 import { drawVerticalText, fitVerticalText } from "../../../shared/src/rendering/verticalTypesetting";
 import {
   buildBoundaryForStyle,
@@ -15,12 +15,20 @@ import {
 } from "../../../shared/src/rendering/bubbleBackground";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects";
 import { getCachedSvgBubbleBoundary } from "../export/svgBubbleGeometry";
+import { computeMergedBoundary, type MergeMemberInput } from "../export/bubbleMerge";
 import { projectOntoPerpendicularBow } from "./geometry";
 import { QuadBubbleShape } from "./QuadBubbleShape";
 import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {
   bubble: Bubble;
+  /** Every bubble in the same parenting context (unassigned bubbles, or one panel's
+   * children — see PageCanvas.tsx) — used to look up this bubble's merge-group siblings
+   * (Bubble.mergeGroupId) for the live merged-outline preview. A merge group spanning two
+   * different panels won't find its other member here (falls back to drawing unmerged) —
+   * see the plan's "Nicht im Umfang". Omitted entirely by QuadBubbleShape's call sites
+   * (quad bubbles are never mergeable). */
+  allBubbles?: Bubble[];
   scale: number;
   /** Current interactive Stage zoom (PageCanvas.tsx) — handle radii below are divided by this so they stay a constant SCREEN size instead of visually ballooning at high zoom (they're defined in the Layer's local, pre-zoom coordinate space, which the Stage then scales). */
   zoom: number;
@@ -58,7 +66,7 @@ export function BubbleShape(props: Props) {
   return <RectOvalBubbleShape {...props} />;
 }
 
-function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, selected, onSelect, onChange, onContextMenu, readOnly }: Props) {
+function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, presets, selected, onSelect, onChange, onContextMenu, readOnly }: Props) {
   const handleScale = 1 / zoom;
   // `readOnly` = role-based restriction (e.g. translator), `bubble.locked` = the user's own
   // per-object lock — either one disables geometry handles, but the lock TOGGLE icon itself
@@ -89,10 +97,48 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
   const text = bubble.text[activeLanguage] ?? "";
   const style = useMemo(() => resolveBubbleStyle(bubble, activeLanguage, presets), [bubble, activeLanguage, presets]);
   const baseFontSize = style.fontSize * scale;
-  const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape);
-  const boxWidth = Math.max(1, w * (1 - ratio));
-  const boxHeight = Math.max(1, h * (1 - ratio));
   const svgBoundary = form.bubbleStyle === "svg" ? getCachedSvgBubbleBoundary(form.svgFileName) : null;
+
+  // Non-destructive bubble merging (Bubble.mergeGroupId/mergePrimary, see
+  // shared/src/layoutSchema.ts) — siblings are looked up from `allBubbles` (this bubble's
+  // own parenting context, see the Props doc comment above). A stale/lone mergeGroupId
+  // (fewer than 2 live, non-"quad" members) falls back to drawing this bubble normally.
+  const mergeSiblings = useMemo(() => {
+    if (!bubble.mergeGroupId || !allBubbles) return null;
+    const members = allBubbles.filter((b) => b.mergeGroupId === bubble.mergeGroupId && b.shape !== "quad");
+    return members.length >= 2 ? members : null;
+  }, [bubble.mergeGroupId, allBubbles]);
+  const isMergedNonPrimary = !!mergeSiblings && !bubble.mergePrimary;
+
+  // Only computed for the primary member — the union of every sibling's own boundary
+  // (each resolved for the active language), scaled to match buildBoundaryForStyle's own
+  // scaled-coordinate convention (see drawBubbleBackground in bubbleBackground.ts).
+  const mergedBoundaryScaled = useMemo(() => {
+    if (!mergeSiblings || !bubble.mergePrimary) return null;
+    const members: MergeMemberInput[] = mergeSiblings.map((m) => {
+      const mForm = m.id === bubble.id ? form : resolveBubbleForm(m, activeLanguage, presets);
+      return { bubble: m, form: mForm, svgBoundary: mForm.bubbleStyle === "svg" ? getCachedSvgBubbleBoundary(mForm.svgFileName) : null };
+    });
+    const primary = members.find((m) => m.bubble.id === bubble.id);
+    if (!primary) return null;
+    return computeMergedBoundary(members, primary).map((p) => ({ x: p.x * scale, y: p.y * scale }));
+  }, [mergeSiblings, bubble.mergePrimary, bubble.id, form, activeLanguage, presets, scale]);
+
+  const mergedBoundsScaled = useMemo(() => {
+    if (!mergedBoundaryScaled || mergedBoundaryScaled.length === 0) return null;
+    const xs = mergedBoundaryScaled.map((p) => p.x);
+    const ys = mergedBoundaryScaled.map((p) => p.y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    return { x: minX, y: minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY };
+  }, [mergedBoundaryScaled]);
+
+  const textBox = useMemo(
+    () => textBoxFor(form.bubbleStyle, bubble.shape, form, scale, mergedBoundsScaled ?? undefined),
+    [form, bubble.shape, scale, mergedBoundsScaled]
+  );
+  const boxWidth = Math.max(1, textBox.width);
+  const boxHeight = Math.max(1, textBox.height);
 
   const isVertical = style.direction === "vertical-rl";
 
@@ -213,6 +259,15 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
     commitForm({ tailCurve: projected / scale });
   }
 
+  // The clip line (Bubble.clipA/clipB, see layoutSchema.ts) is enabled/disabled from
+  // BubbleInspector.tsx — these two handles only reposition an already-set line.
+  function handleClipADragEnd(e: Konva.KonvaEventObject<DragEvent>) {
+    commitForm({ clipA: { x: e.target.x() / scale, y: e.target.y() / scale } });
+  }
+  function handleClipBDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
+    commitForm({ clipB: { x: e.target.x() / scale, y: e.target.y() / scale } });
+  }
+
   return (
     <>
       <Group
@@ -234,11 +289,11 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       >
-        {form.bubbleStyle !== "none" && (
+        {form.bubbleStyle !== "none" && !isMergedNonPrimary && (
           <Shape
             listening={false}
             sceneFunc={(ctx) => {
-              drawBubbleBackground(ctx._context, form, bubble.shape, scale, svgBoundary);
+              drawBubbleBackground(ctx._context, form, bubble.shape, scale, svgBoundary, mergedBoundaryScaled ?? undefined);
             }}
           />
         )}
@@ -247,7 +302,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
         ) : (
           <Ellipse x={w / 2} y={h / 2} radiusX={w / 2} radiusY={h / 2} stroke={stroke} strokeWidth={2} fill={fill} />
         )}
-        {fitted && (
+        {fitted && !isMergedNonPrimary && (
           // A raw Shape with a custom sceneFunc — not Konva's <Text> — because
           // Konva.Text caches per-fontFamily text-metrics the first time it draws
           // that family. If that first draw happens before a custom @font-face
@@ -265,24 +320,24 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
               ctx.direction = style.direction === "rtl" ? "rtl" : "ltr";
               const anchorX =
                 style.align === "left"
-                  ? (w - boxWidth) / 2
+                  ? textBox.x
                   : style.align === "right"
-                    ? w - (w - boxWidth) / 2
-                    : w / 2;
-              const startY = h / 2 - fitted.blockHeight / 2 + fitted.lineStep / 2;
+                    ? textBox.x + textBox.width
+                    : textBox.x + textBox.width / 2;
+              const startY = textBox.y + textBox.height / 2 - fitted.blockHeight / 2 + fitted.lineStep / 2;
               const fillStyle: TextFillStyle = { color: style.color, outline: style.textOutline, gradient: style.textGradient };
-              applyTextFillStyle(ctx._context, fillStyle, (w - boxWidth) / 2, startY - fitted.lineStep / 2, boxWidth, fitted.blockHeight, scale);
+              applyTextFillStyle(ctx._context, fillStyle, textBox.x, startY - fitted.lineStep / 2, textBox.width, fitted.blockHeight, scale);
               fitted.lines.forEach((line, i) => {
                 drawStyledText(ctx._context, line.text, anchorX, startY + i * fitted.lineStep, fillStyle);
               });
             }}
           />
         )}
-        {fittedVertical && (
+        {fittedVertical && !isMergedNonPrimary && (
           <Shape
             listening={false}
             sceneFunc={(ctx) => {
-              drawVerticalText(ctx._context, fittedVertical, w / 2, h / 2, boxWidth, {
+              drawVerticalText(ctx._context, fittedVertical, textBox.x + textBox.width / 2, textBox.y + textBox.height / 2, boxWidth, {
                 fontFamily: style.fontFamily,
                 color: style.color,
                 align: style.align,
@@ -293,7 +348,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             }}
           />
         )}
-        {selected && form.bubbleStyle !== "none" && form.tail && (
+        {selected && !isMergedNonPrimary && form.bubbleStyle !== "none" && form.tail && (
           <Circle
             x={form.tail.x * scale}
             y={form.tail.y * scale}
@@ -322,7 +377,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             }}
           />
         )}
-        {selected && tailHandles && (
+        {selected && !isMergedNonPrimary && tailHandles && (
           <Circle
             x={tailHandles.nearestPoint.x}
             y={tailHandles.nearestPoint.y}
@@ -346,7 +401,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
             }}
           />
         )}
-        {selected && curveHandlePoint && (
+        {selected && !isMergedNonPrimary && curveHandlePoint && (
           <Circle
             x={curveHandlePoint.x}
             y={curveHandlePoint.y}
@@ -371,6 +426,7 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
           />
         )}
         {selected &&
+          !isMergedNonPrimary &&
           hasWidthAdjustableTail &&
           tailHandles &&
           [tailHandles.left, tailHandles.right].map((p, i) => (
@@ -395,6 +451,39 @@ function RectOvalBubbleShape({ bubble, scale, zoom, activeLanguage, presets, sel
               onDragEnd={(e) => {
                 e.cancelBubble = true;
                 handleTailWidthDragEnd(e);
+              }}
+            />
+          ))}
+        {selected &&
+          !geometryDisabled &&
+          !isMergedNonPrimary &&
+          form.clipA &&
+          form.clipB &&
+          [
+            { point: form.clipA, onDragEnd: handleClipADragEnd },
+            { point: form.clipB, onDragEnd: handleClipBDragEnd },
+          ].map((h, i) => (
+            <Circle
+              key={i}
+              x={h.point.x * scale}
+              y={h.point.y * scale}
+              radius={6 * handleScale}
+              fill="#ff6ec7"
+              stroke="#12131a"
+              strokeWidth={handleScale}
+              draggable
+              onMouseDown={(e) => {
+                e.cancelBubble = true;
+              }}
+              onDragStart={(e) => {
+                e.cancelBubble = true;
+              }}
+              onDragMove={(e) => {
+                e.cancelBubble = true;
+              }}
+              onDragEnd={(e) => {
+                e.cancelBubble = true;
+                h.onDragEnd(e);
               }}
             />
           ))}

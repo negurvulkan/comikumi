@@ -1,5 +1,6 @@
 import type { BubbleForm, BubbleShapeKind, Point } from "../layoutSchema.js";
 import { resolveEffectiveTailStyle } from "../layoutSchema.js";
+import { tracePolygonPath } from "./cutPanel.js";
 
 /**
  * Shared bubble-background geometry: builds a closed boundary point list for
@@ -236,6 +237,40 @@ export function insertTail(points: Point[], anchor: Point, tailWidth: number, ti
   return result;
 }
 
+/**
+ * A large quad covering exactly one half-plane of the line through a-b (both already
+ * scaled to match the boundary points this clips) — extended far past the w x h box in
+ * every direction so the clip never visibly "runs out" regardless of the bubble's actual
+ * size. By default keeps the half containing the box's own center (w/2, h/2); `flip`
+ * keeps the other half instead. Degenerates to "no effective clip" (the whole box) when
+ * a and b coincide, since the line direction is then undefined.
+ */
+function clipHalfPlanePolygon(w: number, h: number, a: Point, b: Point, flip: boolean): Point[] {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) return [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }];
+  const dirX = dx / len;
+  const dirY = dy / len;
+  let nx = -dirY;
+  let ny = dirX;
+  const cx = w / 2;
+  const cy = h / 2;
+  const side = (cx - a.x) * nx + (cy - a.y) * ny;
+  const sign = (side >= 0 ? 1 : -1) * (flip ? -1 : 1);
+  nx *= sign;
+  ny *= sign;
+  const reach = (w + h) * 4 + 1000;
+  const farA = { x: a.x - dirX * reach, y: a.y - dirY * reach };
+  const farB = { x: b.x + dirX * reach, y: b.y + dirY * reach };
+  return [
+    farA,
+    farB,
+    { x: farB.x + nx * reach, y: farB.y + ny * reach },
+    { x: farA.x + nx * reach, y: farA.y + ny * reach },
+  ];
+}
+
 function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form: BubbleForm, scale: number) {
   if (points.length < 3) return;
   ctx.beginPath();
@@ -352,14 +387,25 @@ function drawChainTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], a
 /**
  * Draws the visible bubble background (fill + stroke) plus its tail, for one
  * resolved form. No-op for bubbleStyle "none". `svgBoundary` is forwarded to
- * buildBoundaryForStyle() unchanged — see its doc comment.
+ * buildBoundaryForStyle() unchanged — see its doc comment. `precomputedBoundary`, when
+ * given, is used instead of building the boundary from `shape`/`bubbleStyle` — the merged-
+ * bubble path (bubbleMerge.ts) computes the union of several bubbles' own boundaries and
+ * feeds the result back in here so tail-splicing/clip-line/fill/stroke all still run
+ * exactly the same as for a procedural boundary.
  */
-export function drawBubbleBackground(ctx: CanvasRenderingContext2D, form: BubbleForm, shape: BubbleShapeKind, scale: number, svgBoundary?: Point[] | null) {
+export function drawBubbleBackground(
+  ctx: CanvasRenderingContext2D,
+  form: BubbleForm,
+  shape: BubbleShapeKind,
+  scale: number,
+  svgBoundary?: Point[] | null,
+  precomputedBoundary?: Point[]
+) {
   if (form.bubbleStyle === "none") return;
   const w = form.width * scale;
   const h = form.height * scale;
 
-  let points = buildBoundaryForStyle(form.bubbleStyle, shape, w, h, svgBoundary);
+  let points = precomputedBoundary ?? buildBoundaryForStyle(form.bubbleStyle, shape, w, h, svgBoundary);
   const hasTail = !!form.tail && canHaveTail(form.bubbleStyle);
   const effectiveTailStyle = resolveEffectiveTailStyle(form.bubbleStyle, form.tailStyle);
   const tip = form.tail ? { x: form.tail.x * scale, y: form.tail.y * scale } : null;
@@ -373,6 +419,20 @@ export function drawBubbleBackground(ctx: CanvasRenderingContext2D, form: Bubble
     points = insertTail(points, anchor, form.tailWidth * scale, tip, form.tailCurve * scale);
   }
 
+  // The clip line, like tail/tailAnchor, is stored in LOCAL unrotated form coordinates —
+  // scaled the same way as everything else here, then applied as a plain half-plane
+  // ctx.clip() around the rest of the draw (fill/stroke + detached/chain tail), same
+  // ctx.save()/clip()/restore() primitive already used by cutPanel.ts for panel artwork.
+  const hasClip = !!form.clipA && !!form.clipB;
+  if (hasClip) {
+    ctx.save();
+    tracePolygonPath(
+      ctx,
+      clipHalfPlanePolygon(w, h, { x: form.clipA!.x * scale, y: form.clipA!.y * scale }, { x: form.clipB!.x * scale, y: form.clipB!.y * scale }, form.clipFlip)
+    );
+    ctx.clip();
+  }
+
   fillAndStrokePath(ctx, points, form, scale);
 
   if (hasTail && tip && anchor && effectiveTailStyle === "point-detached") {
@@ -380,4 +440,6 @@ export function drawBubbleBackground(ctx: CanvasRenderingContext2D, form: Bubble
   } else if (hasTail && tip && anchor && effectiveTailStyle === "chain") {
     drawChainTail(ctx, points, anchor, tip, form, scale);
   }
+
+  if (hasClip) ctx.restore();
 }

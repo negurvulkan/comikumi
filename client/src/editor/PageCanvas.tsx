@@ -613,12 +613,19 @@ export function PageCanvas({
               readOnly={readOnly}
             />
           ))}
-          {bubbles
-            .filter((b) => !b.panelId || !panels.some((p) => p.id === b.panelId))
-            .map((b) => (
+          {(() => {
+            const unassignedBubbles = bubbles.filter((b) => !b.panelId || !panels.some((p) => p.id === b.panelId));
+            return unassignedBubbles.map((b) => (
               <BubbleShape
                 key={`${b.id}-${fontsVersion}`}
                 bubble={b}
+                // Sibling list a merged bubble's non-primary members are looked up from
+                // (see BubbleShape.tsx's mergeSiblings) — limited to this same
+                // parenting context (unassigned bubbles here, one panel's children
+                // below), so a merge group spanning two different panels won't find its
+                // other member live in the editor (falls back to drawing unmerged; see
+                // the plan's "Nicht im Umfang").
+                allBubbles={unassignedBubbles}
                 scale={scale}
                 zoom={zoom}
                 activeLanguage={activeLanguage}
@@ -632,7 +639,8 @@ export function PageCanvas({
                 }
                 readOnly={readOnly}
               />
-            ))}
+            ));
+          })()}
           {panels.map((panel) => {
             const children = bubbles.filter((b) => b.panelId === panel.id);
             if (children.length === 0) return null;
@@ -646,6 +654,7 @@ export function PageCanvas({
                   <BubbleShape
                     key={`${b.id}-${fontsVersion}`}
                     bubble={b}
+                    allBubbles={children}
                     scale={scale}
                     zoom={zoom}
                     activeLanguage={activeLanguage}

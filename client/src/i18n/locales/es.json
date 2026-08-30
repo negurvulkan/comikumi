@@ -497,6 +497,8 @@
       "selectedTotal_other": "{{count}} objetos seleccionados",
       "keyboardHint": "Flechas para mover (Mayús = pasos más grandes) · Ctrl+D duplicar · Supr eliminar · Mayús-clic para añadir/quitar",
       "duplicateButton": "Duplicar",
+      "mergeButton": "Fusionar globos",
+      "unmergeButton": "Deshacer fusión",
       "deleteSelection": "Eliminar selección"
     },
     "textListPanel": {
@@ -648,6 +650,10 @@
       "noSvgChosen": "Aún no se ha elegido ningún contorno.",
       "showTail": "Mostrar cola",
       "tailDragHint": "Ajusta la posición sobre el bocadillo (verde), el ancho (naranja), la curvatura (morado) y la punta (azul) en el lienzo mediante los controladores.",
+      "clipEnabled": "Recortar el globo con una línea",
+      "clipDragHint": "Arrastra los dos controladores rosas en el lienzo para reposicionar la línea de corte.",
+      "clipFlip": "Invertir el lado recortado",
+      "clipFromPanel": "Ajustar al borde de la viñeta",
       "presetGovernsHint": "Definido por el preajuste «{{name}}».",
       "directionVerticalRtl": "Vertical, columnas derecha → izquierda (JP)",
       "deleteBubble": "Eliminar bocadillo"

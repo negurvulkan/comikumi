@@ -497,6 +497,8 @@
       "selectedTotal_other": "{{count}} objets sélectionnés",
       "keyboardHint": "Flèches pour déplacer (Maj = pas plus grands) · Ctrl+D dupliquer · Suppr supprimer · Maj-clic pour ajouter/retirer",
       "duplicateButton": "Dupliquer",
+      "mergeButton": "Fusionner les bulles",
+      "unmergeButton": "Annuler la fusion",
       "deleteSelection": "Supprimer la sélection"
     },
     "textListPanel": {
@@ -648,6 +650,10 @@
       "noSvgChosen": "Aucun contour choisi pour l'instant.",
       "showTail": "Afficher la queue",
       "tailDragHint": "Ajustez la position sur la bulle (vert), la largeur (orange), la courbure (violet) et la pointe (bleu) dans le canevas via les poignées.",
+      "clipEnabled": "Découper la bulle selon une ligne",
+      "clipDragHint": "Faites glisser les deux poignées roses dans le canevas pour repositionner la ligne de coupe.",
+      "clipFlip": "Inverser le côté découpé",
+      "clipFromPanel": "Aligner sur le bord de la case",
       "presetGovernsHint": "Défini par le préréglage « {{name}} ».",
       "directionVerticalRtl": "Vertical, colonnes droite → gauche (JP)",
       "deleteBubble": "Supprimer la bulle"

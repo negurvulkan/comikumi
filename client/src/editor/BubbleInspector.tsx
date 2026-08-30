@@ -5,6 +5,7 @@ import type {
   BubbleShapeKind,
   BubbleVisualStyle,
   Panel,
+  Point,
   TailChainSegmentShape,
   TailStyle,
   TextAlign,
@@ -215,6 +216,42 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
 
   function toggleTail(checked: boolean) {
     setFormField({ tail: checked ? { x: form.width / 2, y: form.height + Math.max(30, form.height * 0.25) } : null });
+  }
+
+  function toggleClip(checked: boolean) {
+    setFormField(
+      checked
+        ? { clipA: { x: form.width / 2, y: 0 }, clipB: { x: form.width / 2, y: form.height } }
+        : { clipA: null, clipB: null }
+    );
+  }
+
+  /** One-time suggestion, not a persistent binding (see the plan's "Nicht im Umfang") —
+   * picks the assigned panel's polygon edge closest to the bubble's center and sets
+   * clipA/clipB to it, ignoring the bubble's own rotation for simplicity (an acceptable
+   * approximation for a starting point the user can still drag afterward). */
+  function suggestClipFromPanelEdge() {
+    const assignedPanel = panels.find((p) => p.id === bubble.panelId);
+    if (!assignedPanel || assignedPanel.points.length < 2) return;
+    const absX = form.x + assignedPanel.origin.x;
+    const absY = form.y + assignedPanel.origin.y;
+    const cx = absX + form.width / 2;
+    const cy = absY + form.height / 2;
+    let bestEdge: [Point, Point] | null = null;
+    let bestDist = Infinity;
+    const points = assignedPanel.points;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i];
+      const b = points[(i + 1) % points.length];
+      const dist = Math.hypot((a.x + b.x) / 2 - cx, (a.y + b.y) / 2 - cy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestEdge = [a, b];
+      }
+    }
+    if (!bestEdge) return;
+    const [a, b] = bestEdge;
+    setFormField({ clipA: { x: a.x - absX, y: a.y - absY }, clipB: { x: b.x - absX, y: b.y - absY } });
   }
 
   function changeShape(shape: BubbleShapeKind) {
@@ -460,6 +497,24 @@ export function BubbleInspector({ bubble, activeLanguage, panels, characters, gl
                       </label>
                     </>
                   )}
+                </>
+              )}
+
+              <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" checked={!!(form.clipA && form.clipB)} onChange={(e) => toggleClip(e.target.checked)} />
+                {t("editor.bubbleInspector.clipEnabled")}
+              </label>
+              {form.clipA && form.clipB && (
+                <>
+                  <p style={{ color: "var(--text-muted)", margin: "0 0 8px", fontSize: 12 }}>{t("editor.bubbleInspector.clipDragHint")}</p>
+                  <div className="field-row">
+                    <button type="button" onClick={() => setFormField({ clipFlip: !form.clipFlip })}>
+                      {t("editor.bubbleInspector.clipFlip")}
+                    </button>
+                    <button type="button" onClick={suggestClipFromPanelEdge} disabled={!bubble.panelId}>
+                      {t("editor.bubbleInspector.clipFromPanel")}
+                    </button>
+                  </div>
                 </>
               )}
             </>

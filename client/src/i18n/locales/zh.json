@@ -489,6 +489,8 @@
       "selectedTotal_other": "已选择 {{count}} 个对象",
       "keyboardHint": "方向键移动（Shift 加大步幅）· Ctrl+D 复制 · Delete 删除 · Shift 点击可添加/移除",
       "duplicateButton": "复制",
+      "mergeButton": "合并气泡",
+      "unmergeButton": "取消合并",
       "deleteSelection": "删除所选"
     },
     "textListPanel": {
@@ -640,6 +642,10 @@
       "noSvgChosen": "尚未选择轮廓。",
       "showTail": "显示尾巴",
       "tailDragHint": "在画布中通过控制点调整气泡上的尾巴位置（绿色）、宽度（橙色）、弯曲度（紫色）和尖端（蓝色）。",
+      "clipEnabled": "沿直线裁切气泡",
+      "clipDragHint": "拖动画布中的两个粉色控制点以移动裁切线。",
+      "clipFlip": "翻转裁切的一侧",
+      "clipFromPanel": "对齐到分格边缘",
       "presetGovernsHint": "由预设“{{name}}”指定。",
       "directionVerticalRtl": "竖排，从右到左分栏（日文）",
       "deleteBubble": "删除气泡"

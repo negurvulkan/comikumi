@@ -833,6 +833,13 @@ export function Editor() {
               panelCount={selectedPanelIds.length}
               onDuplicate={() => store.duplicateSelected()}
               onDelete={() => store.removeSelected()}
+              canMerge={
+                layout != null &&
+                layout.bubbles.filter((b) => selectedBubbleIds.includes(b.id) && b.shape !== "quad" && !b.locked).length >= 2
+              }
+              onMerge={() => store.mergeSelectedBubbles()}
+              canUnmerge={layout != null && layout.bubbles.some((b) => selectedBubbleIds.includes(b.id) && !!b.mergeGroupId)}
+              onUnmerge={() => store.unmergeSelectedBubbles()}
             />
           ) : selectedBubble ? (
             <BubbleInspector

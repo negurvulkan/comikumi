@@ -101,6 +101,20 @@ export const BubbleFormSchema = z.object({
   tailChainSpacing: z.number().positive().default(1),
   /** Perpendicular bow amount (image px, same units as tailWidth) applied to the tail's edges — 0 = straight (default, unchanged behavior), positive/negative bows to either side. See bubbleBackground.ts's perpendicularOffset(). */
   tailCurve: z.number().default(0),
+  /**
+   * A straight clip line (through clipA/clipB, extended infinitely) that cuts the bubble
+   * in half — everything on one side is not drawn, so the bubble can sit flush against a
+   * panel border instead of overlapping it. Both points are LOCAL, unrotated form
+   * coordinates, same convention as `tail`/`tailAnchor` (0,0 = this form's own top-left),
+   * so the line moves automatically with the bubble on drag/resize/rotate. `null` on
+   * either point means "no clip" — both must be set together (see clipHalfPlanePolygon in
+   * bubbleBackground.ts, which no-ops when either is missing).
+   */
+  clipA: PointSchema.nullable().default(null),
+  clipB: PointSchema.nullable().default(null),
+  /** Which side of clipA/clipB is kept — false (default) keeps the side containing the
+   * form's own center, true keeps the other side. */
+  clipFlip: z.boolean().default(false),
 });
 export type BubbleForm = z.infer<typeof BubbleFormSchema>;
 
@@ -134,6 +148,23 @@ export const BubbleSchema = z.object({
   tailChainSegments: z.number().int().min(1).max(8).default(3),
   tailChainSpacing: z.number().positive().default(1),
   tailCurve: z.number().default(0),
+  /** See BubbleFormSchema's identically-named fields — same LOCAL/unrotated convention. */
+  clipA: PointSchema.nullable().default(null),
+  clipB: PointSchema.nullable().default(null),
+  clipFlip: z.boolean().default(false),
+  /**
+   * Non-destructive bubble merging: bubbles sharing the same `mergeGroupId` are drawn as
+   * one continuous outline (the union of their individual boundaries) instead of
+   * individually — see bubbleMerge.ts. Exactly one member per group should have
+   * `mergePrimary: true`; that member's own `text`/tail fields are used for the whole
+   * merged shape, the other members' `text`/tail are ignored while merged but kept as-is
+   * in the data (un-merging just clears these two fields, restoring independent bubbles
+   * with whatever text they still privately held). Deliberately NOT part of
+   * BubbleFormSchema — this is a per-instance identity relationship, not a per-language
+   * style/geometry bundle (same reasoning as `panelId`/`characterId` living here only).
+   */
+  mergeGroupId: z.string().nullable().default(null),
+  mergePrimary: z.boolean().default(false),
   /**
    * Per-language replacement of this bubble's entire form (position, size,
    * rotation, visible background style) — e.g. a German translation needing
@@ -272,6 +303,9 @@ export function resolveBubbleForm(bubble: Bubble, languageCode: string, presets:
     tailChainSegments: preset?.background.tailChainSegments ?? bubble.tailChainSegments,
     tailChainSpacing: preset?.background.tailChainSpacing ?? bubble.tailChainSpacing,
     tailCurve: bubble.tailCurve,
+    clipA: bubble.clipA,
+    clipB: bubble.clipB,
+    clipFlip: bubble.clipFlip,
   };
 }
 
