@@ -65,7 +65,7 @@ interface Props {
   readOnly?: boolean;
   onSelect: (id: string | null, additive?: boolean) => void;
   onChange: (id: string, patch: Partial<Bubble>) => void;
-  onCreate: (shape: BubbleShapeKind, box: { x: number; y: number; width: number; height: number }) => void;
+  onCreate: (shape: BubbleShapeKind, box: { x: number; y: number; width: number; height: number }, opts?: { isEffect?: boolean }) => void;
   onSelectImage: (id: string | null, additive?: boolean) => void;
   onChangeImage: (id: string, patch: Partial<ImageElement>) => void;
   onSelectCurvedText: (id: string | null, additive?: boolean) => void;
@@ -307,6 +307,8 @@ export function PageCanvas({
       const scaledBox = { x: box.x / scale, y: box.y / scale, width: box.width / scale, height: box.height / scale };
       if (tool === "panel") {
         onCreatePanel(boxCorners(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height));
+      } else if (tool === "effect") {
+        onCreate("rect", scaledBox, { isEffect: true });
       } else {
         onCreate(tool, scaledBox);
       }

@@ -56,6 +56,9 @@ export function runQaChecks(
 
   for (const { page, bubbles } of pages) {
     for (const bubble of bubbles) {
+      // Effect (SFX) bubbles aren't dialogue and aren't meaningfully checked for
+      // translation completeness or glossary usage here — see Bubble.isEffect.
+      if (bubble.isEffect) continue;
       const hasAnyText = Object.values(bubble.text).some((t) => t.trim());
       if (!hasAnyText) continue; // an entirely empty bubble isn't "missing a translation", it's just unused
 

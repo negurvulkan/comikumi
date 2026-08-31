@@ -444,6 +444,20 @@ instead of a solid color. Every one of these style fields (and the entire
 shape/position/size/rotation/background) can be overridden per language.
 Bubbles can be assigned to a panel and a character.
 
+**Effect (SFX) bubbles**: a dedicated toolbar tool next to the three shape
+tools draws a bubble exactly like the rectangle tool, but marks it as a sound
+effect/onomatopoeia instead of spoken dialogue. Any existing bubble can be
+switched to (or out of) this mode from a checkbox in its inspector — useful
+for onomatopoeia lettered before this distinction existed. An effect bubble
+is still a completely normal bubble (any shape, style, panel/character
+assignment, translation-memory matching); the only difference is that it's
+excluded from the "who says what" reports, from the dialogue lines a script
+is auto-generated with (see [Script Editor & Script Sidebar](#script-editor--script-sidebar)),
+and from the missing-translation QA check — none of which make sense for a
+sound effect. It still appears normally in reading-order navigation and the
+Layers navigator (see [Locking](#locking)), tagged "Effect" there instead of
+"Bubble".
+
 **Clipping**: a rect/oval/thought/shout/SVG bubble can be cut along a straight
 line — dragged freely on the canvas via two handles, with a "Snap to panel
 edge" button in the bubble inspector that suggests a starting line from the
@@ -847,6 +861,8 @@ in by hand.
   plot, notes).
 - Both paths only change in-memory state — as everywhere in the script area,
   "Save" must be clicked deliberately afterward for it to land on disk.
+- Effect (SFX) bubbles are skipped when generating dialogue lines this way —
+  see [Speech Bubbles](#speech-bubbles).
 
 ## Review Comments
 
@@ -927,6 +943,8 @@ of via the editor store, since layout data is never written here.
   "who says what" overview with its own language selector.
 - The page and volume reports share the same evaluation logic, so the two
   never use different definitions.
+- Effect (SFX) bubbles are excluded from every report view — they're not
+  dialogue, see [Speech Bubbles](#speech-bubbles).
 
 ## Export & Import
 

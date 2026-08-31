@@ -960,8 +960,8 @@ export function Editor() {
             readOnly={isTranslatorOnly}
             onSelect={store.selectBubble}
             onChange={store.updateBubble}
-            onCreate={(shape, box) => {
-              store.addBubble(shape, box);
+            onCreate={(shape, box, opts) => {
+              store.addBubble(shape, box, opts);
               setDrawTool(null);
             }}
             onSelectImage={store.selectImage}

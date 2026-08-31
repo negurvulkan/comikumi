@@ -63,6 +63,20 @@ describe("addBubbles", () => {
   });
 });
 
+describe("addBubble", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("sets isEffect on the new bubble when opts.isEffect is true (the Effect tool)", () => {
+    useEditorStore.getState().addBubble("rect", { x: 0, y: 0, width: 100, height: 50 }, { isEffect: true });
+    expect(useEditorStore.getState().layout!.bubbles[0].isEffect).toBe(true);
+  });
+
+  it("leaves isEffect unset for a normal bubble (no opts)", () => {
+    useEditorStore.getState().addBubble("rect", { x: 0, y: 0, width: 100, height: 50 });
+    expect(useEditorStore.getState().layout!.bubbles[0].isEffect).toBeUndefined();
+  });
+});
+
 describe("updateSelectedBubbles", () => {
   beforeEach(resetStoreWithEmptyLayout);
 

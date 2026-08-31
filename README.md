@@ -37,6 +37,11 @@ React + Konva canvas editor.
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
   (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
   panel-reference polygons for reporting.
+- **Effect (SFX) bubbles** — a dedicated toolbar tool marks a bubble as a sound effect
+  instead of dialogue (existing bubbles can be switched either way from the inspector);
+  effect bubbles are excluded from "who says what" reports, auto-generated script
+  dialogue lines, and the missing-translation QA check, while staying fully normal
+  everywhere else (translation memory, reading order, the Layers navigator).
 - **Layers/Panel navigator & bulk locking** — every bubble/image/curved text on a page,
   grouped by panel, with per-element lock toggles; "lock all panels", "lock panel +
   its bubbles", and "lock selection" bulk actions stop overlapping panels from getting

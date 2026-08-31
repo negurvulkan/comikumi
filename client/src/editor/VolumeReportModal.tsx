@@ -30,7 +30,8 @@ export function VolumeReportModal({ volumeId, characters, readingDirection, onCl
   useEffect(() => {
     api
       .getVolumeReport(volumeId)
-      .then((rows) => setPages(rows.map((r) => ({ page: r.page, bubbles: r.layout.bubbles }))))
+      // Effect (SFX) bubbles aren't dialogue — excluded here too, same as ReportModal.tsx.
+      .then((rows) => setPages(rows.map((r) => ({ page: r.page, bubbles: r.layout.bubbles.filter((b) => !b.isEffect) }))))
       .catch((e) => setError(translateApiError(e, t)));
   }, [volumeId, t]);
 

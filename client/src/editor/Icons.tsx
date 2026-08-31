@@ -39,6 +39,16 @@ export function QuadToolIcon() {
   );
 }
 
+/** A jagged sound-effect burst — the Effect (SFX/onomatopoeia) bubble tool, deliberately
+ * distinct from the three plain-shape icons above (see LayersPanel.tsx's isEffect flag). */
+export function EffectToolIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 20 20" fill="currentColor" stroke="none">
+      <path d="M10 1.5 L12 7 L18 7.5 L13 11 L14.5 17.5 L10 13.8 L5.5 17.5 L7 11 L2 7.5 L8 7 Z" />
+    </svg>
+  );
+}
+
 export function ImageToolIcon() {
   return (
     <svg {...common}>

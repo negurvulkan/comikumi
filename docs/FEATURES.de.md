@@ -445,6 +445,22 @@ dieser Stil-Felder (und die komplette Form/Position/Größe/Rotation/Hintergrund
 per Sprach-Umschalter überschreibbar. Blasen können einem Panel und einem Charakter
 zugeordnet werden.
 
+**Effekt-Blasen (SFX)**: ein eigenes Werkzeug in der Werkzeugleiste, direkt
+neben den drei Formen-Werkzeugen, zeichnet eine Blase genau wie das
+Rechteck-Werkzeug, markiert sie dabei aber als Soundeffekt/Onomatopoetikum
+statt gesprochenen Dialog. Jede bestehende Blase lässt sich über eine
+Checkbox im Inspector nachträglich in diesen Modus versetzen (oder wieder
+herausnehmen) — praktisch für bereits vorhandene SFX-Blasen aus der Zeit vor
+dieser Unterscheidung. Eine Effekt-Blase bleibt eine ganz normale Blase (jede
+Form, jeder Stil, Panel-/Charakter-Zuordnung, Translation-Memory-Matching
+funktionieren weiterhin) — der einzige Unterschied: sie wird aus den
+„Wer sagt was"-Berichten, aus den beim automatischen Skript-Erzeugen
+generierten Dialogzeilen (siehe [Skript-Editor & Skript-Sidebar](#skript-editor--skript-sidebar))
+und aus der Fehlende-Übersetzung-QA-Prüfung ausgeschlossen — für nichts davon
+ergibt ein Soundeffekt Sinn. In der Lesereihenfolge-Navigation und im
+Layers-Navigator (siehe [Sperren](#sperren)) taucht sie weiterhin ganz normal
+auf, dort mit der Kennzeichnung „Effekt" statt „Bubble".
+
 **Anschneiden**: eine Rechteck-/Oval-/Denk-/Schrei-/SVG-Blase lässt sich an einer
 geraden Linie anschneiden — frei auf dem Canvas per zwei Greifern gezogen, mit
 einem „An Panelkante ausrichten"-Button im Blasen-Inspector, der eine
@@ -845,6 +861,8 @@ lassen sich aus Blasendaten nicht ableiten und bleiben leer, zum Nachtragen von 
   Handlung, Notizen) nicht zu überschreiben.
 - Beide Wege ändern nur den Arbeitsspeicher-Zustand — wie überall im Skript-Bereich muss
   anschließend bewusst "Speichern" geklickt werden, damit es auf der Platte landet.
+- Effekt-Blasen (SFX) werden beim Erzeugen der Dialogzeilen übersprungen —
+  siehe [Sprechblasen](#sprechblasen).
 
 ## Review-Kommentare
 
@@ -925,6 +943,8 @@ geschrieben werden.
   Seiten-für-Seiten-"wer sagt was"-Übersicht mit eigener Sprachauswahl.
 - Seiten- und Band-Bericht teilen sich dieselbe Auswertungslogik, damit beide nie
   unterschiedliche Definitionen verwenden.
+- Effekt-Blasen (SFX) sind aus jeder Berichtsansicht ausgeschlossen — sie sind
+  kein Dialog, siehe [Sprechblasen](#sprechblasen).
 
 ## Export & Import
 

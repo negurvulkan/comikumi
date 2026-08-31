@@ -62,7 +62,10 @@ export function deleteDialogueLine(panel: ScriptPanel, lineId: string): ScriptPa
  * ordering always uses each bubble's base geometry (resolveBubbleForm finds no
  * formOverride for language ""), independent of any particular project language. */
 export function scriptPageFromLayout(page: string, layout: PageLayout, readingDirection: ReadingDirection = "rtl"): ScriptPage {
-  const groups = groupBubblesByPanel(layout.bubbles, layout.panels, "", readingDirection);
+  // Effect (SFX) bubbles aren't dialogue — excluded from the generated dialogue lines
+  // (see Bubble.isEffect).
+  const dialogueBubbles = layout.bubbles.filter((b) => !b.isEffect);
+  const groups = groupBubblesByPanel(dialogueBubbles, layout.panels, "", readingDirection);
   return {
     id: uuid(),
     label: "",

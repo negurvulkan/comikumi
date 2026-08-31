@@ -505,6 +505,12 @@ export function BubbleInspector({
             </>
           )}
 
+          <OptionalToggleField
+            label={t("editor.bubbleInspector.isEffectLabel")}
+            checked={!!bubble.isEffect}
+            onToggle={(v) => onChange({ isEffect: v ? true : undefined })}
+          />
+
           <div className="field-row">
             <label>
               Panel

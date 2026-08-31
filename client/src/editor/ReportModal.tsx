@@ -21,9 +21,12 @@ function toSingleLine(text: string): string {
  * computed live from the already-loaded layout, no extra request needed. */
 export function ReportModal({ bubbles, panels, characters, activeLanguage, readingDirection, onClose }: Props) {
   const { t } = useTranslation();
-  const ordered = sortBubblesByPosition(bubbles, activeLanguage, readingDirection);
-  const byPanel = groupBubblesByPanel(bubbles, panels, activeLanguage, readingDirection);
-  const pageCharacters = uniqueCharacterNames(bubbles, characters);
+  // Effect (SFX) bubbles aren't dialogue — excluded from every report on this page (but
+  // not from the Layers navigator or reading-order navigation, see Bubble.isEffect).
+  const dialogueBubbles = bubbles.filter((b) => !b.isEffect);
+  const ordered = sortBubblesByPosition(dialogueBubbles, activeLanguage, readingDirection);
+  const byPanel = groupBubblesByPanel(dialogueBubbles, panels, activeLanguage, readingDirection);
+  const pageCharacters = uniqueCharacterNames(dialogueBubbles, characters);
   const panelCharacters = byPanel
     .map((g) => ({ label: g.label, characterNames: uniqueCharacterNames(g.bubbles, characters) }))
     .filter((g) => g.characterNames.length > 0);

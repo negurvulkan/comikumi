@@ -251,6 +251,13 @@ export const BubbleSchema = z.object({
    * unlocked, so JSON.stringify drops the key entirely once unlocked — only ever written
    * to disk when the element was last locked. */
   locked: z.boolean().optional(),
+  /** Markiert diese Bubble als Soundeffekt/Onomatopoetikum statt gesprochenen
+   * Dialog — schließt sie aus Charakter-"wer sagt was"-Reports, generierten
+   * Skript-Dialogzeilen und der Fehlende-Übersetzung-QA-Prüfung aus. NICHT
+   * ausgeschlossen: Lesereihenfolge-Navigation, der Layers-Navigator und
+   * Translation-Memory-Matching (SFX-Text bleibt dort ein normales Ziel). Same
+   * `.optional()`/undefined-when-off convention as `locked` above. */
+  isEffect: z.boolean().optional(),
 });
 export type Bubble = z.infer<typeof BubbleSchema>;
 

@@ -32,6 +32,12 @@ describe("runQaChecks — missingTranslation", () => {
     const pages = [{ page: "page_01", bubbles: [bubble("b1", { ja: "こんにちは", de: "Hallo" })] }];
     expect(runQaChecks(pages, languages, [], [])).toHaveLength(0);
   });
+
+  it("does not flag an effect (SFX) bubble even with text missing in a configured language", () => {
+    const effectBubble = createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 50, text: { ja: "ドン", de: "" }, isEffect: true });
+    const pages = [{ page: "page_01", bubbles: [effectBubble] }];
+    expect(runQaChecks(pages, languages, [], [])).toHaveLength(0);
+  });
 });
 
 describe("runQaChecks — untranslatedGlossaryTerm", () => {
@@ -59,6 +65,19 @@ describe("runQaChecks — untranslatedGlossaryTerm", () => {
     const sameGlossary: GlossaryEntry[] = [{ id: "g1", term: "Sensei", translations: { de: "Sensei" }, readings: {}, note: "" }];
     const pages = [{ page: "page_01", bubbles: [bubble("b1", { de: "Danke, Sensei" })] }];
     expect(glossaryIssues(pages, sameGlossary)).toHaveLength(0);
+  });
+
+  it("does not flag an effect (SFX) bubble even when the glossary term appears in its text", () => {
+    const effectBubble = createBubble({
+      id: "b1",
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 50,
+      text: { ja: "Kaijuu desu", de: "Ein Kaijuu greift an" },
+      isEffect: true,
+    });
+    expect(glossaryIssues([{ page: "page_01", bubbles: [effectBubble] }], glossary)).toHaveLength(0);
   });
 });
 

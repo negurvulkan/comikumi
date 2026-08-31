@@ -205,7 +205,11 @@ export function LayersPanel({
                         onClick={(e) => handleRowClick(row, e.shiftKey)}
                       >
                         <span className="text-list-type">
-                          {t(`editor.layersPanel.type${row.kind === "bubble" ? "Bubble" : row.kind === "image" ? "Image" : "CurvedText"}`)}
+                          {t(
+                            `editor.layersPanel.type${
+                              row.kind === "bubble" ? (row.bubble.isEffect ? "Effect" : "Bubble") : row.kind === "image" ? "Image" : "CurvedText"
+                            }`
+                          )}
                         </span>
                         <span className="text-list-content">{rowLabel(row)}</span>
                         <button

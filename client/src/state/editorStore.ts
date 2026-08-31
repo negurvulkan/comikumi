@@ -82,7 +82,11 @@ interface EditorState {
   selectCurvedText: (id: string | null, additive?: boolean) => void;
   selectPanel: (id: string | null, additive?: boolean) => void;
   deselectAll: () => void;
-  addBubble: (shape: BubbleShapeKind, box: { x: number; y: number; width: number; height: number }) => void;
+  addBubble: (
+    shape: BubbleShapeKind,
+    box: { x: number; y: number; width: number; height: number },
+    opts?: { isEffect?: boolean }
+  ) => void;
   updateBubble: (id: string, patch: Partial<Bubble>) => void;
   removeBubble: (id: string) => void;
   addImage: (fileName: string, naturalWidth: number, naturalHeight: number, languageCodes: string[]) => void;
@@ -277,11 +281,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set(clearSelection());
     },
 
-    addBubble(shape, box) {
+    addBubble(shape, box, opts) {
       const layout = get().layout;
       if (!layout) return;
       pushHistory(true);
-      const bubble = createBubble({ id: uuid(), shape, ...box });
+      const bubble = createBubble({ id: uuid(), shape, ...box, ...(opts?.isEffect ? { isEffect: true } : {}) });
       set({
         layout: { ...layout, bubbles: [...layout.bubbles, bubble] },
         selectedBubbleIds: [bubble.id],

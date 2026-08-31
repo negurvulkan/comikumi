@@ -19,16 +19,20 @@ import {
   CommentFreehandToolIcon,
   CommentsPanelToolIcon,
   LayersToolIcon,
+  EffectToolIcon,
 } from "./Icons";
 
-/** What the canvas is currently armed to draw — bubble shapes, a Panel reference
- * region, or one of the three review-comment marker kinds (see
- * shared/src/comments.ts's CommentTargetSchema). Every panel starts as a plain
- * reference marker; its optional Cut-Panel behavior (detach/move/remove/replace
- * content — see PanelShape.tsx/PanelInspector.tsx) is activated afterward from the
- * inspector, not via a separate draw tool, since Panel and Cut-Panel are the same
- * entity. Not a BubbleShapeKind itself since Panels aren't bubbles. */
-export type DrawTool = BubbleShapeKind | "panel" | "comment-pin" | "comment-box" | "comment-freehand";
+/** What the canvas is currently armed to draw — bubble shapes, an Effect (SFX/
+ * onomatopoeia) bubble, a Panel reference region, or one of the three review-comment
+ * marker kinds (see shared/src/comments.ts's CommentTargetSchema). Every panel starts
+ * as a plain reference marker; its optional Cut-Panel behavior (detach/move/remove/
+ * replace content — see PanelShape.tsx/PanelInspector.tsx) is activated afterward from
+ * the inspector, not via a separate draw tool, since Panel and Cut-Panel are the same
+ * entity. Not a BubbleShapeKind itself since Panels aren't bubbles. "effect" is also
+ * not a BubbleShapeKind — it always draws shape "rect" (see PageCanvas.tsx's
+ * handleMouseUp) but sets Bubble.isEffect on creation; the resulting bubble's shape can
+ * still be changed afterward like any other bubble. */
+export type DrawTool = BubbleShapeKind | "effect" | "panel" | "comment-pin" | "comment-box" | "comment-freehand";
 
 interface Props {
   drawTool: DrawTool | null;
@@ -122,6 +126,14 @@ export function ToolStrip({
         disabled={creationDisabled}
       >
         <QuadToolIcon />
+      </button>
+      <button
+        className={`tool-btn${drawTool === "effect" ? " active" : ""}`}
+        onClick={() => onSetDrawTool(drawTool === "effect" ? null : "effect")}
+        title={t("editor.toolStrip.effectTool")}
+        disabled={creationDisabled}
+      >
+        <EffectToolIcon />
       </button>
       <ImagePicker onInsert={onInsertImage} iconOnly disabled={creationDisabled} />
       <button className="tool-btn" onClick={onAddCurvedText} title={t("editor.textListPanel.typeCurvedText")} disabled={creationDisabled}>
