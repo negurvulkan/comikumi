@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Circle, Ellipse, Group, Rect, Shape, Transformer } from "react-konva";
+import { Circle, Ellipse, Group, Rect, Shape, Text, Transformer } from "react-konva";
 import Konva from "konva";
 import type { Bubble, BubbleForm } from "../../../shared/src/layoutSchema";
 import { resolveBubbleForm, resolveBubbleStyle, resolveEffectiveTailStyle } from "../../../shared/src/layoutSchema";
@@ -153,6 +153,14 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
     if (!text || !isVertical) return null;
     return fitVerticalText(text, style.lineHeight, boxWidth, boxHeight, baseFontSize);
   }, [text, isVertical, style.lineHeight, boxWidth, boxHeight, baseFontSize]);
+
+  // True when the text still doesn't fit its box even after fitHorizontalText/
+  // fitVerticalText shrank it all the way to MIN_FONT_SIZE — neither function reports
+  // this itself (see their own doc comments), so it's the same comparison a caller who
+  // already has boxWidth/boxHeight in scope can make directly: blockHeight (horizontal)
+  // or blockWidth (vertical, since tategaki columns grow sideways) exceeding the box
+  // means clamping stopped the shrink, not the text actually fitting.
+  const overflows = fitted ? fitted.blockHeight > boxHeight : fittedVertical ? fittedVertical.blockWidth > boxWidth : false;
 
   // Writes a form patch to the per-language override (if the active language
   // already has one) or straight to the bubble's base fields otherwise — the
@@ -347,6 +355,27 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
               });
             }}
           />
+        )}
+        {overflows && !isMergedNonPrimary && (
+          // Live overflow warning — a translation that no longer fits even at the
+          // smallest allowed font size (see the `overflows` doc comment above). Purely
+          // visual (listening=false so it never intercepts clicks/drags meant for the
+          // bubble underneath); the dashed red outline stays legible over any fill
+          // color, and the badge is anchored top-right in the bubble's own unrotated
+          // local space, so it rotates/scales along with the bubble for free.
+          <>
+            <Rect width={w} height={h} stroke="#ff3b30" strokeWidth={2} dash={[6, 4]} listening={false} />
+            <Text
+              text="⚠"
+              x={w - 20}
+              y={2}
+              fontSize={16}
+              listening={false}
+              shadowColor="#000"
+              shadowBlur={2}
+              shadowOpacity={0.6}
+            />
+          </>
         )}
         {selected && !isMergedNonPrimary && form.bubbleStyle !== "none" && form.tail && (
           <Circle

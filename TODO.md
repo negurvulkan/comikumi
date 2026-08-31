@@ -127,9 +127,21 @@ zahlt in dieselbe „Export schneller/robuster machen"-Richtung ein.
 Eigenständige UI-Verbesserungen ohne gegenseitige Abhängigkeit — jede für sich
 klein genug, um unabhängig von den anderen Batches eingeschoben zu werden.
 
-- [ ] **Live-Overflow-Warnung im Canvas** — rote Umrandung/Icon direkt an der
-      Bubble, wenn Text trotz Schriftverkleinerung nicht passt.
-- [ ] **Minimap/Übersicht** — bei Seiten mit vielen Panels/Bubbles, für schnelles
-      Springen ohne Rein-/Rauszoomen.
-- [ ] **Onboarding/Leerer-Zustand** — der aktuelle Hinweis ("Select a bubble...")
-      ist sehr karg; kurze geführte Tour oder Illustration für Erstnutzer.
+- [x] **Live-Overflow-Warnung im Canvas** — `BubbleShape.tsx`: `fitHorizontalText`/
+      `fitVerticalText` melden Overflow nicht selbst, also vergleicht die Komponente
+      (die `boxWidth`/`boxHeight` ohnehin schon kennt) `blockHeight`/`blockWidth` gegen
+      die Box, sobald bei MIN_FONT_SIZE nicht mehr geschrumpft werden konnte. Rote
+      gestrichelte Umrandung + ⚠-Badge, rein visuell (`listening=false`). Nur
+      rect/oval — Quad-Blasen (eigener Perspektiv-Rendering-Pfad) bewusst ausgeklammert,
+      konsistent mit Clip/Merge/Padding.
+- [x] **Minimap/Übersicht** — `CanvasMinimap.tsx`, unten rechts im Canvas-Viewport,
+      erscheint erst ab 6 Panels+Bubbles zusammen (bei wenig Inhalt zeigt der normale
+      Canvas ohnehin schon alles). Klick zentriert die Haupt-Ansicht auf die geklickte
+      Stelle (Zoom bleibt) über dieselbe Stage-Positions-Mathematik, die
+      `focusOnPanel`/`zoomAt` in PageCanvas.tsx bereits nutzen. Plain HTML/CSS
+      (kein zweiter Konva-Stage nötig für eine so kleine Übersicht).
+- [x] **Onboarding/Leerer-Zustand** — Editor.tsx: eine wirklich leere Seite (0 Bubbles/
+      Bilder/Kurventexte/Panels) zeigt jetzt eine kurze Erste-Schritte-Liste (Werkzeuge
+      benutzen, Auto-Bubbles, Panels zuerst zeichnen, Tastenkürzel/Befehlspalette)
+      statt des knappen „Select a bubble..."-Hinweises — der bleibt unverändert für
+      Seiten, die bereits Inhalt haben, aber gerade nichts ausgewählt ist.

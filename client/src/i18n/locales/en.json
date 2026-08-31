@@ -682,7 +682,8 @@
       "zoomOut": "Zoom out",
       "zoomIn": "Zoom in",
       "resetView": "Reset view",
-      "scrollPanHint": "Scroll = zoom · Drag on empty area = pan"
+      "scrollPanHint": "Scroll = zoom · Drag on empty area = pan",
+      "minimapHint": "Click to jump to that part of the page"
     },
     "editorRoute": {
       "invalidJsonFormat": "Error: file does not match the expected layout format.",
@@ -694,7 +695,13 @@
       "undo": "Undo",
       "unsavedPill": "Unsaved",
       "savedPill": "Saved",
-      "selectOrCreateHint": "Select a bubble, image, or curved text, or create one with a tool on the left."
+      "selectOrCreateHint": "Select a bubble, image, or curved text, or create one with a tool on the left.",
+      "emptyPageTitle": "This page is still empty",
+      "emptyPageIntro": "A few ways to get started:",
+      "emptyPageTipDraw": "Pick a bubble/panel/image tool on the left toolbar, then drag on the page to draw it.",
+      "emptyPageTipAutoBubbles": "Or let Auto-Bubbles detect speech bubbles for you (toolbar), then review and accept the results.",
+      "emptyPageTipPanel": "Drawing panel outlines first gives you per-panel reading order and reports later.",
+      "emptyPageTipShortcuts": "Ctrl/Cmd+K opens the command palette; the Help menu lists every keyboard shortcut."
     },
     "bubbleInspector": {
       "textTabLabel": "Text",

@@ -986,6 +986,22 @@ export function Editor() {
               onChange={(patch) => store.updatePanel(selectedPanel.id, patch)}
               onDelete={() => store.removePanel(selectedPanel.id)}
             />
+          ) : layout.bubbles.length + layout.images.length + layout.curvedTexts.length + layout.panels.length === 0 ? (
+            // A genuinely blank page (nothing drawn yet at all, not just "nothing
+            // currently selected") gets a short first-steps list instead of the terse
+            // one-liner below — the terse version stays for every other "nothing
+            // selected" case (a page that already has content), since repeating a
+            // getting-started list there would just be noise for an experienced user.
+            <div className="inspector">
+              <p style={{ margin: 0, fontWeight: 600 }}>{t("editor.editorRoute.emptyPageTitle")}</p>
+              <p className="hint" style={{ margin: "0 0 4px" }}>{t("editor.editorRoute.emptyPageIntro")}</p>
+              <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
+                <li className="hint">{t("editor.editorRoute.emptyPageTipDraw")}</li>
+                <li className="hint">{t("editor.editorRoute.emptyPageTipAutoBubbles")}</li>
+                <li className="hint">{t("editor.editorRoute.emptyPageTipPanel")}</li>
+                <li className="hint">{t("editor.editorRoute.emptyPageTipShortcuts")}</li>
+              </ul>
+            </div>
           ) : (
             <div className="inspector">
               <p style={{ color: "var(--text-muted)", margin: 0 }}>

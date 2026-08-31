@@ -15,6 +15,7 @@ import { CurvedTextElementShape } from "./CurvedTextElementShape";
 import { PanelShape } from "./PanelShape";
 import { CutPanelContentShape } from "./CutPanelContentShape";
 import { CommentMarkerShape } from "./CommentMarkerShape";
+import { CanvasMinimap } from "./CanvasMinimap";
 import { ContextMenu, type ContextMenuEntry } from "./ContextMenu";
 import { setVertexAngle } from "./geometry";
 import type { DrawTool } from "./ToolStrip";
@@ -341,6 +342,31 @@ export function PageCanvas({
     setZoom(clamped);
     setPanOffset({ x: targetStageX - newCenter.x, y: targetStageY - newCenter.y });
   }
+
+  /** Recenters the viewport on an image-px point WITHOUT changing zoom — the minimap's
+   * (CanvasMinimap.tsx) click-to-navigate handler. Same "solve for the stage position
+   * that puts this point at screen center" math as focusOnPanel() above, just without
+   * also picking a new zoom level. */
+  function panToImagePoint(imageX: number, imageY: number) {
+    const centerX = imageX * scale;
+    const centerY = imageY * scale;
+    const targetStageX = viewportSize.width / 2 - centerX * zoom;
+    const targetStageY = viewportSize.height / 2 - centerY * zoom;
+    const newCenter = centerFor(zoom);
+    setPanOffset({ x: targetStageX - newCenter.x, y: targetStageY - newCenter.y });
+  }
+
+  // The currently visible portion of the page, in the same unscaled image-px space as
+  // Bubble.x/y/width/height — the inverse of the stage's x/y/scale transform (screen 0,0
+  // maps back to layer-space -stageX/zoom, -stageY/zoom; dividing by `scale` converts
+  // that layer-space value back to original image px). Feeds CanvasMinimap's viewport
+  // rectangle.
+  const visibleRect = {
+    x: -stageX / zoom / scale,
+    y: -stageY / zoom / scale,
+    width: viewportSize.width / zoom / scale,
+    height: viewportSize.height / zoom / scale,
+  };
 
   useEffect(() => {
     if (!focusRequest) return;
@@ -721,6 +747,14 @@ export function PageCanvas({
             ))}
         </Layer>
         </Stage>
+        <CanvasMinimap
+          imageWidth={imageWidth}
+          imageHeight={imageHeight}
+          bubbles={bubbles}
+          panels={panels}
+          visibleRect={visibleRect}
+          onPanTo={panToImagePoint}
+        />
       </div>
       {contextMenu && (
         <ContextMenu x={contextMenu.x} y={contextMenu.y} entries={contextMenuEntries()} onClose={() => setContextMenu(null)} />

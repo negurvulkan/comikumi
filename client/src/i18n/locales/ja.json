@@ -653,7 +653,8 @@
       "zoomOut": "縮小",
       "zoomIn": "拡大",
       "resetView": "表示をリセット",
-      "scrollPanHint": "スクロール = ズーム・空白部分をドラッグ = 移動"
+      "scrollPanHint": "スクロール = ズーム・空白部分をドラッグ = 移動",
+      "minimapHint": "クリックでそのページ部分に移動"
     },
     "editorRoute": {
       "invalidJsonFormat": "エラー: ファイルが想定されるレイアウト形式と一致しません。",
@@ -665,7 +666,13 @@
       "undo": "元に戻す",
       "unsavedPill": "未保存",
       "savedPill": "保存済み",
-      "selectOrCreateHint": "吹き出し・画像・曲線テキストを選択するか、左側のツールで新規作成してください。"
+      "selectOrCreateHint": "吹き出し・画像・曲線テキストを選択するか、左側のツールで新規作成してください。",
+      "emptyPageTitle": "このページはまだ空です",
+      "emptyPageIntro": "始め方の例：",
+      "emptyPageTipDraw": "左のツールバーで吹き出し／パネル／画像ツールを選び、ページ上でドラッグして描画します。",
+      "emptyPageTipAutoBubbles": "またはAuto-Bubbles（ツールバー）で吹き出しを自動検出させ、結果を確認・適用します。",
+      "emptyPageTipPanel": "先にパネルの輪郭を描いておくと、後でパネルごとの読み順やレポートが得られます。",
+      "emptyPageTipShortcuts": "Ctrl/Cmd+Kでコマンドパレットを開けます。ヘルプメニューにすべてのキーボードショートカットがあります。"
     },
     "bubbleInspector": {
       "textTabLabel": "テキスト",

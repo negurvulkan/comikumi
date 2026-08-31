@@ -522,6 +522,7 @@ body {
 }
 
 .canvas-viewport {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -529,6 +530,41 @@ body {
   justify-content: center;
   overflow: hidden;
   background: #0e0e10;
+}
+
+/* Small always-on page overview, bottom-right corner of the canvas (see
+   CanvasMinimap.tsx) — only rendered once a page has enough panels/bubbles that
+   navigating it by eye/scroll alone gets tedious. */
+.canvas-minimap {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  background: rgba(14, 14, 16, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.canvas-minimap-panel {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.canvas-minimap-bubble {
+  position: absolute;
+  background: rgba(108, 140, 255, 0.7);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.canvas-minimap-viewport {
+  position: absolute;
+  border: 1px solid var(--accent);
+  background: rgba(108, 140, 255, 0.12);
+  pointer-events: none;
 }
 
 .pill {

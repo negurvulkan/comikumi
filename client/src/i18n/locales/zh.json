@@ -653,7 +653,8 @@
       "zoomOut": "缩小",
       "zoomIn": "放大",
       "resetView": "重置视图",
-      "scrollPanHint": "滚动 = 缩放 · 在空白处拖动 = 平移"
+      "scrollPanHint": "滚动 = 缩放 · 在空白处拖动 = 平移",
+      "minimapHint": "点击以跳转到页面的该区域"
     },
     "editorRoute": {
       "invalidJsonFormat": "错误：文件与预期的版式格式不匹配。",
@@ -665,7 +666,13 @@
       "undo": "撤销",
       "unsavedPill": "未保存",
       "savedPill": "已保存",
-      "selectOrCreateHint": "选择一个气泡、图片或曲线文字，或使用左侧工具新建一个。"
+      "selectOrCreateHint": "选择一个气泡、图片或曲线文字，或使用左侧工具新建一个。",
+      "emptyPageTitle": "此页面还是空的",
+      "emptyPageIntro": "几种开始的方式：",
+      "emptyPageTipDraw": "在左侧工具栏选择气泡/面板/图片工具，然后在页面上拖动绘制。",
+      "emptyPageTipAutoBubbles": "或者使用 Auto-Bubbles（工具栏）自动检测气泡，然后检查并应用结果。",
+      "emptyPageTipPanel": "先绘制面板轮廓，之后会自动获得按面板划分的阅读顺序和报告。",
+      "emptyPageTipShortcuts": "Ctrl/Cmd+K 打开命令面板；帮助菜单列出了所有键盘快捷键。"
     },
     "bubbleInspector": {
       "textTabLabel": "文字",

@@ -662,7 +662,8 @@
       "zoomOut": "Alejar",
       "zoomIn": "Acercar",
       "resetView": "Restablecer vista",
-      "scrollPanHint": "Desplazar = zoom · Arrastrar en área vacía = desplazar vista"
+      "scrollPanHint": "Desplazar = zoom · Arrastrar en área vacía = desplazar vista",
+      "minimapHint": "Haz clic para saltar a esa parte de la página"
     },
     "editorRoute": {
       "invalidJsonFormat": "Error: el archivo no coincide con el formato de maquetación esperado.",
@@ -674,7 +675,13 @@
       "undo": "Deshacer",
       "unsavedPill": "Sin guardar",
       "savedPill": "Guardado",
-      "selectOrCreateHint": "Selecciona un bocadillo, una imagen o un texto curvo, o crea uno con una herramienta de la izquierda."
+      "selectOrCreateHint": "Selecciona un bocadillo, una imagen o un texto curvo, o crea uno con una herramienta de la izquierda.",
+      "emptyPageTitle": "Esta página todavía está vacía",
+      "emptyPageIntro": "Algunas formas de empezar:",
+      "emptyPageTipDraw": "Elige una herramienta de globo/panel/imagen en la barra izquierda y arrastra sobre la página para dibujarla.",
+      "emptyPageTipAutoBubbles": "O deja que Auto-Bubbles detecte los globos por ti (barra de herramientas) y revisa/acepta los resultados.",
+      "emptyPageTipPanel": "Dibujar primero los contornos de los paneles te da orden de lectura e informes por panel más adelante.",
+      "emptyPageTipShortcuts": "Ctrl/Cmd+K abre la paleta de comandos; el menú de ayuda lista todos los atajos de teclado."
     },
     "bubbleInspector": {
       "textTabLabel": "Texto",

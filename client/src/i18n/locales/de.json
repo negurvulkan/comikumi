@@ -682,7 +682,8 @@
       "zoomOut": "Verkleinern",
       "zoomIn": "Vergrößern",
       "resetView": "Ansicht zurücksetzen",
-      "scrollPanHint": "Scrollen = zoomen · Ziehen auf leerer Fläche = verschieben"
+      "scrollPanHint": "Scrollen = zoomen · Ziehen auf leerer Fläche = verschieben",
+      "minimapHint": "Klicken, um zu diesem Bereich der Seite zu springen"
     },
     "editorRoute": {
       "invalidJsonFormat": "Fehler: Datei entspricht nicht dem erwarteten Layout-Format.",
@@ -694,7 +695,13 @@
       "undo": "Rückgängig",
       "unsavedPill": "Ungespeichert",
       "savedPill": "Gespeichert",
-      "selectOrCreateHint": "Bubble, Bild oder Kurventext auswählen, oder mit einem der Werkzeuge links neu anlegen."
+      "selectOrCreateHint": "Bubble, Bild oder Kurventext auswählen, oder mit einem der Werkzeuge links neu anlegen.",
+      "emptyPageTitle": "Diese Seite ist noch leer",
+      "emptyPageIntro": "Ein paar Möglichkeiten für den Einstieg:",
+      "emptyPageTipDraw": "Ein Bubble-/Panel-/Bild-Werkzeug links auswählen und auf der Seite aufziehen.",
+      "emptyPageTipAutoBubbles": "Oder Sprechblasen automatisch per Auto-Bubbles erkennen lassen (Werkzeugleiste) und die Ergebnisse prüfen/übernehmen.",
+      "emptyPageTipPanel": "Zuerst Panel-Umrisse zu zeichnen liefert später automatisch Lesereihenfolge und Reports pro Panel.",
+      "emptyPageTipShortcuts": "Strg/Cmd+K öffnet die Befehlspalette; das Hilfe-Menü listet alle Tastenkürzel."
     },
     "bubbleInspector": {
       "textTabLabel": "Text",

@@ -662,7 +662,8 @@
       "zoomOut": "Zoom arrière",
       "zoomIn": "Zoom avant",
       "resetView": "Réinitialiser la vue",
-      "scrollPanHint": "Défiler = zoomer · Glisser sur une zone vide = déplacer"
+      "scrollPanHint": "Défiler = zoomer · Glisser sur une zone vide = déplacer",
+      "minimapHint": "Cliquer pour aller à cette partie de la page"
     },
     "editorRoute": {
       "invalidJsonFormat": "Erreur : le fichier ne correspond pas au format de mise en page attendu.",
@@ -674,7 +675,13 @@
       "undo": "Annuler",
       "unsavedPill": "Non enregistré",
       "savedPill": "Enregistré",
-      "selectOrCreateHint": "Sélectionnez une bulle, une image ou un texte courbe, ou créez-en un avec un outil à gauche."
+      "selectOrCreateHint": "Sélectionnez une bulle, une image ou un texte courbe, ou créez-en un avec un outil à gauche.",
+      "emptyPageTitle": "Cette page est encore vide",
+      "emptyPageIntro": "Quelques façons de commencer :",
+      "emptyPageTipDraw": "Choisissez un outil bulle/panneau/image dans la barre de gauche, puis dessinez-le en glissant sur la page.",
+      "emptyPageTipAutoBubbles": "Ou laissez Auto-Bubbles détecter les bulles pour vous (barre d'outils), puis vérifiez/acceptez les résultats.",
+      "emptyPageTipPanel": "Dessiner d'abord les contours des panneaux donne ensuite un ordre de lecture et des rapports par panneau.",
+      "emptyPageTipShortcuts": "Ctrl/Cmd+K ouvre la palette de commandes ; le menu Aide liste tous les raccourcis clavier."
     },
     "bubbleInspector": {
       "textTabLabel": "Texte",

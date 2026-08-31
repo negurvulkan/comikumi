@@ -653,7 +653,8 @@
       "zoomOut": "축소",
       "zoomIn": "확대",
       "resetView": "보기 재설정",
-      "scrollPanHint": "스크롤 = 확대/축소 · 빈 영역 드래그 = 이동"
+      "scrollPanHint": "스크롤 = 확대/축소 · 빈 영역 드래그 = 이동",
+      "minimapHint": "클릭하면 해당 부분으로 이동합니다"
     },
     "editorRoute": {
       "invalidJsonFormat": "오류: 파일이 예상되는 레이아웃 형식과 일치하지 않습니다.",
@@ -665,7 +666,13 @@
       "undo": "실행 취소",
       "unsavedPill": "저장 안 됨",
       "savedPill": "저장됨",
-      "selectOrCreateHint": "말풍선, 이미지 또는 곡선 텍스트를 선택하거나 왼쪽 도구로 새로 만드세요."
+      "selectOrCreateHint": "말풍선, 이미지 또는 곡선 텍스트를 선택하거나 왼쪽 도구로 새로 만드세요.",
+      "emptyPageTitle": "이 페이지는 아직 비어 있습니다",
+      "emptyPageIntro": "시작하는 몇 가지 방법:",
+      "emptyPageTipDraw": "왼쪽 도구 모음에서 말풍선/패널/이미지 도구를 선택한 뒤 페이지 위에서 드래그해 그립니다.",
+      "emptyPageTipAutoBubbles": "또는 Auto-Bubbles(도구 모음)로 말풍선을 자동 감지시킨 뒤 결과를 검토/적용하세요.",
+      "emptyPageTipPanel": "패널 윤곽을 먼저 그려두면 이후 패널별 읽기 순서와 보고서를 얻을 수 있습니다.",
+      "emptyPageTipShortcuts": "Ctrl/Cmd+K로 명령 팔레트를 엽니다. 도움말 메뉴에 모든 키보드 단축키가 있습니다."
     },
     "bubbleInspector": {
       "textTabLabel": "텍스트",
