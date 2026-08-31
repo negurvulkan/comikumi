@@ -1,0 +1,35 @@
+name: CI
+
+# Minimal typecheck+test gate — catches the class of mistake this project has no other
+# automated defense against (nothing here runs typecheck/tests unless a human remembers
+# to). `npm run build` doubles as the typecheck step for both packages: server's build
+# is `tsc -p tsconfig.json` (typecheck + emit) and client's is `tsc -b && vite build`
+# (typecheck + bundle) — there's no separate "typecheck" script to call instead.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      # Root's own postinstall (see package.json) runs `npm install` in server/ and
+      # client/ right after this — one command sets up all three package.json's deps.
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npm run test
