@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { PDFDocument } from "pdf-lib";
 import { setupTestEnv, type TestEnv } from "../../test-utils/fixtures.js";
@@ -24,7 +25,14 @@ beforeAll(async () => {
   env = await setupTestEnv();
   const fontsDir = path.join(env.dataDir, "fonts");
   await fs.mkdir(fontsDir, { recursive: true });
-  await fs.copyFile("C:\\Windows\\Fonts\\arial.ttf", path.join(fontsDir, "TestFont.ttf"));
+  // Real TTF bytes are needed here (pdf-lib/fontkit actually parses and embeds glyph
+  // outlines), so a committed fixture — not a placeholder — same DejaVu Sans font as
+  // pageRaster.visual.test.ts uses, for the same reason: the previous
+  // C:\Windows\Fonts\arial.ttf only existed on Windows and broke this test elsewhere.
+  await fs.copyFile(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "__fixtures__", "TestFont.ttf"),
+    path.join(fontsDir, "TestFont.ttf")
+  );
 
   ({ createBubble, createEmptyLayout, createCurvedTextElement, createPanel } = await import(
     "../../../../shared/src/layoutSchema.js"

@@ -10,7 +10,11 @@ beforeAll(async () => {
   env = await setupTestEnv();
   const fontsDir = path.join(env.dataDir, "fonts");
   await fs.mkdir(fontsDir, { recursive: true });
-  await fs.copyFile("C:\\Windows\\Fonts\\arial.ttf", path.join(fontsDir, "GlobalFont.ttf"));
+  // findFontFileForFamily/findInDir only ever check the file's name+extension, never its
+  // bytes (see fontResolver.ts) — a placeholder is enough, same as the .woff placeholder
+  // just below. Previously copied a real system font (C:\Windows\Fonts\arial.ttf), which
+  // only exists on Windows and silently broke this test on any other OS (Linux CI, macOS).
+  await fs.writeFile(path.join(fontsDir, "GlobalFont.ttf"), "not a real font either");
   // A .woff placeholder — not real WOFF bytes, but findFontFileForFamily should reject it
   // purely by extension before ever trying to read/parse it.
   await fs.writeFile(path.join(fontsDir, "WebOnlyFont.woff"), "not a real font");

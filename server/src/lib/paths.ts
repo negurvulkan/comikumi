@@ -136,10 +136,16 @@ export function pageMetaFileName(bookFolderName: string): string {
 /** Rejects any single-segment file name that could escape its storage directory
  * (path separators, "..", or ".") — used by every "/file/:fileName" route before
  * joining it onto a fixed storage dir, so a request can't read arbitrary files
- * elsewhere on disk. */
+ * elsewhere on disk. Checks for "/" and "\\" directly rather than comparing against
+ * `path.basename(name)`: `path.basename` only treats "\\" as a separator under
+ * win32 semantics, so on a POSIX server (the common self-hosted/Docker case) a
+ * name like "..\\secret.json" would `path.basename()` back to itself unchanged and
+ * wrongly pass — this function must reject the same inputs regardless of which OS
+ * the server happens to run on, since the untrusted name comes from a client
+ * request, not the local filesystem. */
 export function isSafeFileName(name: string): boolean {
   if (!name || name === "." || name === "..") return false;
-  return path.basename(name) === name;
+  return !name.includes("/") && !name.includes("\\");
 }
 
 /** Validates a "/"-joined relative folder path used by asset-router folder browsing

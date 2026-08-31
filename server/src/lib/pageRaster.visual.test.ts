@@ -47,7 +47,14 @@ beforeAll(async () => {
     .png()
     .toFile(baseImagePath);
 
-  registerFont("C:\\Windows\\Fonts\\arial.ttf", "TestFont");
+  // A committed fixture (DejaVu Sans, Bitstream Vera Fonts Copyright — see
+  // TestFont.LICENSE.txt — explicitly free to bundle/redistribute), NOT a system font
+  // path: this baseline is checked into git and compared byte-for-byte-of-pixels on
+  // every CI run, so it must render identically everywhere. Previously registered
+  // "C:\Windows\Fonts\arial.ttf" directly — only existed on Windows (and wasn't
+  // redistributable even if it had), so the committed baseline (generated with real
+  // Arial) silently diverged on any other OS, including Linux CI.
+  registerFont(path.join(fixturesDir, "TestFont.ttf"), "TestFont");
 });
 
 function buildLayout(): PageLayout {
@@ -92,7 +99,7 @@ function buildLayout(): PageLayout {
     text: { de: "Ein Gedanke..." },
   });
 
-  // "TestFont" (arial.ttf, see beforeAll) has no CJK glyphs, so these characters
+  // "TestFont" (DejaVu Sans, see beforeAll) has no CJK glyphs, so these characters
   // render invisibly/as tofu — this bubble still exercises the tategaki/furigana
   // LAYOUT math (column geometry, row spacing, forced breaks) via drawVerticalText,
   // it just can't visually catch a glyph-level regression. Real vertical-typesetting
