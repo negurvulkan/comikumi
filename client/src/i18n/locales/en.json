@@ -583,6 +583,8 @@
       "unlockPanelHint": "Unlock panel + all assigned bubbles",
       "lockHint": "Lock",
       "unlockHint": "Unlock",
+      "bringToFrontHint": "Bring to front",
+      "sendToBackHint": "Send to back",
       "expand": "Expand",
       "collapse": "Collapse"
     },
@@ -688,6 +690,8 @@
       "noPreset": "– no preset –",
       "flipHorizontal": "Flip horizontally",
       "duplicate": "Duplicate",
+      "bringToFront": "Bring to front",
+      "sendToBack": "Send to back",
       "lockPanel": "Lock panel + contents",
       "unlockPanel": "Unlock panel + contents",
       "removePoint": "Remove point",

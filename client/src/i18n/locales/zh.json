@@ -560,6 +560,8 @@
       "unlockPanelHint": "解锁分格及其所有关联气泡",
       "lockHint": "锁定",
       "unlockHint": "解锁",
+      "bringToFrontHint": "置于顶层",
+      "sendToBackHint": "置于底层",
       "expand": "展开",
       "collapse": "折叠"
     },
@@ -665,6 +667,8 @@
       "noPreset": "– 无预设 –",
       "flipHorizontal": "水平翻转",
       "duplicate": "复制",
+      "bringToFront": "置于顶层",
+      "sendToBack": "置于底层",
       "lockPanel": "锁定分格及内容",
       "unlockPanel": "解锁分格及内容",
       "removePoint": "删除点",

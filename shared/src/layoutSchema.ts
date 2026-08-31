@@ -258,6 +258,13 @@ export const BubbleSchema = z.object({
    * Translation-Memory-Matching (SFX-Text bleibt dort ein normales Ziel). Same
    * `.optional()`/undefined-when-off convention as `locked` above. */
   isEffect: z.boolean().optional(),
+  /** Explicit paint-order rank among ALL of the page's bubbles/images/curved texts —
+   * unrelated to `readingOrderOverride` above (that's report/script/translation
+   * sequencing; this is what's drawn on top of what). Absent means "use the default
+   * type-based stacking" (see `pageLayerOrder()` below) — only ever set once an
+   * element has been explicitly brought to front/sent to back via the Layers
+   * navigator or the bubble context menu. */
+  layerOrderOverride: z.number().optional(),
 });
 export type Bubble = z.infer<typeof BubbleSchema>;
 
@@ -364,6 +371,8 @@ export const ImageElementSchema = z.object({
   /** See Bubble.locked's doc comment — same semantics, same reason for `.optional()`
    * instead of `.default(false)`. */
   locked: z.boolean().optional(),
+  /** See Bubble.layerOrderOverride's doc comment — same semantics. */
+  layerOrderOverride: z.number().optional(),
 });
 export type ImageElement = z.infer<typeof ImageElementSchema>;
 
@@ -407,6 +416,8 @@ export const CurvedTextElementSchema = z.object({
   /** See Bubble.locked's doc comment — same semantics, same reason for `.optional()`
    * instead of `.default(false)`. */
   locked: z.boolean().optional(),
+  /** See Bubble.layerOrderOverride's doc comment — same semantics. */
+  layerOrderOverride: z.number().optional(),
 });
 export type CurvedTextElement = z.infer<typeof CurvedTextElementSchema>;
 
@@ -738,6 +749,69 @@ export type PageLayout = z.infer<typeof PageLayoutSchema>;
 
 export function createEmptyLayout(page: string, sourceImage: string, imageWidth: number, imageHeight: number): PageLayout {
   return { page, sourceImage, imageWidth, imageHeight, bubbles: [], images: [], curvedTexts: [], panels: [], schemaVersion: 2 };
+}
+
+/** One entry in a page's paint-order stack — see `pageLayerOrder()`. */
+export interface LayerItem {
+  type: "bubble" | "image" | "curvedText";
+  id: string;
+}
+
+/** Effective bottom-to-top paint order for a page's bubbles/images/curved texts —
+ * shared by the editor canvas (client/src/editor/PageCanvas.tsx), the PNG export
+ * (client/src/export/renderPageToPng.ts), and the layered-PSD export
+ * (server/src/lib/psdExport.ts) so all three always agree. Without any
+ * `layerOrderOverride` set anywhere (the default for every page saved before this
+ * feature existed): images, then bubbles, then curved texts, each in their own
+ * array order — byte-for-byte the same result rendering already produced before
+ * layer ordering was introduced. An element with `layerOrderOverride` set is
+ * instead ranked by that value among everything else (`override ?? autoRank`,
+ * same resolution pattern as reportUtils.ts's `sortBubblesByPosition`). Panels are
+ * intentionally excluded — they're an editor-only reference layer, never exported,
+ * always painted below everything else (see PanelShape.tsx). */
+export function pageLayerOrder(layout: Pick<PageLayout, "bubbles" | "images" | "curvedTexts">): LayerItem[] {
+  const defaultOrder: LayerItem[] = [
+    ...layout.images.map((i): LayerItem => ({ type: "image", id: i.id })),
+    ...layout.bubbles.map((b): LayerItem => ({ type: "bubble", id: b.id })),
+    ...layout.curvedTexts.map((c): LayerItem => ({ type: "curvedText", id: c.id })),
+  ];
+  const overrideOf = (item: LayerItem): number | undefined => {
+    if (item.type === "bubble") return layout.bubbles.find((b) => b.id === item.id)?.layerOrderOverride;
+    if (item.type === "image") return layout.images.find((i) => i.id === item.id)?.layerOrderOverride;
+    return layout.curvedTexts.find((c) => c.id === item.id)?.layerOrderOverride;
+  };
+  return defaultOrder
+    .map((item, autoRank) => ({ item, key: overrideOf(item) ?? autoRank }))
+    .sort((a, b) => a.key - b.key)
+    .map((x) => x.item);
+}
+
+/** Writes `layerOrderOverride` as dense 0..n-1 ranks matching `order` onto every
+ * bubble/image/curved text it contains — same "renumber the whole group" approach
+ * as reportUtils.ts's `moveBubbleInReadingOrder`, just page-wide across all three
+ * element types instead of per reading-order group. `order` must contain every
+ * item `pageLayerOrder(layout)` would return (typically obtained by calling it,
+ * then reordering); an item missing from `order` keeps its current override
+ * untouched. Client-only need (the server only ever reads via pageLayerOrder) but
+ * lives here next to it for symmetry. */
+export function withLayerOrder(layout: PageLayout, order: LayerItem[]): PageLayout {
+  const rankById = new Map<string, number>();
+  order.forEach((item, rank) => rankById.set(`${item.type}:${item.id}`, rank));
+  return {
+    ...layout,
+    bubbles: layout.bubbles.map((b) => {
+      const rank = rankById.get(`bubble:${b.id}`);
+      return rank === undefined ? b : { ...b, layerOrderOverride: rank };
+    }),
+    images: layout.images.map((i) => {
+      const rank = rankById.get(`image:${i.id}`);
+      return rank === undefined ? i : { ...i, layerOrderOverride: rank };
+    }),
+    curvedTexts: layout.curvedTexts.map((c) => {
+      const rank = rankById.get(`curvedText:${c.id}`);
+      return rank === undefined ? c : { ...c, layerOrderOverride: rank };
+    }),
+  };
 }
 
 export function createImageElement(partial: {

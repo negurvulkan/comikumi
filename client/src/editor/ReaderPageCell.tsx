@@ -112,6 +112,8 @@ export function ReaderPageCell({
         onDuplicateSelected={() => {}}
         onDeleteSelected={() => {}}
         onSetPanelLockCascade={() => {}}
+        onBringLayerToFront={() => {}}
+        onSendLayerToBack={() => {}}
         comments={comments}
         selectedCommentId={selectedCommentId}
         onRequestCreateComment={(target, clientX, clientY) => onRequestCreateComment(page, target, clientX, clientY)}

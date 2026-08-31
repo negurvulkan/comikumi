@@ -583,6 +583,8 @@
       "unlockPanelHint": "Panel + alle zugehörigen Bubbles entsperren",
       "lockHint": "Sperren",
       "unlockHint": "Entsperren",
+      "bringToFrontHint": "In den Vordergrund",
+      "sendToBackHint": "In den Hintergrund",
       "expand": "Aufklappen",
       "collapse": "Zuklappen"
     },
@@ -688,6 +690,8 @@
       "noPreset": "– kein Preset –",
       "flipHorizontal": "Horizontal spiegeln",
       "duplicate": "Duplizieren",
+      "bringToFront": "In den Vordergrund",
+      "sendToBack": "In den Hintergrund",
       "lockPanel": "Panel + Inhalt sperren",
       "unlockPanel": "Panel + Inhalt entsperren",
       "removePoint": "Punkt entfernen",

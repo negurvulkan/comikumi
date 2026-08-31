@@ -3,8 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Stage, Layer, Image as KonvaImage, Rect, Ellipse, Group, Line } from "react-konva";
 import Konva from "konva";
-import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, Panel, Point } from "../../../shared/src/layoutSchema";
-import { boxCorners, panelDisplayLabel, polygonBounds, resolvePanelForLanguage } from "../../../shared/src/layoutSchema";
+import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, LayerItem, Panel, Point } from "../../../shared/src/layoutSchema";
+import { boxCorners, pageLayerOrder, panelDisplayLabel, polygonBounds, resolvePanelForLanguage } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import type { Comment, CommentTarget } from "../../../shared/src/comments";
@@ -88,6 +88,12 @@ interface Props {
    * problem this feature targets: a panel getting in the way of clicking something
    * underneath it, without opening the full LayersPanel navigator. */
   onSetPanelLockCascade: (panelId: string, locked: boolean) => void;
+  /** Moves the currently right-clicked bubble to the very top/bottom of the page's paint
+   * order — see layoutSchema.ts's pageLayerOrder/withLayerOrder and editorStore.ts's
+   * bringLayerToFront/sendLayerToBack. Images/curved texts have no context menu today —
+   * the Layers navigator is the only way to reorder those (see LayersPanel.tsx). */
+  onBringLayerToFront: (target: LayerItem) => void;
+  onSendLayerToBack: (target: LayerItem) => void;
   /** This page's review comments only (Editor.tsx already filters the volume-wide list —
    * see CommentsPanel.tsx, which shows the unfiltered volume list instead). */
   comments: Comment[];
@@ -143,6 +149,8 @@ export function PageCanvas({
   onDuplicateSelected,
   onDeleteSelected,
   onSetPanelLockCascade,
+  onBringLayerToFront,
+  onSendLayerToBack,
   comments,
   selectedCommentId,
   onRequestCreateComment,
@@ -461,6 +469,9 @@ export function PageCanvas({
         { type: "separator" },
         { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected, disabled: bubble.locked },
         { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected, disabled: bubble.locked },
+        { type: "separator" },
+        { type: "action", label: t("editor.contextMenu.bringToFront"), onClick: () => onBringLayerToFront({ type: "bubble", id: bubble.id }) },
+        { type: "action", label: t("editor.contextMenu.sendToBack"), onClick: () => onSendLayerToBack({ type: "bubble", id: bubble.id }) },
       ];
     }
     const panel = panels.find((p) => p.id === contextMenu.id);
@@ -643,92 +654,90 @@ export function PageCanvas({
               readOnly={readOnly}
             />
           ))}
-          {images.map((img) => (
-            <ImageElementShape
-              key={img.id}
-              element={img}
-              activeLanguage={activeLanguage}
-              scale={scale}
-              zoom={zoom}
-              selected={selectedImageIds.includes(img.id)}
-              onSelect={(additive) => onSelectImage(img.id, additive)}
-              onChange={(patch) => onChangeImage(img.id, patch)}
-              readOnly={readOnly}
-            />
-          ))}
           {(() => {
+            // Bottom-to-top paint order across bubbles/images/curved texts (see
+            // layoutSchema.ts's pageLayerOrder — Panels/Cut-Panel content above are
+            // intentionally not part of this, they stay a fixed always-bottom,
+            // editor-only reference layer). Sibling lists for merge-group lookup
+            // (see BubbleShape.tsx's mergeSiblings) are precomputed once here, same
+            // grouping as before this feature (a panel's own children, or every
+            // unassigned bubble) — only which bubble PAINTS where changed, not which
+            // bubbles are considered siblings for merging.
             const unassignedBubbles = bubbles.filter((b) => !b.panelId || !panels.some((p) => p.id === b.panelId));
-            return unassignedBubbles.map((b) => (
-              <BubbleShape
-                key={`${b.id}-${fontsVersion}`}
-                bubble={b}
-                // Sibling list a merged bubble's non-primary members are looked up from
-                // (see BubbleShape.tsx's mergeSiblings) — limited to this same
-                // parenting context (unassigned bubbles here, one panel's children
-                // below), so a merge group spanning two different panels won't find its
-                // other member live in the editor (falls back to drawing unmerged; see
-                // the plan's "Nicht im Umfang").
-                allBubbles={unassignedBubbles}
-                scale={scale}
-                zoom={zoom}
-                activeLanguage={activeLanguage}
-                presets={presets}
-                selected={selectedIds.includes(b.id)}
-                onSelect={(additive) => onSelect(b.id, additive)}
-                onChange={(patch) => onChange(b.id, patch)}
-                onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
-                onCornerContextMenu={(clientX, clientY, vertexIndex) =>
-                  setVertexMenu({ x: clientX, y: clientY, kind: "bubble", targetId: b.id, vertexIndex })
-                }
-                readOnly={readOnly}
-              />
-            ));
-          })()}
-          {panels.map((panel) => {
-            const children = bubbles.filter((b) => b.panelId === panel.id);
-            if (children.length === 0) return null;
-            // Nested inside a Group anchored at the panel's origin — a child bubble's own
-            // x/y are relative to this origin, and Konva composes the parent transform
-            // automatically, so BubbleShape's drag/transform handlers need no changes at
-            // all: e.target.x()/y() already comes back panel-relative for free.
-            return (
-              <Group key={`panel-children-${panel.id}`} x={panel.origin.x * scale} y={panel.origin.y * scale}>
-                {children.map((b) => (
-                  <BubbleShape
-                    key={`${b.id}-${fontsVersion}`}
-                    bubble={b}
-                    allBubbles={children}
+            return pageLayerOrder({ bubbles, images, curvedTexts }).map((item) => {
+              if (item.type === "image") {
+                const img = images.find((i) => i.id === item.id);
+                if (!img) return null;
+                return (
+                  <ImageElementShape
+                    key={img.id}
+                    element={img}
+                    activeLanguage={activeLanguage}
                     scale={scale}
                     zoom={zoom}
-                    activeLanguage={activeLanguage}
-                    presets={presets}
-                    selected={selectedIds.includes(b.id)}
-                    onSelect={(additive) => onSelect(b.id, additive)}
-                    onChange={(patch) => onChange(b.id, patch)}
-                    onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
-                    onCornerContextMenu={(clientX, clientY, vertexIndex) =>
-                      setVertexMenu({ x: clientX, y: clientY, kind: "bubble", targetId: b.id, vertexIndex })
-                    }
+                    selected={selectedImageIds.includes(img.id)}
+                    onSelect={(additive) => onSelectImage(img.id, additive)}
+                    onChange={(patch) => onChangeImage(img.id, patch)}
                     readOnly={readOnly}
                   />
-                ))}
-              </Group>
-            );
-          })}
-          {curvedTexts.map((el) => (
-            <CurvedTextElementShape
-              key={`${el.id}-${fontsVersion}`}
-              element={el}
-              activeLanguage={activeLanguage}
-              scale={scale}
-              zoom={zoom}
-              presets={presets}
-              selected={selectedCurvedTextIds.includes(el.id)}
-              onSelect={(additive) => onSelectCurvedText(el.id, additive)}
-              onChange={(patch) => onChangeCurvedText(el.id, patch)}
-              readOnly={readOnly}
-            />
-          ))}
+                );
+              }
+              if (item.type === "curvedText") {
+                const el = curvedTexts.find((c) => c.id === item.id);
+                if (!el) return null;
+                return (
+                  <CurvedTextElementShape
+                    key={`${el.id}-${fontsVersion}`}
+                    element={el}
+                    activeLanguage={activeLanguage}
+                    scale={scale}
+                    zoom={zoom}
+                    presets={presets}
+                    selected={selectedCurvedTextIds.includes(el.id)}
+                    onSelect={(additive) => onSelectCurvedText(el.id, additive)}
+                    onChange={(patch) => onChangeCurvedText(el.id, patch)}
+                    readOnly={readOnly}
+                  />
+                );
+              }
+              const b = bubbles.find((x) => x.id === item.id);
+              if (!b) return null;
+              const panel = b.panelId ? panels.find((p) => p.id === b.panelId) : undefined;
+              const siblings = panel ? bubbles.filter((x) => x.panelId === panel.id) : unassignedBubbles;
+              const bubbleShape = (
+                <BubbleShape
+                  key={`${b.id}-${fontsVersion}`}
+                  bubble={b}
+                  allBubbles={siblings}
+                  scale={scale}
+                  zoom={zoom}
+                  activeLanguage={activeLanguage}
+                  presets={presets}
+                  selected={selectedIds.includes(b.id)}
+                  onSelect={(additive) => onSelect(b.id, additive)}
+                  onChange={(patch) => onChange(b.id, patch)}
+                  onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
+                  onCornerContextMenu={(clientX, clientY, vertexIndex) =>
+                    setVertexMenu({ x: clientX, y: clientY, kind: "bubble", targetId: b.id, vertexIndex })
+                  }
+                  readOnly={readOnly}
+                />
+              );
+              if (!panel) return bubbleShape;
+              // Nested inside a Group anchored at the panel's origin — a child bubble's own
+              // x/y are relative to this origin, and Konva composes the parent transform
+              // automatically, so BubbleShape's drag/transform handlers need no changes at
+              // all: e.target.x()/y() already comes back panel-relative for free. One Group
+              // per assigned bubble (not one shared Group per panel) so bubbles can freely
+              // interleave in paint order with images/curved texts, which aren't
+              // panel-relative at all.
+              return (
+                <Group key={`panel-origin-${b.id}`} x={panel.origin.x * scale} y={panel.origin.y * scale}>
+                  {bubbleShape}
+                </Group>
+              );
+            });
+          })()}
           {comments.map((c) => (
             <CommentMarkerShape
               key={c.id}

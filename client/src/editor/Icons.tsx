@@ -49,6 +49,29 @@ export function EffectToolIcon() {
   );
 }
 
+/** A large square in front of a smaller offset square — "bring to front" in the Layers
+ * navigator/bubble context menu (see editorStore.ts's bringLayerToFront). */
+export function BringToFrontIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
+      <rect x="2" y="2" width="8" height="8" rx="1" opacity="0.45" />
+      <rect x="6" y="6" width="8" height="8" rx="1" fill="var(--bg-elevated, #1a1b22)" />
+    </svg>
+  );
+}
+
+/** Same two squares, offset the other way — "send to back" (see editorStore.ts's
+ * sendLayerToBack). Deliberately the mirror of BringToFrontIcon so the two read as a
+ * pair at a glance. */
+export function SendToBackIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
+      <rect x="6" y="6" width="8" height="8" rx="1" opacity="0.45" />
+      <rect x="2" y="2" width="8" height="8" rx="1" fill="var(--bg-elevated, #1a1b22)" />
+    </svg>
+  );
+}
+
 export function ImageToolIcon() {
   return (
     <svg {...common}>

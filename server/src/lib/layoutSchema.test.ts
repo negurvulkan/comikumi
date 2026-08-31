@@ -15,6 +15,8 @@ import {
   createEmptyLayout,
   cutPanelReplacementFileForLanguage,
   resolvePanelForLanguage,
+  pageLayerOrder,
+  withLayerOrder,
 } from "../../../shared/src/layoutSchema.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
 
@@ -350,6 +352,63 @@ describe("locked field", () => {
     const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10, locked: true });
     expect(bubble.locked).toBe(true);
     expect(JSON.parse(JSON.stringify(bubble))).toHaveProperty("locked", true);
+  });
+});
+
+describe("pageLayerOrder / withLayerOrder", () => {
+  function layoutWith(bubbles: ReturnType<typeof createBubble>[], images: ReturnType<typeof createImageElement>[], curvedTexts: ReturnType<typeof createCurvedTextElement>[]) {
+    return { ...createEmptyLayout("page_01", "page.png", 200, 150), bubbles, images, curvedTexts };
+  }
+
+  it("without any layerOrderOverride, defaults to images, then bubbles, then curved texts, each in array order", () => {
+    const img1 = createImageElement({ id: "i1", corners: boxCorners(0, 0, 10, 10), files: {} });
+    const img2 = createImageElement({ id: "i2", corners: boxCorners(0, 0, 10, 10), files: {} });
+    const b1 = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    const b2 = createBubble({ id: "b2", x: 0, y: 0, width: 10, height: 10 });
+    const c1 = createCurvedTextElement({ id: "c1", points: [{ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 2 }, { x: 3, y: 3 }] });
+
+    const order = pageLayerOrder(layoutWith([b1, b2], [img1, img2], [c1]));
+
+    expect(order).toEqual([
+      { type: "image", id: "i1" },
+      { type: "image", id: "i2" },
+      { type: "bubble", id: "b1" },
+      { type: "bubble", id: "b2" },
+      { type: "curvedText", id: "c1" },
+    ]);
+  });
+
+  it("an element with layerOrderOverride is ranked by that value among everything else", () => {
+    const img1 = createImageElement({ id: "i1", corners: boxCorners(0, 0, 10, 10), files: {} });
+    const b1 = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    // Force the image (normally rank 0, default-tier-first) above the bubble (default
+    // rank 1) by giving it a higher override — mirrors "bring an image in front of a
+    // bubble" (the motivating use case for this whole feature).
+    const layout = layoutWith([b1], [{ ...img1, layerOrderOverride: 10 }], []);
+
+    expect(pageLayerOrder(layout)).toEqual([
+      { type: "bubble", id: "b1" },
+      { type: "image", id: "i1" },
+    ]);
+  });
+
+  it("withLayerOrder followed by pageLayerOrder round-trips the given order exactly", () => {
+    const img1 = createImageElement({ id: "i1", corners: boxCorners(0, 0, 10, 10), files: {} });
+    const b1 = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    const c1 = createCurvedTextElement({ id: "c1", points: [{ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 2 }, { x: 3, y: 3 }] });
+    const layout = layoutWith([b1], [img1], [c1]);
+
+    const desiredOrder = [
+      { type: "curvedText" as const, id: "c1" },
+      { type: "image" as const, id: "i1" },
+      { type: "bubble" as const, id: "b1" },
+    ];
+    const reordered = withLayerOrder(layout, desiredOrder);
+
+    expect(pageLayerOrder(reordered)).toEqual(desiredOrder);
+    expect(reordered.curvedTexts[0].layerOrderOverride).toBe(0);
+    expect(reordered.images[0].layerOrderOverride).toBe(1);
+    expect(reordered.bubbles[0].layerOrderOverride).toBe(2);
   });
 });
 

@@ -1,13 +1,14 @@
 import { createCanvas, ImageData as NapiImageData, type Canvas } from "@napi-rs/canvas";
 import { initializeCanvas, writePsdBuffer, type Layer, type Psd } from "ag-psd";
-import type { PageLayout } from "../../../shared/src/layoutSchema.js";
-import { resolveBubbleStyle, resolveCurvedTextStyle } from "../../../shared/src/layoutSchema.js";
+import type { LayerItem, PageLayout } from "../../../shared/src/layoutSchema.js";
+import { imageFileForLanguage, pageLayerOrder, resolveBubbleStyle, resolveCurvedTextStyle } from "../../../shared/src/layoutSchema.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
 import {
   drawBaseImage,
   drawBubbleElement,
   drawCurvedTextElementRaster,
-  drawCutPanelsAndImages,
+  drawCutPanels,
+  drawImageElement,
   ensurePageRasterReady,
   loadBaseImage,
   registerFont,
@@ -15,17 +16,23 @@ import {
 import { findFontFileForFamily } from "./fontResolver.js";
 
 /**
- * Layered PSD export: "Hintergrund" (base scan) / "Retuschen" (Cut-Panel content +
- * placed images) / one layer per bubble and per curved-text element ("Text/
- * Sprechblasen"). Every layer is a plain RASTER PNG-with-alpha (confirmed choice —
- * not a real, Photoshop-text-tool-editable PSD text object, which would be as much
- * work as the vector-PDF problem itself) — Photoshop can hide/show/move/mask each
- * layer independently, but not retype the text with the Type tool.
+ * Layered PSD export: "Hintergrund" (base scan) / "Retuschen / Cut-Panels" (Cut-Panel
+ * content only) / one layer per bubble, per curved-text element, and per placed image.
+ * Every layer is a plain RASTER PNG-with-alpha (confirmed choice — not a real,
+ * Photoshop-text-tool-editable PSD text object, which would be as much work as the
+ * vector-PDF problem itself) — Photoshop can hide/show/move/mask each layer
+ * independently, but not retype the text with the Type tool.
  *
  * Every layer is kept at FULL PAGE SIZE (not tightly cropped to its content's bounding
  * box) — simpler and safer than computing a per-element crop rect (especially for
  * rotated/quad bubbles), at the cost of a larger file than a tightly cropped layer
  * would be. A worthwhile follow-up, not attempted here.
+ *
+ * Bubble/curved-text/image layers are ordered per layoutSchema.ts's pageLayerOrder, so
+ * the PSD's own layer stack (bottom to top in the `layers` array) matches what the
+ * editor canvas and the PNG export show — an image explicitly brought in front of a
+ * bubble sits above that bubble's layer here too (unlike the vector-PDF export, see
+ * pageRaster.ts's renderPageBackground doc comment for why that one's different).
  */
 
 let psdCanvasInitialized = false;
@@ -96,12 +103,20 @@ export async function buildLayeredPsd(opts: BuildPsdOptions): Promise<Buffer> {
   drawBaseImage(ctxOf(backgroundCanvas), baseImage, layout);
 
   const retouchCanvas = newTransparentCanvas(width, height);
-  await drawCutPanelsAndImages(ctxOf(retouchCanvas), layout, languageCode, baseImage, resolveImagePath);
+  await drawCutPanels(ctxOf(retouchCanvas), layout, languageCode, baseImage, resolveImagePath);
 
   const layers: Layer[] = [
     { name: "Hintergrund", top: 0, left: 0, right: width, bottom: height, canvas: backgroundCanvas as unknown as HTMLCanvasElement },
-    { name: "Retuschen / Cut-Panels / Bilder", top: 0, left: 0, right: width, bottom: height, canvas: retouchCanvas as unknown as HTMLCanvasElement },
+    { name: "Retuschen / Cut-Panels", top: 0, left: 0, right: width, bottom: height, canvas: retouchCanvas as unknown as HTMLCanvasElement },
   ];
+
+  // Bubble/curved-text/image layers are built into a lookup keyed by (type, id) first,
+  // then pushed onto `layers` in pageLayerOrder — so the PSD's own bottom-to-top layer
+  // stack always matches the editor canvas and PNG export (see this module's doc
+  // comment). Labels still number by each element's own array position (not its paint
+  // position), same as before this feature — more stable/meaningful for identifying a
+  // specific element than a position that changes every time something's reordered.
+  const layerByKey = new Map<string, Layer>();
 
   layout.bubbles.forEach((bubble, i) => {
     const text = bubble.text[languageCode];
@@ -109,7 +124,7 @@ export async function buildLayeredPsd(opts: BuildPsdOptions): Promise<Buffer> {
     if (!hasVisibleContent) return;
     const canvas = newTransparentCanvas(width, height);
     drawBubbleElement(ctxOf(canvas), bubble, layout, languageCode, presets);
-    layers.push({
+    layerByKey.set(`bubble:${bubble.id}`, {
       name: `Sprechblase ${i + 1}`,
       top: 0,
       left: 0,
@@ -124,7 +139,7 @@ export async function buildLayeredPsd(opts: BuildPsdOptions): Promise<Buffer> {
     if (!text || !text.trim()) return;
     const canvas = newTransparentCanvas(width, height);
     drawCurvedTextElementRaster(ctxOf(canvas), el, languageCode, presets);
-    layers.push({
+    layerByKey.set(`curvedText:${el.id}`, {
       name: `Kurventext ${i + 1}`,
       top: 0,
       left: 0,
@@ -133,6 +148,26 @@ export async function buildLayeredPsd(opts: BuildPsdOptions): Promise<Buffer> {
       canvas: canvas as unknown as HTMLCanvasElement,
     });
   });
+
+  for (const [i, element] of layout.images.entries()) {
+    if (!imageFileForLanguage(element, languageCode)) continue;
+    const canvas = newTransparentCanvas(width, height);
+    await drawImageElement(ctxOf(canvas), element, languageCode, resolveImagePath);
+    layerByKey.set(`image:${element.id}`, {
+      name: `Bild ${i + 1}`,
+      top: 0,
+      left: 0,
+      right: width,
+      bottom: height,
+      canvas: canvas as unknown as HTMLCanvasElement,
+    });
+  }
+
+  const order: LayerItem[] = pageLayerOrder(layout);
+  for (const item of order) {
+    const layer = layerByKey.get(`${item.type}:${item.id}`);
+    if (layer) layers.push(layer);
+  }
 
   const psd: Psd = { width, height, children: layers };
   return writePsdBuffer(psd);

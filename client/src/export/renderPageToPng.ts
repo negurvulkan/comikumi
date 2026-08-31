@@ -1,7 +1,20 @@
-import type { Bubble, BubbleForm, PageLayout, Panel, Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type {
+  Bubble,
+  BubbleForm,
+  CurvedTextElement,
+  ImageElement,
+  PageLayout,
+  Panel,
+  Point,
+  TextAlign,
+  TextDirection,
+  TextGradient,
+  TextOutline,
+} from "../../../shared/src/layoutSchema";
 import {
   cutPanelReplacementFileForLanguage,
   imageFileForLanguage,
+  pageLayerOrder,
   resolveBubbleForm,
   resolveBubbleStyle,
   resolveCurvedTextStyle,
@@ -144,8 +157,13 @@ export async function renderPageToPng(
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(layout.imageWidth * scale);
   canvas.height = Math.round(layout.imageHeight * scale);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("2D-Canvas-Kontext konnte nicht erstellt werden");
+  const maybeCtx = canvas.getContext("2d");
+  if (!maybeCtx) throw new Error("2D-Canvas-Kontext konnte nicht erstellt werden");
+  // Rebound as its own const (rather than just narrowing `maybeCtx` in place) so the
+  // narrowed non-null type is visible inside the drawOne*() function declarations below —
+  // TS's flow narrowing for a closed-over variable doesn't reliably propagate into a
+  // hoisted function declaration referencing the original binding.
+  const ctx: CanvasRenderingContext2D = maybeCtx;
   // Every drawing call below works in the layout's native pixel units — scaling the
   // context once up front (rather than threading a scale factor through every draw
   // call) lets the whole render pipeline stay resolution-agnostic.
@@ -202,18 +220,6 @@ export async function renderPageToPng(
   }
   await Promise.all([...svgFileNames].map((fileName) => ensureSvgBubbleBoundaryLoaded(fileName)));
 
-  // Placed images render below text bubbles (a translated poster patch sits
-  // on the artwork; any bubble on top of it should still win).
-  if (loadPlacedImage) {
-    for (const element of layout.images) {
-      const fileName = imageFileForLanguage(element, languageCode);
-      if (!fileName) continue;
-      const img = await loadPlacedImage(fileName);
-      const warped = warpImageIntoQuad(element.corners, img, element.opacity);
-      if (warped) ctx.drawImage(warped.canvas, warped.x, warped.y);
-    }
-  }
-
   // Pre-resolve every non-quad bubble's absolute form (panel-origin baked in) up front —
   // needed both by the main per-bubble draw loop below and by merge-group members, whose
   // own geometry must be available even for the group members that aren't drawn
@@ -227,13 +233,22 @@ export async function renderPageToPng(
   }
   const mergeGroups = resolveMergeGroups(layout.bubbles);
 
-  for (const bubble of layout.bubbles) {
+  async function drawOneImage(element: ImageElement): Promise<void> {
+    if (!loadPlacedImage) return;
+    const fileName = imageFileForLanguage(element, languageCode);
+    if (!fileName) return;
+    const img = await loadPlacedImage(fileName);
+    const warped = warpImageIntoQuad(element.corners, img, element.opacity);
+    if (warped) ctx.drawImage(warped.canvas, warped.x, warped.y);
+  }
+
+  function drawOneBubble(bubble: Bubble): void {
     const text = bubble.text[languageCode];
     const hasText = !!text && !!text.trim();
     const style = resolveBubbleStyle(bubble, languageCode, presets);
 
     if (bubble.shape === "quad" && bubble.corners) {
-      if (!hasText) continue;
+      if (!hasText) return;
       const quadOrigin = panelOriginFor(bubble, layout.panels);
       const corners =
         quadOrigin.x || quadOrigin.y ? bubble.corners.map((c) => ({ x: c.x + quadOrigin.x, y: c.y + quadOrigin.y })) : bubble.corners;
@@ -249,7 +264,7 @@ export async function renderPageToPng(
         direction: style.direction,
       });
       if (warped) ctx.drawImage(warped.canvas, warped.x, warped.y);
-      continue;
+      return;
     }
 
     // Non-primary merge-group members contribute their geometry to the primary's unified
@@ -258,14 +273,14 @@ export async function renderPageToPng(
     // this bubble normally instead of silently vanishing.
     const group = bubble.mergeGroupId ? mergeGroups.get(bubble.mergeGroupId) : undefined;
     const isMerged = !!group && group.length >= 2;
-    if (isMerged && !bubble.mergePrimary) continue;
+    if (isMerged && !bubble.mergePrimary) return;
 
     const form = resolvedForms.get(bubble.id)!;
     // A bubble with a visible background is real page artwork now, not just
     // an invisible text overlay — it must still be drawn even when this
     // language has no translation yet (e.g. a batch export of an
     // untranslated language shouldn't leave a newly-added bubble missing).
-    if (form.bubbleStyle === "none" && !hasText) continue;
+    if (form.bubbleStyle === "none" && !hasText) return;
 
     let precomputedBoundary: Point[] | undefined;
     let mergedBounds: { x: number; y: number; width: number; height: number } | undefined;
@@ -308,11 +323,9 @@ export async function renderPageToPng(
     ctx.restore();
   }
 
-  // Freestanding title/effect text on a Bézier path — drawn after bubbles so
-  // titles/effects sit visually on top, same order as the editor preview.
-  for (const el of layout.curvedTexts) {
+  function drawOneCurvedText(el: CurvedTextElement): void {
     const text = el.text[languageCode];
-    if (!text || !text.trim()) continue;
+    if (!text || !text.trim()) return;
     const style = resolveCurvedTextStyle(el, languageCode, presets);
     const fitted = fitCurvedText(ctx, text, style.fontFamily, el.points, style.fontSize);
     drawCurvedText(ctx, text, el.points, fitted, style.fontFamily, style.align, {
@@ -320,6 +333,23 @@ export async function renderPageToPng(
       outline: style.textOutline,
       gradient: style.textGradient,
     }, 1);
+  }
+
+  // Bottom-to-top paint order across images/bubbles/curved texts (see
+  // layoutSchema.ts's pageLayerOrder) — without any layerOrderOverride set anywhere,
+  // this is byte-for-byte the same order rendering already used before layer ordering
+  // existed (images, then bubbles, then curved texts).
+  for (const item of pageLayerOrder(layout)) {
+    if (item.type === "image") {
+      const element = layout.images.find((i) => i.id === item.id);
+      if (element) await drawOneImage(element);
+    } else if (item.type === "bubble") {
+      const bubble = layout.bubbles.find((b) => b.id === item.id);
+      if (bubble) drawOneBubble(bubble);
+    } else {
+      const el = layout.curvedTexts.find((c) => c.id === item.id);
+      if (el) drawOneCurvedText(el);
+    }
   }
 
   return canvasToBlob(canvas, format, quality);

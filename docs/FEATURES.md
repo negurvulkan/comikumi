@@ -571,6 +571,28 @@ bulk actions are available:
   the multi-selection inspector's Lock/Unlock buttons apply to every selected
   element regardless of type, in one step.
 
+### Layer Order (Z-Order)
+
+Bubbles, placed images, and curved texts each paint in a fixed order by
+default (images below bubbles below curved texts) — but any of them can be
+explicitly reordered relative to the others, e.g. to let an image patch
+covering part of the original artwork sit *in front of* a bubble instead of
+behind it (useful when an object in the panel — hair, an arm, a prop —
+should visually overlap a bubble, something a straight clip line alone
+can't do; see [Speech Bubbles](#speech-bubbles) → Clipping). Every bubble/
+image/curved-text row in the **Layers panel** has "Bring to front"/"Send to
+back" buttons; a bubble's right-click context menu has the same two
+actions. Panels themselves aren't part of this — they're an editor-only
+reference layer, always drawn at the very bottom, never exported.
+
+Respected everywhere the page is actually rendered: the editor canvas, PNG
+export, and the layered PSD export (each bubble/image/curved-text PSD layer
+is ordered to match). The one exception is the vector-PDF export, which
+flattens Cut-Panels/images/bubble backgrounds into one raster layer with
+real vector bubble text always drawn on top in a separate pass — an image
+brought in front of a bubble elsewhere still renders behind that bubble's
+text there.
+
 ## Cut Panel
 
 No dedicated toolbar button and no dedicated data type — every

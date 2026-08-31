@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Bubble, CurvedTextElement, ImageElement, Panel } from "../../../shared/src/layoutSchema";
+import type { Bubble, CurvedTextElement, ImageElement, LayerItem, Panel } from "../../../shared/src/layoutSchema";
 import { imageFileForLanguage } from "../../../shared/src/layoutSchema";
 import { groupBubblesByPanel, type ReadingDirection } from "./reportUtils";
 import { useResizableSidebarWidth } from "./useResizableSidebarWidth";
 import { SidebarResizeHandle } from "./SidebarResizeHandle";
+import { BringToFrontIcon, SendToBackIcon } from "./Icons";
 
 interface Props {
   /** Always mounted (needed for the slide transition to animate) — same convention as
@@ -29,6 +30,12 @@ interface Props {
   onChangeCurvedText: (id: string, patch: Partial<CurvedTextElement>) => void;
   onSetAllPanelsLocked: (locked: boolean) => void;
   onSetPanelLockCascade: (panelId: string, locked: boolean) => void;
+  /** Moves a bubble/image/curved text to the very top/bottom of the page's paint order
+   * (see layoutSchema.ts's pageLayerOrder/withLayerOrder) — panels are excluded, they're
+   * an always-bottom, editor-only reference layer, so no button for these on panel
+   * group headers. */
+  onBringToFront: (target: LayerItem) => void;
+  onSendToBack: (target: LayerItem) => void;
   onClose: () => void;
 }
 
@@ -44,6 +51,12 @@ function rowId(row: Row): string {
 
 function rowLocked(row: Row): boolean {
   return row.kind === "bubble" ? !!row.bubble.locked : row.kind === "image" ? !!row.image.locked : !!row.el.locked;
+}
+
+/** Row.kind's three values are exactly LayerItem["type"]'s union — reused directly for
+ * the bring-to-front/send-to-back actions instead of a second parallel enum. */
+function rowLayerItem(row: Row): LayerItem {
+  return { type: row.kind, id: rowId(row) };
 }
 
 /**
@@ -86,6 +99,8 @@ export function LayersPanel({
   onChangeCurvedText,
   onSetAllPanelsLocked,
   onSetPanelLockCascade,
+  onBringToFront,
+  onSendToBack,
   onClose,
 }: Props) {
   const { t } = useTranslation();
@@ -212,6 +227,26 @@ export function LayersPanel({
                           )}
                         </span>
                         <span className="text-list-content">{rowLabel(row)}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onBringToFront(rowLayerItem(row));
+                          }}
+                          title={t("editor.layersPanel.bringToFrontHint")}
+                        >
+                          <BringToFrontIcon />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSendToBack(rowLayerItem(row));
+                          }}
+                          title={t("editor.layersPanel.sendToBackHint")}
+                        >
+                          <SendToBackIcon />
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => {

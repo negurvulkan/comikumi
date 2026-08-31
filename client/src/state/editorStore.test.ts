@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createBubble, createEmptyLayout, createPanel } from "../../../shared/src/layoutSchema";
+import { createBubble, createCurvedTextElement, createEmptyLayout, createImageElement, createPanel } from "../../../shared/src/layoutSchema";
 import { useEditorStore } from "./editorStore";
 
 function resetStoreWithEmptyLayout() {
@@ -239,6 +239,60 @@ describe("setPanelLockCascade", () => {
 
   it("is a no-op (no history entry) when the panel doesn't exist", () => {
     useEditorStore.getState().setPanelLockCascade("missing", true);
+    expect(useEditorStore.getState().past.length).toBe(0);
+  });
+});
+
+describe("bringLayerToFront / sendLayerToBack", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  function setupLayout() {
+    const image = createImageElement({ id: "i1", corners: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }], files: {} });
+    const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    const curvedText = createCurvedTextElement({ id: "c1", points: [{ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 2 }, { x: 3, y: 3 }] });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, images: [image], bubbles: [bubble], curvedTexts: [curvedText] } }));
+  }
+
+  it("bringLayerToFront moves the target (e.g. an image) above everything else, including bubbles", () => {
+    setupLayout();
+    // Default order is image, bubble, curvedText — bringing the image to front should
+    // put it ahead of the bubble too, the motivating use case for this whole feature.
+    useEditorStore.getState().bringLayerToFront({ type: "image", id: "i1" });
+
+    const layout = useEditorStore.getState().layout!;
+    const image = layout.images[0];
+    const bubble = layout.bubbles[0];
+    const curvedText = layout.curvedTexts[0];
+    expect(image.layerOrderOverride).toBeGreaterThan(bubble.layerOrderOverride!);
+    expect(image.layerOrderOverride).toBeGreaterThan(curvedText.layerOrderOverride!);
+  });
+
+  it("sendLayerToBack moves the target below everything else", () => {
+    setupLayout();
+    useEditorStore.getState().sendLayerToBack({ type: "curvedText", id: "c1" });
+
+    const layout = useEditorStore.getState().layout!;
+    expect(layout.curvedTexts[0].layerOrderOverride).toBeLessThan(layout.images[0].layerOrderOverride!);
+    expect(layout.curvedTexts[0].layerOrderOverride).toBeLessThan(layout.bubbles[0].layerOrderOverride!);
+  });
+
+  it("creates one undo step and marks the layout dirty", () => {
+    setupLayout();
+    useEditorStore.getState().bringLayerToFront({ type: "bubble", id: "b1" });
+    expect(useEditorStore.getState().past.length).toBe(1);
+    expect(useEditorStore.getState().dirty).toBe(true);
+  });
+
+  it("is a no-op (no history entry) when the target isn't found", () => {
+    setupLayout();
+    useEditorStore.getState().bringLayerToFront({ type: "bubble", id: "missing" });
+    expect(useEditorStore.getState().past.length).toBe(0);
+  });
+
+  it("is a no-op (no history entry) when the target is already at that end of the stack", () => {
+    setupLayout();
+    // curvedText is already last (frontmost) in the default order.
+    useEditorStore.getState().bringLayerToFront({ type: "curvedText", id: "c1" });
     expect(useEditorStore.getState().past.length).toBe(0);
   });
 });

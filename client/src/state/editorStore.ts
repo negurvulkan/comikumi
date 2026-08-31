@@ -1,7 +1,16 @@
 import { create } from "zustand";
 import { v4 as uuid } from "uuid";
-import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, PageLayout, Panel, PanelCut, Point } from "../../../shared/src/layoutSchema";
-import { boxCorners, createBubble, createCurvedTextElement, createImageElement, createPanel, offsetBubble } from "../../../shared/src/layoutSchema";
+import type { Bubble, BubbleShapeKind, CurvedTextElement, ImageElement, LayerItem, PageLayout, Panel, PanelCut, Point } from "../../../shared/src/layoutSchema";
+import {
+  boxCorners,
+  createBubble,
+  createCurvedTextElement,
+  createImageElement,
+  createPanel,
+  offsetBubble,
+  pageLayerOrder,
+  withLayerOrder,
+} from "../../../shared/src/layoutSchema";
 import { bubbleCenter, pointInQuad } from "../editor/geometry";
 import { api } from "../api/client";
 import i18n from "../i18n";
@@ -157,6 +166,12 @@ interface EditorState {
    * layoutSchema.ts) and are never part of a panel's lock cascade. A no-op if the panel
    * doesn't exist. */
   setPanelLockCascade: (panelId: string, locked: boolean) => void;
+  /** Moves one bubble/image/curved text to the very top or bottom of the page's paint
+   * order (see layoutSchema.ts's pageLayerOrder/withLayerOrder) — the Layers navigator's
+   * and the bubble context menu's "bring to front"/"send to back" actions. A no-op (no
+   * history entry) if the target isn't found or is already at that end of the stack. */
+  bringLayerToFront: (target: LayerItem) => void;
+  sendLayerToBack: (target: LayerItem) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => {
@@ -809,6 +824,30 @@ export const useEditorStore = create<EditorState>((set, get) => {
         },
         dirty: true,
       });
+    },
+
+    bringLayerToFront(target) {
+      const layout = get().layout;
+      if (!layout) return;
+      const order = pageLayerOrder(layout);
+      const i = order.findIndex((x) => x.type === target.type && x.id === target.id);
+      if (i === -1 || i === order.length - 1) return;
+      const [item] = order.splice(i, 1);
+      order.push(item);
+      pushHistory(true);
+      set({ layout: withLayerOrder(layout, order), dirty: true });
+    },
+
+    sendLayerToBack(target) {
+      const layout = get().layout;
+      if (!layout) return;
+      const order = pageLayerOrder(layout);
+      const i = order.findIndex((x) => x.type === target.type && x.id === target.id);
+      if (i === -1 || i === 0) return;
+      const [item] = order.splice(i, 1);
+      order.unshift(item);
+      pushHistory(true);
+      set({ layout: withLayerOrder(layout, order), dirty: true });
     },
   };
 });

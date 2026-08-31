@@ -578,6 +578,30 @@ Bulk-Aktionen zur Verfügung:
   Sperren/Entsperren-Buttons im Mehrfachauswahl-Inspector alle ausgewählten Elemente
   unabhängig vom Typ in einem Schritt.
 
+### Ebenenreihenfolge (Z-Order)
+
+Blasen, platzierte Bilder und Kurventexte malen standardmäßig in einer festen
+Reihenfolge (Bilder unter Blasen unter Kurventexten) — jedes davon lässt sich
+aber explizit relativ zu den anderen umsortieren, z. B. damit ein Bild-Patch,
+der einen Teil der Original-Grafik abdeckt, *vor* statt hinter einer Blase
+liegt (nützlich, wenn ein Objekt im Panel — Haare, ein Arm, ein Gegenstand —
+eine Blase optisch überlappen soll, was eine gerade Anschneide-Linie allein
+nicht kann; siehe [Sprechblasen](#sprechblasen) → Anschneiden). Jede Blasen-/
+Bild-/Kurventext-Zeile im **Ebenen-Navigator** hat „In den Vordergrund“/„In
+den Hintergrund“-Buttons; das Rechtsklick-Kontextmenü einer Blase hat
+dieselben zwei Aktionen. Panels selbst sind davon nicht betroffen — sie sind
+eine editor-interne Referenzebene, immer ganz unten gezeichnet, nie
+exportiert.
+
+Wird überall respektiert, wo die Seite tatsächlich gerendert wird: Editor-
+Canvas, PNG-Export und der geschichtete PSD-Export (jeder Blasen-/Bild-/
+Kurventext-PSD-Layer wird entsprechend sortiert). Die eine Ausnahme ist der
+Vektor-PDF-Export, der Cut-Panels/Bilder/Blasen-Hintergründe zu einer
+Rastergrafik zusammenfasst, auf die echter Vektor-Blasentext anschließend
+immer in einem separaten, obersten Durchgang gelegt wird — ein Bild, das
+anderswo vor eine Blase gebracht wurde, liegt dort weiterhin hinter deren
+Text.
+
 ## Cut-Panel
 
 Keine eigene Werkzeugleisten-Schaltfläche und kein eigener Datentyp — jedes [Panel](#elementtypen)

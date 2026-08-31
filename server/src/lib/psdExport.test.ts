@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { readPsd } from "ag-psd";
-import { createBubble, createCurvedTextElement, createEmptyLayout } from "../../../shared/src/layoutSchema.js";
+import { createBubble, createCurvedTextElement, createEmptyLayout, createImageElement } from "../../../shared/src/layoutSchema.js";
 import { buildLayeredPsd } from "./psdExport.js";
 
 let baseImagePath: string;
@@ -26,7 +26,7 @@ describe("buildLayeredPsd", () => {
     const psd = readPsd(bytes);
     expect(psd.width).toBe(200);
     expect(psd.height).toBe(150);
-    expect(psd.children?.map((l) => l.name)).toEqual(["Hintergrund", "Retuschen / Cut-Panels / Bilder"]);
+    expect(psd.children?.map((l) => l.name)).toEqual(["Hintergrund", "Retuschen / Cut-Panels"]);
   });
 
   it("adds one layer per bubble with visible content", async () => {
@@ -37,7 +37,7 @@ describe("buildLayeredPsd", () => {
     const psd = readPsd(bytes);
     expect(psd.children?.map((l) => l.name)).toEqual([
       "Hintergrund",
-      "Retuschen / Cut-Panels / Bilder",
+      "Retuschen / Cut-Panels",
       "Sprechblase 1",
     ]);
     const layer = psd.children!.find((l) => l.name === "Sprechblase 1")!;
@@ -59,7 +59,7 @@ describe("buildLayeredPsd", () => {
     const bytes = await buildLayeredPsd({ baseImagePath, layout, languageCode: "de", resolveImagePath: async () => null });
 
     const psd = readPsd(bytes);
-    expect(psd.children?.map((l) => l.name)).toEqual(["Hintergrund", "Retuschen / Cut-Panels / Bilder"]);
+    expect(psd.children?.map((l) => l.name)).toEqual(["Hintergrund", "Retuschen / Cut-Panels"]);
   });
 
   it("keeps a rect bubble with no text (background shape is still visible)", async () => {
@@ -70,7 +70,7 @@ describe("buildLayeredPsd", () => {
     const psd = readPsd(bytes);
     expect(psd.children?.map((l) => l.name)).toEqual([
       "Hintergrund",
-      "Retuschen / Cut-Panels / Bilder",
+      "Retuschen / Cut-Panels",
       "Sprechblase 1",
     ]);
   });
@@ -106,8 +106,50 @@ describe("buildLayeredPsd", () => {
     const psd = readPsd(bytes);
     expect(psd.children?.map((l) => l.name)).toEqual([
       "Hintergrund",
-      "Retuschen / Cut-Panels / Bilder",
+      "Retuschen / Cut-Panels",
       "Kurventext 1",
     ]);
+  });
+
+  it("adds one layer per placed image, below bubbles by default", async () => {
+    const image = createImageElement({
+      id: "i1",
+      corners: [{ x: 10, y: 10 }, { x: 60, y: 10 }, { x: 60, y: 60 }, { x: 10, y: 60 }],
+      files: { de: "page.png" },
+    });
+    const bubble = createBubble({ id: "b1", x: 20, y: 20, width: 60, height: 40, bubbleStyle: "speech", text: { de: "Hallo" } });
+    const layout = { ...createEmptyLayout("page_01", "page.png", 200, 150), images: [image], bubbles: [bubble] };
+    const bytes = await buildLayeredPsd({
+      baseImagePath,
+      layout,
+      languageCode: "de",
+      resolveImagePath: async () => baseImagePath,
+    });
+
+    const psd = readPsd(bytes);
+    expect(psd.children?.map((l) => l.name)).toEqual(["Hintergrund", "Retuschen / Cut-Panels", "Bild 1", "Sprechblase 1"]);
+  });
+
+  it("respects layerOrderOverride — an image explicitly brought to front sits above the bubble layer", async () => {
+    const image = createImageElement({
+      id: "i1",
+      corners: [{ x: 10, y: 10 }, { x: 60, y: 10 }, { x: 60, y: 60 }, { x: 10, y: 60 }],
+      files: { de: "page.png" },
+    });
+    const bubble = createBubble({ id: "b1", x: 20, y: 20, width: 60, height: 40, bubbleStyle: "speech", text: { de: "Hallo" } });
+    const layout = {
+      ...createEmptyLayout("page_01", "page.png", 200, 150),
+      images: [{ ...image, layerOrderOverride: 1 }],
+      bubbles: [{ ...bubble, layerOrderOverride: 0 }],
+    };
+    const bytes = await buildLayeredPsd({
+      baseImagePath,
+      layout,
+      languageCode: "de",
+      resolveImagePath: async () => baseImagePath,
+    });
+
+    const psd = readPsd(bytes);
+    expect(psd.children?.map((l) => l.name)).toEqual(["Hintergrund", "Retuschen / Cut-Panels", "Sprechblase 1", "Bild 1"]);
   });
 });

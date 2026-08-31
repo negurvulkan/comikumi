@@ -560,6 +560,8 @@
       "unlockPanelHint": "패널 + 할당된 모든 말풍선 잠금 해제",
       "lockHint": "잠금",
       "unlockHint": "잠금 해제",
+      "bringToFrontHint": "맨 앞으로 가져오기",
+      "sendToBackHint": "맨 뒤로 보내기",
       "expand": "펼치기",
       "collapse": "접기"
     },
@@ -665,6 +667,8 @@
       "noPreset": "– 프리셋 없음 –",
       "flipHorizontal": "좌우 반전",
       "duplicate": "복제",
+      "bringToFront": "맨 앞으로 가져오기",
+      "sendToBack": "맨 뒤로 보내기",
       "lockPanel": "패널 + 내용 잠금",
       "unlockPanel": "패널 + 내용 잠금 해제",
       "removePoint": "점 제거",

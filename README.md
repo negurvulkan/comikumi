@@ -46,6 +46,10 @@ React + Konva canvas editor.
   grouped by panel, with per-element lock toggles; "lock all panels", "lock panel +
   its bubbles", and "lock selection" bulk actions stop overlapping panels from getting
   in the way of clicking or accidentally dragging what's underneath.
+- **Layer order (z-order)** — bring any bubble/image/curved text in front of or behind
+  the others (Layers navigator buttons or the bubble context menu), e.g. to let an image
+  patch sit in front of a bubble instead of always behind it. Respected in the editor,
+  PNG export, and layered PSD export.
 - **Bubble clipping & merging** — cut a bubble along a straight line (with a one-click
   suggestion from the nearest panel edge) so it sits flush against a panel border, or
   non-destructively merge several bubbles into one continuous outline with a single

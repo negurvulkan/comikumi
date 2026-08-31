@@ -882,6 +882,8 @@ export function Editor() {
           onChangeCurvedText={store.updateCurvedText}
           onSetAllPanelsLocked={store.setAllPanelsLocked}
           onSetPanelLockCascade={store.setPanelLockCascade}
+          onBringToFront={store.bringLayerToFront}
+          onSendToBack={store.sendLayerToBack}
           onClose={() => setShowLayersPanel(false)}
         />
         <TranslatorContextPanel
@@ -979,6 +981,8 @@ export function Editor() {
             onDuplicateSelected={() => store.duplicateSelected()}
             onDeleteSelected={() => store.removeSelected()}
             onSetPanelLockCascade={store.setPanelLockCascade}
+            onBringLayerToFront={store.bringLayerToFront}
+            onSendLayerToBack={store.sendLayerToBack}
             comments={comments.filter((c) => c.page === page)}
             selectedCommentId={commentThreadState?.mode === "view" ? commentThreadState.commentId : null}
             onRequestCreateComment={handleRequestCreateComment}

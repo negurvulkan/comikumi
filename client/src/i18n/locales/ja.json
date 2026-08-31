@@ -560,6 +560,8 @@
       "unlockPanelHint": "パネル + 割り当てられた吹き出しをすべてロック解除",
       "lockHint": "ロック",
       "unlockHint": "ロック解除",
+      "bringToFrontHint": "最前面へ移動",
+      "sendToBackHint": "最背面へ移動",
       "expand": "展開",
       "collapse": "折りたたむ"
     },
@@ -665,6 +667,8 @@
       "noPreset": "– プリセットなし –",
       "flipHorizontal": "左右反転",
       "duplicate": "複製",
+      "bringToFront": "最前面へ移動",
+      "sendToBack": "最背面へ移動",
       "lockPanel": "パネル + 内容をロック",
       "unlockPanel": "パネル + 内容のロックを解除",
       "removePoint": "点を削除",

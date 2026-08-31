@@ -569,6 +569,8 @@
       "unlockPanelHint": "Desbloquear panel + todos los bocadillos asignados",
       "lockHint": "Bloquear",
       "unlockHint": "Desbloquear",
+      "bringToFrontHint": "Traer al frente",
+      "sendToBackHint": "Enviar al fondo",
       "expand": "Expandir",
       "collapse": "Contraer"
     },
@@ -674,6 +676,8 @@
       "noPreset": "– sin preajuste –",
       "flipHorizontal": "Voltear horizontalmente",
       "duplicate": "Duplicar",
+      "bringToFront": "Traer al frente",
+      "sendToBack": "Enviar al fondo",
       "lockPanel": "Bloquear panel + contenido",
       "unlockPanel": "Desbloquear panel + contenido",
       "removePoint": "Eliminar punto",

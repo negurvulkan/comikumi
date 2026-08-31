@@ -569,6 +569,8 @@
       "unlockPanelHint": "Déverrouiller le panneau + toutes les bulles assignées",
       "lockHint": "Verrouiller",
       "unlockHint": "Déverrouiller",
+      "bringToFrontHint": "Mettre au premier plan",
+      "sendToBackHint": "Mettre à l'arrière-plan",
       "expand": "Déplier",
       "collapse": "Replier"
     },
@@ -674,6 +676,8 @@
       "noPreset": "– aucun préréglage –",
       "flipHorizontal": "Retourner horizontalement",
       "duplicate": "Dupliquer",
+      "bringToFront": "Mettre au premier plan",
+      "sendToBack": "Mettre à l'arrière-plan",
       "lockPanel": "Verrouiller le panneau + le contenu",
       "unlockPanel": "Déverrouiller le panneau + le contenu",
       "removePoint": "Supprimer le point",
