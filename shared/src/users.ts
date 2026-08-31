@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/** Shape of every `*ApiKeyEncrypted` field below (see server/src/lib/secretsCrypto.ts) —
+ * factored out once four fields started using it identically instead of repeating the
+ * three-field object literal per provider. */
+const EncryptedSecretSchema = z.object({
+  iv: z.string(),
+  tag: z.string(),
+  ciphertext: z.string(),
+});
+
 /** Projekt-Rolle, aufsteigend privilegiert. Siehe PROJECT_ROLE_RANK für Vergleiche
  * ("mindestens Rolle X"). */
 export const ProjectRoleSchema = z.enum(["viewer", "translator", "letterer", "admin"]);
@@ -54,19 +63,35 @@ export const UserAccountSchema = z.object({
    * itself inside an isolated per-user CODEX_HOME directory (see
    * server/src/lib/ai/codexProcessManager.ts), so there's nothing for ComiKumi to
    * encrypt/store for that provider. */
-  openaiApiKeyEncrypted: z
-    .object({
-      iv: z.string(),
-      tag: z.string(),
-      ciphertext: z.string(),
-    })
-    .optional(),
+  openaiApiKeyEncrypted: EncryptedSecretSchema.optional(),
+  /** Same encrypted-at-rest convention as openaiApiKeyEncrypted — see
+   * server/src/lib/ai/anthropicProvider.ts. */
+  anthropicApiKeyEncrypted: EncryptedSecretSchema.optional(),
+  /** Same encrypted-at-rest convention as openaiApiKeyEncrypted — see
+   * server/src/lib/ai/geminiProvider.ts (provider id "google"). */
+  googleApiKeyEncrypted: EncryptedSecretSchema.optional(),
+  /** Same encrypted-at-rest convention as openaiApiKeyEncrypted — see
+   * server/src/lib/ai/openrouterProvider.ts. */
+  openrouterApiKeyEncrypted: EncryptedSecretSchema.optional(),
+  /** Ollama (server/src/lib/ai/ollamaProvider.ts) has no secret to encrypt — just a
+   * base URL and a locally-installed model name, both plain text and both visible to
+   * the client as-is (unlike the *ApiKeyEncrypted fields above, deliberately NOT
+   * stripped by PublicUser below, so the account settings form can show the user their
+   * current values instead of a blind re-entry). The ComiKumi SERVER must be able to
+   * reach this URL over the network — not the user's browser — see
+   * docs/FEATURES.md's AI Assistant section. */
+  ollamaBaseUrl: z.string().trim().min(1).optional(),
+  ollamaModel: z.string().trim().min(1).optional(),
 });
 export type UserAccount = z.infer<typeof UserAccountSchema>;
 export const UserAccountListSchema = z.array(UserAccountSchema);
 
-/** Öffentliche Sicht auf einen Account — passwordHash und der verschlüsselte
- * OpenAI-Key dürfen nie über die API nach außen gehen (siehe routes/auth.ts's
+/** Öffentliche Sicht auf einen Account — passwordHash und jeder verschlüsselte
+ * Provider-Key dürfen nie über die API nach außen gehen (siehe routes/auth.ts's
  * toPublicUser()). Provider-Status (nur ein Boolean, kein Secret) läuft stattdessen
- * über toAIProviderStatus() und einen eigenen Endpunkt. */
-export type PublicUser = Omit<UserAccount, "passwordHash" | "openaiApiKeyEncrypted">;
+ * über toAIProviderStatus() und einen eigenen Endpunkt. Ollamas Felder sind bewusst
+ * NICHT ausgeschlossen — kein Secret, siehe ollamaBaseUrl/ollamaModel oben. */
+export type PublicUser = Omit<
+  UserAccount,
+  "passwordHash" | "openaiApiKeyEncrypted" | "anthropicApiKeyEncrypted" | "googleApiKeyEncrypted" | "openrouterApiKeyEncrypted"
+>;

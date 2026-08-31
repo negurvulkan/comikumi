@@ -6,7 +6,7 @@ import { asyncHandler } from "../lib/asyncHandler.js";
 export const aiRouter = Router();
 
 const ChatRequestSchema = z.object({
-  providerId: z.enum(["openai", "codex"]),
+  providerId: z.enum(["openai", "codex", "anthropic", "google", "openrouter", "ollama"]),
   messages: z.array(z.object({ role: z.enum(["system", "user", "assistant"]), content: z.string() })).min(1),
   contextText: z.string().optional(),
   contextImage: z.string().optional(),

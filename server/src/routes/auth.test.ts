@@ -314,3 +314,97 @@ describe("AI provider configuration (self-service)", () => {
   });
 });
 
+// Anthropic/Google/OpenRouter each get the exact same test coverage as OpenAI above —
+// same self-service PUT/DELETE-key shape, just a different route/status field.
+describe.each([
+  { provider: "anthropic", route: "anthropic-key" },
+  { provider: "google", route: "google-key" },
+  { provider: "openrouter", route: "openrouter-key" },
+])("AI provider configuration — $provider (self-service)", ({ provider, route }) => {
+  it(`401s the ${route} routes without a token`, async () => {
+    expect((await request(app).put(`/api/auth/me/${route}`).send({ apiKey: "sk-x" })).status).toBe(401);
+    expect((await request(app).delete(`/api/auth/me/${route}`)).status).toBe(401);
+  });
+
+  it(`reports ${provider}.configured: false before any key is set`, async () => {
+    const res = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(res.status).toBe(200);
+    expect(res.body[provider]).toEqual({ configured: false });
+  });
+
+  it("rejects an empty key", async () => {
+    const res = await request(app).put(`/api/auth/me/${route}`).set("Authorization", `Bearer ${env.token}`).send({ apiKey: "" });
+    expect(res.status).toBe(400);
+  });
+
+  it("sets a key, never returns it anywhere, and reports configured: true", async () => {
+    const set = await request(app).put(`/api/auth/me/${route}`).set("Authorization", `Bearer ${env.token}`).send({ apiKey: "sk-test-123" });
+    expect(set.status).toBe(200);
+    expect(set.body).toEqual({ ok: true });
+
+    const me = await request(app).get("/api/auth/me").set("Authorization", `Bearer ${env.token}`);
+    expect(me.body).not.toHaveProperty(`${provider}ApiKeyEncrypted`);
+
+    const status = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(status.body[provider]).toEqual({ configured: true });
+  });
+
+  it("clears a previously set key", async () => {
+    await request(app).put(`/api/auth/me/${route}`).set("Authorization", `Bearer ${env.token}`).send({ apiKey: "sk-test-456" });
+    const del = await request(app).delete(`/api/auth/me/${route}`).set("Authorization", `Bearer ${env.token}`);
+    expect(del.status).toBe(200);
+
+    const status = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(status.body[provider]).toEqual({ configured: false });
+  });
+});
+
+describe("AI provider configuration — ollama (self-service)", () => {
+  it("401s the ollama-config routes without a token", async () => {
+    expect((await request(app).put("/api/auth/me/ollama-config").send({ baseUrl: "http://x", model: "m" })).status).toBe(401);
+    expect((await request(app).delete("/api/auth/me/ollama-config")).status).toBe(401);
+  });
+
+  it("reports ollama.configured: false before any config is set", async () => {
+    const res = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.ollama).toEqual({ configured: false });
+  });
+
+  it("rejects an incomplete config (missing model)", async () => {
+    const res = await request(app)
+      .put("/api/auth/me/ollama-config")
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ baseUrl: "http://localhost:11434" });
+    expect(res.status).toBe(400);
+  });
+
+  it("sets a config (not a secret — visible on /me and in ai-status) and reports configured: true", async () => {
+    const set = await request(app)
+      .put("/api/auth/me/ollama-config")
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ baseUrl: "http://localhost:11434", model: "llama3.2" });
+    expect(set.status).toBe(200);
+    expect(set.body).toEqual({ ok: true });
+
+    const me = await request(app).get("/api/auth/me").set("Authorization", `Bearer ${env.token}`);
+    expect(me.body.ollamaBaseUrl).toBe("http://localhost:11434");
+    expect(me.body.ollamaModel).toBe("llama3.2");
+
+    const status = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(status.body.ollama).toEqual({ configured: true, baseUrl: "http://localhost:11434", model: "llama3.2" });
+  });
+
+  it("clears a previously set config", async () => {
+    await request(app)
+      .put("/api/auth/me/ollama-config")
+      .set("Authorization", `Bearer ${env.token}`)
+      .send({ baseUrl: "http://localhost:11434", model: "llama3.2" });
+    const del = await request(app).delete("/api/auth/me/ollama-config").set("Authorization", `Bearer ${env.token}`);
+    expect(del.status).toBe(200);
+
+    const status = await request(app).get("/api/auth/me/ai-status").set("Authorization", `Bearer ${env.token}`);
+    expect(status.body.ollama).toEqual({ configured: false });
+  });
+});
+

@@ -260,6 +260,112 @@ authRouter.delete(
   })
 );
 
+// Anthropic/Google/OpenRouter key routes below are exact copies of the OpenAI pair
+// above — same self-service, same validation, same encrypt-at-the-boundary/null-clears
+// convention (see authStore.ts's updateUser doc comment) — only the field name differs.
+
+const SetAnthropicKeySchema = z.object({ apiKey: z.string().min(1) });
+
+authRouter.put(
+  "/me/anthropic-key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = SetAnthropicKeySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    await updateUser(req.user!.sub, { anthropicApiKey: parsed.data.apiKey });
+    res.json({ ok: true });
+  })
+);
+
+authRouter.delete(
+  "/me/anthropic-key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await updateUser(req.user!.sub, { anthropicApiKey: null });
+    res.json({ ok: true });
+  })
+);
+
+const SetGoogleKeySchema = z.object({ apiKey: z.string().min(1) });
+
+authRouter.put(
+  "/me/google-key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = SetGoogleKeySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    await updateUser(req.user!.sub, { googleApiKey: parsed.data.apiKey });
+    res.json({ ok: true });
+  })
+);
+
+authRouter.delete(
+  "/me/google-key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await updateUser(req.user!.sub, { googleApiKey: null });
+    res.json({ ok: true });
+  })
+);
+
+const SetOpenRouterKeySchema = z.object({ apiKey: z.string().min(1) });
+
+authRouter.put(
+  "/me/openrouter-key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = SetOpenRouterKeySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    await updateUser(req.user!.sub, { openrouterApiKey: parsed.data.apiKey });
+    res.json({ ok: true });
+  })
+);
+
+authRouter.delete(
+  "/me/openrouter-key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await updateUser(req.user!.sub, { openrouterApiKey: null });
+    res.json({ ok: true });
+  })
+);
+
+// Ollama has no secret (see shared/src/users.ts) — a plain {baseUrl, model} pair
+// instead of an {apiKey}, otherwise the same self-service PUT/DELETE shape.
+const SetOllamaConfigSchema = z.object({ baseUrl: z.string().trim().min(1), model: z.string().trim().min(1) });
+
+authRouter.put(
+  "/me/ollama-config",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = SetOllamaConfigSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      return;
+    }
+    await updateUser(req.user!.sub, { ollamaBaseUrl: parsed.data.baseUrl, ollamaModel: parsed.data.model });
+    res.json({ ok: true });
+  })
+);
+
+authRouter.delete(
+  "/me/ollama-config",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await updateUser(req.user!.sub, { ollamaBaseUrl: null, ollamaModel: null });
+    res.json({ ok: true });
+  })
+);
+
 /** Never returns the key itself (encrypted or not) — just enough for the client to
  * know which providers are usable (see AccountSettings.tsx/AIPanel.tsx). Codex's
  * status is derived live from CODEX_HOME file presence / the running app-server
@@ -273,11 +379,15 @@ authRouter.get(
       res.status(401).json({ error: "unauthorized" });
       return;
     }
-    const openai = toAIProviderStatus(user).openai;
+    const { openai, anthropic, google, openrouter, ollama } = toAIProviderStatus(user);
     const codexConfigured = await isCodexLoggedIn(req.user!.sub);
     const codexRateLimits = codexConfigured ? await getCodexRateLimits(req.user!.sub) : null;
     res.json({
       openai,
+      anthropic,
+      google,
+      openrouter,
+      ollama,
       codex: { configured: codexConfigured, planType: codexRateLimits?.planType, usedPercent: codexRateLimits?.usedPercent },
     });
   })

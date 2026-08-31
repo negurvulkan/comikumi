@@ -10,7 +10,14 @@ const SCRYPT_KEYLEN = 64;
 const TOKEN_EXPIRY: NonNullable<SignOptions["expiresIn"]> = "30d";
 
 export function toPublicUser(user: UserAccount): PublicUser {
-  const { passwordHash: _passwordHash, openaiApiKeyEncrypted: _openaiApiKeyEncrypted, ...rest } = user;
+  const {
+    passwordHash: _passwordHash,
+    openaiApiKeyEncrypted: _openaiApiKeyEncrypted,
+    anthropicApiKeyEncrypted: _anthropicApiKeyEncrypted,
+    googleApiKeyEncrypted: _googleApiKeyEncrypted,
+    openrouterApiKeyEncrypted: _openrouterApiKeyEncrypted,
+    ...rest
+  } = user;
   return rest;
 }
 
@@ -99,10 +106,22 @@ export async function updateUser(
   id: string,
   // `email: null` clears it (JSON has no "delete this field" signal otherwise);
   // `undefined`/omitted leaves it untouched — same distinction PATCH-style updates
-  // need everywhere else in this codebase. `openaiApiKey` takes the PLAINTEXT key in
-  // (encrypted here, at the storage boundary) and follows the same omit/set/null-clear
-  // convention.
-  updates: { password?: string; isSystemAdmin?: boolean; email?: string | null; openaiApiKey?: string | null }
+  // need everywhere else in this codebase. `openaiApiKey`/`anthropicApiKey`/
+  // `googleApiKey`/`openrouterApiKey` take the PLAINTEXT key in (encrypted here, at
+  // the storage boundary) and follow the same omit/set/null-clear convention.
+  // `ollamaBaseUrl`/`ollamaModel` are plain text (no secret to encrypt — see
+  // shared/src/users.ts's doc comment on those two fields).
+  updates: {
+    password?: string;
+    isSystemAdmin?: boolean;
+    email?: string | null;
+    openaiApiKey?: string | null;
+    anthropicApiKey?: string | null;
+    googleApiKey?: string | null;
+    openrouterApiKey?: string | null;
+    ollamaBaseUrl?: string | null;
+    ollamaModel?: string | null;
+  }
 ): Promise<UserAccount> {
   const users = await readUsersRaw();
   const index = users.findIndex((u) => u.id === id);
@@ -132,6 +151,26 @@ export async function updateUser(
     if (updates.openaiApiKey === null) delete user.openaiApiKeyEncrypted;
     else user.openaiApiKeyEncrypted = await encryptSecret(updates.openaiApiKey);
   }
+  if (updates.anthropicApiKey !== undefined) {
+    if (updates.anthropicApiKey === null) delete user.anthropicApiKeyEncrypted;
+    else user.anthropicApiKeyEncrypted = await encryptSecret(updates.anthropicApiKey);
+  }
+  if (updates.googleApiKey !== undefined) {
+    if (updates.googleApiKey === null) delete user.googleApiKeyEncrypted;
+    else user.googleApiKeyEncrypted = await encryptSecret(updates.googleApiKey);
+  }
+  if (updates.openrouterApiKey !== undefined) {
+    if (updates.openrouterApiKey === null) delete user.openrouterApiKeyEncrypted;
+    else user.openrouterApiKeyEncrypted = await encryptSecret(updates.openrouterApiKey);
+  }
+  if (updates.ollamaBaseUrl !== undefined) {
+    if (updates.ollamaBaseUrl === null) delete user.ollamaBaseUrl;
+    else user.ollamaBaseUrl = updates.ollamaBaseUrl;
+  }
+  if (updates.ollamaModel !== undefined) {
+    if (updates.ollamaModel === null) delete user.ollamaModel;
+    else user.ollamaModel = updates.ollamaModel;
+  }
 
   await writeUsersRaw(users);
   return user;
@@ -147,17 +186,67 @@ export async function getDecryptedOpenAIKey(id: string): Promise<string | null> 
   return decryptSecret(user.openaiApiKeyEncrypted);
 }
 
+/** Same "decrypt only at the moment of the outgoing request" contract as
+ * getDecryptedOpenAIKey — see lib/ai/anthropicProvider.ts. */
+export async function getDecryptedAnthropicKey(id: string): Promise<string | null> {
+  const user = await findUserById(id);
+  if (!user?.anthropicApiKeyEncrypted) return null;
+  return decryptSecret(user.anthropicApiKeyEncrypted);
+}
+
+/** Same "decrypt only at the moment of the outgoing request" contract as
+ * getDecryptedOpenAIKey — see lib/ai/geminiProvider.ts. */
+export async function getDecryptedGoogleKey(id: string): Promise<string | null> {
+  const user = await findUserById(id);
+  if (!user?.googleApiKeyEncrypted) return null;
+  return decryptSecret(user.googleApiKeyEncrypted);
+}
+
+/** Same "decrypt only at the moment of the outgoing request" contract as
+ * getDecryptedOpenAIKey — see lib/ai/openrouterProvider.ts. */
+export async function getDecryptedOpenRouterKey(id: string): Promise<string | null> {
+  const user = await findUserById(id);
+  if (!user?.openrouterApiKeyEncrypted) return null;
+  return decryptSecret(user.openrouterApiKeyEncrypted);
+}
+
+/** No decryption involved (see shared/src/users.ts's doc comment — Ollama has no
+ * secret) — just the two plain fields, or null if either is missing, see
+ * lib/ai/ollamaProvider.ts. */
+export async function getOllamaConfig(id: string): Promise<{ baseUrl: string; model: string } | null> {
+  const user = await findUserById(id);
+  if (!user?.ollamaBaseUrl || !user?.ollamaModel) return null;
+  return { baseUrl: user.ollamaBaseUrl, model: user.ollamaModel };
+}
+
 export interface AIProviderStatus {
   openai: { configured: boolean };
+  anthropic: { configured: boolean };
+  google: { configured: boolean };
+  openrouter: { configured: boolean };
+  ollama: { configured: boolean; baseUrl?: string; model?: string };
 }
 
 /** Safe-to-send-to-the-client summary of which AI providers this account has
  * configured — never the secret itself (see toPublicUser()'s own doc comment for why
- * openaiApiKeyEncrypted never round-trips to the browser at all). Codex's status is
- * NOT reported here — it's derived live from CODEX_HOME file presence/the running
- * app-server process, see lib/ai/codexProcessManager.ts. */
+ * every `*ApiKeyEncrypted` field never round-trips to the browser at all). Codex's
+ * status is NOT reported here — it's derived live from CODEX_HOME file presence/the
+ * running app-server process, see lib/ai/codexProcessManager.ts. Ollama's entry is the
+ * one exception that includes real values (baseUrl/model) instead of just a boolean —
+ * neither is a secret, and showing them lets the account settings form pre-fill the
+ * current values instead of a blind re-entry like the key-based providers. */
 export function toAIProviderStatus(user: UserAccount): AIProviderStatus {
-  return { openai: { configured: user.openaiApiKeyEncrypted !== undefined } };
+  return {
+    openai: { configured: user.openaiApiKeyEncrypted !== undefined },
+    anthropic: { configured: user.anthropicApiKeyEncrypted !== undefined },
+    google: { configured: user.googleApiKeyEncrypted !== undefined },
+    openrouter: { configured: user.openrouterApiKeyEncrypted !== undefined },
+    ollama: {
+      configured: !!user.ollamaBaseUrl && !!user.ollamaModel,
+      baseUrl: user.ollamaBaseUrl,
+      model: user.ollamaModel,
+    },
+  };
 }
 
 
