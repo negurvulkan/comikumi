@@ -83,6 +83,11 @@ interface Props {
    * Delete) but scoped to exactly the one element that was right-clicked. */
   onDuplicateSelected: () => void;
   onDeleteSelected: () => void;
+  /** Locks/unlocks a panel AND every bubble assigned to it in one go
+   * (editorStore.ts's setPanelLockCascade) — the context-menu shortcut for the exact
+   * problem this feature targets: a panel getting in the way of clicking something
+   * underneath it, without opening the full LayersPanel navigator. */
+  onSetPanelLockCascade: (panelId: string, locked: boolean) => void;
   /** This page's review comments only (Editor.tsx already filters the volume-wide list —
    * see CommentsPanel.tsx, which shows the unfiltered volume list instead). */
   comments: Comment[];
@@ -137,6 +142,7 @@ export function PageCanvas({
   onDeselectAll,
   onDuplicateSelected,
   onDeleteSelected,
+  onSetPanelLockCascade,
   comments,
   selectedCommentId,
   onRequestCreateComment,
@@ -470,6 +476,15 @@ export function PageCanvas({
         : []),
       { type: "action", label: t("editor.contextMenu.duplicate"), onClick: onDuplicateSelected, disabled: panel?.locked },
       { type: "action", label: t("common.delete"), danger: true, onClick: onDeleteSelected, disabled: panel?.locked },
+      ...(panel
+        ? [
+            {
+              type: "action" as const,
+              label: panel.locked ? t("editor.contextMenu.unlockPanel") : t("editor.contextMenu.lockPanel"),
+              onClick: () => onSetPanelLockCascade(panel.id, !panel.locked),
+            },
+          ]
+        : []),
     ];
   }
 

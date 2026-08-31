@@ -504,7 +504,9 @@
       "bulkPresetLabel": "プリセットを割り当て",
       "bulkPresetPlaceholder": "プリセットを選択…",
       "bulkPaddingLabel": "内側の余白を設定",
-      "bulkApplyButton": "適用"
+      "bulkApplyButton": "適用",
+      "lockButton": "ロック",
+      "unlockButton": "ロック解除"
     },
     "shortcuts": {
       "menuEntry": "キーボードショートカット",
@@ -542,6 +544,23 @@
       "empty": "このページにはまだ吹き出しや曲線テキストがありません。",
       "typeBubble": "吹き出し",
       "typeCurvedText": "曲線テキスト"
+    },
+    "layersPanel": {
+      "title": "レイヤー / パネル",
+      "empty": "このページにはまだオブジェクトがありません。",
+      "noPanel": "パネルなし",
+      "typeBubble": "吹き出し",
+      "typeImage": "画像",
+      "typeCurvedText": "曲線テキスト",
+      "noImageFile": "(ファイルなし)",
+      "lockAllPanels": "すべてのパネルをロック",
+      "unlockAllPanels": "すべてのパネルのロックを解除",
+      "lockPanelHint": "パネル + 割り当てられた吹き出しをすべてロック",
+      "unlockPanelHint": "パネル + 割り当てられた吹き出しをすべてロック解除",
+      "lockHint": "ロック",
+      "unlockHint": "ロック解除",
+      "expand": "展開",
+      "collapse": "折りたたむ"
     },
     "reportModal": {
       "title": "レポート — このページ ({{language}})",
@@ -612,6 +631,7 @@
         "2x3": "2×3グリッド"
       },
       "textsThisPage": "このページのテキスト",
+      "layersPanel": "レイヤー / パネル",
       "commentPin": "コメント（ピン）",
       "commentBox": "コメント（枠）",
       "commentFreehand": "コメント（フリーハンド）"
@@ -643,6 +663,8 @@
       "noPreset": "– プリセットなし –",
       "flipHorizontal": "左右反転",
       "duplicate": "複製",
+      "lockPanel": "パネル + 内容をロック",
+      "unlockPanel": "パネル + 内容のロックを解除",
       "removePoint": "点を削除",
       "setAngleFixPrevious": "角度を設定（前の点を固定）",
       "setAngleFixNext": "角度を設定（次の点を固定）",

@@ -111,6 +111,7 @@ export function ReaderPageCell({
         }}
         onDuplicateSelected={() => {}}
         onDeleteSelected={() => {}}
+        onSetPanelLockCascade={() => {}}
         comments={comments}
         selectedCommentId={selectedCommentId}
         onRequestCreateComment={(target, clientX, clientY) => onRequestCreateComment(page, target, clientX, clientY)}

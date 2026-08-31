@@ -993,6 +993,16 @@ button.active {
   background: var(--bg);
 }
 
+.text-list-row.active {
+  background: var(--accent);
+  color: #12131a;
+}
+
+.text-list-row.active .text-list-type {
+  color: #12131a;
+  opacity: 0.7;
+}
+
 .text-list-type {
   flex-shrink: 0;
   width: 72px;

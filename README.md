@@ -37,6 +37,10 @@ React + Konva canvas editor.
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
   (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
   panel-reference polygons for reporting.
+- **Layers/Panel navigator & bulk locking** — every bubble/image/curved text on a page,
+  grouped by panel, with per-element lock toggles; "lock all panels", "lock panel +
+  its bubbles", and "lock selection" bulk actions stop overlapping panels from getting
+  in the way of clicking or accidentally dragging what's underneath.
 - **Bubble clipping & merging** — cut a bubble along a straight line (with a one-click
   suggestion from the nearest panel edge) so it sits flush against a panel border, or
   non-destructively merge several bubbles into one continuous outline with a single

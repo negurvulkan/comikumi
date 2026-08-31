@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createBubble, createEmptyLayout } from "../../../shared/src/layoutSchema";
+import { createBubble, createEmptyLayout, createPanel } from "../../../shared/src/layoutSchema";
 import { useEditorStore } from "./editorStore";
 
 function resetStoreWithEmptyLayout() {
@@ -103,5 +103,128 @@ describe("updateSelectedBubbles", () => {
 
     expect(useEditorStore.getState().past.length).toBe(0);
     expect(useEditorStore.getState().layout!.bubbles[0].fontSize).not.toBe(40);
+  });
+});
+
+describe("setLockedForSelection", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("locks every selected element across bubbles/images/curvedTexts/panels, leaves the rest untouched", () => {
+    const selectedBubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    const otherBubble = createBubble({ id: "b2", x: 0, y: 0, width: 10, height: 10 });
+    const panel = createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    const otherPanel = createPanel({ id: "p2", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    useEditorStore.setState((s) => ({
+      layout: { ...s.layout!, bubbles: [selectedBubble, otherBubble], panels: [panel, otherPanel] },
+      selectedBubbleIds: ["b1"],
+      selectedPanelIds: ["p1"],
+    }));
+
+    useEditorStore.getState().setLockedForSelection(true);
+
+    const layout = useEditorStore.getState().layout!;
+    expect(layout.bubbles.find((b) => b.id === "b1")!.locked).toBe(true);
+    expect(layout.bubbles.find((b) => b.id === "b2")!.locked).toBeUndefined();
+    expect(layout.panels.find((p) => p.id === "p1")!.locked).toBe(true);
+    expect(layout.panels.find((p) => p.id === "p2")!.locked).toBeUndefined();
+  });
+
+  it("unlocking writes `locked: undefined` rather than `false` (dropped from JSON on save)", () => {
+    const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10, locked: true });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [bubble] }, selectedBubbleIds: ["b1"] }));
+
+    useEditorStore.getState().setLockedForSelection(false);
+
+    expect(useEditorStore.getState().layout!.bubbles[0].locked).toBeUndefined();
+  });
+
+  it("creates one undo step and marks the layout dirty", () => {
+    const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [bubble] }, selectedBubbleIds: ["b1"] }));
+
+    useEditorStore.getState().setLockedForSelection(true);
+
+    expect(useEditorStore.getState().past.length).toBe(1);
+    expect(useEditorStore.getState().dirty).toBe(true);
+  });
+
+  it("is a no-op (no history entry) when nothing is selected", () => {
+    const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({
+      layout: { ...s.layout!, bubbles: [bubble] },
+      selectedBubbleIds: [],
+      selectedImageIds: [],
+      selectedCurvedTextIds: [],
+      selectedPanelIds: [],
+    }));
+
+    useEditorStore.getState().setLockedForSelection(true);
+
+    expect(useEditorStore.getState().past.length).toBe(0);
+    expect(useEditorStore.getState().layout!.bubbles[0].locked).toBeUndefined();
+  });
+});
+
+describe("setAllPanelsLocked", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("locks/unlocks every panel on the page, leaves bubbles untouched", () => {
+    const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10 });
+    const p1 = createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    const p2 = createPanel({ id: "p2", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [bubble], panels: [p1, p2] } }));
+
+    useEditorStore.getState().setAllPanelsLocked(true);
+    let layout = useEditorStore.getState().layout!;
+    expect(layout.panels.every((p) => p.locked)).toBe(true);
+    expect(layout.bubbles[0].locked).toBeUndefined();
+
+    useEditorStore.getState().setAllPanelsLocked(false);
+    layout = useEditorStore.getState().layout!;
+    expect(layout.panels.every((p) => !p.locked)).toBe(true);
+  });
+
+  it("is a no-op (no history entry) when the page has no panels", () => {
+    useEditorStore.getState().setAllPanelsLocked(true);
+    expect(useEditorStore.getState().past.length).toBe(0);
+  });
+});
+
+describe("setPanelLockCascade", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("locks the panel and every bubble assigned to it, leaves other panels/bubbles untouched", () => {
+    const assigned = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10, panelId: "p1" });
+    const unassigned = createBubble({ id: "b2", x: 0, y: 0, width: 10, height: 10 });
+    const otherPanelBubble = createBubble({ id: "b3", x: 0, y: 0, width: 10, height: 10, panelId: "p2" });
+    const p1 = createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    const p2 = createPanel({ id: "p2", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    useEditorStore.setState((s) => ({
+      layout: { ...s.layout!, bubbles: [assigned, unassigned, otherPanelBubble], panels: [p1, p2] },
+    }));
+
+    useEditorStore.getState().setPanelLockCascade("p1", true);
+
+    const layout = useEditorStore.getState().layout!;
+    expect(layout.panels.find((p) => p.id === "p1")!.locked).toBe(true);
+    expect(layout.panels.find((p) => p.id === "p2")!.locked).toBeUndefined();
+    expect(layout.bubbles.find((b) => b.id === "b1")!.locked).toBe(true);
+    expect(layout.bubbles.find((b) => b.id === "b2")!.locked).toBeUndefined();
+    expect(layout.bubbles.find((b) => b.id === "b3")!.locked).toBeUndefined();
+  });
+
+  it("creates one undo step for the whole cascade", () => {
+    const bubble = createBubble({ id: "b1", x: 0, y: 0, width: 10, height: 10, panelId: "p1" });
+    const p1 = createPanel({ id: "p1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [bubble], panels: [p1] } }));
+
+    useEditorStore.getState().setPanelLockCascade("p1", true);
+
+    expect(useEditorStore.getState().past.length).toBe(1);
+  });
+
+  it("is a no-op (no history entry) when the panel doesn't exist", () => {
+    useEditorStore.getState().setPanelLockCascade("missing", true);
+    expect(useEditorStore.getState().past.length).toBe(0);
   });
 });

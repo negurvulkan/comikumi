@@ -513,7 +513,9 @@
       "bulkPresetLabel": "Asignar preajuste",
       "bulkPresetPlaceholder": "Elegir un preajuste…",
       "bulkPaddingLabel": "Definir margen interno",
-      "bulkApplyButton": "Aplicar"
+      "bulkApplyButton": "Aplicar",
+      "lockButton": "Bloquear",
+      "unlockButton": "Desbloquear"
     },
     "shortcuts": {
       "menuEntry": "Atajos de teclado",
@@ -551,6 +553,23 @@
       "empty": "Aún no hay bocadillos ni textos curvos en esta página.",
       "typeBubble": "Bocadillo",
       "typeCurvedText": "Texto curvo"
+    },
+    "layersPanel": {
+      "title": "Capas / Paneles",
+      "empty": "Aún no hay objetos en esta página.",
+      "noPanel": "Sin panel",
+      "typeBubble": "Bocadillo",
+      "typeImage": "Imagen",
+      "typeCurvedText": "Texto curvo",
+      "noImageFile": "(sin archivo)",
+      "lockAllPanels": "Bloquear todos los paneles",
+      "unlockAllPanels": "Desbloquear todos los paneles",
+      "lockPanelHint": "Bloquear panel + todos los bocadillos asignados",
+      "unlockPanelHint": "Desbloquear panel + todos los bocadillos asignados",
+      "lockHint": "Bloquear",
+      "unlockHint": "Desbloquear",
+      "expand": "Expandir",
+      "collapse": "Contraer"
     },
     "reportModal": {
       "title": "Informe — esta página ({{language}})",
@@ -621,6 +640,7 @@
         "2x3": "Cuadrícula 2×3"
       },
       "textsThisPage": "Textos de esta página",
+      "layersPanel": "Capas / Paneles",
       "commentPin": "Comentario (pin)",
       "commentBox": "Comentario (caja)",
       "commentFreehand": "Comentario (marcado a mano alzada)"
@@ -652,6 +672,8 @@
       "noPreset": "– sin preajuste –",
       "flipHorizontal": "Voltear horizontalmente",
       "duplicate": "Duplicar",
+      "lockPanel": "Bloquear panel + contenido",
+      "unlockPanel": "Desbloquear panel + contenido",
       "removePoint": "Eliminar punto",
       "setAngleFixPrevious": "Establecer ángulo (fijar punto anterior)",
       "setAngleFixNext": "Establecer ángulo (fijar punto siguiente)",

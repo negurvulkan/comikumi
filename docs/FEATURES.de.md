@@ -531,11 +531,36 @@ gesperrt; ein Klick darauf schaltet um. Solange ein Element gesperrt ist:
 - Text-/Stil-Bearbeitung im Inspector bleibt weiterhin möglich — die Sperre betrifft
   ausschließlich Geometrie.
 
-Ein gesperrtes Panel schützt nur sich selbst, nicht automatisch seine zugeordneten
-Kind-Blasen (siehe [Elementtypen](#elementtypen) → Panels) — die bleiben unabhängig
-sperr-/bearbeitbar. Die Sperre wird im gespeicherten Layout nur dann mit abgelegt, wenn
-das Element zuletzt gesperrt war (siehe `locked` in
+Ein Klick auf das eigene Schloss-Symbol eines Elements wirkt nur auf dieses Element —
+ein gesperrtes Panel schützt auf diesem Weg nicht automatisch seine zugeordneten
+Kind-Blasen (siehe [Elementtypen](#elementtypen) → Panels); die bleiben über ihr eigenes
+Symbol unabhängig sperr-/bearbeitbar. Die Sperre wird im gespeicherten Layout nur dann mit
+abgelegt, wenn das Element zuletzt gesperrt war (siehe `locked` in
 [JSON-Format.de.md](JSON-Format.de.md#bubble)).
+
+### Ebenen-/Panel-Navigator & Bulk-Sperren
+
+Da Panels oft visuell über Blasen und anderen Overlays liegen, machen sie es manchmal
+schwer, gezielt etwas darunter anzuklicken — und jedes Panel einzeln zu sperren ist
+aufwendig. Der **Ebenen-Navigator** (Werkzeugleiste, neben dem Text-Listen-Symbol) löst
+das: Er listet jede Blase, jedes Bild und jeden Kurventext der Seite gruppiert nach
+zugehörigem Panel auf (Elemente ohne Panel landen in einer eigenen Gruppe), jeweils mit
+eigenem Sperr-Symbol und anklickbarer Zeile zur Auswahl. Gruppen lassen sich
+auf-/zuklappen, ein Klick auf den Panel-Gruppentitel wählt das Panel auf der Leinwand aus.
+
+Aus dem Ebenen-Navigator, dem Panel-Kontextmenü und dem **Bearbeiten**-Menü stehen drei
+Bulk-Aktionen zur Verfügung:
+
+- **Alle Panels sperren/entsperren** — schaltet alle Panels der Seite auf einmal um
+  (Blasen/Bilder/Kurventexte bleiben unberührt).
+- **Panel + Inhalt sperren/entsperren** — Rechtsklick auf ein Panel (oder dessen
+  Sperr-Symbol im Ebenen-Navigator) sperrt das Panel zusammen mit jeder ihm zugewiesenen
+  Blase (`bubble.panelId`) in einem Schritt. Bilder und Kurventexte haben keine
+  Panel-Zuordnung und sind nie Teil dieser Kaskade, selbst wenn sie visuell im
+  Panel-Bereich liegen.
+- **Auswahl sperren/entsperren** — bei einer Mehrfachauswahl (Shift-Klick) sperren die
+  Sperren/Entsperren-Buttons im Mehrfachauswahl-Inspector alle ausgewählten Elemente
+  unabhängig vom Typ in einem Schritt.
 
 ## Cut-Panel
 

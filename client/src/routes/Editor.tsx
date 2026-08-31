@@ -23,6 +23,7 @@ import { useNormalizeRun, type FlaggedPage } from "../export/useNormalizeRun";
 import { renderPageToPng, type RasterExportOptions } from "../export/renderPageToPng";
 import type { UniformFitMode } from "../export/uniformFormat";
 import { TextListPanel } from "../editor/TextListPanel";
+import { LayersPanel } from "../editor/LayersPanel";
 import { TranslatorContextPanel } from "../editor/TranslatorContextPanel";
 import { ScriptSidebar } from "../editor/ScriptSidebar";
 import { StoryBiblePanel } from "../editor/StoryBiblePanel";
@@ -86,6 +87,7 @@ export function Editor() {
   const [drawTool, setDrawTool] = useState<DrawTool | null>(null);
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [showTextPanel, setShowTextPanel] = useState(false);
+  const [showLayersPanel, setShowLayersPanel] = useState(false);
   const [showContextPanel, setShowContextPanel] = useState(false);
   const [showScriptPanel, setShowScriptPanel] = useState(false);
   const [showStoryBiblePanel, setShowStoryBiblePanel] = useState(false);
@@ -569,6 +571,19 @@ export function Editor() {
           onClick: () => store.duplicateSelected(),
           disabled: selectedCount === 0 || isTranslatorOnly,
         },
+        { type: "separator" },
+        {
+          type: "action",
+          label: t("editor.layersPanel.lockAllPanels"),
+          onClick: () => store.setAllPanelsLocked(true),
+          disabled: layout.panels.length === 0,
+        },
+        {
+          type: "action",
+          label: t("editor.layersPanel.unlockAllPanels"),
+          onClick: () => store.setAllPanelsLocked(false),
+          disabled: layout.panels.length === 0,
+        },
       ],
     },
     {
@@ -755,6 +770,7 @@ export function Editor() {
           textPanelOpen={showTextPanel}
           onToggleTextPanel={() => {
             setShowTextPanel((v) => !v);
+            setShowLayersPanel(false);
             setShowContextPanel(false);
             setShowScriptPanel(false);
             setShowStoryBiblePanel(false);
@@ -762,10 +778,21 @@ export function Editor() {
             setShowCommentsPanel(false);
           }}
           textPanelDisabled={languages.length === 0}
+          layersPanelOpen={showLayersPanel}
+          onToggleLayersPanel={() => {
+            setShowLayersPanel((v) => !v);
+            setShowTextPanel(false);
+            setShowContextPanel(false);
+            setShowScriptPanel(false);
+            setShowStoryBiblePanel(false);
+            setShowAIPanel(false);
+            setShowCommentsPanel(false);
+          }}
           contextPanelOpen={showContextPanel}
           onToggleContextPanel={() => {
             setShowContextPanel((v) => !v);
             setShowTextPanel(false);
+            setShowLayersPanel(false);
             setShowScriptPanel(false);
             setShowStoryBiblePanel(false);
             setShowAIPanel(false);
@@ -775,6 +802,7 @@ export function Editor() {
           onToggleScriptPanel={() => {
             setShowScriptPanel((v) => !v);
             setShowTextPanel(false);
+            setShowLayersPanel(false);
             setShowContextPanel(false);
             setShowStoryBiblePanel(false);
             setShowAIPanel(false);
@@ -784,6 +812,7 @@ export function Editor() {
           onToggleStoryBiblePanel={() => {
             setShowStoryBiblePanel((v) => !v);
             setShowTextPanel(false);
+            setShowLayersPanel(false);
             setShowContextPanel(false);
             setShowScriptPanel(false);
             setShowAIPanel(false);
@@ -793,6 +822,7 @@ export function Editor() {
           onToggleAIPanel={() => {
             setShowAIPanel((v) => !v);
             setShowTextPanel(false);
+            setShowLayersPanel(false);
             setShowContextPanel(false);
             setShowScriptPanel(false);
             setShowStoryBiblePanel(false);
@@ -802,6 +832,7 @@ export function Editor() {
           onToggleCommentsPanel={() => {
             setShowCommentsPanel((v) => !v);
             setShowTextPanel(false);
+            setShowLayersPanel(false);
             setShowContextPanel(false);
             setShowScriptPanel(false);
             setShowStoryBiblePanel(false);
@@ -829,6 +860,29 @@ export function Editor() {
           onSelectBubble={(id) => store.selectBubble(id)}
           onSelectCurvedText={(id) => store.selectCurvedText(id)}
           onClose={() => setShowTextPanel(false)}
+        />
+        <LayersPanel
+          open={showLayersPanel}
+          bubbles={layout.bubbles}
+          images={layout.images}
+          curvedTexts={layout.curvedTexts}
+          panels={layout.panels}
+          activeLanguage={activeLanguage}
+          readingDirection={readingDirection}
+          selectedBubbleIds={selectedBubbleIds}
+          selectedImageIds={selectedImageIds}
+          selectedCurvedTextIds={selectedCurvedTextIds}
+          selectedPanelIds={selectedPanelIds}
+          onSelectBubble={store.selectBubble}
+          onSelectImage={store.selectImage}
+          onSelectCurvedText={store.selectCurvedText}
+          onSelectPanel={store.selectPanel}
+          onChangeBubble={store.updateBubble}
+          onChangeImage={store.updateImage}
+          onChangeCurvedText={store.updateCurvedText}
+          onSetAllPanelsLocked={store.setAllPanelsLocked}
+          onSetPanelLockCascade={store.setPanelLockCascade}
+          onClose={() => setShowLayersPanel(false)}
         />
         <TranslatorContextPanel
           open={showContextPanel}
@@ -924,6 +978,7 @@ export function Editor() {
             onDeselectAll={store.deselectAll}
             onDuplicateSelected={() => store.duplicateSelected()}
             onDeleteSelected={() => store.removeSelected()}
+            onSetPanelLockCascade={store.setPanelLockCascade}
             comments={comments.filter((c) => c.page === page)}
             selectedCommentId={commentThreadState?.mode === "view" ? commentThreadState.commentId : null}
             onRequestCreateComment={handleRequestCreateComment}
@@ -937,6 +992,8 @@ export function Editor() {
               panelCount={selectedPanelIds.length}
               onDuplicate={() => store.duplicateSelected()}
               onDelete={() => store.removeSelected()}
+              onLockSelection={() => store.setLockedForSelection(true)}
+              onUnlockSelection={() => store.setLockedForSelection(false)}
               canMerge={
                 layout != null &&
                 layout.bubbles.filter((b) => selectedBubbleIds.includes(b.id) && b.shape !== "quad" && !b.locked).length >= 2

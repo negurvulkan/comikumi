@@ -527,7 +527,9 @@
       "bulkPresetLabel": "Preset zuweisen",
       "bulkPresetPlaceholder": "Preset wählen…",
       "bulkPaddingLabel": "Innenabstand setzen",
-      "bulkApplyButton": "Anwenden"
+      "bulkApplyButton": "Anwenden",
+      "lockButton": "Sperren",
+      "unlockButton": "Entsperren"
     },
     "shortcuts": {
       "menuEntry": "Tastenkürzel",
@@ -565,6 +567,23 @@
       "empty": "Noch keine Bubbles oder Kurventexte auf dieser Seite.",
       "typeBubble": "Bubble",
       "typeCurvedText": "Kurventext"
+    },
+    "layersPanel": {
+      "title": "Ebenen / Panels",
+      "empty": "Noch keine Objekte auf dieser Seite.",
+      "noPanel": "Ohne Panel",
+      "typeBubble": "Bubble",
+      "typeImage": "Bild",
+      "typeCurvedText": "Kurventext",
+      "noImageFile": "(keine Datei)",
+      "lockAllPanels": "Alle Panels sperren",
+      "unlockAllPanels": "Alle Panels entsperren",
+      "lockPanelHint": "Panel + alle zugehörigen Bubbles sperren",
+      "unlockPanelHint": "Panel + alle zugehörigen Bubbles entsperren",
+      "lockHint": "Sperren",
+      "unlockHint": "Entsperren",
+      "expand": "Aufklappen",
+      "collapse": "Zuklappen"
     },
     "reportModal": {
       "title": "Bericht — diese Seite ({{language}})",
@@ -635,6 +654,7 @@
         "2x3": "2×3-Raster"
       },
       "textsThisPage": "Texte dieser Seite",
+      "layersPanel": "Ebenen / Panels",
       "commentPin": "Kommentar (Pin)",
       "commentBox": "Kommentar (Markierungsbox)",
       "commentFreehand": "Kommentar (Freihand-Markup)"
@@ -666,6 +686,8 @@
       "noPreset": "– kein Preset –",
       "flipHorizontal": "Horizontal spiegeln",
       "duplicate": "Duplizieren",
+      "lockPanel": "Panel + Inhalt sperren",
+      "unlockPanel": "Panel + Inhalt entsperren",
       "removePoint": "Punkt entfernen",
       "setAngleFixPrevious": "Winkel setzen (vorherigen Punkt fixieren)",
       "setAngleFixNext": "Winkel setzen (nächsten Punkt fixieren)",

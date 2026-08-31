@@ -525,11 +525,37 @@ means locked; clicking it toggles the state. While an element is locked:
 - Text/style editing in the inspector remains possible — the lock only
   concerns geometry.
 
-A locked panel only protects itself, not automatically its assigned child
-bubbles (see [Element Types](#element-types) → Panels) — those remain
-independently lockable/editable. The lock is only stored in the saved layout
-if the element was locked last (see `locked` in
+Toggling an element's own lock icon only affects that element — a locked
+panel does not automatically protect its assigned child bubbles this way
+(see [Element Types](#element-types) → Panels); those remain independently
+lockable/editable through their own icon. The lock is only stored in the
+saved layout if the element was locked last (see `locked` in
 [JSON-Format.md](JSON-Format.md#bubble)).
+
+### Layers / Panel Navigator & Bulk Locking
+
+Since panels often sit visually on top of bubbles and other overlays, they
+can make it hard to click precisely on what's underneath — and locking every
+panel one by one is tedious. The **Layers panel** (toolbar icon next to the
+text-list toggle) solves this: it lists every bubble, image, and curved text
+on the page grouped by the panel they belong to (elements with no panel are
+grouped separately), each with its own lock toggle and a click-to-select row.
+Groups can be collapsed/expanded, and clicking a panel's group label selects
+that panel on the canvas.
+
+From the Layers panel, the panel context menu, and the **Edit** menu, three
+bulk actions are available:
+
+- **Lock/unlock all panels** — toggles every panel on the page at once
+  (bubbles/images/curved texts are untouched).
+- **Lock/unlock panel + contents** — right-click a panel (or use its lock
+  icon in the Layers panel) to lock the panel together with every bubble
+  assigned to it (`bubble.panelId`) in one step. Images and curved texts have
+  no panel assignment and are never included in this cascade, even if they
+  visually sit inside the panel's area.
+- **Lock/unlock selection** — with multiple elements selected (shift-click),
+  the multi-selection inspector's Lock/Unlock buttons apply to every selected
+  element regardless of type, in one step.
 
 ## Cut Panel
 

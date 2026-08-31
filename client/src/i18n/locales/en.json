@@ -527,7 +527,9 @@
       "bulkPresetLabel": "Assign preset",
       "bulkPresetPlaceholder": "Choose a preset…",
       "bulkPaddingLabel": "Set inner padding",
-      "bulkApplyButton": "Apply"
+      "bulkApplyButton": "Apply",
+      "lockButton": "Lock",
+      "unlockButton": "Unlock"
     },
     "shortcuts": {
       "menuEntry": "Keyboard shortcuts",
@@ -565,6 +567,23 @@
       "empty": "No bubbles or curved texts on this page yet.",
       "typeBubble": "Bubble",
       "typeCurvedText": "Curved text"
+    },
+    "layersPanel": {
+      "title": "Layers / Panels",
+      "empty": "No objects on this page yet.",
+      "noPanel": "No panel",
+      "typeBubble": "Bubble",
+      "typeImage": "Image",
+      "typeCurvedText": "Curved text",
+      "noImageFile": "(no file)",
+      "lockAllPanels": "Lock all panels",
+      "unlockAllPanels": "Unlock all panels",
+      "lockPanelHint": "Lock panel + all assigned bubbles",
+      "unlockPanelHint": "Unlock panel + all assigned bubbles",
+      "lockHint": "Lock",
+      "unlockHint": "Unlock",
+      "expand": "Expand",
+      "collapse": "Collapse"
     },
     "reportModal": {
       "title": "Report — this page ({{language}})",
@@ -635,6 +654,7 @@
         "2x3": "2×3 grid"
       },
       "textsThisPage": "Texts on this page",
+      "layersPanel": "Layers / Panels",
       "commentPin": "Comment (pin)",
       "commentBox": "Comment (box)",
       "commentFreehand": "Comment (freehand markup)"
@@ -666,6 +686,8 @@
       "noPreset": "– no preset –",
       "flipHorizontal": "Flip horizontally",
       "duplicate": "Duplicate",
+      "lockPanel": "Lock panel + contents",
+      "unlockPanel": "Unlock panel + contents",
       "removePoint": "Remove point",
       "setAngleFixPrevious": "Set angle (keep previous point fixed)",
       "setAngleFixNext": "Set angle (keep next point fixed)",

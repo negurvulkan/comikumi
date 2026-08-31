@@ -513,7 +513,9 @@
       "bulkPresetLabel": "Assigner un préréglage",
       "bulkPresetPlaceholder": "Choisir un préréglage…",
       "bulkPaddingLabel": "Définir la marge intérieure",
-      "bulkApplyButton": "Appliquer"
+      "bulkApplyButton": "Appliquer",
+      "lockButton": "Verrouiller",
+      "unlockButton": "Déverrouiller"
     },
     "shortcuts": {
       "menuEntry": "Raccourcis clavier",
@@ -551,6 +553,23 @@
       "empty": "Aucune bulle ni texte courbe sur cette page pour l'instant.",
       "typeBubble": "Bulle",
       "typeCurvedText": "Texte courbe"
+    },
+    "layersPanel": {
+      "title": "Calques / Panneaux",
+      "empty": "Aucun objet sur cette page pour l'instant.",
+      "noPanel": "Sans panneau",
+      "typeBubble": "Bulle",
+      "typeImage": "Image",
+      "typeCurvedText": "Texte courbe",
+      "noImageFile": "(aucun fichier)",
+      "lockAllPanels": "Verrouiller tous les panneaux",
+      "unlockAllPanels": "Déverrouiller tous les panneaux",
+      "lockPanelHint": "Verrouiller le panneau + toutes les bulles assignées",
+      "unlockPanelHint": "Déverrouiller le panneau + toutes les bulles assignées",
+      "lockHint": "Verrouiller",
+      "unlockHint": "Déverrouiller",
+      "expand": "Déplier",
+      "collapse": "Replier"
     },
     "reportModal": {
       "title": "Rapport — cette page ({{language}})",
@@ -621,6 +640,7 @@
         "2x3": "Grille 2×3"
       },
       "textsThisPage": "Textes de cette page",
+      "layersPanel": "Calques / Panneaux",
       "commentPin": "Commentaire (épingle)",
       "commentBox": "Commentaire (zone)",
       "commentFreehand": "Commentaire (annotation à main levée)"
@@ -652,6 +672,8 @@
       "noPreset": "– aucun préréglage –",
       "flipHorizontal": "Retourner horizontalement",
       "duplicate": "Dupliquer",
+      "lockPanel": "Verrouiller le panneau + le contenu",
+      "unlockPanel": "Déverrouiller le panneau + le contenu",
       "removePoint": "Supprimer le point",
       "setAngleFixPrevious": "Définir l'angle (fixer le point précédent)",
       "setAngleFixNext": "Définir l'angle (fixer le point suivant)",

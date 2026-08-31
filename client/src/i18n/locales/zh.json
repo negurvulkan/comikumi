@@ -504,7 +504,9 @@
       "bulkPresetLabel": "指定预设",
       "bulkPresetPlaceholder": "选择预设…",
       "bulkPaddingLabel": "设置内边距",
-      "bulkApplyButton": "应用"
+      "bulkApplyButton": "应用",
+      "lockButton": "锁定",
+      "unlockButton": "解锁"
     },
     "shortcuts": {
       "menuEntry": "键盘快捷键",
@@ -542,6 +544,23 @@
       "empty": "本页尚无气泡或曲线文字。",
       "typeBubble": "气泡",
       "typeCurvedText": "曲线文字"
+    },
+    "layersPanel": {
+      "title": "图层 / 分格",
+      "empty": "本页尚无对象。",
+      "noPanel": "无分格",
+      "typeBubble": "气泡",
+      "typeImage": "图片",
+      "typeCurvedText": "曲线文字",
+      "noImageFile": "（无文件）",
+      "lockAllPanels": "锁定所有分格",
+      "unlockAllPanels": "解锁所有分格",
+      "lockPanelHint": "锁定分格及其所有关联气泡",
+      "unlockPanelHint": "解锁分格及其所有关联气泡",
+      "lockHint": "锁定",
+      "unlockHint": "解锁",
+      "expand": "展开",
+      "collapse": "折叠"
     },
     "reportModal": {
       "title": "报告——本页（{{language}}）",
@@ -612,6 +631,7 @@
         "2x3": "2×3 网格"
       },
       "textsThisPage": "本页文字",
+      "layersPanel": "图层 / 分格",
       "commentPin": "评论（图钉）",
       "commentBox": "评论（框选）",
       "commentFreehand": "评论（手绘标记）"
@@ -643,6 +663,8 @@
       "noPreset": "– 无预设 –",
       "flipHorizontal": "水平翻转",
       "duplicate": "复制",
+      "lockPanel": "锁定分格及内容",
+      "unlockPanel": "解锁分格及内容",
       "removePoint": "删除点",
       "setAngleFixPrevious": "设置角度（固定前一个点）",
       "setAngleFixNext": "设置角度（固定后一个点）",

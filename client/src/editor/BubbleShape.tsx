@@ -286,7 +286,7 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
         offsetX={w / 2}
         offsetY={h / 2}
         rotation={form.rotation}
-        draggable={!readOnly}
+        draggable={!geometryDisabled}
         onClick={(e) => onSelect(e.evt.shiftKey)}
         onTap={() => onSelect(false)}
         onContextMenu={(e) => {

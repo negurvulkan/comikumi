@@ -18,6 +18,7 @@ import {
   CommentBoxToolIcon,
   CommentFreehandToolIcon,
   CommentsPanelToolIcon,
+  LayersToolIcon,
 } from "./Icons";
 
 /** What the canvas is currently armed to draw — bubble shapes, a Panel reference
@@ -48,6 +49,8 @@ interface Props {
   textPanelOpen: boolean;
   onToggleTextPanel: () => void;
   textPanelDisabled?: boolean;
+  layersPanelOpen: boolean;
+  onToggleLayersPanel: () => void;
   contextPanelOpen: boolean;
   onToggleContextPanel: () => void;
   scriptPanelOpen: boolean;
@@ -77,6 +80,8 @@ export function ToolStrip({
   textPanelOpen,
   onToggleTextPanel,
   textPanelDisabled,
+  layersPanelOpen,
+  onToggleLayersPanel,
   contextPanelOpen,
   onToggleContextPanel,
   scriptPanelOpen,
@@ -187,6 +192,13 @@ export function ToolStrip({
         title={t("editor.toolStrip.textsThisPage")}
       >
         <GlobeToolIcon />
+      </button>
+      <button
+        className={`tool-btn${layersPanelOpen ? " active" : ""}`}
+        onClick={onToggleLayersPanel}
+        title={t("editor.toolStrip.layersPanel")}
+      >
+        <LayersToolIcon />
       </button>
       <button
         className={`tool-btn${contextPanelOpen ? " active" : ""}`}

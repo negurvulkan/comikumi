@@ -260,6 +260,18 @@ export function AutoBubblesToolIcon() {
   );
 }
 
+/** Three stacked/offset rectangles — the Layers/Panel navigator toggle (grouped
+ * object list with per-panel lock cascades, see LayersPanel.tsx). */
+export function LayersToolIcon() {
+  return (
+    <svg {...common}>
+      <rect x="5.5" y="2.5" width="12" height="8" rx="1.5" />
+      <rect x="2.5" y="6" width="12" height="8" rx="1.5" fill="var(--bg-elevated, #1a1b22)" />
+      <path d="M6.5 11 V16.5 H16" />
+    </svg>
+  );
+}
+
 /** A four-point sparkle — used for the AI-assistant panel toggle. */
 export function AIAssistantIcon() {
   return (

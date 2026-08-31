@@ -140,6 +140,19 @@ interface EditorState {
    * bubble-only (not images/curved texts/panels) — the fields it's used for (presetId,
    * paddingRatio, fontSize) only exist on Bubble. */
   updateSelectedBubbles: (patch: Partial<Bubble>) => void;
+  /** Sets/clears `locked` on every currently-selected element across all four arrays at
+   * once — the bulk counterpart to LockToggleHandle.tsx's per-element toggle, for a
+   * multi-selection (shift-click or the LayersPanel navigator). A no-op (no history
+   * entry) when nothing is selected. */
+  setLockedForSelection: (locked: boolean) => void;
+  /** Sets/clears `locked` on every panel on the page — bubbles/images/curved texts are
+   * untouched. */
+  setAllPanelsLocked: (locked: boolean) => void;
+  /** Sets/clears `locked` on one panel AND every bubble assigned to it
+   * (`bubble.panelId === panelId`) — images/curved texts have no `panelId` (see
+   * layoutSchema.ts) and are never part of a panel's lock cascade. A no-op if the panel
+   * doesn't exist. */
+  setPanelLockCascade: (panelId: string, locked: boolean) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => {
@@ -739,6 +752,56 @@ export const useEditorStore = create<EditorState>((set, get) => {
         layout: {
           ...layout,
           bubbles: layout.bubbles.map((b) => (targetIds.has(b.id) ? { ...b, ...patch } : b)),
+        },
+        dirty: true,
+      });
+    },
+
+    setLockedForSelection(locked) {
+      const layout = get().layout;
+      if (!layout) return;
+      const { selectedBubbleIds, selectedImageIds, selectedCurvedTextIds, selectedPanelIds } = get();
+      if (selectedBubbleIds.length + selectedImageIds.length + selectedCurvedTextIds.length + selectedPanelIds.length === 0) return;
+      pushHistory(true);
+      // `locked: undefined` (not `false`) matches LockToggleHandle.tsx's own single-element
+      // toggle convention — see Bubble.locked's doc comment in layoutSchema.ts: only ever
+      // written to disk while actually locked, dropped entirely once unlocked.
+      const lockPatch = { locked: locked ? true : undefined };
+      set({
+        layout: {
+          ...layout,
+          bubbles: layout.bubbles.map((b) => (selectedBubbleIds.includes(b.id) ? { ...b, ...lockPatch } : b)),
+          images: layout.images.map((img) => (selectedImageIds.includes(img.id) ? { ...img, ...lockPatch } : img)),
+          curvedTexts: layout.curvedTexts.map((el) => (selectedCurvedTextIds.includes(el.id) ? { ...el, ...lockPatch } : el)),
+          panels: layout.panels.map((p) => (selectedPanelIds.includes(p.id) ? { ...p, ...lockPatch } : p)),
+        },
+        dirty: true,
+      });
+    },
+
+    setAllPanelsLocked(locked) {
+      const layout = get().layout;
+      if (!layout) return;
+      if (layout.panels.length === 0) return;
+      pushHistory(true);
+      const lockPatch = { locked: locked ? true : undefined };
+      set({
+        layout: { ...layout, panels: layout.panels.map((p) => ({ ...p, ...lockPatch })) },
+        dirty: true,
+      });
+    },
+
+    setPanelLockCascade(panelId, locked) {
+      const layout = get().layout;
+      if (!layout) return;
+      if (!layout.panels.some((p) => p.id === panelId)) return;
+      pushHistory(true);
+      const lockPatch = { locked: locked ? true : undefined };
+      set({
+        layout: {
+          ...layout,
+          panels: layout.panels.map((p) => (p.id === panelId ? { ...p, ...lockPatch } : p)),
+          bubbles: layout.bubbles.map((b) => (b.panelId === panelId ? { ...b, ...lockPatch } : b)),
         },
         dirty: true,
       });

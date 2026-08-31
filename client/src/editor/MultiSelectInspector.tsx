@@ -10,6 +10,11 @@ interface Props {
   panelCount: number;
   onDuplicate: () => void;
   onDelete: () => void;
+  /** Bulk lock/unlock across every currently-selected element, regardless of type
+   * (editorStore.ts's setLockedForSelection) — the multi-select counterpart to
+   * LockToggleHandle.tsx's per-element toggle. */
+  onLockSelection: () => void;
+  onUnlockSelection: () => void;
   /** Whether the current selection actually qualifies for editorStore.ts's
    * mergeSelectedBubbles() (>=2 unlocked, non-"quad" bubbles) — computed by the caller,
    * which has the full bubble data this component only receives as counts. */
@@ -35,6 +40,8 @@ export function MultiSelectInspector({
   panelCount,
   onDuplicate,
   onDelete,
+  onLockSelection,
+  onUnlockSelection,
   canMerge,
   onMerge,
   canUnmerge,
@@ -62,6 +69,10 @@ export function MultiSelectInspector({
         {t("editor.multiSelect.keyboardHint")}
       </p>
       <button onClick={onDuplicate}>{t("editor.multiSelect.duplicateButton")}</button>
+      <div className="field-row">
+        <button onClick={onLockSelection}>{t("editor.multiSelect.lockButton")}</button>
+        <button onClick={onUnlockSelection}>{t("editor.multiSelect.unlockButton")}</button>
+      </div>
       {canMerge && <button onClick={onMerge}>{t("editor.multiSelect.mergeButton")}</button>}
       {canUnmerge && <button onClick={onUnmerge}>{t("editor.multiSelect.unmergeButton")}</button>}
       <button onClick={onDelete} style={{ color: "#ff8a95" }}>

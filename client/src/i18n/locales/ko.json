@@ -504,7 +504,9 @@
       "bulkPresetLabel": "프리셋 지정",
       "bulkPresetPlaceholder": "프리셋 선택…",
       "bulkPaddingLabel": "내부 여백 설정",
-      "bulkApplyButton": "적용"
+      "bulkApplyButton": "적용",
+      "lockButton": "잠금",
+      "unlockButton": "잠금 해제"
     },
     "shortcuts": {
       "menuEntry": "키보드 단축키",
@@ -542,6 +544,23 @@
       "empty": "이 페이지에는 아직 말풍선이나 곡선 텍스트가 없습니다.",
       "typeBubble": "말풍선",
       "typeCurvedText": "곡선 텍스트"
+    },
+    "layersPanel": {
+      "title": "레이어 / 패널",
+      "empty": "이 페이지에는 아직 객체가 없습니다.",
+      "noPanel": "패널 없음",
+      "typeBubble": "말풍선",
+      "typeImage": "이미지",
+      "typeCurvedText": "곡선 텍스트",
+      "noImageFile": "(파일 없음)",
+      "lockAllPanels": "모든 패널 잠금",
+      "unlockAllPanels": "모든 패널 잠금 해제",
+      "lockPanelHint": "패널 + 할당된 모든 말풍선 잠금",
+      "unlockPanelHint": "패널 + 할당된 모든 말풍선 잠금 해제",
+      "lockHint": "잠금",
+      "unlockHint": "잠금 해제",
+      "expand": "펼치기",
+      "collapse": "접기"
     },
     "reportModal": {
       "title": "리포트 — 이 페이지 ({{language}})",
@@ -612,6 +631,7 @@
         "2x3": "2×3 격자"
       },
       "textsThisPage": "이 페이지의 텍스트",
+      "layersPanel": "레이어 / 패널",
       "commentPin": "댓글 (핀)",
       "commentBox": "댓글 (박스)",
       "commentFreehand": "댓글 (자유 그리기)"
@@ -643,6 +663,8 @@
       "noPreset": "– 프리셋 없음 –",
       "flipHorizontal": "좌우 반전",
       "duplicate": "복제",
+      "lockPanel": "패널 + 내용 잠금",
+      "unlockPanel": "패널 + 내용 잠금 해제",
       "removePoint": "점 제거",
       "setAngleFixPrevious": "각도 설정 (이전 점 고정)",
       "setAngleFixNext": "각도 설정 (다음 점 고정)",
