@@ -1003,7 +1003,14 @@ export const api = {
 
   getAIProviderStatus: () =>
     authFetch(apiUrl("/api/auth/me/ai-status")).then((r) =>
-      json<{ openai: { configured: boolean }; codex: { configured: boolean; planType?: string; usedPercent?: number } }>(r)
+      json<{
+        openai: { configured: boolean };
+        codex: { configured: boolean; planType?: string; usedPercent?: number };
+        anthropic: { configured: boolean };
+        google: { configured: boolean };
+        openrouter: { configured: boolean };
+        ollama: { configured: boolean; baseUrl?: string; model?: string };
+      }>(r)
     ),
 
   setOpenAIKey: (apiKey: string) =>
@@ -1014,6 +1021,45 @@ export const api = {
     }).then((r) => json<{ ok: true }>(r)),
 
   clearOpenAIKey: () => authFetch(apiUrl("/api/auth/me/openai-key"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  // Anthropic/Google/OpenRouter key management — exact mirror of setOpenAIKey/
+  // clearOpenAIKey above, only the route/field name differs.
+  setAnthropicKey: (apiKey: string) =>
+    authFetch(apiUrl("/api/auth/me/anthropic-key"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  clearAnthropicKey: () => authFetch(apiUrl("/api/auth/me/anthropic-key"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  setGoogleKey: (apiKey: string) =>
+    authFetch(apiUrl("/api/auth/me/google-key"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  clearGoogleKey: () => authFetch(apiUrl("/api/auth/me/google-key"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  setOpenRouterKey: (apiKey: string) =>
+    authFetch(apiUrl("/api/auth/me/openrouter-key"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  clearOpenRouterKey: () => authFetch(apiUrl("/api/auth/me/openrouter-key"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  // Ollama has no secret — a plain {baseUrl, model} pair instead of an {apiKey}.
+  setOllamaConfig: (config: { baseUrl: string; model: string }) =>
+    authFetch(apiUrl("/api/auth/me/ollama-config"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  clearOllamaConfig: () => authFetch(apiUrl("/api/auth/me/ollama-config"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
 
   startCodexLogin: () =>
     authFetch(apiUrl("/api/auth/me/codex-login"), { method: "POST" }).then((r) =>
@@ -1038,7 +1084,7 @@ export const api = {
    * mirrored here since json() isn't called) on a non-OK response before any stream
    * would even start (e.g. invalid_request, unknown_provider). */
   sendAIChat: async (request: {
-    providerId: "openai" | "codex";
+    providerId: "openai" | "codex" | "anthropic" | "google" | "openrouter" | "ollama";
     messages: { role: "system" | "user" | "assistant"; content: string }[];
     contextText?: string;
     contextImage?: string;

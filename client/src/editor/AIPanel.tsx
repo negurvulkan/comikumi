@@ -56,7 +56,7 @@ async function fetchAndDownscaleToDataUrl(url: string, maxDim = 1280): Promise<s
   return downscaleBlobToDataUrl(await res.blob(), maxDim);
 }
 
-type ProviderId = "openai" | "codex";
+type ProviderId = "openai" | "codex" | "anthropic" | "google" | "openrouter" | "ollama";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -91,7 +91,7 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
   const navigate = useNavigate();
   const resize = useResizableSidebarWidth();
 
-  const [providerStatus, setProviderStatus] = useState<{ openai: boolean; codex: boolean } | null>(null);
+  const [providerStatus, setProviderStatus] = useState<Record<ProviderId, boolean> | null>(null);
   const [providerId, setProviderId] = useState<ProviderId | null>(null);
   const [includeContext, setIncludeContext] = useState(true);
   const [useRenderedContext, setUseRenderedContext] = useState(false);
@@ -106,8 +106,20 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
     api
       .getAIProviderStatus()
       .then((status) => {
-        setProviderStatus({ openai: status.openai.configured, codex: status.codex.configured });
-        setProviderId((current) => current ?? (status.openai.configured ? "openai" : status.codex.configured ? "codex" : null));
+        const next: Record<ProviderId, boolean> = {
+          openai: status.openai.configured,
+          codex: status.codex.configured,
+          anthropic: status.anthropic.configured,
+          google: status.google.configured,
+          openrouter: status.openrouter.configured,
+          ollama: status.ollama.configured,
+        };
+        setProviderStatus(next);
+        // First configured provider wins as the default — OpenAI/Codex checked first
+        // for existing-user continuity, the four newer providers in registration order.
+        setProviderId(
+          (current) => current ?? ((Object.keys(next) as ProviderId[]).find((id) => next[id]) ?? null)
+        );
       })
       .catch((err) => setError(translateApiError(err, t)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -117,7 +129,7 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
-  const hasAnyProvider = providerStatus ? providerStatus.openai || providerStatus.codex : false;
+  const hasAnyProvider = providerStatus ? Object.values(providerStatus).some(Boolean) : false;
 
   const renderedMessages = useMemo(
     () => messages.map((m) => ({ ...m, html: m.role === "assistant" ? safeMarked.parse(m.content) : null })),
@@ -223,6 +235,10 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
           <select value={providerId ?? ""} onChange={(e) => setProviderId(e.target.value as ProviderId)}>
             {providerStatus?.openai && <option value="openai">OpenAI</option>}
             {providerStatus?.codex && <option value="codex">Codex</option>}
+            {providerStatus?.anthropic && <option value="anthropic">Anthropic (Claude)</option>}
+            {providerStatus?.google && <option value="google">Google (Gemini)</option>}
+            {providerStatus?.openrouter && <option value="openrouter">OpenRouter</option>}
+            {providerStatus?.ollama && <option value="ollama">Ollama</option>}
           </select>
 
           {contextText !== undefined && (
