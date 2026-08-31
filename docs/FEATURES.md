@@ -806,12 +806,18 @@ Context View) in the page editor and the script editor — a pure ask-only
 assistant, no automatic changes to project data or tool-calling. The chat
 history is purely client-side for the current session, not stored server-side.
 
-- **Two interchangeable providers**, configured per account under "My Account"
-  (`/account`, linked in the header): a self-supplied **OpenAI API key**
-  (stored encrypted on the server, never returned to the client in plaintext)
-  or a **"Sign in with ChatGPT"** login via Codex (device-code flow — display a
-  code + verification link, then confirm in a browser on any device). Only the
-  providers actually configured appear as choices in the panel.
+- **Six interchangeable providers**, configured per account under "My Account"
+  (`/account`, linked in the header). Only the providers actually configured
+  appear as choices in the panel:
+  - A self-supplied **OpenAI**, **Anthropic (Claude)**, **Google (Gemini)**,
+    or **OpenRouter** API key — each stored encrypted on the server, never
+    returned to the client in plaintext.
+  - A **"Sign in with ChatGPT"** login via Codex (device-code flow — display a
+    code + verification link, then confirm in a browser on any device).
+  - A self-hosted **Ollama** server — just a base URL and a locally-installed
+    model name (not a secret, no encryption). The URL must be reachable from
+    the ComiKumi **server**, not the user's browser — for most setups that
+    means the same machine or network as the server.
 - **Codex runs as its own, long-lived server subprocess per account** with an
   isolated credentials folder (`server/data/codex-home/<account-id>`) —
   multiple accounts on the same ComiKumi server have separate ChatGPT logins

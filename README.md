@@ -70,7 +70,8 @@ React + Konva canvas editor.
   straight into the selected bubble. Either can be generated with one click from
   already-lettered pages instead of typed up from scratch.
 - **AI assistant** — a chat panel in the page editor and script editor, backed by
-  either your own OpenAI API key or a "Sign in with ChatGPT" Codex login (per account,
+  your own API key for OpenAI, Anthropic (Claude), Google (Gemini), or OpenRouter; a
+  "Sign in with ChatGPT" Codex login; or a self-hosted Ollama server (per account,
   isolated credentials). Ask-only for now (no automatic edits to project data); each
   question is sent together with the current page's speech-bubble transcript and,
   where available, the page image itself.

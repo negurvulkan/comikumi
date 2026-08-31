@@ -810,13 +810,20 @@ Frage-Modus-Assistent, keine automatischen Änderungen an Projektdaten oder
 Tool-Calling. Der Chat-Verlauf ist rein clientseitig für die laufende Sitzung, wird
 serverseitig nicht gespeichert.
 
-- **Zwei austauschbare Provider**, pro Konto konfiguriert unter "Mein Konto"
-  (`/account`, verlinkt im Header): ein selbst hinterlegter **OpenAI-API-Key**
-  (verschlüsselt auf dem Server gespeichert, nie im Klartext an den Client
-  zurückgegeben) oder eine **"Mit ChatGPT anmelden"**-Anmeldung über Codex
-  (Device-Code-Flow — Code + Verifizierungslink anzeigen, dann auf einem beliebigen
-  Gerät im Browser bestätigen). Nur die tatsächlich konfigurierten Provider
-  erscheinen im Panel zur Auswahl.
+- **Sechs austauschbare Provider**, pro Konto konfiguriert unter "Mein Konto"
+  (`/account`, verlinkt im Header). Nur die tatsächlich konfigurierten Provider
+  erscheinen im Panel zur Auswahl:
+  - Ein selbst hinterlegter **OpenAI-**, **Anthropic (Claude)-**,
+    **Google (Gemini)-** oder **OpenRouter-API-Key** — jeweils verschlüsselt
+    auf dem Server gespeichert, nie im Klartext an den Client zurückgegeben.
+  - Eine **"Mit ChatGPT anmelden"**-Anmeldung über Codex (Device-Code-Flow —
+    Code + Verifizierungslink anzeigen, dann auf einem beliebigen Gerät im
+    Browser bestätigen).
+  - Ein selbstgehosteter **Ollama**-Server — nur eine Basis-URL und ein lokal
+    installierter Modellname (kein Geheimnis, keine Verschlüsselung). Die URL
+    muss vom ComiKumi-**Server** aus erreichbar sein, nicht vom Browser des
+    Nutzers — bei den meisten Setups bedeutet das: dieselbe Maschine oder
+    dasselbe Netzwerk wie der Server.
 - **Codex läuft als eigener, lang lebender Server-Subprozess pro Konto** mit
   isoliertem Zugangsdaten-Ordner (`server/data/codex-home/<Konto-ID>`) — mehrere
   Konten auf demselben ComiKumi-Server haben getrennte ChatGPT-Logins und können sich
