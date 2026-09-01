@@ -337,6 +337,7 @@
     "orderConflictKeepMine": "保留我的版本",
     "orderConflictReload": "加载对方的版本",
     "menuManageChapters": "管理章节…",
+    "noChapterSection": "无章节",
     "pageType_cover": "封面",
     "pageType_chapterInterstitial": "章节扉页",
     "pageType_story": "正文页",
@@ -773,10 +774,12 @@
     "modeOdd": "奇数页",
     "modeRange": "范围",
     "modeCustom": "自定义选择",
+    "modeChapter": "章节",
     "onlyPage": "仅“{{page}}”。",
     "fromPage": "起始页",
     "toPage": "结束页",
     "customLabel": "页码（例如：1,3,5,10-14）",
+    "chapterLabel": "章节",
     "onlyTranslated": "仅显示已翻译的页面",
     "languageLabel": "语言",
     "allLanguages": "所有语言",
@@ -846,12 +849,15 @@
     "charactersHeading": "本卷出现了哪些角色？",
     "noCharacters": "未分配任何角色。",
     "whoSaysWhatHeading": "谁说了什么——按页面",
-    "noText": "（无文本）"
+    "noText": "（无文本）",
+    "chapterFilterLabel": "章节",
+    "allChapters": "所有章节"
   },
   "qaChecker": {
     "menuEntry": "质量检查",
     "title": "整卷质量检查",
     "noIssues": "未发现问题。",
+    "noPageContext": "无页面关联",
     "jumpButton": "打开",
     "category": {
       "missingTranslation": "缺失的翻译（{{count}}项）",

@@ -3,7 +3,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import multer from "multer";
 import sharp from "sharp";
-import { findVolume, listPages, PAGE_IMAGE_EXTENSIONS } from "../lib/projectScanner.js";
+import { findVolume, listPages, readPageMeta, PAGE_IMAGE_EXTENSIONS } from "../lib/projectScanner.js";
+import { resolveChapters } from "../../../shared/src/pageMeta.js";
 import { languageFolderName, isSafeFileName, isSafeFolderPath } from "../lib/paths.js";
 import { readPresets, readSettings, getCurrentProjectInfo } from "../lib/projectStore.js";
 import { ZipArchive } from "archiver";
@@ -348,15 +349,29 @@ exportRouter.get(
       if (!PAGE_IMAGE_EXTENSIONS.has(ext)) continue;
       imagesByPage.set(path.basename(file.name, ext), file.name);
     }
-    const pages = await listPages(volume);
+    // Optional page-subset filter (comma-separated page ids) — e.g. "just this
+    // chapter" from ExportViewer.tsx, resolved client-side via shared/src/pageMeta.ts's
+    // resolveChapters(). Omitted/empty means every page, the existing default.
+    const pageIdsParam = typeof req.query.pageIds === "string" ? req.query.pageIds : undefined;
+    const requestedPageIds = pageIdsParam ? new Set(pageIdsParam.split(",").filter(Boolean)) : null;
+    let pages = await listPages(volume);
+    if (requestedPageIds) pages = pages.filter((p) => requestedPageIds.has(p.page));
+    if (requestedPageIds && pages.length === 0) {
+      res.status(404).json({ error: "no_matching_pages_found" });
+      return;
+    }
     const orderedPageFileNames = new Set(pages.map((p) => imagesByPage.get(p.page)).filter((f): f is string => !!f));
+    // Stray non-page files (print PDFs/PSDs etc., "no page-order concept to sort by")
+    // only make sense for a whole-folder export — a page-subset request (chapter
+    // export) should contain exactly that chapter's pages, nothing volume-wide.
     const orderedFileNames = [
       ...pages.map((p) => imagesByPage.get(p.page)).filter((f): f is string => !!f),
-      ...files.map((f) => f.name).filter((name) => !orderedPageFileNames.has(name)),
+      ...(requestedPageIds ? [] : files.map((f) => f.name).filter((name) => !orderedPageFileNames.has(name))),
     ];
 
+    const zipFileNameSuffix = requestedPageIds ? `${folderSuffix}_chapter` : `${folderSuffix}_exports`;
     res.setHeader("Content-Type", "application/zip");
-    res.setHeader("Content-Disposition", `attachment; filename="${volume.bookFolderName}_${folderSuffix}_exports.zip"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${volume.bookFolderName}_${zipFileNameSuffix}.zip"`);
 
     const archive = new ZipArchive({ zlib: { level: 9 } });
     archive.on("error", (err: Error) => {
@@ -377,7 +392,13 @@ exportRouter.get(
  * book folder name / the actual packaged count / the project's reading direction). The
  * <Pages> block (per-page Type/DoublePage) is only emitted when the caller specified at
  * least one entry, since an all-defaults block adds noise most readers ignore anyway. */
-function buildComicInfoXml(metadata: CbzMetadata, title: string, pageCount: number, manga: string): string {
+function buildComicInfoXml(
+  metadata: CbzMetadata,
+  title: string,
+  pageCount: number,
+  manga: string,
+  bookmarkByIndex?: Map<number, string>
+): string {
   const fields: [string, string | undefined][] = [
     ["Title", title],
     ["Series", metadata.series],
@@ -413,13 +434,23 @@ function buildComicInfoXml(metadata: CbzMetadata, title: string, pageCount: numb
     .map(([tag, value]) => `  <${tag}>${escapeXml(value!)}</${tag}>`)
     .join("\n");
 
+  // Merge the user-edited per-page Type/DoublePage entries (metadata.pages) with the
+  // auto-derived chapter Bookmarks (bookmarkByIndex) into one <Page> element per
+  // touched index — the two are independent inputs (one from CbzMetadataModal.tsx,
+  // one from pageMeta.chapters) that can both apply to the same page.
+  const typeAndDoublePageByIndex = new Map(metadata.pages?.map((p) => [p.image, p]) ?? []);
+  const touchedIndices = new Set([...typeAndDoublePageByIndex.keys(), ...(bookmarkByIndex?.keys() ?? [])]);
   let pagesXml = "";
-  if (metadata.pages && metadata.pages.length > 0) {
-    const pageEntries = metadata.pages
-      .map((p) => {
-        const attrs = [`Image="${p.image}"`];
-        if (p.type) attrs.push(`Type="${p.type}"`);
-        if (p.doublePage) attrs.push(`DoublePage="true"`);
+  if (touchedIndices.size > 0) {
+    const pageEntries = [...touchedIndices]
+      .sort((a, b) => a - b)
+      .map((index) => {
+        const p = typeAndDoublePageByIndex.get(index);
+        const attrs = [`Image="${index}"`];
+        if (p?.type) attrs.push(`Type="${p.type}"`);
+        if (p?.doublePage) attrs.push(`DoublePage="true"`);
+        const bookmark = bookmarkByIndex?.get(index);
+        if (bookmark) attrs.push(`Bookmark="${escapeXml(bookmark)}"`);
         return `    <Page ${attrs.join(" ")} />`;
       })
       .join("\n");
@@ -475,11 +506,33 @@ exportRouter.post(
       if (!PAGE_IMAGE_EXTENSIONS.has(ext)) continue;
       imagesByPage.set(path.basename(entry.name, ext), entry.name);
     }
-    const pages = await listPages(volume);
-    const orderedFiles = pages.map((p) => imagesByPage.get(p.page)).filter((f): f is string => !!f);
+    // Optional page-subset filter (e.g. "just this chapter" from ExportViewer.tsx,
+    // resolved client-side via shared/src/pageMeta.ts's resolveChapters()). Unrelated
+    // to metadata.pages (per-page Type/DoublePage) — see CbzMetadataSchema's doc
+    // comment on pageIds. Omitted/empty means every page, the existing default.
+    const requestedPageIds = metadata.pageIds && metadata.pageIds.length > 0 ? new Set(metadata.pageIds) : null;
+    let pages = await listPages(volume);
+    if (requestedPageIds) pages = pages.filter((p) => requestedPageIds.has(p.page));
+    const orderedPages = pages.filter((p) => imagesByPage.has(p.page));
+    const orderedFiles = orderedPages.map((p) => imagesByPage.get(p.page)!);
     if (orderedFiles.length === 0) {
       res.status(404).json({ error: "no_exported_images_found" });
       return;
+    }
+
+    // Chapter Bookmarks: for each chapter with at least one page IN THIS ARCHIVE
+    // (already filtered above, so a single-chapter export's own chapter always lands
+    // on index 0), mark its first page's <Page> element with Bookmark="<name>" — an
+    // otherwise-unused ComicInfo.xml field readers like Komga/Kavita use to build a
+    // chapter navigation list. Purely derived from pageMeta.chapters, no new
+    // user-editable field needed.
+    const pageMeta = await readPageMeta(volume);
+    const resolvedChapters = resolveChapters(orderedPages.map((p) => p.page), pageMeta);
+    const bookmarkByIndex = new Map<number, string>();
+    for (const { chapter, pageIds } of resolvedChapters) {
+      const firstPageId = pageIds[0];
+      const index = orderedPages.findIndex((p) => p.page === firstPageId);
+      if (index !== -1) bookmarkByIndex.set(index, chapter.name);
     }
 
     const projectInfo = await getCurrentProjectInfo(req.activeProject);
@@ -490,10 +543,11 @@ exportRouter.post(
           ? "YesAndRightToLeft"
           : "Yes";
     const title = metadata.title || volume.bookFolderName;
-    const comicInfoXml = buildComicInfoXml(metadata, title, orderedFiles.length, manga);
+    const comicInfoXml = buildComicInfoXml(metadata, title, orderedFiles.length, manga, bookmarkByIndex);
 
+    const cbzFileNameSuffix = requestedPageIds ? `${folderSuffix}_chapter` : folderSuffix;
     res.setHeader("Content-Type", "application/vnd.comicbook+zip");
-    res.setHeader("Content-Disposition", `attachment; filename="${volume.bookFolderName}_${folderSuffix}.cbz"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${volume.bookFolderName}_${cbzFileNameSuffix}.cbz"`);
 
     const archive = new ZipArchive({ zlib: { level: 9 } });
     archive.on("error", (err: Error) => {

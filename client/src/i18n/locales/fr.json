@@ -338,6 +338,7 @@
     "orderConflictKeepMine": "Conserver ma version",
     "orderConflictReload": "Charger l'autre version",
     "menuManageChapters": "Gérer les chapitres…",
+    "noChapterSection": "Sans chapitre",
     "pageType_cover": "Couverture",
     "pageType_chapterInterstitial": "Page de chapitre",
     "pageType_story": "Page d'histoire",
@@ -782,10 +783,12 @@
     "modeOdd": "Pages impaires",
     "modeRange": "Plage",
     "modeCustom": "Sélection personnalisée",
+    "modeChapter": "Chapitre",
     "onlyPage": "Seulement « {{page}} ».",
     "fromPage": "de la page",
     "toPage": "à la page",
     "customLabel": "Numéros de page (p. ex. 1,3,5,10-14)",
+    "chapterLabel": "Chapitre",
     "onlyTranslated": "Seulement les pages traduites",
     "languageLabel": "Langue",
     "allLanguages": "Toutes les langues",
@@ -855,12 +858,15 @@
     "charactersHeading": "Quels personnages apparaissent dans ce volume ?",
     "noCharacters": "Aucun personnage assigné.",
     "whoSaysWhatHeading": "Qui dit quoi — par page",
-    "noText": "(pas de texte)"
+    "noText": "(pas de texte)",
+    "chapterFilterLabel": "Chapitre",
+    "allChapters": "Tous les chapitres"
   },
   "qaChecker": {
     "menuEntry": "Contrôle qualité",
     "title": "Contrôle qualité de tout le tome",
     "noIssues": "Aucun problème trouvé.",
+    "noPageContext": "Sans lien avec une page",
     "jumpButton": "Ouvrir",
     "category": {
       "missingTranslation": "Traductions manquantes ({{count}})",

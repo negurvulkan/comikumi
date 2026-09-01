@@ -88,6 +88,11 @@ React + Konva canvas editor.
 - **PNG, print (CMYK TIFF), vector PDF/PSD, and CBZ export**, with page-range/language
   filtering, JSON import/export of a whole volume's layouts, and a full ComicInfo.xml
   metadata dialog (series/credits/publication/categorization/per-page type) for the CBZ.
+- **Chapters** — tag pages into chapters (order always derived from the volume's own
+  page order, never a separate thing to keep in sync); the page overview groups pages
+  into chapter sections, the export dialog and Export-Viewer's ZIP/CBZ downloads gain a
+  "just this chapter" filter, CBZ downloads get automatic chapter bookmarks (ComicInfo.xml,
+  read by Komga/Kavita), and the volume report/QA checker gain chapter filtering/grouping.
 - **Multi-user safety** — optimistic conflict detection on page saves (a save conflict
   prompts to keep your version or load the other one, instead of silently overwriting
   it), serialized writes for comments/script/project metadata, and a warning before

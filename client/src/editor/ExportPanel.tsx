@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { LanguageDef } from "../../../shared/src/languages";
+import type { ResolvedChapter } from "../../../shared/src/pageMeta";
 import { api } from "../api/client";
 import type { PageSelection, PageSelectionMode } from "../export/pageSelection";
 import { parseCustomSelection, PageSelectionError } from "../export/pageSelection";
@@ -22,6 +23,11 @@ interface Props {
   languages: LanguageDef[];
   /** Omitted in views with no single active page (e.g. the volume overview) — hides the "Aktuelle Seite" option. */
   currentPage?: string;
+  /** Omitted (or empty) hides the "Kapitel" mode entirely — only PageGrid.tsx's
+   * volume-overview invocation has pageMeta/pageOrder loaded to pass this; Editor.tsx's
+   * single-page invocation doesn't. Only chapters with at least one assigned page (see
+   * shared/src/pageMeta.ts's resolveChapters) are meaningful here. */
+  chapters?: ResolvedChapter[];
   exporting: boolean;
   /** `pdfxVersion` is only meaningful when `format === "vector-pdf"`; `imageOptions` only when
    * `format === "png"`/`"final-format"`; `finalFormatOptions` only when `format === "final-format"`
@@ -56,6 +62,7 @@ const MODE_LABEL_KEYS: Record<PageSelectionMode, string> = {
   odd: "exportPanel.modeOdd",
   range: "exportPanel.modeRange",
   custom: "exportPanel.modeCustom",
+  chapter: "exportPanel.modeChapter",
 };
 
 function translateSelectionError(err: unknown, t: (key: string, params?: Record<string, string>) => string): string {
@@ -63,12 +70,13 @@ function translateSelectionError(err: unknown, t: (key: string, params?: Record<
   return err instanceof Error ? err.message : String(err);
 }
 
-export function ExportPanel({ volumeId, languages, currentPage, exporting, onExport, onAnalyzeUniform, onClose }: Props) {
+export function ExportPanel({ volumeId, languages, currentPage, chapters, exporting, onExport, onAnalyzeUniform, onClose }: Props) {
   const { t } = useTranslation();
   const [mode, setMode] = useState<PageSelectionMode>(currentPage ? "current" : "all");
   const [rangeFrom, setRangeFrom] = useState(1);
   const [rangeTo, setRangeTo] = useState(1);
   const [custom, setCustom] = useState("");
+  const [chapterId, setChapterId] = useState<string>(chapters?.[0]?.chapter.id ?? "");
   const [onlyTranslated, setOnlyTranslated] = useState(false);
   const [languageFilter, setLanguageFilter] = useState<"all" | string>("all");
   const [format, setFormat] = useState<ExportFormat>("png");
@@ -117,6 +125,7 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
   const canSubmit =
     !exporting &&
     (mode !== "custom" || customError === null) &&
+    (mode !== "chapter" || !!chapterId) &&
     (format !== "uniform" || (targetWidth > 0 && targetHeight > 0)) &&
     (format !== "final-format" || (finalWidthPx > 0 && finalHeightPx > 0 && !finalFormatMarginTooLarge));
 
@@ -142,6 +151,10 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
   function buildSelection(): PageSelection {
     if (mode === "range") return { mode, rangeFrom, rangeTo };
     if (mode === "custom") return { mode, custom };
+    if (mode === "chapter") {
+      const chapterPageIds = new Set(chapters?.find((c) => c.chapter.id === chapterId)?.pageIds ?? []);
+      return { mode, chapterPageIds };
+    }
     return { mode };
   }
 
@@ -171,6 +184,7 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {(Object.keys(MODE_LABEL_KEYS) as PageSelectionMode[])
           .filter((m) => m !== "current" || !!currentPage)
+          .filter((m) => m !== "chapter" || (chapters && chapters.length > 0))
           .map((m) => (
             <button key={m} className={mode === m ? "active" : ""} onClick={() => setMode(m)}>
               {t(MODE_LABEL_KEYS[m])}
@@ -205,6 +219,19 @@ export function ExportPanel({ volumeId, languages, currentPage, exporting, onExp
       )}
       {customError && (
         <p style={{ color: "#ff8a95", margin: "-4px 0 0", fontSize: 12 }}>{customError}</p>
+      )}
+
+      {mode === "chapter" && chapters && chapters.length > 0 && (
+        <label>
+          {t("exportPanel.chapterLabel")}
+          <select value={chapterId} onChange={(e) => setChapterId(e.target.value)}>
+            {chapters.map(({ chapter, pageIds }) => (
+              <option key={chapter.id} value={chapter.id}>
+                {chapter.name} ({pageIds.length})
+              </option>
+            ))}
+          </select>
+        </label>
       )}
 
       <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

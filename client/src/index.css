@@ -96,6 +96,21 @@ body {
   gap: 16px;
 }
 
+/* PageGrid.tsx's chapter section headers — full-width row inside the same grid as the
+   page cards (not a separate container), see that component's own comment on why. */
+.chapter-section-header {
+  margin: 8px 0 -4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.chapter-section-header:first-child {
+  margin-top: 0;
+}
+
 .card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);

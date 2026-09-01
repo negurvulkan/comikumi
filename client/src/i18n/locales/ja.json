@@ -337,6 +337,7 @@
     "orderConflictKeepMine": "自分のバージョンを保持",
     "orderConflictReload": "相手のバージョンを読み込む",
     "menuManageChapters": "章を管理…",
+    "noChapterSection": "章なし",
     "pageType_cover": "表紙",
     "pageType_chapterInterstitial": "章扉ページ",
     "pageType_story": "本編ページ",
@@ -773,10 +774,12 @@
     "modeOdd": "奇数ページ",
     "modeRange": "範囲",
     "modeCustom": "カスタム選択",
+    "modeChapter": "章",
     "onlyPage": "「{{page}}」のみ。",
     "fromPage": "開始ページ",
     "toPage": "終了ページ",
     "customLabel": "ページ番号 (例: 1,3,5,10-14)",
+    "chapterLabel": "章",
     "onlyTranslated": "翻訳があるページのみ",
     "languageLabel": "言語",
     "allLanguages": "すべての言語",
@@ -846,12 +849,15 @@
     "charactersHeading": "この巻に登場するキャラクターは?",
     "noCharacters": "割り当てられたキャラクターがありません。",
     "whoSaysWhatHeading": "誰が何を言うか — ページ別",
-    "noText": "(テキストなし)"
+    "noText": "(テキストなし)",
+    "chapterFilterLabel": "章",
+    "allChapters": "すべての章"
   },
   "qaChecker": {
     "menuEntry": "QAチェック",
     "title": "巻全体のQAチェック",
     "noIssues": "問題は見つかりませんでした。",
+    "noPageContext": "ページに紐づかない",
     "jumpButton": "開く",
     "category": {
       "missingTranslation": "未翻訳の項目（{{count}}件）",

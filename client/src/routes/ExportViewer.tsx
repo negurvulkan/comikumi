@@ -9,7 +9,7 @@ import { useProjectRole } from "../state/useProjectRole";
 import { CbzMetadataModal } from "../editor/CbzMetadataModal";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { CbzMetadata } from "../../../shared/src/cbz";
-import type { PageMetaDocument } from "../../../shared/src/pageMeta";
+import { resolveChapters, type PageMetaDocument } from "../../../shared/src/pageMeta";
 
 interface ExportFile {
   name: string;
@@ -50,6 +50,9 @@ export function ExportViewer() {
   const [inspectingFile, setInspectingFile] = useState<ExportFile | null>(null);
   const [cbzModalOpen, setCbzModalOpen] = useState(false);
   const [pageMeta, setPageMeta] = useState<PageMetaDocument | undefined>(undefined);
+  /** "" means "every page" (the whole export folder) — a real chapter id restricts ZIP/
+   * CBZ downloads to just that chapter's pages, see resolveChapters() below. */
+  const [selectedChapterId, setSelectedChapterId] = useState<string>("");
 
   const loadData = async () => {
     try {
@@ -101,6 +104,21 @@ export function ExportViewer() {
     .filter((p) => (filesMap.get(p.page) ?? []).some((f) => CBZ_IMAGE_EXTENSIONS.has(f.extension.toLowerCase())))
     .map((p) => p.page);
 
+  // `pages` (from api.listPages) is already in saved volume page order (see
+  // server/src/lib/projectScanner.ts's listPages) — safe to use directly as
+  // resolveChapters()'s `pageOrder` input.
+  const resolvedChapters = pageMeta ? resolveChapters((pages ?? []).map((p) => p.page), pageMeta) : [];
+  const selectedChapterPageIds = selectedChapterId
+    ? resolvedChapters.find((c) => c.chapter.id === selectedChapterId)?.pageIds
+    : undefined;
+  // Same chapter filter applied to the CBZ Pages-tab ordering, so the per-page Type/
+  // DoublePage indices CbzMetadataModal.tsx computes line up with the server's
+  // post-filter sequence (see server/src/routes/export.ts's /cbz route, which filters
+  // BEFORE deriving image indices).
+  const orderedExportedPagesForCbz = selectedChapterPageIds
+    ? orderedExportedPages.filter((page) => selectedChapterPageIds.includes(page))
+    : orderedExportedPages;
+
   const handleDeleteFolder = async () => {
     if (!selectedLanguage) return;
     const ok = await confirm({
@@ -144,7 +162,7 @@ export function ExportViewer() {
     setCbzModalOpen(false);
     setBusy(true);
     try {
-      await api.downloadExportCbz(volumeId, selectedLanguage, metadata);
+      await api.downloadExportCbz(volumeId, selectedLanguage, { ...metadata, pageIds: selectedChapterPageIds });
     } catch (err) {
       setError(translateApiError(err, t));
     } finally {
@@ -235,9 +253,19 @@ export function ExportViewer() {
                   <span style={{ fontSize: 16, fontWeight: 600 }}>{activeLangLabel}</span>
                   <span className="hint" style={{ marginLeft: 8 }}>({currentSummary.folderName})</span>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {resolvedChapters.length > 0 && (
+                    <select value={selectedChapterId} onChange={(e) => setSelectedChapterId(e.target.value)} title={t("exportViewer.chapterFilterLabel")}>
+                      <option value="">{t("exportViewer.allChapters")}</option>
+                      {resolvedChapters.map(({ chapter, pageIds }) => (
+                        <option key={chapter.id} value={chapter.id}>
+                          {chapter.name} ({pageIds.length})
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <a
-                    href={api.exportFolderZipUrl(volumeId, selectedLanguage)}
+                    href={api.exportFolderZipUrl(volumeId, selectedLanguage, selectedChapterPageIds)}
                     className="button"
                     style={{ textDecoration: "none", color: "var(--text)" }}
                   >
@@ -343,7 +371,7 @@ export function ExportViewer() {
 
       {cbzModalOpen && (
         <CbzMetadataModal
-          pages={orderedExportedPages}
+          pages={orderedExportedPagesForCbz}
           pageMeta={pageMeta}
           initial={{
             series: project?.name,

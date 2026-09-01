@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
@@ -8,7 +8,7 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { EMPTY_PAGE_META_DOCUMENT, PAGE_TYPES, type PageMetaDocument, type PageType } from "../../../shared/src/pageMeta";
+import { EMPTY_PAGE_META_DOCUMENT, PAGE_TYPES, resolveChapters, type PageMetaDocument, type PageType } from "../../../shared/src/pageMeta";
 import { api, downloadBlob, type PageSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useExportRun } from "../export/useExportRun";
@@ -570,6 +570,11 @@ export function PageGrid() {
     },
   ];
 
+  // `pages` (from api.listPages) is already in saved volume page order (see
+  // server/src/lib/projectScanner.ts's listPages) — safe to use directly as
+  // resolveChapters()'s `pageOrder` input without a separate api.getPageOrder() call.
+  const resolvedChapters = resolveChapters((pages ?? []).map((p) => p.page), pageMeta);
+
   return (
     <div className="page">
       <MenuBar groups={menuGroups} />
@@ -600,6 +605,7 @@ export function PageGrid() {
           <ExportPanel
             volumeId={volumeId}
             languages={languages}
+            chapters={resolvedChapters}
             exporting={exporting || normalizing}
             onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions) =>
               runExport(selection, onlyTranslated, languageFilter, format, null, pdfxVersion, imageOptions, finalFormatOptions)
@@ -728,29 +734,58 @@ export function PageGrid() {
             <div className="card-grid">
               {(() => {
                 const pageNumbers = computePageNumbers(pages, pageMeta);
-                return pages.map((p, i) => (
-                  <PageCard
-                    key={p.page}
-                    page={p}
-                    volumeId={volumeId}
-                    href={`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`}
-                    readHref={`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
-                    canDrag={canManagePages}
-                    canManage={canManagePages}
-                    onDelete={() => handleDeletePage(p.page)}
-                    onInsertBefore={() => setInsertPickerIndex(i)}
-                    readTitle={t("reader.menuEntry")}
-                    deleteTitle={t("pageGrid.deletePage")}
-                    insertTitle={t("pageGrid.insertHere")}
-                    dragTitle={t("pageGrid.dragHandle")}
-                    pageType={pageMeta.pages[p.page]?.type ?? "story"}
-                    pageNumber={pageNumbers.get(p.page)}
-                    chapterId={pageMeta.pages[p.page]?.chapterId}
-                    chapters={pageMeta.chapters}
-                    onChangeType={(type) => updatePageMeta(p.page, { type })}
-                    onChangeChapter={(chapterId) => updatePageMeta(p.page, { chapterId })}
-                  />
-                ));
+                // Chapter section headers: purely a rendering concern over the SAME
+                // flat `pages` array/SortableContext (see this block's comment above
+                // for why — splitting into multiple SortableContexts would break
+                // dnd-kit's rectSortingStrategy drop-position math). A run-based
+                // (contiguous) grouping, not resolveChapters()'s membership-based one:
+                // walking `pages` in order and starting a new header whenever
+                // chapterId changes means a chapter whose pages AREN'T contiguous in
+                // volume order gets a second header further down instead of pulling
+                // its pages out of true page order — that repeated header IS the "hint,
+                // don't enforce" surfacing of a split chapter (see the plan).
+                // No headers at all if the volume has never used chapters — avoids a
+                // permanent "Ohne Kapitel" header cluttering every untagged volume,
+                // the common/default case.
+                const showChapterSections = pageMeta.chapters.length > 0;
+                let previousChapterId: string | null | undefined = undefined;
+                return pages.flatMap((p, i) => {
+                  const chapterId = pageMeta.pages[p.page]?.chapterId ?? null;
+                  const elements: ReactNode[] = [];
+                  if (showChapterSections && chapterId !== previousChapterId) {
+                    const chapterName = chapterId ? pageMeta.chapters.find((c) => c.id === chapterId)?.name : null;
+                    elements.push(
+                      <div key={`chapter-${i}`} className="chapter-section-header" style={{ gridColumn: "1 / -1" }}>
+                        {chapterName ?? t("pageGrid.noChapterSection")}
+                      </div>
+                    );
+                  }
+                  previousChapterId = chapterId;
+                  elements.push(
+                    <PageCard
+                      key={p.page}
+                      page={p}
+                      volumeId={volumeId}
+                      href={`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(p.page)}`}
+                      readHref={`${pBase}/volumes/${encodeURIComponent(volumeId)}/read/${encodeURIComponent(p.page)}`}
+                      canDrag={canManagePages}
+                      canManage={canManagePages}
+                      onDelete={() => handleDeletePage(p.page)}
+                      onInsertBefore={() => setInsertPickerIndex(i)}
+                      readTitle={t("reader.menuEntry")}
+                      deleteTitle={t("pageGrid.deletePage")}
+                      insertTitle={t("pageGrid.insertHere")}
+                      dragTitle={t("pageGrid.dragHandle")}
+                      pageType={pageMeta.pages[p.page]?.type ?? "story"}
+                      pageNumber={pageNumbers.get(p.page)}
+                      chapterId={pageMeta.pages[p.page]?.chapterId}
+                      chapters={pageMeta.chapters}
+                      onChangeType={(type) => updatePageMeta(p.page, { type })}
+                      onChangeChapter={(chapterId) => updatePageMeta(p.page, { chapterId })}
+                    />
+                  );
+                  return elements;
+                });
               })()}
             </div>
           </SortableContext>

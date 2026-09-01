@@ -40,3 +40,36 @@ export const PageMetaDocumentSchema = z.object({
 export type PageMetaDocument = z.infer<typeof PageMetaDocumentSchema>;
 
 export const EMPTY_PAGE_META_DOCUMENT: PageMetaDocument = { chapters: [], pages: {} };
+
+export interface ResolvedChapter {
+  chapter: Chapter;
+  /** Every page id whose PageMetaEntry has chapterId === chapter.id, in `pageOrder`
+   * sequence — membership, not a contiguous-run concept. A chapter's pages can be
+   * scattered across the volume (deliberately allowed, not validated against — see
+   * client/src/routes/PageGrid.tsx's chapter-section headers, which surface a split
+   * chapter visually instead of preventing it). */
+  pageIds: string[];
+}
+
+/** Chapters in volume order — position is the first page (in `pageOrder`) that
+ * references it, never stored separately (see this file's own doc comment on why
+ * chapter order is deliberately derived). Shared by export (client/src/export/
+ * pageSelection.ts), the volume report, and the QA checker, so all three agree on
+ * both chapter order and membership. A chapter with no assigned pages doesn't appear
+ * here at all (nothing to export/report) — client/src/editor/ChapterManager.tsx still
+ * lists every chapter from `meta.chapters` regardless, for management purposes. */
+export function resolveChapters(pageOrder: string[], meta: PageMetaDocument): ResolvedChapter[] {
+  const pageIdsByChapterId = new Map<string, string[]>();
+  for (const pageId of pageOrder) {
+    const chapterId = meta.pages[pageId]?.chapterId;
+    if (!chapterId) continue;
+    if (!pageIdsByChapterId.has(chapterId)) pageIdsByChapterId.set(chapterId, []);
+    pageIdsByChapterId.get(chapterId)!.push(pageId);
+  }
+  const result: ResolvedChapter[] = [];
+  for (const [chapterId, pageIds] of pageIdsByChapterId) {
+    const chapter = meta.chapters.find((c) => c.id === chapterId);
+    if (chapter) result.push({ chapter, pageIds });
+  }
+  return result;
+}

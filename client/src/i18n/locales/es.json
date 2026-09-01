@@ -338,6 +338,7 @@
     "orderConflictKeepMine": "Conservar mi versión",
     "orderConflictReload": "Cargar la otra versión",
     "menuManageChapters": "Gestionar capítulos…",
+    "noChapterSection": "Sin capítulo",
     "pageType_cover": "Portada",
     "pageType_chapterInterstitial": "Página de capítulo",
     "pageType_story": "Página de historia",
@@ -782,10 +783,12 @@
     "modeOdd": "Páginas impares",
     "modeRange": "Rango",
     "modeCustom": "Selección personalizada",
+    "modeChapter": "Capítulo",
     "onlyPage": "Solo «{{page}}».",
     "fromPage": "desde la página",
     "toPage": "hasta la página",
     "customLabel": "Números de página (p. ej. 1,3,5,10-14)",
+    "chapterLabel": "Capítulo",
     "onlyTranslated": "Solo páginas con traducción",
     "languageLabel": "Idioma",
     "allLanguages": "Todos los idiomas",
@@ -855,12 +858,15 @@
     "charactersHeading": "¿Qué personajes aparecen en este volumen?",
     "noCharacters": "Ningún personaje asignado.",
     "whoSaysWhatHeading": "Quién dice qué — por página",
-    "noText": "(sin texto)"
+    "noText": "(sin texto)",
+    "chapterFilterLabel": "Capítulo",
+    "allChapters": "Todos los capítulos"
   },
   "qaChecker": {
     "menuEntry": "Control de calidad",
     "title": "Control de calidad de todo el tomo",
     "noIssues": "No se encontraron problemas.",
+    "noPageContext": "Sin referencia de página",
     "jumpButton": "Abrir",
     "category": {
       "missingTranslation": "Traducciones faltantes ({{count}})",

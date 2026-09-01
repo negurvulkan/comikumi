@@ -471,6 +471,88 @@ describe("Export-Viewer Routes", () => {
     });
   });
 
+  describe("chapter-scoped export (pageIds filter + CBZ Bookmark)", () => {
+    async function bufferedGet(url: string) {
+      return api
+        .get(url)
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+    }
+
+    // Builds on the two-page fixture ("page order awareness" above): page_02, page_01
+    // both real source pages and both already-exported into the "german" folder, saved
+    // order ["page_02", "page_01"]. Tags page_02 as its own chapter here.
+    beforeAll(async () => {
+      const metaPath = path.join(env.scanRoot, "Volume_01", "volume_01_meta.json");
+      await fs.writeFile(
+        metaPath,
+        JSON.stringify({
+          chapters: [{ id: "c1", name: "Chapter Two" }],
+          pages: { page_02: { chapterId: "c1" } },
+        })
+      );
+    });
+
+    it("ZIP with ?pageIds= includes only the requested pages, not stray non-page files", async () => {
+      const res = await bufferedGet(`/api/volumes/${VOLUME_ID}/exports/german/zip?pageIds=page_02`);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-disposition"]).toContain('attachment; filename="volume_01_german_chapter.zip"');
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const names = zip.getEntries().map((e) => e.entryName);
+      expect(names).toEqual(["page_02.png"]);
+    });
+
+    it("CBZ with pageIds in the body archives only the requested pages", async () => {
+      const res = await api
+        .post(`/api/volumes/${VOLUME_ID}/exports/german/cbz`)
+        .send({ pageIds: ["page_02"] })
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+      expect(res.status).toBe(200);
+      expect(res.headers["content-disposition"]).toContain('attachment; filename="volume_01_german_chapter.cbz"');
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const pageEntries = zip
+        .getEntries()
+        .map((e) => e.entryName)
+        .filter((name) => name !== "ComicInfo.xml");
+      expect(pageEntries).toEqual(["0001.png"]);
+      expect(zip.readFile("0001.png")!.toString()).toBe("dummy png content 2"); // page_02
+    });
+
+    it("CBZ auto-derives a chapter Bookmark from pageMeta.chapters, on the chapter's first page", async () => {
+      const res = await api
+        .post(`/api/volumes/${VOLUME_ID}/exports/german/cbz`)
+        .send({})
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+      expect(res.status).toBe(200);
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const xml = zip.readAsText("ComicInfo.xml");
+      // page_02 is first in the saved order ["page_02","page_01"], so it lands at
+      // archive index 0 — the Bookmark belongs there, not on page_01 (index 1).
+      expect(xml).toContain('<Page Image="0" Bookmark="Chapter Two" />');
+      expect(xml).not.toContain('Image="1" Bookmark');
+    });
+  });
+
   describe("DELETE /api/volumes/:id/exports/:folderSuffix/:fileName", () => {
     it("blocks a translator from deleting files", async () => {
       const res = await translatorApi.delete(`/api/volumes/${VOLUME_ID}/exports/german/page_01.png`);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Bubble } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
+import { resolveChapters } from "../../../shared/src/pageMeta";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { characterName, sortBubblesByPosition, type ReadingDirection } from "./reportUtils";
@@ -23,17 +24,28 @@ function toSingleLine(text: string): string {
  * scope, so it's a separate view rather than the page report reused verbatim. */
 export function VolumeReportModal({ volumeId, characters, readingDirection, onClose }: Props) {
   const { t } = useTranslation();
-  const [pages, setPages] = useState<{ page: string; bubbles: Bubble[] }[] | null>(null);
+  const [allPages, setAllPages] = useState<{ page: string; bubbles: Bubble[] }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("de");
+  /** "" means "every page" — see the chapter <select> below. */
+  const [chapterId, setChapterId] = useState("");
+  const [resolvedChapters, setResolvedChapters] = useState<ReturnType<typeof resolveChapters>>([]);
 
   useEffect(() => {
-    api
-      .getVolumeReport(volumeId)
-      // Effect (SFX) bubbles aren't dialogue — excluded here too, same as ReportModal.tsx.
-      .then((rows) => setPages(rows.map((r) => ({ page: r.page, bubbles: r.layout.bubbles.filter((b) => !b.isEffect) }))))
+    Promise.all([api.getVolumeReport(volumeId), api.getPageMeta(volumeId)])
+      .then(([rows, pageMeta]) => {
+        // Effect (SFX) bubbles aren't dialogue — excluded here too, same as ReportModal.tsx.
+        setAllPages(rows.map((r) => ({ page: r.page, bubbles: r.layout.bubbles.filter((b) => !b.isEffect) })));
+        // `rows` is already in saved volume page order (same api.getVolumeReport
+        // ordering PageGrid.tsx/ExportViewer.tsx rely on) — safe to use directly as
+        // resolveChapters()'s pageOrder input.
+        setResolvedChapters(resolveChapters(rows.map((r) => r.page), pageMeta.meta));
+      })
       .catch((e) => setError(translateApiError(e, t)));
   }, [volumeId, t]);
+
+  const chapterPageIds = chapterId ? resolvedChapters.find((c) => c.chapter.id === chapterId)?.pageIds : undefined;
+  const pages = chapterPageIds ? (allPages ?? []).filter((p) => chapterPageIds.includes(p.page)) : allPages;
 
   const languageCodes = pages
     ? [...new Set(pages.flatMap((p) => p.bubbles.flatMap((b) => Object.keys(b.text))))].sort()
@@ -56,6 +68,19 @@ export function VolumeReportModal({ volumeId, characters, readingDirection, onCl
     <div className="inspector" style={{ width: 520, maxWidth: "85vw", maxHeight: "80vh" }}>
       <p style={{ margin: 0, fontWeight: 600 }}>{t("volumeReport.title")}</p>
       {error && <div className="error-banner">{error}</div>}
+      {resolvedChapters.length > 0 && (
+        <label>
+          {t("volumeReport.chapterFilterLabel")}
+          <select value={chapterId} onChange={(e) => setChapterId(e.target.value)}>
+            <option value="">{t("volumeReport.allChapters")}</option>
+            {resolvedChapters.map(({ chapter, pageIds }) => (
+              <option key={chapter.id} value={chapter.id}>
+                {chapter.name} ({pageIds.length})
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {!pages ? (
         <p className="hint" style={{ margin: 0 }}>
           {t("common.loading")}

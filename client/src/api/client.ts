@@ -538,8 +538,13 @@ export const api = {
   exportFileDownloadUrl: (volumeId: string, folderSuffix: string, fileName: string) =>
     authUrl(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/${encodeURIComponent(fileName)}?download=true`)),
 
-  exportFolderZipUrl: (volumeId: string, folderSuffix: string) =>
-    authUrl(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/zip`)),
+  /** `pageIds` restricts the archive to that subset (e.g. a single chapter — see
+   * shared/src/pageMeta.ts's resolveChapters) instead of the whole export folder. */
+  exportFolderZipUrl: (volumeId: string, folderSuffix: string, pageIds?: string[]) =>
+    authUrl(
+      projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/exports/${encodeURIComponent(folderSuffix)}/zip`) +
+        (pageIds && pageIds.length > 0 ? `?pageIds=${encodeURIComponent(pageIds.join(","))}` : "")
+    ),
 
   /** POST (not a plain `<a href>` like the ZIP download) because the full ComicInfo.xml
    * field set collected by CbzMetadataModal.tsx — including a per-page <Pages> table for

@@ -1,6 +1,6 @@
 import type { PageSummary } from "../api/client";
 
-export type PageSelectionMode = "current" | "all" | "even" | "odd" | "range" | "custom";
+export type PageSelectionMode = "current" | "all" | "even" | "odd" | "range" | "custom" | "chapter";
 
 export interface PageSelection {
   mode: PageSelectionMode;
@@ -8,6 +8,11 @@ export interface PageSelection {
   rangeTo?: number;
   /** e.g. "1,3,5,10-14" */
   custom?: string;
+  /** For mode "chapter" — precomputed by the caller (ExportPanel.tsx) via
+   * shared/src/pageMeta.ts's resolveChapters(), since this module stays chapter-
+   * unaware otherwise (same "just an id set" pattern as `custom` above, minus the
+   * number-parsing). */
+  chapterPageIds?: Set<string>;
 }
 
 /** Thrown by parseCustomSelection on invalid syntax — code is a stable key translatable
@@ -92,6 +97,8 @@ export function selectPages(pages: PageSummary[], selection: PageSelection, curr
         return n !== null && numbers.has(n);
       });
     }
+    case "chapter":
+      return pages.filter((p) => selection.chapterPageIds?.has(p.page));
     default:
       return [];
   }

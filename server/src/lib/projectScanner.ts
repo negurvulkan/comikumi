@@ -3,6 +3,7 @@ import path from "node:path";
 import { readSettings, type ActiveProject } from "./projectStore.js";
 import { pageOrderFileName, pageMetaFileName } from "./paths.js";
 import { PageOrderDocumentSchema } from "../../../shared/src/pageOrder.js";
+import { EMPTY_PAGE_META_DOCUMENT, PageMetaDocumentSchema, type PageMetaDocument } from "../../../shared/src/pageMeta.js";
 
 export interface VolumeInfo {
   /** Stable id derived from the path relative to 04_Comic_Production, e.g. "Volume_01/volume_01" */
@@ -126,6 +127,22 @@ export function pageOrderFilePathFor(volume: VolumeInfo): string {
 
 export function pageMetaFilePathFor(volume: VolumeInfo): string {
   return path.join(volume.parentDir, pageMetaFileName(volume.bookFolderName));
+}
+
+/** Reads the volume's saved page-tagging (type + chapter) document —
+ * EMPTY_PAGE_META_DOCUMENT if it doesn't exist yet or fails to parse, same
+ * silent-tolerance idiom as readPageOrder() below. Exported (unlike readPageOrder)
+ * since export.ts also needs chapter data (CBZ Bookmark attributes, chapter-scoped
+ * export) — routes/pageMeta.ts's own GET handler still reads+parses inline itself
+ * rather than calling this, since it additionally needs the raw string for ETag
+ * computation. */
+export async function readPageMeta(volume: VolumeInfo): Promise<PageMetaDocument> {
+  try {
+    const raw = await fs.readFile(pageMetaFilePathFor(volume), "utf-8");
+    return PageMetaDocumentSchema.parse(JSON.parse(raw));
+  } catch {
+    return EMPTY_PAGE_META_DOCUMENT;
+  }
 }
 
 /** Reads the volume's saved page-display-order document — [] if it doesn't exist yet

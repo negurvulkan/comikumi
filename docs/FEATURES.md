@@ -12,6 +12,7 @@ snapshot — please keep it in sync with larger changes.
 - [Multi-User Operation](#multi-user-operation)
 - [UI Language](#ui-language)
 - [Volumes & Pages](#volumes--pages)
+- [Chapters](#chapters)
 - [Language Management](#language-management)
 - [Character Management](#character-management)
 - [Story Bible](#story-bible)
@@ -252,6 +253,42 @@ remains open; see `docs/Professional-Workflow-Gaps.md`.
   open settings) as well as a menu bar with import/export actions (see
   [Export & Import](#export--import)), a "Report for volume" entry, and a
   status/message bar for background operations.
+
+## Chapters
+
+Lightweight per-volume tagging, not a separate structural entity — a page
+optionally references a `type` ("cover"/"chapter divider"/"story", used for
+cover detection and excluding non-story pages from the running page number)
+and a chapter. Chapter *order* is never stored: a chapter's position is
+always derived from the volume's own page order (the first page assigned to
+it), so chapter order and page order can never disagree.
+
+- **Manage chapters** ("Page" menu) — a simple add/rename/delete list. Each
+  page card in the page overview has a chapter dropdown to assign/change it.
+- **Visual grouping in the page overview**: pages are shown in section
+  headers by chapter (only once at least one chapter exists — an untagged
+  volume still shows a plain grid). If a chapter's pages aren't contiguous in
+  the volume, its name simply appears as a section header again further
+  down instead of silently hiding the gap — a visible hint rather than a
+  blocked action, since drag-reordering across chapter boundaries never
+  changes a page's chapter on its own.
+- **Chapter export**: the export dialog's page-selection modes gain a
+  "Chapter" option (resolves to that chapter's pages, wherever they sit in
+  the volume) — works for every raster/print/vector-PDF/PSD export. The
+  Export-Viewer screen's ZIP and CBZ downloads get the same chapter filter
+  next to the language selector, restricting the archive to just that
+  chapter instead of the whole exported folder.
+- **CBZ chapter bookmarks**: building a CBZ automatically writes a
+  `Bookmark` attribute (an otherwise-unused ComicInfo.xml field) onto the
+  first page of every chapter that has one — readers like Komga/Kavita use
+  this to build a chapter navigation list. Fully automatic, derived from the
+  chapters already defined; no extra configuration.
+- **Volume report & QA-check chapter awareness**: the volume-wide report
+  gains a chapter filter (restricts "who says what"/character lists to one
+  chapter); the QA checker groups its findings by chapter within each
+  category instead of one flat list, with separate buckets for untagged
+  pages and for findings not tied to any single page (e.g. duplicate
+  presets).
 
 ## Language Management
 

@@ -12,6 +12,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Mehrbenutzerbetrieb](#mehrbenutzerbetrieb)
 - [UI-Sprache](#ui-sprache)
 - [Bände & Seiten](#bände--seiten)
+- [Kapitel](#kapitel)
 - [Sprachverwaltung](#sprachverwaltung)
 - [Charakterverwaltung](#charakterverwaltung)
 - [Story Bible](#story-bible)
@@ -251,6 +252,48 @@ dort nur der Schreib-Mutex, kein ETag-Dialog) bleibt ebenfalls offen; siehe
   verwalten, Einstellungen öffnen) sowie eine Menüleiste mit Import-/Export-Aktionen
   (siehe [Export & Import](#export--import)), einen Eintrag "Bericht für den Band" und
   eine Status-/Meldungsleiste für Hintergrundvorgänge.
+
+## Kapitel
+
+Leichtgewichtiges Tagging pro Band, keine eigene strukturelle Einheit — eine
+Seite referenziert optional einen `type` ("Cover"/"Kapitel-Zwischenseite"/
+"Story", genutzt für Cover-Erkennung und um Nicht-Story-Seiten von der
+laufenden Seitennummerierung auszuschließen) sowie ein Kapitel. Die Kapitel-
+*Reihenfolge* wird nie gespeichert: die Position eines Kapitels ergibt sich
+immer aus der eigenen Seitenreihenfolge des Bandes (die erste ihm
+zugewiesene Seite) — Kapitel- und Seitenreihenfolge können also nie
+auseinanderlaufen.
+
+- **Kapitel verwalten** ("Seite"-Menü) — eine einfache Anlegen-/Umbenennen-/
+  Löschen-Liste. Jede Seitenkarte in der Seitenübersicht hat ein Dropdown
+  zum Zuweisen/Ändern des Kapitels.
+- **Visuelle Gruppierung in der Seitenübersicht**: Seiten werden mit
+  Abschnittsüberschriften nach Kapitel angezeigt (nur sobald mindestens ein
+  Kapitel existiert — ein noch nicht getaggter Band zeigt weiterhin ein
+  schlichtes Raster). Liegen die Seiten eines Kapitels nicht zusammenhängend
+  im Band, taucht sein Name einfach an einer weiteren Stelle als
+  Abschnittsüberschrift erneut auf, statt die Lücke stillschweigend zu
+  verbergen — ein sichtbarer Hinweis statt einer blockierten Aktion, da
+  Drag-Umsortieren über Kapitelgrenzen hinweg nie automatisch das Kapitel
+  einer Seite ändert.
+- **Kapitel-Export**: Der Export-Dialog bekommt eine "Kapitel"-Option bei der
+  Seitenauswahl (löst zum Kapitel gehörende Seiten auf, egal wo sie im Band
+  liegen) — funktioniert für jeden Raster-/Druck-/Vektor-PDF-/PSD-Export. Der
+  Export-Viewer-Bildschirm bekommt denselben Kapitel-Filter für ZIP- und
+  CBZ-Downloads neben der Sprachauswahl, der das Archiv auf nur dieses
+  Kapitel statt den ganzen Export-Ordner beschränkt.
+- **CBZ-Kapitel-Lesezeichen**: Beim Bauen einer CBZ wird automatisch ein
+  `Bookmark`-Attribut (ein sonst ungenutztes ComicInfo.xml-Feld) auf die
+  erste Seite jedes Kapitels mit mindestens einer Seite geschrieben — Reader
+  wie Komga/Kavita nutzen das für eine Kapitel-Navigation. Vollautomatisch,
+  aus den bereits definierten Kapiteln abgeleitet — keine zusätzliche
+  Konfiguration nötig.
+- **Kapitel-Bewusstsein in Band-Bericht & QA-Check**: Der bandweite Bericht
+  bekommt einen Kapitel-Filter (beschränkt "wer sagt was"/Charakterlisten auf
+  ein Kapitel); der QA-Checker gruppiert seine Funde innerhalb jeder
+  Kategorie zusätzlich nach Kapitel statt einer flachen Liste, mit eigenen
+  Buckets für nicht getaggte Seiten und für Funde ohne Bezug zu einer
+  einzelnen Seite (z. B. doppelte Presets).
 
 ## Sprachverwaltung
 

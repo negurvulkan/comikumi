@@ -101,5 +101,13 @@ export const CbzMetadataSchema = z.object({
   scanInformation: optionalTrimmed(300),
 
   pages: z.array(CbzPageEntrySchema).optional(),
+
+  /** Restricts the archive to just these page ids (e.g. a single chapter's pages —
+   * see shared/src/pageMeta.ts's resolveChapters()) instead of every exported page in
+   * the language folder. Unrelated to `pages` above (that's per-page Type/DoublePage
+   * metadata for whichever pages end up in the archive, keyed by post-filter index —
+   * deliberately a different field name to avoid confusion between the two). Omitted
+   * or empty means "every exported page", the existing default behavior. */
+  pageIds: z.array(z.string()).optional(),
 });
 export type CbzMetadata = z.infer<typeof CbzMetadataSchema>;
