@@ -2,8 +2,12 @@ import { computePreprocessInfo, type PreprocessInfo } from "./detection";
 
 /** Resizes `bitmap`'s longest side to `targetSize`, pads (top-left aligned, black
  * fill) to a `targetSize`×`targetSize` square, and normalizes to the detector's
- * expected `(px/127.5)-1` range in NCHW float32 layout — the exact preprocessing
- * `detection.ts`'s `PreprocessInfo`/`mapBoxToOriginal()` assume. Runs on
+ * expected `px/255` range (0..1) in NCHW float32 layout — matches the upstream
+ * `zyddnys/manga-image-translator` reference preprocessing exactly (confirmed from
+ * its own `letterbox()`/inference source — plain `/255` normalization, NOT the
+ * `(px/127.5)-1` range this file used before, which was an unverified assumption
+ * that silently produced near-zero activations, not a crash, so it went unnoticed
+ * until real end-to-end testing). Runs on
  * `OffscreenCanvas` (available in Workers on every browser this feature already
  * requires for WebGPU/WASM) rather than the DOM canvas, so it works entirely inside
  * worker.ts with no main-thread round-trip. */
@@ -27,9 +31,9 @@ export function resizeAndPadToTensor(
   const tensorData = new Float32Array(3 * pixelCount); // NCHW: [R plane][G plane][B plane]
   for (let i = 0; i < pixelCount; i++) {
     const base = i * 4;
-    tensorData[i] = data[base] / 127.5 - 1; // R
-    tensorData[pixelCount + i] = data[base + 1] / 127.5 - 1; // G
-    tensorData[2 * pixelCount + i] = data[base + 2] / 127.5 - 1; // B
+    tensorData[i] = data[base] / 255; // R
+    tensorData[pixelCount + i] = data[base + 1] / 255; // G
+    tensorData[2 * pixelCount + i] = data[base + 2] / 255; // B
   }
   return { tensorData, info };
 }

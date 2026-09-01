@@ -47,7 +47,7 @@ export function sigmoid(x: number): number {
 /** Resize-longest-side-to-`targetSize`, top-left-aligned (padding added only on the
  * right/bottom) — so mapping a detection back to original coordinates is a plain
  * division by `scale`, no offset subtraction needed. */
-export function computePreprocessInfo(origWidth: number, origHeight: number, targetSize = 2048): PreprocessInfo {
+export function computePreprocessInfo(origWidth: number, origHeight: number, targetSize = 1024): PreprocessInfo {
   const scale = targetSize / Math.max(origWidth, origHeight);
   return { scale, targetSize, origWidth, origHeight };
 }
@@ -64,8 +64,55 @@ export function binarize(probMap: ProbMap, threshold = TEXT_THRESH): Uint8Array 
   return mask;
 }
 
-/** 4-connectivity flood fill, iterative (BFS via a reused index buffer) — 2048×2048
- * masks are ~4M pixels, a recursive flood fill would blow the call stack. Returns one
+/** Default dilation radius (px, at the detector's own 1024×1024 map resolution) —
+ * closes gaps between adjacent glyph strokes in the raw mask (this model's `seg`
+ * output traces individual letters, built for pixel-precise text removal, not
+ * per-line/bubble boxes — without bridging that gap, connectedComponents() finds one
+ * component per character instead of one per text block). Empirically tuned against
+ * real manga pages (started from radius 3, the "5x5 kernel" idea in the upstream
+ * repo's own mask-merging code, `ctd_utils/textmask.py`'s
+ * `cv2.dilate(..., np.ones((5,5)), iterations=1)`) — 6 gave the cleanest result (3
+ * correctly-merged bubbles on each of 3 test pages, no fragmentation and no
+ * over-merging of distinct bubbles). Revisit if a wider variety of test pages later
+ * shows this value merging separate nearby bubbles together. */
+export const DILATE_RADIUS = 6;
+
+/** Square-kernel dilation: a pixel becomes 1 if any pixel within `radius` (Chebyshev
+ * distance, i.e. a `(2r+1)x(2r+1)` box) is 1 — closes small gaps between nearby glyphs
+ * so they merge into one connectedComponents() blob per text line/bubble instead of
+ * one per character. Two-pass (horizontal then vertical) box-blur-style dilation
+ * instead of a naive O(width*height*radius^2) full-kernel scan — same result, much
+ * cheaper for a 1024x1024 mask. */
+export function dilateMask(mask: Uint8Array, width: number, height: number, radius = DILATE_RADIUS): Uint8Array {
+  if (radius <= 0) return mask;
+  const horizontal = new Uint8Array(mask.length);
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    for (let x = 0; x < width; x++) {
+      let hit = 0;
+      for (let dx = -radius; dx <= radius && !hit; dx++) {
+        const nx = x + dx;
+        if (nx >= 0 && nx < width && mask[row + nx]) hit = 1;
+      }
+      horizontal[row + x] = hit;
+    }
+  }
+  const dilated = new Uint8Array(mask.length);
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      let hit = 0;
+      for (let dy = -radius; dy <= radius && !hit; dy++) {
+        const ny = y + dy;
+        if (ny >= 0 && ny < height && horizontal[ny * width + x]) hit = 1;
+      }
+      dilated[y * width + x] = hit;
+    }
+  }
+  return dilated;
+}
+
+/** 4-connectivity flood fill, iterative (BFS via a reused index buffer) — a 1024×1024
+ * mask is ~1M pixels, a recursive flood fill would blow the call stack. Returns one
  * pixel-index array per connected component. */
 export function connectedComponents(mask: Uint8Array, width: number, height: number): number[][] {
   const labeled = new Uint8Array(mask.length);
@@ -171,18 +218,46 @@ export function clampBoxToImage(box: Box, imageWidth: number, imageHeight: numbe
   return { x, y, width: Math.max(0, right - x), height: Math.max(0, bottom - y), confidence: box.confidence };
 }
 
-/** Full pipeline: raw detector output logits → final boxes in original-image pixel
- * space, ready to become Bubbles. `mapWidth`/`mapHeight` are the detector's own output
- * tensor dimensions (the padded square, e.g. 2048×2048), which may differ from the
- * model's nominal input size if the model itself downsamples internally — kept as
- * explicit parameters rather than assumed, so this stays correct regardless. */
-export function decodeDetections(logits: Float32Array, mapWidth: number, mapHeight: number, info: PreprocessInfo): Box[] {
-  const probMap = logitsToProbMap(logits, mapWidth, mapHeight);
+/** Full pipeline: raw detector output → final boxes in original-image pixel space,
+ * ready to become Bubbles. `mapWidth`/`mapHeight` are the detector's own output tensor
+ * dimensions (the padded square, e.g. 1024×1024), which may differ from the model's
+ * nominal input size if the model itself downsamples internally — kept as explicit
+ * parameters rather than assumed, so this stays correct regardless.
+ *
+ * `alreadyActivated` (default `false`, preserving the original "raw logits, apply our
+ * own sigmoid" assumption): the `comictextdetector.pt.onnx` model's `seg` output was
+ * confirmed via live inference to already be a 0..1 probability map (its own graph
+ * applies sigmoid internally — observed raw values exactly in [0,1] with max=1.0), so
+ * applying `logitsToProbMap`'s sigmoid a SECOND time compressed every pixel into
+ * [0.5, 0.73] — always above TEXT_THRESH regardless of content, turning the whole page
+ * into one giant "text" blob that then failed the confidence filter. Pass `true` for
+ * this model to skip the redundant sigmoid and use the output as-is.
+ *
+ * `dilateRadius` (default `DILATE_RADIUS`) overrides dilateMask's gap-bridging
+ * radius — mainly for tests exercising a specific radius; worker.ts always uses
+ * the default. */
+export function decodeDetections(
+  values: Float32Array,
+  mapWidth: number,
+  mapHeight: number,
+  info: PreprocessInfo,
+  alreadyActivated = false,
+  dilateRadius = DILATE_RADIUS
+): Box[] {
+  const probMap = alreadyActivated ? { data: values, width: mapWidth, height: mapHeight } : logitsToProbMap(values, mapWidth, mapHeight);
   const mask = binarize(probMap);
-  const components = connectedComponents(mask, mapWidth, mapHeight);
+  // Group via the DILATED mask (bridges small gaps between adjacent glyphs into one
+  // component per text line/bubble — see dilateMask's doc comment), but compute each
+  // box's bounds/confidence from only the TRUE (undilated) ink pixels within that
+  // group — otherwise the dilation's own gap-filler pixels (never actually above
+  // TEXT_THRESH) would loosen the box and drag down the mean confidence.
+  const dilated = dilateMask(mask, mapWidth, mapHeight, dilateRadius);
+  const components = connectedComponents(dilated, mapWidth, mapHeight);
 
   const boxes: Box[] = [];
-  for (const pixels of components) {
+  for (const group of components) {
+    const pixels = group.filter((idx) => mask[idx] === 1);
+    if (pixels.length === 0) continue;
     const box = boxFromComponent(pixels, mapWidth, probMap);
     if (!box) continue;
     const unclipped = unclipBox(box);

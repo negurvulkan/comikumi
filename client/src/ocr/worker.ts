@@ -16,7 +16,11 @@ ort.env.wasm.wasmPaths = "/ort/";
 ort.env.wasm.numThreads = 1;
 ort.env.logLevel = "error";
 
-const DETECTOR_INPUT_SIZE = 2048;
+// The model's actual fixed input shape (confirmed via onnxruntime-web's own
+// "Got invalid dimensions... Expected: 1024" error at runtime) — 2048 was an
+// unverified assumption baked in before this was ever actually run against real
+// inference (only the model's license/provenance had been checked, not its shape).
+const DETECTOR_INPUT_SIZE = 1024;
 
 function post(message: WorkerMessage): void {
   self.postMessage(message);
@@ -39,12 +43,25 @@ async function runDetection(session: ort.InferenceSession, imageBitmap: ImageBit
   const inputTensor = new ort.Tensor("float32", tensorData, [1, 3, DETECTOR_INPUT_SIZE, DETECTOR_INPUT_SIZE]);
   const inputName = session.inputNames[0];
   const outputs = await session.run({ [inputName]: inputTensor });
-  const outputTensor = outputs[session.outputNames[0]];
+  // The upstream reference model (zyddnys/manga-image-translator's comictextdetector)
+  // has THREE outputs — an (unused here) box-regression head, the single-channel text
+  // "mask" this detector actually needs, and a separate "lines_map" used only by its
+  // own polygon-extraction post-processing — not one single tensor at output index 0.
+  // Picking by shape (batch=1, channels=1, i.e. a per-pixel probability map) rather
+  // than blindly taking session.outputNames[0] avoids silently decoding the wrong
+  // output if the ONNX export orders them differently than expected.
+  const outputTensor =
+    session.outputNames.map((name) => outputs[name]).find((t) => t.dims.length === 4 && t.dims[0] === 1 && t.dims[1] === 1) ??
+    outputs[session.outputNames[0]];
   // Output map dimensions come from the tensor itself rather than being assumed —
   // some detector export variants emit the probability map at a different resolution
   // than the input (e.g. downsampled by the model's own stride).
   const [, , mapHeight, mapWidth] = outputTensor.dims as [number, number, number, number];
-  const boxes = decodeDetections(outputTensor.data as Float32Array, mapWidth, mapHeight, info);
+  // alreadyActivated: true — confirmed via live inference that this model's `seg`
+  // output is already a 0..1 probability map (its own graph applies sigmoid
+  // internally), not raw logits — see decodeDetections' doc comment for the full
+  // "double sigmoid" story this fixes.
+  const boxes = decodeDetections(outputTensor.data as Float32Array, mapWidth, mapHeight, info, true);
 
   return boxes.map(
     (box): DetectedRegion => ({

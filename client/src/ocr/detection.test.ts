@@ -4,6 +4,7 @@ import {
   computePreprocessInfo,
   logitsToProbMap,
   binarize,
+  dilateMask,
   connectedComponents,
   boxFromComponent,
   unclipBox,
@@ -43,6 +44,28 @@ describe("logitsToProbMap / binarize", () => {
     expect(probMap.data[0]).toBeCloseTo(0.5);
     const mask = binarize(probMap, TEXT_THRESH);
     expect(Array.from(mask)).toEqual([1, 0, 1]);
+  });
+});
+
+describe("dilateMask", () => {
+  it("bridges a small gap between two separate blobs so they touch", () => {
+    // 1x9 row: two single-pixel blobs 3px apart (a gap connectedComponents alone
+    // would keep separate).
+    // prettier-ignore
+    const mask = new Uint8Array([1, 0, 0, 0, 1, 0, 0, 0, 0]);
+    const dilated = dilateMask(mask, 9, 1, 2);
+    // radius 2 grows each 1-pixel to a 5-wide span: [0..2] u [2..6] -> touches/overlaps.
+    expect(Array.from(dilated)).toEqual([1, 1, 1, 1, 1, 1, 1, 0, 0]);
+  });
+
+  it("radius 0 is a no-op", () => {
+    const mask = new Uint8Array([0, 1, 0]);
+    expect(dilateMask(mask, 3, 1, 0)).toBe(mask);
+  });
+
+  it("leaves an all-zero mask all-zero", () => {
+    const mask = new Uint8Array(9);
+    expect(Array.from(dilateMask(mask, 3, 3, 1))).toEqual(Array.from(mask));
   });
 });
 
@@ -206,5 +229,64 @@ describe("decodeDetections (full pipeline)", () => {
     logits[0] = 10; // a single lit pixel, 1x1 — below MIN_BOX_SIZE
     const info = computePreprocessInfo(mapSize, mapSize, mapSize);
     expect(decodeDetections(logits, mapSize, mapSize, info)).toEqual([]);
+  });
+
+  it("merges two nearby small blobs (simulating adjacent glyphs) into one box instead of two", () => {
+    // Regression coverage for a real-world symptom: the detector's mask traces
+    // individual glyphs, not whole text lines — without dilation, two 2x2 blobs a
+    // few px apart (like adjacent letters) would decode as two separate boxes
+    // (44 "bubbles" for one real speech bubble, in the live bug report).
+    const mapSize = 20;
+    const logits = new Float32Array(mapSize * mapSize).fill(-10);
+    // Two 3x3 "glyphs" on the same row, a 2px gap between them (each individually
+    // already clears MIN_BOX_SIZE, so a failure to merge would show up as 2 boxes,
+    // not 0).
+    for (let y = 5; y <= 7; y++) {
+      for (let x = 5; x <= 7; x++) logits[y * mapSize + x] = 10;
+      for (let x = 10; x <= 12; x++) logits[y * mapSize + x] = 10;
+    }
+    const info = computePreprocessInfo(mapSize, mapSize, mapSize);
+    const boxes = decodeDetections(logits, mapSize, mapSize, info);
+    expect(boxes.length).toBe(1);
+    // Confidence must come from the true glyph pixels only (both are sigmoid(10)~=1),
+    // not diluted by the low-confidence gap pixels dilation bridges them with.
+    expect(boxes[0].confidence).toBeGreaterThan(0.99);
+  });
+
+  describe("alreadyActivated", () => {
+    // Regression coverage for a real-world bug: comictextdetector.pt.onnx's `seg`
+    // output is already a 0..1 probability map (confirmed via live inference — raw
+    // values observed in [0,1] with max=1.0), not raw logits. Applying sigmoid a
+    // second time compresses every value into [0.5, 0.73] — always above
+    // TEXT_THRESH regardless of content — turning the whole map into one giant
+    // "text" blob that then fails the confidence filter, i.e. 0 boxes no matter
+    // what the image actually shows.
+    it("treats input as an already-0..1 probability map, skipping the sigmoid step", () => {
+      const mapSize = 8;
+      const probs = new Float32Array(mapSize * mapSize).fill(0.01); // background: low prob
+      for (let y = 2; y <= 4; y++) {
+        for (let x = 2; x <= 4; x++) {
+          probs[y * mapSize + x] = 0.99; // high-confidence 3x3 block
+        }
+      }
+      const info = computePreprocessInfo(mapSize, mapSize, mapSize);
+      const boxes = decodeDetections(probs, mapSize, mapSize, info, true);
+      expect(boxes.length).toBe(1);
+    });
+
+    it("without it, a value already in [0,1] gets double-sigmoided into a useless narrow band (the bug this guards against)", () => {
+      const mapSize = 8;
+      const probs = new Float32Array(mapSize * mapSize).fill(0.01);
+      for (let y = 2; y <= 4; y++) {
+        for (let x = 2; x <= 4; x++) {
+          probs[y * mapSize + x] = 0.99;
+        }
+      }
+      const info = computePreprocessInfo(mapSize, mapSize, mapSize);
+      // sigmoid(0.01)≈0.502 and sigmoid(0.99)≈0.729 are BOTH >= TEXT_THRESH (0.5) —
+      // the whole map binarizes as one big low-confidence blob, which then fails
+      // BOX_THRESH and yields nothing, reproducing the reported "0 detections".
+      expect(decodeDetections(probs, mapSize, mapSize, info, false)).toEqual([]);
+    });
   });
 });

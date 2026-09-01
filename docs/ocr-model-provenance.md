@@ -92,3 +92,37 @@ license is.
 
 Do not substitute a different/unverified model source for the detector without
 repeating this check.
+
+## Runtime contract (confirmed via live inference, 2026-09-01)
+
+The license/provenance check above was done before this model was ever actually run
+through onnxruntime-web — three real bugs surfaced only once real inference was tried
+against real pages, all now fixed in `client/src/ocr/{worker,preprocess,detection}.ts`.
+Recorded here since a future model substitution needs to re-verify all three, not just
+the license:
+
+- **Input size**: fixed **1024×1024** (`DETECTOR_INPUT_SIZE` in `worker.ts`), NOT 2048
+  as originally assumed — onnxruntime-web's own `OrtRun` error ("Expected: 1024") is
+  what caught this.
+- **Normalization**: plain `px/255` (0..1 range), confirmed against the upstream
+  `zyddnys/manga-image-translator` reference preprocessing — NOT `(px/127.5)-1`
+  (-1..1 range) this file originally used.
+- **Outputs**: the ONNX graph exposes **three** named outputs — `blk` (box-regression,
+  unused here), `seg` (the text-region mask this detector actually needs, shape
+  `[1,1,1024,1024]`), `det` (a second map, unused here, likely the upstream
+  "lines_map"). `worker.ts` selects `seg` by shape (`dims[1] === 1`) rather than
+  assuming output index 0.
+- **`seg` activation**: already a **0..1 probability map** — the graph applies sigmoid
+  internally (confirmed live: raw values span [~0, 1.0] with an exact max of 1.0).
+  `decodeDetections()`'s own sigmoid step must be skipped for this model
+  (`alreadyActivated: true`) — applying it twice compresses every pixel into
+  [0.5, 0.73], always above `TEXT_THRESH` regardless of image content, which
+  silently produced zero detections on every page (not a crash) until diagnosed via
+  live console instrumentation.
+
+Still **unverified** (not yet hit in testing, so not yet root-caused): channel order
+(RGB vs BGR) — the upstream preprocessing does a `BGR2RGB` conversion immediately
+followed by a channel-axis reversal, whose net effect on final channel order wasn't
+fully traceable from the parts of the source read so far. If detected boxes are
+present but visibly biased/wrong (as opposed to zero, which the three bugs above
+already explain), this is the next thing to check.

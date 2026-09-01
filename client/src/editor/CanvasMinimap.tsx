@@ -24,13 +24,29 @@ const MAX_HEIGHT_PX = 120;
 // (see the TODO's own "bei Seiten mit vielen Panels/Bubbles" framing).
 const MIN_ELEMENT_COUNT = 6;
 
-function boundsOf(bubble: Bubble): { minX: number; minY: number; maxX: number; maxY: number } {
+/** A child bubble's x/y/corners are relative to its parent panel's origin (see
+ * PanelPointsSchema.origin) — same helper duplicated identically in every other
+ * renderer (renderPageToPng.ts, server/src/lib/pageRaster.ts) since it's a 4-line,
+ * render-context-specific lookup, not general-purpose math. Unassigned/stale-panelId
+ * bubbles resolve to {x:0,y:0} (a no-op shift), matching how they're already absolute. */
+function panelOriginFor(bubble: Bubble, panels: Panel[]): { x: number; y: number } {
+  const panel = bubble.panelId ? panels.find((p) => p.id === bubble.panelId) : undefined;
+  return panel?.origin ?? { x: 0, y: 0 };
+}
+
+export function boundsOf(bubble: Bubble, panels: Panel[]): { minX: number; minY: number; maxX: number; maxY: number } {
+  const origin = panelOriginFor(bubble, panels);
   if (bubble.shape === "quad" && bubble.corners) {
-    const xs = bubble.corners.map((c) => c.x);
-    const ys = bubble.corners.map((c) => c.y);
+    const xs = bubble.corners.map((c) => c.x + origin.x);
+    const ys = bubble.corners.map((c) => c.y + origin.y);
     return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
   }
-  return { minX: bubble.x, minY: bubble.y, maxX: bubble.x + bubble.width, maxY: bubble.y + bubble.height };
+  return {
+    minX: bubble.x + origin.x,
+    minY: bubble.y + origin.y,
+    maxX: bubble.x + origin.x + bubble.width,
+    maxY: bubble.y + origin.y + bubble.height,
+  };
 }
 
 /** Small always-visible overview of the whole page (panels + bubbles as tiny boxes,
@@ -72,7 +88,7 @@ export function CanvasMinimap({ imageWidth, imageHeight, bubbles, panels, visibl
         );
       })}
       {bubbles.map((bubble) => {
-        const b = boundsOf(bubble);
+        const b = boundsOf(bubble, panels);
         return (
           <div
             key={bubble.id}
