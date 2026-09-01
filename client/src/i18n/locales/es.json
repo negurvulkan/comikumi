@@ -829,7 +829,9 @@
     "formatVectorPdfHint": "El texto de las burbujas se convierte en texto vectorial real de PDF, seleccionable/copiable (no un mapa de píxeles) — texto rectangular/oval/curvo exacto, burbujas en cuadrilátero mediante una aproximación afín (la perspectiva real es técnicamente imposible en el propio formato PDF). El texto vertical (tategaki) llegará más adelante. Sin un perfil ICC configurado, el archivo no es un PDF/X certificado (ver el informe tras la exportación).",
     "pdfxVersionLabel": "Variante PDF/X",
     "formatPsd": "PSD (capas)",
-    "formatPsdHint": "Exporta un archivo de Photoshop por capas: fondo / retoques-recortes-imágenes / una capa por cada bocadillo y texto curvo. Las capas son PNG rasterizado con alfa, no objetos de texto PSD editables — cada capa se puede ocultar/mover/enmascarar, pero el texto no se puede volver a escribir con la herramienta de texto de Photoshop.",
+    "formatPsdHint": "Exporta un archivo de Photoshop por capas: fondo / retoques-recortes-imágenes / una capa por cada bocadillo y texto curvo. Cada capa es una imagen rasterizada que se puede ocultar/mover/enmascarar.",
+    "psdEditableTextLayersLabel": "Capas de texto editables (experimental)",
+    "psdEditableTextLayersHint": "Intenta además añadir un objeto de texto real, editable con la herramienta de texto de Photoshop, a los bocadillos compatibles (rectángulo/óvalo simple, horizontal, color sólido, sin fusionar) — todo lo demás sigue siendo una imagen rasterizada, como siempre. Un bocadillo así se convierte en dos capas (\"… (Fondo)\" / \"… (Texto)\"), ya que una capa de texto de Photoshop no puede llevar también el contorno/relleno del bocadillo. Photoshop mostrará un aviso de \"Actualizar\" la primera vez que abras el archivo; haz clic en Actualizar para que el texto sea editable.",
     "errors": {
       "empty_selection": "Introduce números de página, p. ej. «1,3,5,10-14».",
       "invalid_range": "Rango no válido «{{part}}» — el primer número debe ser menor o igual que el segundo.",

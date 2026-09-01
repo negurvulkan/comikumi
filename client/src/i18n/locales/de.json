@@ -849,7 +849,9 @@
     "formatVectorPdfHint": "Blasentext wird echter, markier-/kopierbarer PDF-Vektortext (kein Pixelraster) — Rechteck-/Oval-/Kurventext exakt, Viereck-Blasen als affine Näherung (echte Perspektive ist im PDF-Format technisch unmöglich). Vertikaler Text (Tategaki) folgt später. Ohne hinterlegtes ICC-Profil ist die Datei kein zertifiziertes PDF/X (siehe Bericht nach dem Export).",
     "pdfxVersionLabel": "PDF/X-Variante",
     "formatPsd": "PSD (Ebenen)",
-    "formatPsdHint": "Exportiert eine Ebenen-PSD-Datei: Hintergrund / Retuschen-Cut-Panels-Bilder / eine Ebene je Sprechblase und Kurventext. Ebenen sind Raster-PNG mit Alphakanal, keine editierbaren PSD-Textobjekte — jede Ebene lässt sich aus-/einblenden, verschieben, maskieren, aber der Text nicht mit dem Photoshop-Textwerkzeug neu tippen.",
+    "formatPsdHint": "Exportiert eine Ebenen-PSD-Datei: Hintergrund / Retuschen-Cut-Panels-Bilder / eine Ebene je Sprechblase und Kurventext. Jede Ebene ist ein Rasterbild, das sich aus-/einblenden, verschieben und maskieren lässt.",
+    "psdEditableTextLayersLabel": "Editierbare Text-Ebenen (experimentell)",
+    "psdEditableTextLayersHint": "Versucht zusätzlich, dafür geeigneten Sprechblasen ein echtes, mit dem Photoshop-Textwerkzeug editierbares Textobjekt mitzugeben (einfaches Rechteck/Oval, horizontal, Volltonfarbe, nicht verschmolzen) — alles andere bleibt wie bisher ein Rasterbild. Eine solche Blase wird dabei zu zwei Ebenen (\"… (Hintergrund)\" / \"… (Text)\"), da eine Photoshop-Text-Ebene nicht gleichzeitig Umriss/Füllung der Blase tragen kann. Photoshop zeigt beim ersten Öffnen der Datei einen \"Update\"-Dialog auf der Ebene — mit Klick auf \"Update\" wird der Text editierbar.",
     "errors": {
       "empty_selection": "Bitte Seitenzahlen angeben, z. B. „1,3,5,10-14“.",
       "invalid_range": "Ungültiger Bereich „{{part}}“ — erste Zahl muss kleiner/gleich der zweiten sein.",

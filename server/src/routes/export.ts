@@ -178,9 +178,10 @@ exportRouter.post(
 
 /**
  * Layered PSD export — same "client sends the raw PageLayout JSON, server renders"
- * pattern as /export-vector-pdf (see that route's doc comment). Layers are plain
- * raster PNG-with-alpha (see psdExport.ts's own doc comment for why), not editable
- * PSD text objects — Photoshop can hide/show/move/mask each layer independently.
+ * pattern as /export-vector-pdf (see that route's doc comment). Every layer always
+ * carries a raster PNG-with-alpha; `editableTextLayers` (opt-in, see psdExport.ts's
+ * own doc comment) additionally attaches a real, Photoshop-Type-tool-editable text
+ * object to qualifying bubbles.
  */
 exportRouter.post(
   "/:id/export-psd",
@@ -191,10 +192,11 @@ exportRouter.post(
       res.status(404).json({ error: "volume_not_found" });
       return;
     }
-    const { folderSuffix, page, languageCode } = req.body as {
+    const { folderSuffix, page, languageCode, editableTextLayers } = req.body as {
       folderSuffix?: string;
       page?: string;
       languageCode?: string;
+      editableTextLayers?: boolean;
     };
     if (!folderSuffix || !page || !languageCode) {
       res.status(400).json({ error: "export_fields_required" });
@@ -221,6 +223,7 @@ exportRouter.post(
         languageCode,
         presets,
         resolveImagePath: resolveImageFilePath,
+        editableTextLayers: !!editableTextLayers,
       });
     } catch (err) {
       res.status(500).json({ error: "psd_export_failed", params: { reason: (err as Error).message } });

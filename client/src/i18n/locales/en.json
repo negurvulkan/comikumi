@@ -849,7 +849,9 @@
     "formatVectorPdfHint": "Bubble text becomes real, selectable/copyable PDF vector text (not a pixel raster) — rect/oval/curved text exact, quad bubbles as an affine approximation (true perspective is technically impossible in the PDF format itself). Vertical (tategaki) text is a later phase. Without a configured ICC profile, the file isn't a certified PDF/X (see the report after export).",
     "pdfxVersionLabel": "PDF/X variant",
     "formatPsd": "PSD (layers)",
-    "formatPsdHint": "Exports a layered Photoshop file: background / retouches-cut-panels-images / one layer per bubble and curved-text element. Layers are raster PNG-with-alpha, not editable PSD text objects — you can hide/move/mask each layer, not retype the text with Photoshop's Type tool.",
+    "formatPsdHint": "Exports a layered Photoshop file: background / retouches-cut-panels-images / one layer per bubble and curved-text element. Every layer is a raster image you can hide/move/mask.",
+    "psdEditableTextLayersLabel": "Editable text layers (experimental)",
+    "psdEditableTextLayersHint": "Also attaches a real, Type-tool-editable text object to bubbles that support it (plain rectangle/oval, horizontal, solid color, not merged) — everything else stays a raster image, as always. Such a bubble becomes two layers (\"… (Background)\" / \"… (Text)\") since a Photoshop text layer can't also carry the bubble's outline/fill. Photoshop shows an \"Update\" prompt the first time you open the file; click Update to make the text editable.",
     "errors": {
       "empty_selection": "Please enter page numbers, e.g. \"1,3,5,10-14\".",
       "invalid_range": "Invalid range \"{{part}}\" — the first number must be less than or equal to the second.",

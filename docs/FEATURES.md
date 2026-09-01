@@ -1075,6 +1075,20 @@ of via the editor store, since layout data is never written here.
   link (the full field set including the page table could blow up a
   query-string download-link URL) — the response comes back as a blob and is
   saved via an object URL + synthetic click.
+- **Layered PSD export**: one Photoshop layer per bubble/curved-text/placed
+  image, plus background and Cut-Panel/retouch layers, ordered to match the
+  editor's own [layer order](#layer-order-z-order). Every layer is a raster image you
+  can hide/move/mask. An experimental, opt-in checkbox ("Editable text
+  layers") additionally attaches a real, Type-tool-editable text object to
+  bubbles that support it — plain rectangle/oval, horizontal, solid fill
+  color, not merged with another bubble (vertical/Japanese text, gradient
+  fills, quad bubbles, and merged bubbles keep their existing raster-only
+  layer, since Photoshop's native text engine can't represent them). Such a
+  bubble becomes two layers ("… (Background)" and "… (Text)") instead of
+  one, since a Photoshop text layer can't also carry the bubble's own
+  outline/fill. Off by default; Photoshop shows an "Update" prompt the first
+  time it opens the text layer — accepting it converts it to live,
+  retypeable text.
 - **Rendering fundamentals**: shrink-to-fit + wrapping for horizontal text, a
   complete tategaki engine (forced line breaks, furigana runs, tate-chū-yoko
   digit/Latin runs, kana shrink/offset, kinsoku shori line-breaking rules),

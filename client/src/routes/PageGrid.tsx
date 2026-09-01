@@ -607,8 +607,18 @@ export function PageGrid() {
             languages={languages}
             chapters={resolvedChapters}
             exporting={exporting || normalizing}
-            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions) =>
-              runExport(selection, onlyTranslated, languageFilter, format, null, pdfxVersion, imageOptions, finalFormatOptions)
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions, psdEditableTextLayers) =>
+              runExport(
+                selection,
+                onlyTranslated,
+                languageFilter,
+                format,
+                null,
+                pdfxVersion,
+                imageOptions,
+                finalFormatOptions,
+                psdEditableTextLayers
+              )
             }
             onAnalyzeUniform={handleAnalyzeUniform}
             onClose={() => setShowExportPanel(false)}

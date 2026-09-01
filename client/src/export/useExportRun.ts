@@ -76,7 +76,10 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
     /** Only consulted when `format === "png"` — the raster (client-rendered) export path. */
     imageOptions: RasterExportOptions = {},
     /** Only consulted when `format === "final-format"`. */
-    finalFormatOptions?: FinalFormatOptions
+    finalFormatOptions?: FinalFormatOptions,
+    /** Only consulted when `format === "psd"` — see ExportPanel.tsx's checkbox and
+     * server/src/lib/psdExport.ts's own doc comment for what this actually does. */
+    psdEditableTextLayers = false
   ) {
     if (languages.length === 0) return;
     setExporting(true);
@@ -112,7 +115,7 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
           // Same server-side-rendering pattern as vector-pdf — no client render, the
           // server builds the layered PSD straight from this raw layout JSON.
           for (const lang of langsForPage) {
-            await api.exportPsdPage(volumeId, p.page, lang.folderSuffix, pageLayout, lang.code);
+            await api.exportPsdPage(volumeId, p.page, lang.folderSuffix, pageLayout, lang.code, psdEditableTextLayers);
             exportCount++;
             setExportMsg(t("useExportRun.progress", { count: exportCount }));
           }

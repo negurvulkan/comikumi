@@ -39,7 +39,9 @@ interface Props {
     format: ExportFormat,
     pdfxVersion: PdfXVersion,
     imageOptions: RasterExportOptions,
-    finalFormatOptions?: FinalFormatOptions
+    finalFormatOptions?: FinalFormatOptions,
+    /** Only meaningful when `format === "psd"` — see the checkbox in the psd format block. */
+    psdEditableTextLayers?: boolean
   ) => void;
   /** Only called for `format === "uniform"` — the caller runs a distortion analysis
    * first (see useNormalizeRun.ts's analyze()) before any page is actually rendered,
@@ -81,6 +83,7 @@ export function ExportPanel({ volumeId, languages, currentPage, chapters, export
   const [languageFilter, setLanguageFilter] = useState<"all" | string>("all");
   const [format, setFormat] = useState<ExportFormat>("png");
   const [pdfxVersion, setPdfxVersion] = useState<PdfXVersion>("x4");
+  const [psdEditableTextLayers, setPsdEditableTextLayers] = useState(false);
   const [imageFormat, setImageFormat] = useState<RasterImageFormat>("png");
   const [scale, setScale] = useState(1);
   const [quality, setQuality] = useState(92);
@@ -173,7 +176,7 @@ export function ExportPanel({ volumeId, languages, currentPage, chapters, export
       });
       return;
     }
-    onExport(buildSelection(), onlyTranslated, languageFilter, format, pdfxVersion, imageOptions);
+    onExport(buildSelection(), onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, undefined, psdEditableTextLayers);
   }
 
   return (
@@ -379,7 +382,16 @@ export function ExportPanel({ volumeId, languages, currentPage, chapters, export
         <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.formatPrintHint")}</p>
       )}
       {format === "psd" && (
-        <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.formatPsdHint")}</p>
+        <>
+          <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.formatPsdHint")}</p>
+          <label className="field-row" style={{ alignItems: "center", gap: 6 }}>
+            <input type="checkbox" checked={psdEditableTextLayers} onChange={(e) => setPsdEditableTextLayers(e.target.checked)} />
+            {t("exportPanel.psdEditableTextLayersLabel")}
+          </label>
+          {psdEditableTextLayers && (
+            <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>{t("exportPanel.psdEditableTextLayersHint")}</p>
+          )}
+        </>
       )}
       {format === "vector-pdf" && (
         <>

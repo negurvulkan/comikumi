@@ -457,13 +457,21 @@ export const api = {
     }).then((r) => json<{ ok: true; path: string; pdfxStamped: boolean }>(r)),
 
   /** Layered PSD export — same "send the raw PageLayout JSON, server renders" pattern
-   * as exportVectorPdfPage. Layers are raster PNG-with-alpha, not editable PSD text
-   * objects (see server/src/lib/psdExport.ts). */
-  exportPsdPage: (volumeId: string, page: string, folderSuffix: string, layout: PageLayout, languageCode: string) =>
+   * as exportVectorPdfPage. Every layer always carries a raster PNG-with-alpha;
+   * `editableTextLayers` (opt-in) additionally attaches real, Photoshop-Type-tool-
+   * editable text objects to qualifying bubbles (see server/src/lib/psdExport.ts). */
+  exportPsdPage: (
+    volumeId: string,
+    page: string,
+    folderSuffix: string,
+    layout: PageLayout,
+    languageCode: string,
+    editableTextLayers?: boolean
+  ) =>
     authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/export-psd`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ folderSuffix, page, languageCode, layout }),
+      body: JSON.stringify({ folderSuffix, page, languageCode, layout, editableTextLayers }),
     }).then((r) => json<{ ok: true; path: string }>(r)),
 
   /** Starts a background export job (server/src/lib/exportJobs.ts) covering every page

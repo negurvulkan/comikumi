@@ -829,7 +829,9 @@
     "formatVectorPdfHint": "Le texte des bulles devient du vrai texte vectoriel PDF, sélectionnable/copiable (pas une image pixellisée) — texte rectangle/ovale/courbe exact, bulles en quadrilatère via une approximation affine (la vraie perspective est techniquement impossible dans le format PDF lui-même). Le texte vertical (tategaki) viendra plus tard. Sans profil ICC configuré, le fichier n'est pas un PDF/X certifié (voir le rapport après l'export).",
     "pdfxVersionLabel": "Variante PDF/X",
     "formatPsd": "PSD (calques)",
-    "formatPsdHint": "Exporte un fichier Photoshop en calques : arrière-plan / retouches-découpes-images / un calque par bulle et par texte courbe. Les calques sont des rasters PNG avec alpha, pas des objets texte PSD éditables — chaque calque peut être masqué/déplacé/masqué, mais le texte ne peut pas être retapé avec l'outil texte de Photoshop.",
+    "formatPsdHint": "Exporte un fichier Photoshop en calques : arrière-plan / retouches-découpes-images / un calque par bulle et par texte courbe. Chaque calque est une image raster que vous pouvez masquer/déplacer/masquer.",
+    "psdEditableTextLayersLabel": "Calques de texte éditables (expérimental)",
+    "psdEditableTextLayersHint": "Tente aussi d'ajouter un véritable objet texte, éditable avec l'outil texte de Photoshop, aux bulles compatibles (rectangle/ovale simple, horizontal, couleur unie, non fusionnée) — tout le reste reste une image raster, comme avant. Une telle bulle devient alors deux calques (\"… (Arrière-plan)\" / \"… (Texte)\"), car un calque de texte Photoshop ne peut pas aussi porter le contour/remplissage de la bulle. Photoshop affichera une invite \"Mettre à jour\" à la première ouverture du fichier ; cliquez sur Mettre à jour pour rendre le texte éditable.",
     "errors": {
       "empty_selection": "Veuillez indiquer des numéros de page, p. ex. « 1,3,5,10-14 ».",
       "invalid_range": "Plage invalide « {{part}} » — le premier nombre doit être inférieur ou égal au second.",

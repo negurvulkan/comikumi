@@ -1086,6 +1086,22 @@ geschrieben werden.
   (das volle Feldset inklusive Seiten-Tabelle kann eine Query-String-Downloadlink-URL
   sprengen) — die Antwort kommt als Blob zurück und wird per Objekt-URL + synthetischem
   Klick gespeichert.
+- **Ebenen-PSD-Export**: eine Photoshop-Ebene je Sprechblase/Kurventext/
+  platziertem Bild, plus Hintergrund- und Retuschen/Cut-Panel-Ebenen, sortiert
+  passend zur eigenen [Ebenenreihenfolge](#ebenenreihenfolge-z-order) des
+  Editors. Jede Ebene ist ein Rasterbild, das sich aus-/einblenden,
+  verschieben und maskieren lässt. Eine experimentelle Opt-in-Checkbox
+  ("Editierbare Text-Ebenen") gibt dafür geeigneten Sprechblasen zusätzlich
+  ein echtes, mit dem Photoshop-Textwerkzeug editierbares Textobjekt mit —
+  einfaches Rechteck/Oval, horizontal, Volltonfarbe, nicht mit einer anderen
+  Blase verschmolzen (vertikaler/japanischer Text, Farbverläufe, Quad-Blasen
+  und verschmolzene Blasen behalten ihre bisherige reine Raster-Ebene, da
+  Photoshops native Text-Engine sie nicht abbilden kann). Eine solche Blase
+  wird dabei zu zwei Ebenen ("… (Hintergrund)" und "… (Text)") statt einer,
+  da eine Photoshop-Text-Ebene nicht gleichzeitig Umriss/Füllung der Blase
+  tragen kann. Standardmäßig aus; Photoshop zeigt beim ersten Öffnen der
+  Text-Ebene einen "Update"-Dialog — Bestätigen macht sie zu echtem, neu
+  tippbarem Text.
 - **Rendering-Grundlagen**: Schrumpf-zu-Passform + Umbruch für horizontalen Text,
   vollständige Tategaki-Engine (erzwungene Umbrüche, Furigana-Läufe,
   Tate-chū-yoko-Ziffern-/Lateinläufe, Kana-Verkleinerung/-Versatz, Kinsoku-Shori-

@@ -700,8 +700,18 @@ export function Editor() {
             languages={languages}
             currentPage={page}
             exporting={exporting || normalizing}
-            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions) =>
-              runExport(selection, onlyTranslated, languageFilter, format, layout ? { page, layout } : null, pdfxVersion, imageOptions, finalFormatOptions)
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions, psdEditableTextLayers) =>
+              runExport(
+                selection,
+                onlyTranslated,
+                languageFilter,
+                format,
+                layout ? { page, layout } : null,
+                pdfxVersion,
+                imageOptions,
+                finalFormatOptions,
+                psdEditableTextLayers
+              )
             }
             onAnalyzeUniform={handleAnalyzeUniform}
             onClose={() => setShowExportPanel(false)}
