@@ -47,6 +47,7 @@ interface ResolvedStyle {
   lineHeight: number;
   align: TextAlign;
   direction: TextDirection;
+  balloonAwareWrap: boolean | undefined;
   color: string;
   textOutline: TextOutline;
   textGradient: TextGradient;
@@ -62,6 +63,14 @@ function drawHorizontalBubble(
 ) {
   const box = textBoxFor(form.bubbleStyle, bubble.shape, form, 1, mergedBounds);
 
+  // See BubbleShape.tsx's identical carve-out: a merged group's boundary
+  // isn't a clean ellipse, and a clip line isn't accounted for by the
+  // closed-form ellipse formula — both fall back to the flat box either way.
+  const balloonGeometry =
+    bubble.shape === "oval" && style.balloonAwareWrap && !mergedBounds && !(form.clipA && form.clipB)
+      ? { shape: bubble.shape, balloonAwareWrap: style.balloonAwareWrap, bubbleWidth: form.width, bubbleHeight: form.height }
+      : undefined;
+
   const { fontSize: size, lines, lineStep, blockHeight } = fitHorizontalText(
     ctx,
     text,
@@ -69,7 +78,8 @@ function drawHorizontalBubble(
     style.lineHeight,
     box.width,
     box.height,
-    style.fontSize
+    style.fontSize,
+    balloonGeometry
   );
 
   ctx.font = `${size}px "${style.fontFamily}"`;
@@ -99,7 +109,12 @@ function drawVerticalBubble(
 ) {
   const box = textBoxFor(form.bubbleStyle, bubble.shape, form, 1, mergedBounds);
 
-  const fitted = fitVerticalText(text, style.lineHeight, box.width, box.height, style.fontSize);
+  const balloonGeometry =
+    bubble.shape === "oval" && style.balloonAwareWrap && !mergedBounds && !(form.clipA && form.clipB)
+      ? { shape: bubble.shape, balloonAwareWrap: style.balloonAwareWrap, bubbleWidth: form.width, bubbleHeight: form.height }
+      : undefined;
+
+  const fitted = fitVerticalText(text, style.lineHeight, box.width, box.height, style.fontSize, balloonGeometry);
   drawVerticalText(ctx, fitted, form.x + box.x + box.width / 2, form.y + box.y + box.height / 2, box.width, {
     fontFamily: style.fontFamily,
     color: style.color,

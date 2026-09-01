@@ -189,6 +189,7 @@ export function BubbleInspector({
     if (preset.text.lineHeight !== undefined) textPatch.lineHeight = style.lineHeight;
     if (preset.text.align !== undefined) textPatch.align = style.align;
     if (preset.text.direction !== undefined) textPatch.direction = style.direction;
+    if (preset.text.balloonAwareWrap !== undefined) textPatch.balloonAwareWrap = style.balloonAwareWrap;
     if (preset.text.color !== undefined) textPatch.color = style.color;
     if (preset.text.textOutline !== undefined) textPatch.textOutline = style.textOutline;
     if (preset.text.textGradient !== undefined) textPatch.textGradient = style.textGradient;
@@ -212,6 +213,7 @@ export function BubbleInspector({
   const lineHeightOverride = bubble.lineHeightOverride?.[activeLanguage];
   const alignOverride = bubble.alignOverride?.[activeLanguage];
   const directionOverride = bubble.directionOverride?.[activeLanguage];
+  const balloonAwareWrapOverride = bubble.balloonAwareWrapOverride?.[activeLanguage];
   const hasEffectsOverride =
     bubble.textOutlineOverride?.[activeLanguage] !== undefined || bubble.textGradientOverride?.[activeLanguage] !== undefined;
   const effectiveOutline = style.textOutline;
@@ -316,6 +318,17 @@ export function BubbleInspector({
 
   function setDirectionOverride(value: TextDirection) {
     onChange({ directionOverride: { ...(bubble.directionOverride ?? {}), [activeLanguage]: value } });
+  }
+
+  function toggleBalloonAwareWrapOverride(checked: boolean) {
+    const next = { ...(bubble.balloonAwareWrapOverride ?? {}) };
+    if (checked) next[activeLanguage] = !!bubble.balloonAwareWrap;
+    else delete next[activeLanguage];
+    onChange({ balloonAwareWrapOverride: next });
+  }
+
+  function setBalloonAwareWrapOverride(value: boolean) {
+    onChange({ balloonAwareWrapOverride: { ...(bubble.balloonAwareWrapOverride ?? {}), [activeLanguage]: value } });
   }
 
   function toggleFormOverride(checked: boolean) {
@@ -910,6 +923,35 @@ export function BubbleInspector({
               <option value="vertical-rl">{t("editor.bubbleInspector.directionVerticalRtl")}</option>
             </select>
           </GovernedField>
+
+          {bubble.shape === "oval" && (
+            <GovernedField
+              label={t("editor.bubbleInspector.balloonAwareWrapLabel")}
+              governed={textPresetGoverns("balloonAwareWrap", balloonAwareWrapOverride !== undefined)}
+              lockTitle={lockTitle}
+              extra={
+                <ScopeSwitch
+                  activeLanguage={activeLanguage}
+                  scope={balloonAwareWrapOverride !== undefined ? "language" : "all"}
+                  onChange={(s) => toggleBalloonAwareWrapOverride(s === "language")}
+                />
+              }
+            >
+              <label className="field-row" style={{ alignItems: "center", gap: 6 }}>
+                <input
+                  type="checkbox"
+                  checked={!!style.balloonAwareWrap}
+                  disabled={textPresetGoverns("balloonAwareWrap", balloonAwareWrapOverride !== undefined)}
+                  onChange={(e) => {
+                    const v = e.target.checked;
+                    if (balloonAwareWrapOverride !== undefined) setBalloonAwareWrapOverride(v);
+                    else onChange({ balloonAwareWrap: v });
+                  }}
+                />
+                <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{t("editor.bubbleInspector.balloonAwareWrapHint")}</span>
+              </label>
+            </GovernedField>
+          )}
         </>
       )}
 

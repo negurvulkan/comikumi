@@ -56,6 +56,11 @@ React + Konva canvas editor.
   shared line of dialogue; ungrouping restores the original bubbles untouched. Text
   inset (the gap between outline and text) defaults to a sensible per-shape value but
   can be overridden per bubble or per preset with a 0–90% slider.
+- **Balloon-aware line-breaking** — an opt-in, per-language toggle for oval bubbles
+  derives each line's usable width from the bubble's true ellipse shape instead of one
+  fixed inset rectangle, so lines near the middle can run wider and lines near the
+  top/bottom narrower; works for both horizontal and vertical (tategaki) text,
+  identically across the editor, PNG export, vector PDF, and PSD export.
 - **Lettering presets** — define a reusable style ("SFX Style", "Narration", …) that
   live-updates every bubble/curved text linked to it, field by field, without
   overwriting values a preset doesn't define; a small built-in starter library ("Manga

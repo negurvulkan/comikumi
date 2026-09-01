@@ -209,6 +209,17 @@ export const BubbleSchema = z.object({
   lineHeight: z.number().positive().default(1.2),
   align: TextAlignSchema.default("center"),
   direction: TextDirectionSchema.default("ltr"),
+  /** Opt-in per-row/per-column text width derived from the bubble's real outline instead
+   * of one fixed inset rectangle — only has an effect for shape "oval" (see
+   * ovalRowWidth/ovalColumnMaxRows in shared/src/rendering/textLayout.ts /
+   * verticalTypesetting.ts). Off by default (undefined) so existing lettered pages keep
+   * their current wrap unchanged; same optional/undefined-when-off convention as
+   * `locked`/`isEffect` below rather than a defaulted boolean. Resolved through
+   * resolveBubbleStyle (like align/direction below), NOT resolveBubbleForm — a bubble's
+   * shape can't vary per language, but whether a given language's text should actually
+   * use balloon-shaped wrapping can (e.g. a language whose translation runs long).
+   * `balloonAwareWrapOverride` below is the matching per-language override map. */
+  balloonAwareWrap: z.boolean().optional(),
   color: z.string().default("#000000"),
   textOutline: TextOutlineSchema.default({ enabled: false, color: "#000000", widthPx: 4 }),
   textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
@@ -225,6 +236,7 @@ export const BubbleSchema = z.object({
   lineHeightOverride: z.record(z.string(), z.number().positive()).optional(),
   alignOverride: z.record(z.string(), TextAlignSchema).optional(),
   directionOverride: z.record(z.string(), TextDirectionSchema).optional(),
+  balloonAwareWrapOverride: z.record(z.string(), z.boolean()).optional(),
   textOutlineOverride: z.record(z.string(), TextOutlineSchema).optional(),
   textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
   /** Manual assignment, not derived from geometry — which Panel (this page's
@@ -309,6 +321,7 @@ export function resolveBubbleStyle(bubble: Bubble, languageCode: string, presets
     lineHeight: resolveLangField(bubble.lineHeightOverride, languageCode, preset?.text.lineHeight, bubble.lineHeight),
     align: resolveLangField(bubble.alignOverride, languageCode, preset?.text.align, bubble.align),
     direction: resolveLangField(bubble.directionOverride, languageCode, preset?.text.direction, bubble.direction),
+    balloonAwareWrap: resolveLangField(bubble.balloonAwareWrapOverride, languageCode, preset?.text.balloonAwareWrap, bubble.balloonAwareWrap),
     color: resolvePresetField(preset?.text.color, bubble.color),
     textOutline: resolveLangField(bubble.textOutlineOverride, languageCode, preset?.text.textOutline, bubble.textOutline),
     textGradient: resolveLangField(bubble.textGradientOverride, languageCode, preset?.text.textGradient, bubble.textGradient),

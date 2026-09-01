@@ -523,6 +523,18 @@ The same field can also be set on a [preset](#lettering-presets) to apply one
 padding value across every linked bubble at once. Applies to every export
 path (PNG, vector PDF, PSD) identically; not available for "quad" bubbles.
 
+**Balloon-aware line-breaking**: for oval bubbles, a checkbox in the bubble
+inspector (or a [preset](#lettering-presets) field) can derive each line's
+usable width from the bubble's actual ellipse shape instead of fitting every
+line into one fixed, uniformly-inset rectangle — lines near the vertical
+center can run wider, lines near the top/bottom edge narrower. Works for both
+horizontal and vertical (tategaki) text; off by default so already-lettered
+pages don't silently re-wrap. Per-language, like font size/align/direction —
+a language whose translation runs long can turn it on while others keep the
+plain rectangle. Renders identically in the live editor, PNG export, vector
+PDF, and PSD export. Not available for "rect" bubbles (no effect there) or
+"quad" bubbles (their own text-warp pipeline).
+
 ### Images
 
 A placed raster image, warped into a free quad (same corner-drag mechanism as

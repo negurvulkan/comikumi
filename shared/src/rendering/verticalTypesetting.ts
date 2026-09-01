@@ -1,5 +1,5 @@
 import type { TextAlign, TextGradient, TextOutline } from "../layoutSchema.js";
-import { MIN_FONT_SIZE } from "./textLayout.js";
+import { MIN_FONT_SIZE, ovalRowWidth, type BalloonGeometry } from "./textLayout.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
 import { createOffscreenCanvas } from "./canvasFactory.js";
 
@@ -353,20 +353,27 @@ function isTrailingProhibited(token: VerticalToken): boolean {
   return token.kind === "char" && TRAILING_PROHIBITED.has(token.text);
 }
 
-function layoutColumnsGreedy(tokens: VerticalToken[], maxRowsPerColumn: number): VerticalToken[][] {
+/** `maxRowsPerColumn` is either a flat cap for every column, or a function looked up by
+ * 0-based column index — the balloon-aware alternative used when a column's capacity
+ * varies with its horizontal position (see ovalColumnMaxRows below). */
+function layoutColumnsGreedy(tokens: VerticalToken[], maxRowsPerColumn: number | ((colIndex: number) => number)): VerticalToken[][] {
+  const maxRowsFor = typeof maxRowsPerColumn === "function" ? maxRowsPerColumn : () => maxRowsPerColumn;
   const columns: VerticalToken[][] = [];
   let current: VerticalToken[] = [];
   let currentWeight = 0;
+  let colIndex = 0;
   for (const token of tokens) {
     if (token.kind === "break") {
       columns.push(current);
+      colIndex++;
       current = [];
       currentWeight = 0;
       continue;
     }
     const weight = tokenWeight(token);
-    if (currentWeight > 0 && currentWeight + weight > maxRowsPerColumn) {
+    if (currentWeight > 0 && currentWeight + weight > maxRowsFor(colIndex)) {
       columns.push(current);
+      colIndex++;
       current = [];
       currentWeight = 0;
     }
@@ -411,16 +418,43 @@ export interface VerticalFitResult {
 }
 
 /**
+ * Balloon-aware column capacity — the vertical/gespiegelte-Achse counterpart to
+ * ovalRowWidth: instead of "how wide can this row be at height y", asks "how many rows
+ * can this column hold at horizontal position x" (columns fill right-to-left, so a
+ * column near the bubble's left/right edge is capped shorter than one near the
+ * center). Reuses ovalRowWidth's closed-form ellipse math directly by swapping which
+ * axis is width vs. height — `ovalRowWidth(bubbleHeight, bubbleWidth, colCenterX)`
+ * computes the ellipse's vertical extent at horizontal position `colCenterX`, exactly
+ * the quantity needed here. Floored at 1 (never 0) — a column too far out for the
+ * ellipse to offer a full row still gets one, which is what lets the ordinary
+ * `blockWidth <= boxWidth` shrink-loop check (unchanged) catch "doesn't fit" instead of
+ * needing a separate overflow signal for this case. */
+function ovalColumnMaxRows(geometry: BalloonGeometry, colPitch: number, rowStep: number, blockWidthGuess: number, colIndex: number): number {
+  const colCenterX = blockWidthGuess / 2 - (colIndex + 0.5) * colPitch;
+  const maxHeight = ovalRowWidth(geometry.bubbleHeight, geometry.bubbleWidth, colCenterX);
+  return Math.max(1, Math.floor(maxHeight / rowStep));
+}
+
+/**
  * Shrinks fontSize (down to MIN_FONT_SIZE) until the tokenized, column-wrapped
  * text fits within boxWidth x boxHeight — shared by the live editor preview,
- * the PNG export and perspective-warped quad text for vertical-rl bubbles.
+ * the PNG export and perspective-warped quad text for vertical-rl bubbles. When
+ * `geometry` has `shape: "oval"` and `balloonAwareWrap` set, each column's row
+ * capacity is derived from the bubble's true ellipse instead of the flat `boxHeight`
+ * (see ovalColumnMaxRows) — same bounded two-pass approximation fitHorizontalText uses
+ * (pass 1 assumes the block spans the full `boxWidth`, i.e. center-anchored columns,
+ * to get a column-count estimate; pass 2 re-lays-out using that estimate's actual
+ * block width). Only correct for align "center" — "left"/"right" alignment shifts
+ * where the block sits without shifting this estimate, an accepted simplification (see
+ * fitHorizontalText's own margin/floor tradeoffs for the same category of approximation).
  */
 export function fitVerticalText(
   text: string,
   lineHeight: number,
   boxWidth: number,
   boxHeight: number,
-  baseFontSize: number
+  baseFontSize: number,
+  geometry?: BalloonGeometry
 ): VerticalFitResult {
   const tokens = tokenizeVertical(text);
   // Both ruby (furigana) and bōten (emphasis dots) draw something to the side of the
@@ -435,6 +469,7 @@ export function fitVerticalText(
       (t.kind === "word" && t.chars.some((c) => c.emphasis))
   );
   const gapFactor = hasWideGap ? 1.4 : 1;
+  const balloonAware = geometry?.shape === "oval" && !!geometry.balloonAwareWrap;
 
   let size = baseFontSize;
   let columns: VerticalToken[][] = [];
@@ -443,8 +478,14 @@ export function fitVerticalText(
   while (size >= MIN_FONT_SIZE) {
     rowStep = size * lineHeight;
     colPitch = rowStep * gapFactor;
-    const maxRowsPerColumn = Math.max(1, Math.floor(boxHeight / rowStep));
-    columns = applyKinsoku(layoutColumnsGreedy(tokens, maxRowsPerColumn));
+    if (balloonAware && geometry) {
+      const firstPass = applyKinsoku(layoutColumnsGreedy(tokens, (i) => ovalColumnMaxRows(geometry, colPitch, rowStep, boxWidth, i)));
+      const blockWidthGuess = firstPass.length * colPitch;
+      columns = applyKinsoku(layoutColumnsGreedy(tokens, (i) => ovalColumnMaxRows(geometry, colPitch, rowStep, blockWidthGuess, i)));
+    } else {
+      const maxRowsPerColumn = Math.max(1, Math.floor(boxHeight / rowStep));
+      columns = applyKinsoku(layoutColumnsGreedy(tokens, maxRowsPerColumn));
+    }
     const blockWidth = columns.length * colPitch;
     if (blockWidth <= boxWidth || size === MIN_FONT_SIZE) break;
     size -= 1;

@@ -142,17 +142,29 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
 
   const isVertical = style.direction === "vertical-rl";
 
+  // Balloon-aware wrapping only applies to a plain (non-merged, non-clipped)
+  // oval — a merged group's boundary is an arbitrary polygon union, and a
+  // clip line cuts the box along a straight edge, neither of which the
+  // closed-form ellipse formula in ovalRowWidth accounts for. Falls back to
+  // the existing flat-rectangle wrap in both cases, same as when the toggle
+  // is off.
+  const balloonGeometry = useMemo(() => {
+    if (bubble.shape !== "oval" || !style.balloonAwareWrap) return undefined;
+    if (mergedBoundsScaled || (form.clipA && form.clipB)) return undefined;
+    return { shape: bubble.shape, balloonAwareWrap: style.balloonAwareWrap, bubbleWidth: form.width * scale, bubbleHeight: form.height * scale };
+  }, [bubble.shape, style.balloonAwareWrap, form.width, form.height, form.clipA, form.clipB, mergedBoundsScaled, scale]);
+
   // Same shrink-to-fit + wrap algorithm as the PNG export, run at display
   // scale, so the editor preview matches the exported result exactly.
   const fitted = useMemo(() => {
     if (!text || isVertical) return null;
-    return fitHorizontalText(getMeasureCtx(), text, style.fontFamily, style.lineHeight, boxWidth, boxHeight, baseFontSize);
-  }, [text, isVertical, style.fontFamily, style.lineHeight, boxWidth, boxHeight, baseFontSize]);
+    return fitHorizontalText(getMeasureCtx(), text, style.fontFamily, style.lineHeight, boxWidth, boxHeight, baseFontSize, balloonGeometry);
+  }, [text, isVertical, style.fontFamily, style.lineHeight, boxWidth, boxHeight, baseFontSize, balloonGeometry]);
 
   const fittedVertical = useMemo(() => {
     if (!text || !isVertical) return null;
-    return fitVerticalText(text, style.lineHeight, boxWidth, boxHeight, baseFontSize);
-  }, [text, isVertical, style.lineHeight, boxWidth, boxHeight, baseFontSize]);
+    return fitVerticalText(text, style.lineHeight, boxWidth, boxHeight, baseFontSize, balloonGeometry);
+  }, [text, isVertical, style.lineHeight, boxWidth, boxHeight, baseFontSize, balloonGeometry]);
 
   // True when the text still doesn't fit its box even after fitHorizontalText/
   // fitVerticalText shrank it all the way to MIN_FONT_SIZE — neither function reports

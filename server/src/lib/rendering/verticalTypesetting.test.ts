@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { tokenizeVertical, fitVerticalText } from "../../../../shared/src/rendering/verticalTypesetting.js";
+import type { BalloonGeometry } from "../../../../shared/src/rendering/textLayout.js";
 
 describe("tokenizeVertical", () => {
   it("tokenizes plain characters one-by-one", () => {
@@ -171,5 +172,48 @@ describe("fitVerticalText", () => {
       const first = column[0];
       expect(first.kind === "char" && first.smallKana).not.toBe(true);
     }
+  });
+
+  describe("balloon-aware geometry", () => {
+    it("without geometry, an oval bubble wraps exactly like the legacy flat-box behavior", () => {
+      const text = "あいうえおかきくけこ";
+      const withoutGeometry = fitVerticalText(text, 1, 10000, 100, 24);
+      const geometry: BalloonGeometry = { shape: "oval", balloonAwareWrap: false, bubbleWidth: 400, bubbleHeight: 400 };
+      const withGeometryOff = fitVerticalText(text, 1, 10000, 100, 24, geometry);
+      expect(withGeometryOff).toEqual(withoutGeometry);
+    });
+
+    it("a non-oval shape ignores balloon geometry even when balloonAwareWrap is true", () => {
+      const text = "あいうえおかきくけこ";
+      const rectResult = fitVerticalText(text, 1, 10000, 100, 24, {
+        shape: "rect",
+        balloonAwareWrap: true,
+        bubbleWidth: 400,
+        bubbleHeight: 400,
+      });
+      const flatResult = fitVerticalText(text, 1, 10000, 100, 24);
+      expect(rectResult).toEqual(flatResult);
+    });
+
+    it("balloon-aware wrapping fits more rows per column near the horizontal center than the flat box would", () => {
+      // A tall, narrow oval: the flat 0.28-inset box caps every column at the same
+      // height, but the true ellipse is much taller near the horizontal center, so
+      // balloon-aware wrapping should need strictly fewer columns for the same text.
+      const text = "あ".repeat(24);
+      const flat = fitVerticalText(text, 1, 100 * (1 - 0.28), 300 * (1 - 0.28), 24);
+      const geometry: BalloonGeometry = { shape: "oval", balloonAwareWrap: true, bubbleWidth: 100, bubbleHeight: 300 };
+      const balloonAware = fitVerticalText(text, 1, 100 * (1 - 0.28), 300 * (1 - 0.28), 24, geometry);
+      expect(balloonAware.columns.length).toBeLessThanOrEqual(flat.columns.length);
+    });
+
+    it("a grouped mono-ruby word still stays together across a column break with balloon geometry active", () => {
+      // A very short bubble caps the ellipse's row capacity at 1 even near the
+      // horizontal center — the balloon-aware equivalent of the plain test's
+      // boxHeight=24 forcing maxRowsPerColumn=1.
+      const geometry: BalloonGeometry = { shape: "oval", balloonAwareWrap: true, bubbleWidth: 400, bubbleHeight: 20 };
+      const result = fitVerticalText("あ{東|とう}{京|きょう}い", 1, 10000, 24, 24, geometry);
+      const columnKinds = result.columns.map((col) => col.map((t) => t.kind));
+      expect(columnKinds).toContainEqual(["rubyWord"]);
+    });
   });
 });

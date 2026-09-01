@@ -33,6 +33,7 @@ import { drawBaseImage, drawBubbleElement, drawCurvedTextElementRaster, ensurePa
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "__fixtures__");
 const baselinePath = path.join(fixturesDir, "pageRaster.visual.baseline.png");
+const balloonBaselinePath = path.join(fixturesDir, "pageRaster.visual.balloonAware.baseline.png");
 
 let baseImagePath: string;
 
@@ -186,41 +187,75 @@ async function decodeToRgba(png: Buffer): Promise<{ data: Buffer; width: number;
   return { data: Buffer.from(data.buffer, data.byteOffset, data.byteLength), width: img.width, height: img.height };
 }
 
+/** Shared pixel-diff-against-baseline assertion, self-bootstrapping the baseline file
+ * on first run (see this module's doc comment) — factored out so a second scene (the
+ * balloon-aware wrap fixture below) doesn't duplicate it. */
+async function expectMatchesBaseline(rendered: Buffer, baselinePath: string, diffFileName: string) {
+  const baselineExists = await fs.access(baselinePath).then(
+    () => true,
+    () => false
+  );
+  if (!baselineExists) {
+    await fs.writeFile(baselinePath, rendered);
+    console.warn(`[visual regression] No baseline found — wrote a new one at ${baselinePath}. Re-run to verify.`);
+    return;
+  }
+
+  const [current, baseline] = await Promise.all([decodeToRgba(rendered), decodeToRgba(await fs.readFile(baselinePath))]);
+  expect(current.width).toBe(baseline.width);
+  expect(current.height).toBe(baseline.height);
+
+  const diff = Buffer.alloc(current.data.length);
+  const mismatchedPixels = pixelmatch(current.data, baseline.data, diff, current.width, current.height, { threshold: 0.1 });
+
+  if (mismatchedPixels > 0) {
+    const diffPath = path.join(fixturesDir, ".tmp", diffFileName);
+    const diffCanvas = createCanvas(current.width, current.height);
+    const diffCtx = diffCanvas.getContext("2d") as unknown as CanvasRenderingContext2D;
+    const imageData = diffCtx.createImageData(current.width, current.height);
+    imageData.data.set(diff);
+    diffCtx.putImageData(imageData, 0, 0);
+    await fs.writeFile(diffPath, diffCanvas.toBuffer("image/png"));
+    console.warn(`[visual regression] ${mismatchedPixels} mismatched pixels — diff written to ${diffPath}`);
+  }
+
+  // A handful of stray antialiased-edge pixels is expected noise, not a regression —
+  // only fail once the mismatch is large enough to represent an actual visible change.
+  expect(mismatchedPixels).toBeLessThan(50);
+}
+
 describe("visual regression: full page render", () => {
   it("matches the checked-in baseline pixel-for-pixel (within a tiny antialiasing tolerance)", async () => {
-    const layout = buildLayout();
+    const rendered = await renderFlattenedPage(buildLayout());
+    await expectMatchesBaseline(rendered, baselinePath, "pageRaster.visual.diff.png");
+  });
+});
+
+describe("visual regression: balloon-aware oval wrap", () => {
+  it("matches the checked-in baseline for a wide oval bubble with balloonAwareWrap on", async () => {
+    // A wide, short oval — the case balloon-aware wrapping exists for: the flat
+    // 0.28-inset box is much narrower than the true ellipse near the vertical center,
+    // so this text wraps into fewer/wider lines than the legacy flat-box behavior would.
+    const bubble = createBubble({
+      id: "balloon1",
+      x: 20,
+      y: 20,
+      width: 320,
+      height: 120,
+      shape: "oval",
+      bubbleStyle: "speech",
+      fillColor: "#ffffff",
+      strokeColor: "#000000",
+      fontFamily: "TestFont",
+      fontSize: 20,
+      balloonAwareWrap: true,
+      text: { de: "Dies ist ein längerer Text der die ovale Form der Blase ausnutzen soll" },
+    });
+    const layout: PageLayout = {
+      ...createEmptyLayout("page_01", "page.png", 400, 300),
+      bubbles: [bubble],
+    };
     const rendered = await renderFlattenedPage(layout);
-
-    const baselineExists = await fs.access(baselinePath).then(
-      () => true,
-      () => false
-    );
-    if (!baselineExists) {
-      await fs.writeFile(baselinePath, rendered);
-      console.warn(`[visual regression] No baseline found — wrote a new one at ${baselinePath}. Re-run to verify.`);
-      return;
-    }
-
-    const [current, baseline] = await Promise.all([decodeToRgba(rendered), decodeToRgba(await fs.readFile(baselinePath))]);
-    expect(current.width).toBe(baseline.width);
-    expect(current.height).toBe(baseline.height);
-
-    const diff = Buffer.alloc(current.data.length);
-    const mismatchedPixels = pixelmatch(current.data, baseline.data, diff, current.width, current.height, { threshold: 0.1 });
-
-    if (mismatchedPixels > 0) {
-      const diffPath = path.join(fixturesDir, ".tmp", "pageRaster.visual.diff.png");
-      const diffCanvas = createCanvas(current.width, current.height);
-      const diffCtx = diffCanvas.getContext("2d") as unknown as CanvasRenderingContext2D;
-      const imageData = diffCtx.createImageData(current.width, current.height);
-      imageData.data.set(diff);
-      diffCtx.putImageData(imageData, 0, 0);
-      await fs.writeFile(diffPath, diffCanvas.toBuffer("image/png"));
-      console.warn(`[visual regression] ${mismatchedPixels} mismatched pixels — diff written to ${diffPath}`);
-    }
-
-    // A handful of stray antialiased-edge pixels is expected noise, not a regression —
-    // only fail once the mismatch is large enough to represent an actual visible change.
-    expect(mismatchedPixels).toBeLessThan(50);
+    await expectMatchesBaseline(rendered, balloonBaselinePath, "pageRaster.visual.balloonAware.diff.png");
   });
 });

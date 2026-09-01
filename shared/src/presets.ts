@@ -24,6 +24,8 @@ export const PresetTextFieldsSchema = z
     lineHeight: z.number().positive().optional(),
     align: TextAlignSchema.optional(),
     direction: TextDirectionSchema.optional(),
+    /** See BubbleSchema's identically-named field in layoutSchema.ts. */
+    balloonAwareWrap: z.boolean().optional(),
     color: z.string().optional(),
     textOutline: TextOutlineSchema.optional(),
     textGradient: TextGradientSchema.optional(),

@@ -39,10 +39,51 @@ export interface FitResult {
   blockHeight: number;
 }
 
+/** A row's available width, looked up by its 0-based index within the wrapped
+ * block — the balloon-aware alternative to a single flat `maxWidth` scalar. */
+export type RowWidthFn = (rowIndex: number) => number;
+
+// Balloon-aware oval wrapping tuning: how much of the true ellipse width at a
+// given row to actually offer text (leaves breathing room against the drawn
+// contour), and a floor — as a fraction of the bubble's full width — so a row
+// near the top/bottom pole never collapses toward zero (which would force
+// one-character lines or make the shrink loop bottom out for no real reason).
+const OVAL_ROW_MARGIN_RATIO = 0.12;
+const OVAL_ROW_MIN_WIDTH_RATIO = 0.3;
+
+/** Usable width of a text row centered `rowCenterY` px away from an oval
+ * bubble's own vertical center — closed-form ellipse width at that y,
+ * `2*rx*sqrt(1-(y/ry)^2)`, inset by OVAL_ROW_MARGIN_RATIO and floored against
+ * OVAL_ROW_MIN_WIDTH_RATIO. `bubbleWidth`/`bubbleHeight` are the bubble's raw
+ * (unpadded) dimensions, in the same scaled units as `rowCenterY`. */
+export function ovalRowWidth(bubbleWidth: number, bubbleHeight: number, rowCenterY: number): number {
+  const rx = bubbleWidth / 2;
+  const ry = bubbleHeight / 2;
+  const t = Math.min(0.98, Math.abs(rowCenterY) / Math.max(ry, 1e-6));
+  const localWidth = 2 * rx * Math.sqrt(Math.max(0, 1 - t * t));
+  const floor = bubbleWidth * OVAL_ROW_MIN_WIDTH_RATIO;
+  return Math.max(floor, localWidth) * (1 - OVAL_ROW_MARGIN_RATIO);
+}
+
+/** Raw geometry needed to derive per-row width from an oval bubble's true
+ * outline — see ovalRowWidth. `bubbleWidth`/`bubbleHeight` must be in the
+ * same scaled units as the `boxWidth`/`boxHeight` passed to fitHorizontalText
+ * (i.e. `form.width * scale` / `form.height * scale`, not the padded box). */
+export interface BalloonGeometry {
+  shape: BubbleShapeKind;
+  balloonAwareWrap: boolean | undefined;
+  bubbleWidth: number;
+  bubbleHeight: number;
+}
+
 /**
  * Shrinks fontSize (down to MIN_FONT_SIZE) until the wrapped text fits within
  * boxWidth x boxHeight — the same algorithm used for the PNG export, so the
- * live editor preview can match it exactly.
+ * live editor preview can match it exactly. When `geometry` is given, has
+ * `shape: "oval"`, and `balloonAwareWrap` is set, each row's available width
+ * is derived from the bubble's true ellipse instead of the flat `boxWidth`
+ * (see ovalRowWidth) — `boxWidth` is then only used as an upper bound near
+ * the vertical center, `boxHeight` still bounds the shrink loop unchanged.
  */
 export function fitHorizontalText(
   ctx: CanvasRenderingContext2D,
@@ -51,14 +92,27 @@ export function fitHorizontalText(
   lineHeight: number,
   boxWidth: number,
   boxHeight: number,
-  baseFontSize: number
+  baseFontSize: number,
+  geometry?: BalloonGeometry
 ): FitResult {
+  const balloonAware = geometry?.shape === "oval" && !!geometry.balloonAwareWrap;
   let size = baseFontSize;
   let lines: Line[] = [];
   while (size >= MIN_FONT_SIZE) {
     ctx.font = `${size}px "${fontFamily}"`;
-    lines = wrapHorizontal(ctx, text, boxWidth);
-    const blockHeight = lines.length * size * lineHeight;
+    const lineStep = size * lineHeight;
+    if (balloonAware && geometry) {
+      // Pass 1: top-aligned row positions (conservative — spans the full box
+      // height) just to get a line-count estimate.
+      const firstPass = wrapHorizontal(ctx, text, rowWidthFn(geometry, boxHeight, lineStep));
+      // Pass 2: re-wrap using that estimate's own (vertically centered)
+      // block height — see rowWidthFn's doc comment.
+      const blockHeightGuess = firstPass.length * lineStep;
+      lines = wrapHorizontal(ctx, text, rowWidthFn(geometry, blockHeightGuess, lineStep));
+    } else {
+      lines = wrapHorizontal(ctx, text, boxWidth);
+    }
+    const blockHeight = lines.length * lineStep;
     if (blockHeight <= boxHeight || size === MIN_FONT_SIZE) break;
     size -= 1;
   }
@@ -66,8 +120,30 @@ export function fitHorizontalText(
   return { fontSize: size, lines, lineStep, blockHeight: lines.length * lineStep };
 }
 
-/** Greedy word-wrap for horizontal (ltr/rtl) text within maxWidth. */
-export function wrapHorizontal(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): Line[] {
+/**
+ * A row-width function for one candidate font size, assuming the wrapped
+ * block is vertically centered and `blockHeight` tall (see BubbleShape.tsx's
+ * startY) — used both for fitHorizontalText's conservative first pass
+ * (`blockHeight` = the full `boxHeight`, i.e. "assume top-aligned rows
+ * spanning the whole box" — can only under-, never over-offer width) and its
+ * second pass (`blockHeight` = the first pass's own actual result), a
+ * bounded two-pass approximation rather than an iterated fixed-point solve
+ * (same "simplified, not perfect" tradeoff applyKinsoku() documents for
+ * vertical text — the total line count can shift by one between passes in
+ * rare cases, and that's accepted rather than re-wrapped to convergence).
+ */
+function rowWidthFn(geometry: BalloonGeometry, blockHeight: number, lineStep: number): RowWidthFn {
+  return (rowIndex: number) => {
+    const rowCenterY = -blockHeight / 2 + (rowIndex + 0.5) * lineStep;
+    return ovalRowWidth(geometry.bubbleWidth, geometry.bubbleHeight, rowCenterY);
+  };
+}
+
+/** Greedy word-wrap for horizontal (ltr/rtl) text — `maxWidth` is either a
+ * flat width for every row, or a RowWidthFn returning a (possibly different)
+ * width per row index for balloon-aware wrapping. */
+export function wrapHorizontal(ctx: CanvasRenderingContext2D, text: string, maxWidth: number | RowWidthFn): Line[] {
+  const widthAt = typeof maxWidth === "function" ? maxWidth : () => maxWidth;
   const lines: Line[] = [];
   for (const paragraph of text.split("\n")) {
     const words = paragraph.split(/\s+/).filter(Boolean);
@@ -78,7 +154,8 @@ export function wrapHorizontal(ctx: CanvasRenderingContext2D, text: string, maxW
     let current = "";
     for (const word of words) {
       const candidate = current ? `${current} ${word}` : word;
-      if (ctx.measureText(candidate).width > maxWidth && current) {
+      const rowMaxWidth = widthAt(lines.length);
+      if (ctx.measureText(candidate).width > rowMaxWidth && current) {
         lines.push({ text: current, width: ctx.measureText(current).width });
         current = word;
       } else {

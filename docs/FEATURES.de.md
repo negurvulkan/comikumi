@@ -537,6 +537,20 @@ sich auch in einem [Preset](#lettering-presets) setzen, um einen Padding-Wert
 auf alle verknüpften Blasen gleichzeitig anzuwenden. Wirkt identisch in jedem
 Exportpfad (PNG, Vektor-PDF, PSD); nicht verfügbar für „Quad"-Blasen.
 
+**Formangepasster Zeilenumbruch**: für ovale Blasen kann eine Checkbox im
+Blasen-Inspector (oder ein [Preset](#lettering-presets)-Feld) einschalten,
+dass die nutzbare Breite jeder Zeile aus der tatsächlichen Ellipsenform der
+Blase abgeleitet wird — Zeilen in der vertikalen Mitte dürfen dadurch breiter
+sein, Zeilen nahe Ober-/Unterkante schmaler, statt alle gleich in ein festes,
+pauschal eingerücktes Rechteck zu passen. Gilt für horizontalen wie
+vertikalen (Tategaki-)Text; Standardmäßig aus, damit bereits geletterte
+Seiten sich nicht unbemerkt anders umbrechen. Pro Sprache einstellbar, genau
+wie Schriftgröße/Ausrichtung/Leserichtung — eine Sprache mit besonders langer
+Übersetzung kann es gezielt einschalten, während andere beim einfachen
+Rechteck bleiben. Wirkt identisch im Live-Editor, PNG-Export, Vektor-PDF und
+PSD-Export. Nicht verfügbar für „Rechteck"- und „Quad"-Blasen (bei Rechteck
+ohnehin wirkungslos, Quad hat eine eigene Text-Warp-Pipeline).
+
 ### Bilder
 
 Ein platziertes Rasterbild, in ein freies Viereck verzerrt (gleicher

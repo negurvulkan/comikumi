@@ -6,7 +6,7 @@ import { createCanvas } from "@napi-rs/canvas";
 import type { Bubble, BubbleForm, PageLayout, Panel, Point } from "../../../../shared/src/layoutSchema.js";
 import { resolveBubbleForm, resolveBubbleStyle, resolveCurvedTextStyle } from "../../../../shared/src/layoutSchema.js";
 import type { LetteringPreset } from "../../../../shared/src/presets.js";
-import { paddingRatioFor, fitHorizontalText } from "../../../../shared/src/rendering/textLayout.js";
+import { textBoxFor, fitHorizontalText } from "../../../../shared/src/rendering/textLayout.js";
 import { fitCurvedText, pointAtArcLength, totalArcLength } from "../../../../shared/src/rendering/curvedText.js";
 import { ensurePageRasterReady, panelOriginFor, registerFont, renderPageBackground } from "../pageRaster.js";
 import { findFontFileForFamily } from "../fontResolver.js";
@@ -232,27 +232,31 @@ export async function buildVectorPdfPage(opts: BuildPdfPageOptions): Promise<Bui
     const origin = panelOriginFor(bubble, layout.panels);
     const form: BubbleForm =
       origin.x || origin.y ? { ...resolvedForm, x: resolvedForm.x + origin.x, y: resolvedForm.y + origin.y } : resolvedForm;
-    const ratio = paddingRatioFor(form.bubbleStyle, bubble.shape, form.paddingRatio);
-    const boxWidth = form.width * (1 - ratio);
-    const boxHeight = form.height * (1 - ratio);
+    // textBoxFor() also respects clipA/clipB — this route previously computed the padded
+    // box inline (form.width/height * (1 - ratio)), silently ignoring a bubble's clip
+    // line. Using the shared helper (same one BubbleShape.tsx/renderPageToPng.ts/
+    // pageRaster.ts already call) closes that gap as a side effect.
+    const box = textBoxFor(form.bubbleStyle, bubble.shape, form, 1);
+    // See BubbleShape.tsx's identical carve-out: a clip line isn't accounted for by the
+    // closed-form ellipse formula, so balloon-aware wrap falls back to the flat box.
+    const balloonGeometry =
+      bubble.shape === "oval" && style.balloonAwareWrap && !(form.clipA && form.clipB)
+        ? { shape: bubble.shape, balloonAwareWrap: style.balloonAwareWrap, bubbleWidth: form.width, bubbleHeight: form.height }
+        : undefined;
     const { fontSize, lines, lineStep, blockHeight } = fitHorizontalText(
       measureCtx,
       text,
       style.fontFamily,
       style.lineHeight,
-      boxWidth,
-      boxHeight,
-      style.fontSize
+      box.width,
+      box.height,
+      style.fontSize,
+      balloonGeometry
     );
 
-    const startY = form.y + form.height / 2 - blockHeight / 2 + lineStep / 2;
-    const centerX = form.x + form.width / 2;
-    const anchorXPx =
-      style.align === "left"
-        ? form.x + (form.width - boxWidth) / 2
-        : style.align === "right"
-          ? form.x + form.width - (form.width - boxWidth) / 2
-          : centerX;
+    const startY = form.y + box.y + box.height / 2 - blockHeight / 2 + lineStep / 2;
+    const centerX = form.x + box.x + box.width / 2;
+    const anchorXPx = style.align === "left" ? form.x + box.x : style.align === "right" ? form.x + box.x + box.width : centerX;
     const rotationRad = (form.rotation * Math.PI) / 180;
     const bubbleCenterPx = { x: form.x + form.width / 2, y: form.y + form.height / 2 };
     const [r, g, b] = hexToRgb01(style.color);

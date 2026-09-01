@@ -79,6 +79,20 @@ describe("resolveBubbleStyle", () => {
     expect(resolveBubbleStyle(bubble, "de", [p]).color).toBe("#ff0000");
     expect(resolveBubbleStyle(base, "de").color).toBe("#000000");
   });
+
+  it("balloonAwareWrap is undefined by default and can differ per language", () => {
+    const bubble = { ...base, balloonAwareWrap: true, balloonAwareWrapOverride: { de: false } };
+    expect(resolveBubbleStyle(base, "de").balloonAwareWrap).toBeUndefined();
+    expect(resolveBubbleStyle(bubble, "ja").balloonAwareWrap).toBe(true); // no override for ja -> base value
+    expect(resolveBubbleStyle(bubble, "de").balloonAwareWrap).toBe(false); // de override wins over the base value
+  });
+
+  it("a preset's balloonAwareWrap wins over the base value but not a per-language override", () => {
+    const p = preset({ id: "p1", text: { balloonAwareWrap: true } });
+    const bubble = { ...base, presetId: "p1", balloonAwareWrapOverride: { de: false } };
+    expect(resolveBubbleStyle({ ...base, presetId: "p1" }, "ja", [p]).balloonAwareWrap).toBe(true);
+    expect(resolveBubbleStyle(bubble, "de", [p]).balloonAwareWrap).toBe(false);
+  });
 });
 
 describe("resolveBubbleForm", () => {

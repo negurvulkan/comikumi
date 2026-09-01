@@ -19,6 +19,7 @@ const DEFAULT_TEXT: Required<PresetTextFields> = {
   lineHeight: 1.2,
   align: "center",
   direction: "ltr",
+  balloonAwareWrap: true,
   color: "#000000",
   textOutline: { enabled: false, color: "#000000", widthPx: 4 },
   textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
@@ -237,6 +238,15 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
               <option value="vertical-rl">{t("managers.presets.directionVertical")}</option>
             </select>
           )}
+        </FieldToggle>
+
+        <FieldToggle
+          label={t("managers.presets.balloonAwareWrapLabel")}
+          value={text.balloonAwareWrap}
+          defaultValue={DEFAULT_TEXT.balloonAwareWrap}
+          onChange={(v) => setText("balloonAwareWrap", v)}
+        >
+          {(v, set) => <input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} />}
         </FieldToggle>
 
         <FieldToggle label={t("managers.presets.colorLabel")} value={text.color} defaultValue={DEFAULT_TEXT.color} onChange={(v) => setText("color", v)}>
