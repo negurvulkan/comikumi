@@ -356,7 +356,7 @@
     "progress": {
       "loading-runtime": "Erkennungs-Modell wird geladen…",
       "detecting": "Sprechblasen werden erkannt…",
-      "recognizing": "Text wird gelesen…"
+      "recognizing": "Text wird gelesen ({{current}}/{{total}})…"
     },
     "noneFound": "Keine Sprechblasen erkannt.",
     "reviewTitle": "{{count}} Blase(n) erkannt",

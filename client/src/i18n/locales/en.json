@@ -356,7 +356,7 @@
     "progress": {
       "loading-runtime": "Loading detection model…",
       "detecting": "Detecting speech bubbles…",
-      "recognizing": "Reading text…"
+      "recognizing": "Reading text ({{current}}/{{total}})…"
     },
     "noneFound": "No speech bubbles detected.",
     "reviewTitle": "{{count}} bubble(s) detected",

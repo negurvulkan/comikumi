@@ -353,7 +353,7 @@
     "progress": {
       "loading-runtime": "Chargement du modèle de détection…",
       "detecting": "Détection des bulles de dialogue…",
-      "recognizing": "Lecture du texte…"
+      "recognizing": "Lecture du texte ({{current}}/{{total}})…"
     },
     "noneFound": "Aucune bulle de dialogue détectée.",
     "reviewTitle": "{{count}} bulle(s) détectée(s)",

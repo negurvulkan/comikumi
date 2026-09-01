@@ -352,7 +352,7 @@
     "progress": {
       "loading-runtime": "正在加载检测模型…",
       "detecting": "正在检测对话气泡…",
-      "recognizing": "正在识别文字…"
+      "recognizing": "正在识别文字（{{current}}/{{total}}）…"
     },
     "noneFound": "未检测到对话气泡。",
     "reviewTitle": "检测到 {{count}} 个气泡",

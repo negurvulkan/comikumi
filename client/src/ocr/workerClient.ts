@@ -1,5 +1,5 @@
 import type { DetectedRegion, RunRequest, WorkerMessage, WorkerProgressStage } from "./types";
-import { ensureDetectorLoaded } from "./modelLoader";
+import { ensureDetectorLoaded, ensureOcrOnnxLoaded } from "./modelLoader";
 
 /** Wraps worker.ts's raw postMessage/onmessage protocol in a Promise, matching
  * useExportRun.ts's plain async-function call shape so the busy/progress hook
@@ -12,7 +12,7 @@ export async function runAutoBubbles(
   imageBitmap: ImageBitmap,
   onProgress?: (stage: WorkerProgressStage, current: number, total: number) => void
 ): Promise<DetectedRegion[]> {
-  const { detector } = await ensureDetectorLoaded();
+  const [{ detector }, { encoder, decoder }] = await Promise.all([ensureDetectorLoaded(), ensureOcrOnnxLoaded()]);
 
   const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
   try {
@@ -25,15 +25,17 @@ export async function runAutoBubbles(
       };
       worker.onerror = (event) => reject(new Error(event.message || "Worker-Fehler bei der automatischen Blasenerkennung"));
 
-      // `detector` is the SAME ArrayBuffer modelLoader.ts memoizes and will return
-      // again on the next run — transferring (not cloning) it would detach/neuter
-      // that shared buffer, breaking every subsequent Auto-Bubbles run in this
-      // session. Transfer a throwaway copy instead; the memoized original stays
-      // intact. (The bitmap has no such reuse concern — it's freshly created per run
-      // by the caller — so it's transferred directly.)
+      // Each of `detector`/`encoder`/`decoder` is the SAME ArrayBuffer modelLoader.ts
+      // memoizes and will return again on the next run — transferring (not cloning)
+      // any of them would detach/neuter that shared buffer, breaking every subsequent
+      // Auto-Bubbles run in this session. Transfer throwaway copies instead; the
+      // memoized originals stay intact. (The bitmap has no such reuse concern — it's
+      // freshly created per run by the caller — so it's transferred directly.)
       const detectorModel = detector.slice(0);
-      const request: RunRequest = { type: "run", imageBitmap, detectorModel };
-      worker.postMessage(request, [imageBitmap, detectorModel]);
+      const ocrEncoderModel = encoder.slice(0);
+      const ocrDecoderModel = decoder.slice(0);
+      const request: RunRequest = { type: "run", imageBitmap, detectorModel, ocrEncoderModel, ocrDecoderModel };
+      worker.postMessage(request, [imageBitmap, detectorModel, ocrEncoderModel, ocrDecoderModel]);
     });
   } finally {
     worker.terminate();

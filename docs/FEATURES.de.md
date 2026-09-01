@@ -20,6 +20,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Projekt-Assets-Ordner](#projekt-assets-ordner)
 - [Editor — Canvas-Grundlagen](#editor--canvas-grundlagen)
 - [Elementtypen](#elementtypen)
+- [Auto-Bubbles (Erkennung & OCR)](#auto-bubbles-erkennung--ocr)
 - [Sperren](#sperren)
 - [Cut-Panel](#cut-panel)
 - [Text-Liste](#text-liste)
@@ -588,6 +589,38 @@ Klick mehrere Panels gleichmäßig verteilt an, jedes bereits im Zustand
 [„Ersetzt durch eigenes Bild"](#cut-panel) (für alle Sprachen aktiviert): einfach
 anklicken und die fertige Panel-Grafik zuweisen. Gedacht für den
 Panel-für-Panel-Aufbau einer [leeren Seite](#bände--seiten).
+
+## Auto-Bubbles (Erkennung & OCR)
+
+Ein Werkzeug in der Werkzeugleiste, das Sprechblasen automatisch findet,
+statt jede von Hand zu zeichnen — läuft komplett clientseitig (kein
+Server-Roundtrip, keine Daten verlassen den Browser) in zwei Schritten:
+
+1. **Erkennung**: ein Text-Bereichs-Detektor findet jede wahrscheinliche
+   Sprechblasen-Fläche auf der aktuellen Seite und zeichnet eine Box darum.
+2. **Erkennung des Texts (OCR)**: der Text innerhalb jeder gefundenen Box
+   wird automatisch ausgelesen und vorausgefüllt — die meisten Blasen
+   brauchen dadurch gar kein manuelles Eintippen mehr.
+
+Beide Modelle laden beim ersten Gebrauch nach (große Dateien, danach dauerhaft
+im Browser zwischengespeichert — kein erneuter Download bei Reload) und
+laufen über WebGPU, wo verfügbar, mit automatischem Fallback auf WASM. Jedes
+Ergebnis — Boxen-Position, erkannter Text und ein Konfidenz-Wert — erscheint
+in einem **Review-Panel**, bevor irgendetwas auf die Seite übernommen wird:
+jede Region kann einzeln bestätigt, bearbeitet oder verworfen werden; nur
+bestätigte Regionen werden nach der Bestätigung zu echten Bubbles. Ohne
+diesen Review-Schritt wird nichts automatisch auf die Seite geschrieben.
+
+Der OCR-Schritt funktioniert nur für japanischen Quelltext — das zugrunde
+liegende Modell hat ein rein japanisches Zeichen-Vokabular, jede andere
+Schrift (lateinisch, kyrillisch usw.) erzeugt konstruktionsbedingt
+voraussichtlich bedeutungslosen Text, kein leeres oder erkennbar unsicheres
+Ergebnis. Der Boxen-Erkennungs-Schritt ist sprachunabhängig und bleibt für
+sich genommen nützlich, um Blasen-Positionen auf jeder Seite zu finden — bei
+nicht-japanischem Quelltext bleibt es beim manuellen Eintippen im
+Review-Panel, wie vor diesem Feature. Beide Modelle sind Drittanbieter-Gewichte unter
+freizügiger Lizenz (Apache-2.0/GPL-3.0), vollständig dokumentiert in
+`docs/ocr-model-provenance.md`.
 
 ## Sperren
 

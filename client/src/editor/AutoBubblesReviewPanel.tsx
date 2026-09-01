@@ -55,6 +55,13 @@ export function AutoBubblesReviewPanel({ regions, onInsert, onCancel }: Props) {
               />
               <div style={{ flex: "1 1 auto" }}>
                 <div className="hint" style={{ margin: 0 }}>{t("ocr.regionLabel", { index: i + 1 })}</div>
+                {region.previewDataUrl && (
+                  <img
+                    src={region.previewDataUrl}
+                    alt=""
+                    style={{ maxWidth: "100%", maxHeight: 80, display: "block", marginBottom: 4, border: "1px solid var(--border)" }}
+                  />
+                )}
                 <textarea
                   value={texts[region.id] ?? ""}
                   onChange={(e) => setTexts((prev) => ({ ...prev, [region.id]: e.target.value }))}

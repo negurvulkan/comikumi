@@ -20,6 +20,7 @@ snapshot — please keep it in sync with larger changes.
 - [Project Asset Folder](#project-asset-folder)
 - [Editor — Canvas Basics](#editor--canvas-basics)
 - [Element Types](#element-types)
+- [Auto-Bubbles (Detection & OCR)](#auto-bubbles-detection--ocr)
 - [Locking](#locking)
 - [Cut Panel](#cut-panel)
 - [Text List](#text-list)
@@ -572,6 +573,35 @@ several evenly distributed panels with one click, each already in the state
 ["replaced by custom image"](#cut-panel) (enabled for every language): just
 click and assign the finished panel artwork. Intended for the
 panel-by-panel construction of an [empty page](#volumes--pages).
+
+## Auto-Bubbles (Detection & OCR)
+
+A toolbar tool that finds speech bubbles for you instead of drawing every one
+by hand: runs entirely client-side (no server round-trip, no data leaves the
+browser) in two steps —
+
+1. **Detection**: a text-region detector finds every likely speech-bubble
+   area on the current page and draws a box around each one.
+2. **Recognition (OCR)**: the text inside each detected box is read
+   automatically and pre-filled, so most bubbles need no manual typing at all.
+
+Both models load lazily on first use (large files, cached persistently in the
+browser afterward — not re-downloaded on reload) and run via WebGPU where
+available, falling back to WASM automatically. Every result — box position,
+recognized text, and a confidence score — appears in a **review panel**
+before anything is added to the page: each region can be accepted, edited, or
+rejected individually; only accepted regions become real bubbles once
+confirmed. Nothing is written to the page automatically without this review
+step.
+
+The OCR step only works for Japanese source text — the underlying model's
+vocabulary is Japanese-character-only, so feeding it any other script (Latin,
+Cyrillic, etc.) is expected to produce meaningless output by design, not an
+empty/graceful result. The box-detection step is language-independent and
+stays useful on its own for finding bubble positions on any page — for a
+non-Japanese source, expect to type the recognized text by hand in the review
+panel same as before this feature existed. Both models are third-party, permissively-licensed (Apache-2.0/GPL-3.0) open weights,
+documented in full in `docs/ocr-model-provenance.md`.
 
 ## Locking
 

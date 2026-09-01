@@ -352,7 +352,7 @@
     "progress": {
       "loading-runtime": "検出モデルを読み込み中…",
       "detecting": "吹き出しを検出中…",
-      "recognizing": "テキストを読み取り中…"
+      "recognizing": "テキストを読み取り中（{{current}}/{{total}}）…"
     },
     "noneFound": "吹き出しが検出されませんでした。",
     "reviewTitle": "{{count}} 個の吹き出しを検出",

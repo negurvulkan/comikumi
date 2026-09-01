@@ -352,7 +352,7 @@
     "progress": {
       "loading-runtime": "인식 모델 로드 중…",
       "detecting": "말풍선 인식 중…",
-      "recognizing": "텍스트 읽는 중…"
+      "recognizing": "텍스트 읽는 중 ({{current}}/{{total}})…"
     },
     "noneFound": "인식된 말풍선이 없습니다.",
     "reviewTitle": "{{count}}개의 말풍선 인식됨",

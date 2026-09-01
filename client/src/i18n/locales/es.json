@@ -353,7 +353,7 @@
     "progress": {
       "loading-runtime": "Cargando el modelo de detección…",
       "detecting": "Detectando globos de diálogo…",
-      "recognizing": "Leyendo el texto…"
+      "recognizing": "Leyendo el texto ({{current}}/{{total}})…"
     },
     "noneFound": "No se detectaron globos de diálogo.",
     "reviewTitle": "{{count}} globo(s) detectado(s)",

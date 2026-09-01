@@ -1,15 +1,25 @@
 /**
- * Persistent, Cache-API-backed loader for the Auto-Bubbles/OCR ONNX models — same
- * "memoized promise, de-dupe concurrent callers" shape as editor/fontLoader.ts's
- * ensureFontsLoaded(), but backed by the browser's Cache API instead of an in-memory
- * Map: these files are hundreds of MB, so surviving a page reload (not re-fetching
- * every time) is a hard requirement, not an optimization. Unlike fontLoader.ts, a
- * failure here REJECTS rather than being swallowed to a warning — OCR simply cannot
- * run without its model, so the caller (useAutoBubblesRun.ts) needs a real error to
- * surface to the user.
+ * Persistent, Cache-API-backed loader for the Auto-Bubbles DETECTION and
+ * text-RECOGNITION (OCR) models — same "memoized promise, de-dupe concurrent callers"
+ * shape as editor/fontLoader.ts's ensureFontsLoaded(), but backed by the browser's
+ * Cache API instead of an in-memory Map: these files are hundreds of MB, so surviving
+ * a page reload (not re-fetching every time) is a hard requirement, not an
+ * optimization. A failure here REJECTS rather than being swallowed to a warning —
+ * neither step can run without its model, so the caller (useAutoBubblesRun.ts) needs a
+ * real error to surface to the user.
  *
- * See docs/ocr-model-provenance.md for why these specific URLs were chosen (and which
- * ones must NOT be substituted without repeating that license check).
+ * The OCR model is fetched here as plain ONNX files (`encoder_model.onnx` +
+ * `decoder_model.onnx`, the UNMERGED pair) and driven directly via onnxruntime-web in
+ * worker.ts, not through transformers.js's own `pipeline()`/`AutoModelForVision2Seq`
+ * loading — see docs/ocr-model-provenance.md's "hand-rolled inference" section for why:
+ * every "merged" (KV-cache-branching) decoder conversion found produced degenerate
+ * output — confirmed via live diagnostics as encoder image features never actually
+ * reaching the decoder — a problem specific to the merged-graph conversion, not this
+ * model or transformers.js's tokenizer/processor loading (both of which are still used
+ * from transformers.js, just not its Vision2Seq session-loading path).
+ *
+ * See docs/ocr-model-provenance.md for why these specific model URLs were chosen (and
+ * why they must NOT be substituted without repeating that license check).
  */
 
 import { authFetch } from "../api/authFetch";
@@ -20,14 +30,6 @@ const CACHE_NAME = "comikumi-ocr-models-v1";
 /** First-party, GPL-3.0, already-ONNX-exported — see docs/ocr-model-provenance.md's
  * "Clean first-party source found instead" section. Safe to fetch/cache today. */
 const DETECTOR_URL = "https://github.com/zyddnys/manga-image-translator/releases/download/beta-0.2.1/comictextdetector.pt.onnx";
-
-/** No official ONNX export exists yet (see docs/ocr-model-provenance.md's "OCR model"
- * finding) — this is a placeholder pending a one-time PyTorch→ONNX conversion outside
- * this codebase's toolchain. `ensureOcrModelsLoaded()` deliberately throws rather than
- * silently fetching a wrong/unverified URL until this is replaced with a real,
- * license-checked source. */
-const OCR_ENCODER_URL: string | null = null;
-const OCR_DECODER_URL: string | null = null;
 
 /** Optional self-hosted mirror — if the server has files under `DATA_DIR/models/`
  * (see server/src/routes/ocrModels.ts), prefer those over the external URL so
@@ -101,8 +103,7 @@ export interface DetectorModel {
 
 let detectorLoadingPromise: Promise<DetectorModel> | null = null;
 
-/** Loads (or serves from the persistent browser cache) the text-detection model —
- * the only model with a verified, usable source today (see module doc comment). */
+/** Loads (or serves from the persistent browser cache) the text-detection model. */
 export function ensureDetectorLoaded(onProgress?: (loadedBytes: number) => void): Promise<DetectorModel> {
   if (!detectorLoadingPromise) {
     detectorLoadingPromise = (async () => {
@@ -118,25 +119,47 @@ export function ensureDetectorLoaded(onProgress?: (loadedBytes: number) => void)
   return detectorLoadingPromise;
 }
 
-/** Not implemented yet — see docs/ocr-model-provenance.md. Throws immediately rather
- * than attempting to fetch `null` URLs, so callers get an actionable error instead of
- * a confusing runtime crash deep inside a worker. */
-export function ensureOcrModelsLoaded(): Promise<{ encoder: ArrayBuffer; decoder: ArrayBuffer }> {
-  if (!OCR_ENCODER_URL || !OCR_DECODER_URL) {
-    return Promise.reject(
-      new Error(
-        "OCR-Modell noch nicht verfügbar — es gibt noch keine geprüfte ONNX-Quelle dafür (siehe docs/ocr-model-provenance.md). Texterkennung kann noch nicht laufen; die Boxen-Erkennung (ensureDetectorLoaded) funktioniert bereits."
-      )
-    );
+/** Apache-2.0, verified same architecture as kha-white/manga-ocr-base (see
+ * docs/ocr-model-provenance.md) — fetching the UNMERGED `encoder_model.onnx`/
+ * `decoder_model.onnx` pair specifically (not `decoder_model_merged.onnx`, which
+ * loads and runs but produces degenerate output, confirmed via live diagnostics). */
+const OCR_MODEL_ID = "DigitalLarynx/manga-ocr-onnx";
+
+function ocrOnnxUrl(fileName: string): string {
+  return `https://huggingface.co/${OCR_MODEL_ID}/resolve/main/onnx/${fileName}`;
+}
+
+export interface OcrOnnxModel {
+  encoder: ArrayBuffer;
+  decoder: ArrayBuffer;
+}
+
+let ocrOnnxLoadingPromise: Promise<OcrOnnxModel> | null = null;
+
+/** Loads (or serves from the persistent browser cache) the OCR encoder+decoder ONNX
+ * pair — no local-mirror support yet (unlike the detector's `OCR_MODELS_DIR` fallback
+ * route), same as before this feature's `docs/ocr-model-provenance.md` "Nicht im
+ * Umfang" note; only `onProgress` for the (larger) encoder download is reported. */
+export function ensureOcrOnnxLoaded(onProgress?: (loadedBytes: number) => void): Promise<OcrOnnxModel> {
+  if (!ocrOnnxLoadingPromise) {
+    ocrOnnxLoadingPromise = (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const [encoder, decoder] = await Promise.all([
+        fetchWithCache(cache, ocrOnnxUrl("encoder_model.onnx"), false, onProgress),
+        fetchWithCache(cache, ocrOnnxUrl("decoder_model.onnx"), false),
+      ]);
+      return { encoder, decoder };
+    })().catch((err) => {
+      ocrOnnxLoadingPromise = null;
+      throw err;
+    });
   }
-  // Unreachable until the URLs above are filled in with a real, license-checked
-  // source — left structurally ready (same cache/fetch shape as ensureDetectorLoaded)
-  // so wiring it in later is a small diff, not a rewrite.
-  throw new Error("unreachable");
+  return ocrOnnxLoadingPromise;
 }
 
 /** Forces a re-check of cache/local-mirror availability on the next ensure*Loaded()
  * call — e.g. after an operator populates DATA_DIR/models/ without a page reload. */
 export function invalidateModelLoaderCache(): void {
   detectorLoadingPromise = null;
+  ocrOnnxLoadingPromise = null;
 }

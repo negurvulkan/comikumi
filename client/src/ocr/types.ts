@@ -14,6 +14,12 @@ export interface DetectedRegion {
    * regions the review panel defaults to "accepted" (see AutoBubblesReviewPanel.tsx),
    * never written into the resulting Bubble. */
   confidence: number;
+  /** PNG data URL of the exact pixels cropped out of the page and fed to OCR (see
+   * cropToCanvas() in worker.ts) — lets the review panel show the source image right
+   * next to the recognized text, so a wrong/garbled suggestion can be told apart from
+   * "OCR misread a real crop" vs. "the crop itself is wrong region/empty/off-page".
+   * Omitted (undefined) only if the crop failed (see cropToCanvas's null case). */
+  previewDataUrl?: string;
 }
 
 /** worker.ts <-> workerClient.ts message protocol. `RunRequest.imageBitmap` is
@@ -22,6 +28,8 @@ export interface RunRequest {
   type: "run";
   imageBitmap: ImageBitmap;
   detectorModel: ArrayBuffer;
+  ocrEncoderModel: ArrayBuffer;
+  ocrDecoderModel: ArrayBuffer;
 }
 
 export type WorkerProgressStage = "loading-runtime" | "detecting" | "recognizing";

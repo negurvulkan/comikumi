@@ -37,6 +37,13 @@ React + Konva canvas editor.
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
   (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
   panel-reference polygons for reporting.
+- **Auto-Bubbles (detection + OCR)** — a toolbar tool finds speech-bubble regions on the
+  page and reads the text inside them automatically, entirely client-side (WebGPU with
+  a WASM fallback, no server round-trip). Every result goes through a review panel
+  first — accept, edit, or reject each region before anything becomes a real bubble.
+  Optimized for Japanese source text today; box detection alone still works for other
+  languages. See [`docs/ocr-model-provenance.md`](docs/ocr-model-provenance.md) for the
+  open-weight models used and their licenses.
 - **Effect (SFX) bubbles** — a dedicated toolbar tool marks a bubble as a sound effect
   instead of dialogue (existing bubbles can be switched either way from the inspector);
   effect bubbles are excluded from "who says what" reports, auto-generated script

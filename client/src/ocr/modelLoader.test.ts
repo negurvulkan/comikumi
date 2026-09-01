@@ -81,10 +81,3 @@ describe("ensureDetectorLoaded", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
-
-describe("ensureOcrModelsLoaded", () => {
-  it("rejects with an actionable error instead of fetching a null URL", async () => {
-    const { ensureOcrModelsLoaded } = await freshModelLoader();
-    await expect(ensureOcrModelsLoaded()).rejects.toThrow(/noch nicht verfügbar/);
-  });
-});
