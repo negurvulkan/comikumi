@@ -627,12 +627,36 @@
       "contextCurrentScript": "当前脚本",
       "empty": "还没有消息。提出一个问题开始吧。",
       "inputPlaceholder": "输入问题…",
-      "send": "发送"
+      "send": "发送",
+      "action": {
+        "preparing": "正在准备建议…",
+        "reviewTitle": "{{count}} 条翻译建议（{{language}}）",
+        "reviewHint": "应用前请检查/修改文本，并取消勾选不需要的建议。",
+        "sourceLabel": "原文（{{language}}）",
+        "applyCount": "应用 {{count}} 条",
+        "applied": "已应用 {{count}} 条翻译 — 别忘了保存。",
+        "dismissed": "已放弃建议。"
+      }
+    },
+    "cleanPage": {
+      "maskEditorTitle": "标记要移除的区域",
+      "maskEditorHint": "检查自动检测到的区域（红色）——拖动可移动，拖动角点可调整大小，点击 × 可删除，或在空白处拖出新区域（例如检测器未识别到的气泡尾巴或拟声词）。",
+      "deleteBox": "删除区域",
+      "maskEditorContinue": "继续（{{count}}）",
+      "reconstructing": "正在重建图像…",
+      "reviewTitle": "页面已清理",
+      "reviewHint": "查看前后对比，满意后再应用 — 原图会保留，可随时恢复。",
+      "before": "之前",
+      "after": "之后",
+      "apply": "应用",
+      "active": "已启用清理后的图像。",
+      "revert": "恢复原图"
     },
     "toolStrip": {
       "storyBible": "故事设定集",
       "aiAssistant": "AI 助手",
       "autoBubbles": "自动识别气泡",
+      "cleanPage": "清理页面（去除文字）",
       "bubbleOval": "气泡（椭圆）",
       "rect": "矩形",
       "quadPerspective": "四边形（透视）",

@@ -627,12 +627,36 @@
       "contextCurrentScript": "현재 스크립트",
       "empty": "아직 메시지가 없습니다. 질문을 입력해 시작하세요.",
       "inputPlaceholder": "질문을 입력하세요…",
-      "send": "보내기"
+      "send": "보내기",
+      "action": {
+        "preparing": "제안을 준비하는 중…",
+        "reviewTitle": "번역 제안 {{count}}건 ({{language}})",
+        "reviewHint": "적용하기 전에 텍스트를 검토/수정하고 원하지 않는 제안은 선택 해제하세요.",
+        "sourceLabel": "원문 ({{language}})",
+        "applyCount": "{{count}}건 적용",
+        "applied": "{{count}}건의 번역을 적용했습니다 — 저장하는 것을 잊지 마세요.",
+        "dismissed": "제안을 취소했습니다."
+      }
+    },
+    "cleanPage": {
+      "maskEditorTitle": "제거할 영역 표시",
+      "maskEditorHint": "자동으로 감지된 영역(빨간색)을 확인하세요 — 드래그하여 이동, 모서리를 드래그하여 크기 조절, ×를 클릭하여 삭제, 또는 빈 공간에 드래그하여 새 영역을 추가할 수 있습니다(감지기가 놓친 말풍선 꼬리나 효과음 등).",
+      "deleteBox": "영역 삭제",
+      "maskEditorContinue": "계속 ({{count}})",
+      "reconstructing": "이미지를 재구성하는 중…",
+      "reviewTitle": "페이지 정리 완료",
+      "reviewHint": "전/후를 확인하고 괜찮으면 적용하세요 — 원본은 유지되며 언제든지 복원할 수 있습니다.",
+      "before": "이전",
+      "after": "이후",
+      "apply": "적용",
+      "active": "정리된 이미지가 적용 중입니다.",
+      "revert": "원본 복원"
     },
     "toolStrip": {
       "storyBible": "스토리 바이블",
       "aiAssistant": "AI 어시스턴트",
       "autoBubbles": "말풍선 자동 인식",
+      "cleanPage": "페이지 정리(텍스트 제거)",
       "bubbleOval": "말풍선 (타원)",
       "rect": "사각형",
       "quadPerspective": "사각형 (원근)",

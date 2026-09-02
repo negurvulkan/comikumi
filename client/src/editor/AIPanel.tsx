@@ -6,6 +6,19 @@ import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useResizableSidebarWidth } from "./useResizableSidebarWidth";
 import { SidebarResizeHandle } from "./SidebarResizeHandle";
+import type { Bubble } from "../../../shared/src/layoutSchema";
+import type { LanguageDef } from "../../../shared/src/languages";
+import type { GlossaryEntry } from "../../../shared/src/glossary";
+import { useEditorStore } from "../state/editorStore";
+import {
+  ACTION_FENCE_PREFIX,
+  buildTranslateActionPrompt,
+  findMissingTranslationTargets,
+  parseTranslateAction,
+  type MissingTranslationTarget,
+  type TranslateMissingBubblesAction,
+} from "./aiTranslateAction";
+import { AiTranslateReviewPanel } from "./AiTranslateReviewPanel";
 
 interface Props {
   /** Always mounted (needed for the slide transition to animate) — same convention as
@@ -30,6 +43,13 @@ interface Props {
    * and actually sends a message, since rendering is comparatively expensive (loads
    * fonts/placed images). Omitted wherever `contextImageUrl` is omitted. */
   contextRenderedImage?: () => Promise<Blob>;
+  /** Present only on the page editor's mount (ScriptEditor.tsx omits it, so the
+   * feature is automatically inactive there — no bubbles to act on) — enables the
+   * assistant's one agentic action, "translate missing bubbles" (see
+   * aiTranslateAction.ts). Gated behind the same `includeContext` checkbox as
+   * `contextText`/`contextImageUrl`, since the target bubbleIds/source text sent to
+   * the model to make this work is itself page content, same privacy toggle. */
+  enableActions?: { bubbles: Bubble[]; languages: LanguageDef[]; glossary: GlossaryEntry[] };
 }
 
 /** Downscales a blob to at most `maxDim` px on its longest edge and re-encodes it as a
@@ -61,6 +81,10 @@ type ProviderId = "openai" | "codex" | "anthropic" | "google" | "openrouter" | "
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  /** Set once a completed assistant response parses as a valid translate-missing-
+   * bubbles action (see aiTranslateAction.ts's parseTranslateAction()) — when present,
+   * this message renders as a review panel instead of markdown text. */
+  action?: TranslateMissingBubblesAction;
 }
 
 /** Markdown → HTML with raw-HTML passthrough disabled and only http(s) links allowed —
@@ -86,10 +110,19 @@ const safeMarked = new Marked({
  * Provider-agnostic: the server normalizes OpenAI/Codex into the same SSE wire format
  * (see server/src/routes/ai.ts), so this component never needs to know which one it's
  * talking to beyond the id the user picked. */
-export function AIPanel({ open, onClose, contextLabel, contextText, contextImageUrl, contextRenderedImage }: Props) {
+export function AIPanel({ open, onClose, contextLabel, contextText, contextImageUrl, contextRenderedImage, enableActions }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const resize = useResizableSidebarWidth();
+
+  // Recomputed whenever the host's bubbles/languages change (not on every render) —
+  // cheap (one page's worth of qaChecks), but no reason to redo it needlessly. Used
+  // both to build the prompt in handleSend() and to resolve source text/language for
+  // already-generated review panels at render time.
+  const missingTargets: MissingTranslationTarget[] = useMemo(
+    () => (enableActions ? findMissingTranslationTargets(enableActions.bubbles, enableActions.languages) : []),
+    [enableActions]
+  );
 
   const [providerStatus, setProviderStatus] = useState<Record<ProviderId, boolean> | null>(null);
   const [providerId, setProviderId] = useState<ProviderId | null>(null);
@@ -132,7 +165,7 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
   const hasAnyProvider = providerStatus ? Object.values(providerStatus).some(Boolean) : false;
 
   const renderedMessages = useMemo(
-    () => messages.map((m) => ({ ...m, html: m.role === "assistant" ? safeMarked.parse(m.content) : null })),
+    () => messages.map((m) => ({ ...m, html: m.role === "assistant" && !m.action ? safeMarked.parse(m.content) : null })),
     [messages]
   );
 
@@ -159,16 +192,26 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
         // contextText already being optional.
         contextImage = await fetchAndDownscaleToDataUrl(contextImageUrl).catch(() => undefined);
       }
+      // Appended to contextText (not a separate system message — ChatRequestSchema
+      // already accepts "system"-role entries, but AIPanel's own ChatMessage type
+      // doesn't need one just for this one string) — see aiTranslateAction.ts.
+      // "" when there's nothing missing, so a fully-translated page costs nothing extra.
+      const actionPrompt = enableActions ? buildTranslateActionPrompt(missingTargets, enableActions.languages, enableActions.glossary) : "";
+      const combinedContextText = [contextText, actionPrompt].filter(Boolean).join("\n\n") || undefined;
       const res = await api.sendAIChat({
         providerId,
         messages: nextMessages,
-        contextText: includeContext ? contextText : undefined,
+        contextText: includeContext ? combinedContextText : undefined,
         contextImage,
       });
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
       let assistantText = "";
+      // null = not yet enough characters to tell; true/false once decided — see
+      // aiTranslateAction.ts's ACTION_FENCE_PREFIX doc comment for why this can't be
+      // known from the very first delta.
+      let isActionResponse: boolean | null = null;
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -188,9 +231,16 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
             }
             if (parsed.delta) {
               assistantText += parsed.delta;
+              if (isActionResponse === null && assistantText.length >= ACTION_FENCE_PREFIX.length) {
+                isActionResponse = assistantText.startsWith(ACTION_FENCE_PREFIX);
+              }
+              // While it's still ambiguous (fewer characters than the fence prefix) OR
+              // confirmed NOT an action, show the growing text live as before. Once
+              // confirmed an action, switch to a placeholder — never flash raw JSON.
+              const displayText = isActionResponse ? t("editor.aiPanel.action.preparing") : assistantText;
               setMessages((prev) => {
                 const next = [...prev];
-                next[next.length - 1] = { role: "assistant", content: assistantText };
+                next[next.length - 1] = { role: "assistant", content: displayText };
                 return next;
               });
             }
@@ -199,11 +249,41 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
           }
         }
       }
+      if (isActionResponse) {
+        // Re-validates against `missingTargets` rather than trusting the streamed
+        // fence-prefix check alone — a model can still emit invalid JSON or a
+        // hallucinated bubbleId/language after a correct-looking opening fence.
+        const action = parseTranslateAction(assistantText, missingTargets);
+        setMessages((prev) => {
+          const next = [...prev];
+          // Fall back to the raw text if it didn't actually validate — never leave the
+          // user stuck on a permanent "preparing a suggestion" placeholder.
+          next[next.length - 1] = action ? { role: "assistant", content: "", action } : { role: "assistant", content: assistantText };
+          return next;
+        });
+      }
     } catch (err) {
       setError(translateApiError(err, t));
     } finally {
       setBusy(false);
     }
+  }
+
+  function applyActionMessage(index: number, patches: { bubbleId: string; language: string; text: string }[]) {
+    useEditorStore.getState().applyBubbleTextPatches(patches);
+    setMessages((prev) => {
+      const next = [...prev];
+      next[index] = { role: "assistant", content: t("editor.aiPanel.action.applied", { count: patches.length }) };
+      return next;
+    });
+  }
+
+  function dismissActionMessage(index: number) {
+    setMessages((prev) => {
+      const next = [...prev];
+      next[index] = { role: "assistant", content: t("editor.aiPanel.action.dismissed") };
+      return next;
+    });
   }
 
   return (
@@ -262,6 +342,14 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
                 <p key={i} style={{ margin: 0, fontWeight: 600, whiteSpace: "pre-wrap" }}>
                   {m.content}
                 </p>
+              ) : m.action ? (
+                <AiTranslateReviewPanel
+                  key={i}
+                  action={m.action}
+                  targets={missingTargets}
+                  onApply={(patches) => applyActionMessage(i, patches)}
+                  onDismiss={() => dismissActionMessage(i)}
+                />
               ) : (
                 // eslint-disable-next-line react/no-danger
                 <div key={i} style={{ margin: 0 }} dangerouslySetInnerHTML={{ __html: m.html ?? "" }} />

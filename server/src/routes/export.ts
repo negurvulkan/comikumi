@@ -15,6 +15,7 @@ import { CbzMetadataSchema, type CbzMetadata } from "../../../shared/src/cbz.js"
 import { buildVectorPdfPage } from "../lib/vectorPdf/buildPdfPage.js";
 import { buildLayeredPsd } from "../lib/psdExport.js";
 import { resolveImageFilePath } from "../lib/imageResolver.js";
+import { resolveBaseImagePath } from "../lib/inpainting.js";
 
 export const exportRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -155,7 +156,7 @@ exportRouter.post(
     let result: { bytes: Buffer; pdfxStamped: boolean };
     try {
       result = await buildVectorPdfPage({
-        baseImagePath: pageInfo.absolutePath,
+        baseImagePath: await resolveBaseImagePath(pageInfo.absolutePath, parsed.data),
         layout: parsed.data,
         languageCode,
         presets,
@@ -218,7 +219,7 @@ exportRouter.post(
     let bytes: Buffer;
     try {
       bytes = await buildLayeredPsd({
-        baseImagePath: pageInfo.absolutePath,
+        baseImagePath: await resolveBaseImagePath(pageInfo.absolutePath, parsed.data),
         layout: parsed.data,
         languageCode,
         presets,

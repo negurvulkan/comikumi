@@ -41,3 +41,38 @@ export async function runAutoBubbles(
     worker.terminate();
   }
 }
+
+/** Same detector, same worker, same review-before-commit spirit as runAutoBubbles()
+ * above — but `mode: "detect-only"` (see types.ts's RunRequest doc comment) skips
+ * fetching/loading the OCR model entirely, since Cleaning/Inpainting (see
+ * client/src/editor/CleanPageReviewPanel.tsx) only needs box positions to send to the
+ * server's `/pages/:page/clean` route, never recognized text. Returned regions'
+ * `recognizedText` is always `""` — never read by Cleaning's own UI, kept only so this
+ * shares `DetectedRegion`'s type with Auto-Bubbles instead of needing a parallel one. */
+export async function runCleanupDetection(
+  imageBitmap: ImageBitmap,
+  onProgress?: (stage: WorkerProgressStage, current: number, total: number) => void
+): Promise<DetectedRegion[]> {
+  const { detector } = await ensureDetectorLoaded();
+
+  const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
+  try {
+    return await new Promise<DetectedRegion[]>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
+        const msg = event.data;
+        if (msg.type === "progress") onProgress?.(msg.stage, msg.current, msg.total);
+        else if (msg.type === "done") resolve(msg.regions);
+        else if (msg.type === "error") reject(new Error(msg.message));
+      };
+      worker.onerror = (event) => reject(new Error(event.message || "Worker-Fehler bei der Bereinigungs-Erkennung"));
+
+      // See runAutoBubbles()'s identical comment above for why this is a throwaway
+      // .slice(0) copy rather than transferring modelLoader.ts's own memoized buffer.
+      const detectorModel = detector.slice(0);
+      const request: RunRequest = { type: "run", mode: "detect-only", imageBitmap, detectorModel };
+      worker.postMessage(request, [imageBitmap, detectorModel]);
+    });
+  } finally {
+    worker.terminate();
+  }
+}

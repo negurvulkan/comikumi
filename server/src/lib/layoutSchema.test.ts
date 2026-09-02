@@ -438,6 +438,7 @@ describe("createEmptyLayout", () => {
       images: [],
       curvedTexts: [],
       panels: [],
+      useCleanedBackground: false,
       schemaVersion: 2,
     });
   });

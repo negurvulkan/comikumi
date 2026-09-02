@@ -228,6 +228,23 @@ export const api = {
   pageThumbnailUrl: (volumeId: string, page: string) =>
     authUrl(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/thumbnail`)),
 
+  /** Runs Cleaning/Inpainting over `boxes` (already detected client-side, see
+   * ocr/workerClient.ts's runCleanupDetection()) and caches the result server-side —
+   * see server/src/lib/inpainting.ts. Resolves once the cache is written; the caller
+   * then reads `cleanedImageUrl()` for a preview (or a cache-busting query param if it
+   * was already loaded once before, e.g. after re-cleaning). Does NOT touch the page's
+   * saved layout — the caller sets `useCleanedBackground` itself once the user
+   * confirms the before/after review. */
+  cleanPage: (volumeId: string, page: string, boxes: { x: number; y: number; width: number; height: number }[]) =>
+    authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/clean`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ boxes }),
+    }).then((r) => json<{ ok: true }>(r)),
+
+  cleanedImageUrl: (volumeId: string, page: string) =>
+    authUrl(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/cleaned-image`)),
+
   /** Uploads one or more page-scan images into the volume's source folder — lets a
    * client on a different machine than the server add pages without filesystem/
    * network-share access to scanRoot. `overwrite` names files the caller has already

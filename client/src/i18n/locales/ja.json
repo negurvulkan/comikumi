@@ -627,12 +627,36 @@
       "contextCurrentScript": "現在のスクリプト",
       "empty": "まだメッセージがありません。質問を入力して始めましょう。",
       "inputPlaceholder": "質問を入力…",
-      "send": "送信"
+      "send": "送信",
+      "action": {
+        "preparing": "提案を準備しています…",
+        "reviewTitle": "{{count}}件の翻訳提案（{{language}}）",
+        "reviewHint": "適用する前にテキストを確認・修正し、不要な提案は選択を外してください。",
+        "sourceLabel": "原文（{{language}}）",
+        "applyCount": "{{count}}件を適用",
+        "applied": "{{count}}件の翻訳を適用しました — 保存を忘れずに。",
+        "dismissed": "提案を破棄しました。"
+      }
+    },
+    "cleanPage": {
+      "maskEditorTitle": "削除する範囲をマーク",
+      "maskEditorHint": "自動検出された範囲（赤）を確認 — ドラッグで移動、角をドラッグでサイズ変更、×クリックで削除、または空いている場所にドラッグして新しい範囲を追加できます（検出できなかった吹き出しの尻尾や効果音など）。",
+      "deleteBox": "範囲を削除",
+      "maskEditorContinue": "次へ（{{count}}）",
+      "reconstructing": "画像を再構築しています…",
+      "reviewTitle": "ページをクリーニングしました",
+      "reviewHint": "前後を確認し、問題なければ適用してください — 元の画像は保持され、いつでも復元できます。",
+      "before": "前",
+      "after": "後",
+      "apply": "適用",
+      "active": "クリーニング済み画像が有効です。",
+      "revert": "元に戻す"
     },
     "toolStrip": {
       "storyBible": "ストーリーバイブル",
       "aiAssistant": "AIアシスタント",
       "autoBubbles": "自動吹き出し検出",
+      "cleanPage": "ページをクリーニング（文字を除去）",
       "bubbleOval": "吹き出し（楕円）",
       "rect": "四角形",
       "quadPerspective": "四辺形（遠近）",

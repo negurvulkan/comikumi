@@ -650,12 +650,36 @@
       "contextCurrentScript": "current script",
       "empty": "No messages yet. Ask a question to get started.",
       "inputPlaceholder": "Ask something…",
-      "send": "Send"
+      "send": "Send",
+      "action": {
+        "preparing": "Preparing a suggestion…",
+        "reviewTitle": "{{count}} translation suggestion(s) ({{language}})",
+        "reviewHint": "Review/correct the text and deselect any suggestions you don't want before applying.",
+        "sourceLabel": "Source ({{language}})",
+        "applyCount": "Apply {{count}}",
+        "applied": "{{count}} translation(s) applied — remember to save.",
+        "dismissed": "Suggestion dismissed."
+      }
+    },
+    "cleanPage": {
+      "maskEditorTitle": "Mark regions to remove",
+      "maskEditorHint": "Review the auto-detected regions (red) — drag to move, drag the corner to resize, click × to delete, or draw new regions on empty space (e.g. for bubble tails or SFX the detector missed).",
+      "deleteBox": "Delete region",
+      "maskEditorContinue": "Continue ({{count}})",
+      "reconstructing": "Reconstructing image…",
+      "reviewTitle": "Page cleaned",
+      "reviewHint": "Review before/after and apply if it looks right — the original is kept and can be restored anytime.",
+      "before": "Before",
+      "after": "After",
+      "apply": "Apply",
+      "active": "Cleaned image active.",
+      "revert": "Restore original"
     },
     "toolStrip": {
       "storyBible": "Story Bible",
       "aiAssistant": "AI Assistant",
       "autoBubbles": "Auto-Bubbles",
+      "cleanPage": "Clean page (remove text)",
       "bubbleOval": "Bubble (oval)",
       "rect": "Rectangle",
       "quadPerspective": "Quad (perspective)",

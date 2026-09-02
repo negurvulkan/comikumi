@@ -21,6 +21,7 @@ snapshot — please keep it in sync with larger changes.
 - [Editor — Canvas Basics](#editor--canvas-basics)
 - [Element Types](#element-types)
 - [Auto-Bubbles (Detection & OCR)](#auto-bubbles-detection--ocr)
+- [Cleaning (Inpainting)](#cleaning-inpainting)
 - [Locking](#locking)
 - [Cut Panel](#cut-panel)
 - [Text List](#text-list)
@@ -603,6 +604,50 @@ non-Japanese source, expect to type the recognized text by hand in the review
 panel same as before this feature existed. Both models are third-party, permissively-licensed (Apache-2.0/GPL-3.0) open weights,
 documented in full in `docs/ocr-model-provenance.md`.
 
+## Cleaning (Inpainting)
+
+A toolbar tool ("Clean page") that removes the original printed text inside
+detected speech-bubble regions and reconstructs the underlying artwork —
+reuses the exact same client-side detector as Auto-Bubbles (see above) to
+find the regions, then sends them to the server, which runs the actual
+reconstruction (a much heavier model than the detector — see below for why
+this one step runs server-side rather than in the browser).
+
+Before anything is sent to the server, detected regions open in a **mask
+editor**: the detector only marks the TEXT it found, which often doesn't
+cover the whole bubble (outline, tail) or SFX lettering — the mask editor
+lets you drag existing regions, resize them from the corner, delete ones
+you don't want, or draw entirely new ones on empty space, so the actual
+reconstruction runs against exactly the area you intend, not just whatever
+the detector happened to find. Works even when detection found nothing at
+all — mark regions from scratch.
+
+The reconstructed result is then shown as a **before/after comparison**
+before anything changes on the page — nothing is applied until you click
+"Apply". Applying doesn't touch the raw scan at all: it only flips a
+per-page "use cleaned background" flag, which then applies everywhere the
+page's background is drawn — the editor canvas, PNG/vector-PDF/PSD export,
+thumbnails. The original scan is never modified or deleted, and the flag
+can be switched back off at any time to instantly restore it.
+
+Scope of this first version: one page at a time, rectangular mask regions
+only (no freehand brush). Whole-page or batch/chapter-wide runs are
+possible later extensions, not covered yet. Reconstruction quality depends
+on the underlying model, which is a general-purpose (not manga-trained)
+checkpoint — see below — so results on complex hand-drawn backgrounds can
+still show visible artifacts even with a well-drawn mask; the mask editor
+fixes "which area gets reconstructed," not "how well it gets reconstructed."
+
+The reconstruction model (`Carve/LaMa-ONNX`, Apache-2.0) runs on the
+**server**, not the browser — at ~200 MB and a fixed 512×512 input
+requiring page-tiling, it's meaningfully heavier than the detector/OCR
+models used elsewhere, and the server is well-suited to this kind of batch
+image work. This is a local/self-hosted server in every deployment this app
+supports, so it stays consistent with the app's "your data doesn't leave
+your infrastructure" principle — just a different machine boundary than the
+purely-client-side Auto-Bubbles feature. Full model license/provenance
+verification is documented in `docs/inpainting-model-provenance.md`.
+
 ## Locking
 
 Every element (bubble, panel, image, curved text) can be individually locked
@@ -881,9 +926,24 @@ reading order, and panel crop help just as much with pure lettering or writing:
 ## AI Assistant
 
 A collapsible chat sidebar (toolbar icon, same docking spot as Story Bible/
-Context View) in the page editor and the script editor — a pure ask-only
-assistant, no automatic changes to project data or tool-calling. The chat
-history is purely client-side for the current session, not stored server-side.
+Context View) in the page editor and the script editor. The chat history is
+purely client-side for the current session, not stored server-side.
+
+Mostly a plain ask-only assistant, with one narrow exception in the page
+editor: **translating missing bubbles**. Ask something like "translate all
+missing German bubbles" and, if the current page actually has bubbles
+missing text in that language, the assistant replies with a review panel
+(source text next to each suggestion, per-row accept/edit/reject checkboxes,
+same pattern as the Auto-Bubbles review step) instead of a chat message —
+nothing is written to the page until "Apply" is clicked, and applying stages
+the change as a normal unsaved edit, going through the exact same save
+button, permission check, and conflict detection as typing the text by hand.
+This isn't the model's native tool-calling — every provider is asked to
+reply with a specific JSON format instead, which works identically across
+all six providers (including Codex, which has no tool-calling available
+today) without provider-specific wiring. Every other request — anything not
+recognized as a translate-missing-bubbles ask — is answered as plain chat,
+same as before. No other automatic action exists yet.
 
 - **Six interchangeable providers**, configured per account under "My Account"
   (`/account`, linked in the header). Only the providers actually configured

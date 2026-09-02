@@ -293,6 +293,20 @@ export function AutoBubblesToolIcon() {
   );
 }
 
+/** An eraser sweeping over a dashed bubble outline — the "Clean page" toolbar action
+ * (Cleaning/Inpainting, see server/src/lib/inpainting.ts). Deliberately echoes
+ * AutoBubblesToolIcon's dashed-bubble motif (same underlying detector) with an eraser
+ * added, rather than an unrelated new visual language. */
+export function CleanPageToolIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <rect x="2.5" y="4.5" width="9" height="9" rx="1.5" strokeDasharray="2.2 1.8" />
+      <path d="M11 15.5 L15 11.5 L18 14.5 L14 18.5 Z" fill="currentColor" stroke="none" />
+      <path d="M14 18.5 H9" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 /** Three stacked/offset rectangles — the Layers/Panel navigator toggle (grouped
  * object list with per-panel lock cascades, see LayersPanel.tsx). */
 export function LayersToolIcon() {

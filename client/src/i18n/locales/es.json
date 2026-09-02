@@ -636,12 +636,36 @@
       "contextCurrentScript": "el guion actual",
       "empty": "Aún no hay mensajes. Haz una pregunta para empezar.",
       "inputPlaceholder": "Escribe una pregunta…",
-      "send": "Enviar"
+      "send": "Enviar",
+      "action": {
+        "preparing": "Preparando una sugerencia…",
+        "reviewTitle": "{{count}} sugerencia(s) de traducción ({{language}})",
+        "reviewHint": "Revisa/corrige el texto y deselecciona las sugerencias que no quieras antes de aplicar.",
+        "sourceLabel": "Texto original ({{language}})",
+        "applyCount": "Aplicar {{count}}",
+        "applied": "{{count}} traducción(es) aplicada(s) — recuerda guardar.",
+        "dismissed": "Sugerencia descartada."
+      }
+    },
+    "cleanPage": {
+      "maskEditorTitle": "Marcar zonas a eliminar",
+      "maskEditorHint": "Revisa las zonas detectadas automáticamente (rojo) — arrastra para mover, arrastra la esquina para redimensionar, haz clic en × para eliminar, o dibuja nuevas zonas en el espacio libre (p. ej. para colas de bocadillos o SFX que el detector no captó).",
+      "deleteBox": "Eliminar zona",
+      "maskEditorContinue": "Continuar ({{count}})",
+      "reconstructing": "Reconstruyendo imagen…",
+      "reviewTitle": "Página limpiada",
+      "reviewHint": "Revisa el antes/después y aplica si se ve bien — el original se conserva y puede restaurarse en cualquier momento.",
+      "before": "Antes",
+      "after": "Después",
+      "apply": "Aplicar",
+      "active": "Imagen limpiada activa.",
+      "revert": "Restaurar original"
     },
     "toolStrip": {
       "storyBible": "Biblia narrativa",
       "aiAssistant": "Asistente de IA",
       "autoBubbles": "Globos automáticos",
+      "cleanPage": "Limpiar página (eliminar texto)",
       "bubbleOval": "Bocadillo (ovalado)",
       "rect": "Rectángulo",
       "quadPerspective": "Cuadrilátero (perspectiva)",

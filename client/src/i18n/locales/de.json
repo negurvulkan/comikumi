@@ -650,12 +650,36 @@
       "contextCurrentScript": "Aktuelles Skript",
       "empty": "Noch keine Nachrichten. Stell eine Frage, um loszulegen.",
       "inputPlaceholder": "Frage stellen…",
-      "send": "Senden"
+      "send": "Senden",
+      "action": {
+        "preparing": "Vorschlag wird vorbereitet …",
+        "reviewTitle": "{{count}} Übersetzungsvorschlag/-vorschläge ({{language}})",
+        "reviewHint": "Text vor der Übernahme prüfen/korrigieren und nicht gewünschte Vorschläge abwählen.",
+        "sourceLabel": "Quelltext ({{language}})",
+        "applyCount": "{{count}} übernehmen",
+        "applied": "{{count}} Übersetzung(en) eingefügt — nicht vergessen zu speichern.",
+        "dismissed": "Vorschlag verworfen."
+      }
+    },
+    "cleanPage": {
+      "maskEditorTitle": "Zu entfernende Bereiche markieren",
+      "maskEditorHint": "Automatisch erkannte Bereiche (rot) prüfen — verschieben, an den Ecken vergrößern, mit Klick auf × löschen oder auf freier Fläche neue Bereiche aufziehen (z. B. für Blasen-Schwänzchen oder SFX, die der Detektor nicht erfasst hat).",
+      "deleteBox": "Bereich löschen",
+      "maskEditorContinue": "Weiter ({{count}})",
+      "reconstructing": "Bild wird rekonstruiert …",
+      "reviewTitle": "Seite bereinigt",
+      "reviewHint": "Vorher/Nachher prüfen und bei Bedarf übernehmen — das Original bleibt erhalten und ist jederzeit wieder abrufbar.",
+      "before": "Vorher",
+      "after": "Nachher",
+      "apply": "Übernehmen",
+      "active": "Bereinigtes Bild aktiv.",
+      "revert": "Original wiederherstellen"
     },
     "toolStrip": {
       "storyBible": "Story Bible",
       "aiAssistant": "KI-Assistent",
       "autoBubbles": "Automatische Blasenerkennung",
+      "cleanPage": "Seite bereinigen (Text entfernen)",
       "bubbleOval": "Blase (oval)",
       "rect": "Rechteck",
       "quadPerspective": "Raute (Perspektive)",

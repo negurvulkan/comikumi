@@ -636,12 +636,36 @@
       "contextCurrentScript": "le script actuel",
       "empty": "Aucun message pour l'instant. Posez une question pour commencer.",
       "inputPlaceholder": "Poser une question…",
-      "send": "Envoyer"
+      "send": "Envoyer",
+      "action": {
+        "preparing": "Préparation d'une suggestion…",
+        "reviewTitle": "{{count}} suggestion(s) de traduction ({{language}})",
+        "reviewHint": "Vérifiez/corrigez le texte et désélectionnez les suggestions non désirées avant d'appliquer.",
+        "sourceLabel": "Texte source ({{language}})",
+        "applyCount": "Appliquer {{count}}",
+        "applied": "{{count}} traduction(s) appliquée(s) — pensez à enregistrer.",
+        "dismissed": "Suggestion ignorée."
+      }
+    },
+    "cleanPage": {
+      "maskEditorTitle": "Marquer les zones à supprimer",
+      "maskEditorHint": "Vérifiez les zones détectées automatiquement (rouge) — faites glisser pour déplacer, faites glisser le coin pour redimensionner, cliquez sur × pour supprimer, ou dessinez de nouvelles zones sur l'espace libre (p. ex. pour les queues de bulles ou les SFX que le détecteur a manqués).",
+      "deleteBox": "Supprimer la zone",
+      "maskEditorContinue": "Continuer ({{count}})",
+      "reconstructing": "Reconstruction de l'image…",
+      "reviewTitle": "Page nettoyée",
+      "reviewHint": "Vérifiez l'avant/après et appliquez si le résultat convient — l'original est conservé et peut être restauré à tout moment.",
+      "before": "Avant",
+      "after": "Après",
+      "apply": "Appliquer",
+      "active": "Image nettoyée active.",
+      "revert": "Restaurer l'original"
     },
     "toolStrip": {
       "storyBible": "Bible narrative",
       "aiAssistant": "Assistant IA",
       "autoBubbles": "Bulles automatiques",
+      "cleanPage": "Nettoyer la page (supprimer le texte)",
       "bubbleOval": "Bulle (ovale)",
       "rect": "Rectangle",
       "quadPerspective": "Quadrilatère (perspective)",

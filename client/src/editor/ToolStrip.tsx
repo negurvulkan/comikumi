@@ -14,6 +14,7 @@ import {
   BookIcon,
   AIAssistantIcon,
   AutoBubblesToolIcon,
+  CleanPageToolIcon,
   CommentPinToolIcon,
   CommentBoxToolIcon,
   CommentFreehandToolIcon,
@@ -44,6 +45,12 @@ interface Props {
    * (no button rendered) where the host screen has no page image to detect on. */
   onRunAutoBubbles?: () => void;
   autoBubblesRunning?: boolean;
+  /** Runs Cleaning/Inpainting detection on the current page and opens the before/
+   * after review panel (see ocr/useCleanPageRun.ts) — same one-shot-action shape as
+   * onRunAutoBubbles above, just reusing the detector for a different purpose. Omitted
+   * wherever onRunAutoBubbles is (no page image to clean). */
+  onRunCleanPage?: () => void;
+  cleanPageRunning?: boolean;
   /** Disables every element-creation tool (bubble/rect/quad/image/curved-text/panel) —
    * used for the "translator" project role, which may only edit existing bubble text,
    * not introduce new geometry (see server/src/routes/layout.ts's diff guard, which
@@ -80,6 +87,8 @@ export function ToolStrip({
   onAddCurvedText,
   onRunAutoBubbles,
   autoBubblesRunning,
+  onRunCleanPage,
+  cleanPageRunning,
   creationDisabled,
   textPanelOpen,
   onToggleTextPanel,
@@ -147,6 +156,16 @@ export function ToolStrip({
           disabled={creationDisabled || autoBubblesRunning}
         >
           <AutoBubblesToolIcon />
+        </button>
+      )}
+      {onRunCleanPage && (
+        <button
+          className="tool-btn"
+          onClick={onRunCleanPage}
+          title={t("editor.toolStrip.cleanPage")}
+          disabled={creationDisabled || cleanPageRunning}
+        >
+          <CleanPageToolIcon />
         </button>
       )}
       <button

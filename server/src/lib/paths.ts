@@ -97,6 +97,20 @@ export const CODEX_HOME_DIR = path.join(DATA_DIR, "codex-home");
  * requirement). */
 export const OCR_MODELS_DIR = path.join(DATA_DIR, "models");
 
+/** Server-side cache for the Cleaning/Inpainting LaMa ONNX model — fetched once from
+ * its own HuggingFace repo on first use and kept here (same "fetch-once, cache
+ * forever" contract as the client's OCR/detector models, just server-side since
+ * inference itself runs server-side here, see docs/inpainting-model-provenance.md
+ * for why). Lives in the same `models` dir as OCR_MODELS_DIR's self-hosted mirror
+ * concept rather than a new top-level folder — it's the same kind of content (a
+ * fixed, app-versioned model file), not user-managed data. */
+export const INPAINT_MODEL_PATH = path.join(OCR_MODELS_DIR, "lama_fp32.onnx");
+
+/** Cache for cleaned (text-removed/inpainted) page images — same hash-of-source-path
+ * + mtime-invalidation cache contract as THUMBNAILS_DIR's getOrCreateThumbnail(), see
+ * server/src/lib/inpainting.ts. Safe to delete entirely; regenerated on next use. */
+export const CLEANED_CACHE_DIR = path.join(DATA_DIR, "cleaned");
+
 /** e.g. "volume_01" + "_empty" -> "volume_01_empty" */
 export function emptyFolderName(bookFolderName: string, emptySuffix: string): string {
   return `${bookFolderName}${emptySuffix}`;

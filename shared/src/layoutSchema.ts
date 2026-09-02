@@ -699,6 +699,14 @@ const PageLayoutObjectSchema = z.object({
   images: z.array(ImageElementSchema).default([]),
   curvedTexts: z.array(CurvedTextElementSchema).default([]),
   panels: z.array(PanelSchema).default([]),
+  /** When true AND a cached cleaned (text-removed/inpainted) version of this page's
+   * scan exists on the server, rendering (editor canvas, PNG/PSD/PDF export,
+   * thumbnails) uses that instead of the raw scan as the base layer — see
+   * server/src/lib/inpainting.ts and docs/inpainting-model-provenance.md. Silently
+   * falls back to the raw scan if the cache is missing/invalidated (e.g. the scan was
+   * replaced since cleaning) — never an error, same resilience principle as every
+   * other derived-artifact cache in this app. */
+  useCleanedBackground: z.boolean().default(false),
   /** Bumped to 2 the first time a layout is migrated for panel-relative bubble
    * coordinates (see the z.preprocess below) — everything saved by the app from that
    * point on carries schemaVersion 2 forward, so the migration only ever runs once. */
@@ -761,7 +769,18 @@ export const PageLayoutSchema = z.preprocess((raw) => {
 export type PageLayout = z.infer<typeof PageLayoutSchema>;
 
 export function createEmptyLayout(page: string, sourceImage: string, imageWidth: number, imageHeight: number): PageLayout {
-  return { page, sourceImage, imageWidth, imageHeight, bubbles: [], images: [], curvedTexts: [], panels: [], schemaVersion: 2 };
+  return {
+    page,
+    sourceImage,
+    imageWidth,
+    imageHeight,
+    bubbles: [],
+    images: [],
+    curvedTexts: [],
+    panels: [],
+    useCleanedBackground: false,
+    schemaVersion: 2,
+  };
 }
 
 /** One entry in a page's paint-order stack — see `pageLayerOrder()`. */

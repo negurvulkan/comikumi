@@ -7,6 +7,7 @@ import { THUMBNAILS_DIR } from "./paths.js";
 import { getThumbnailsDir, readPresets } from "./projectStore.js";
 import { resolveImageFilePath } from "./imageResolver.js";
 import { renderPageBackground } from "./pageRaster.js";
+import { resolveBaseImagePath } from "./inpainting.js";
 
 const THUMBNAIL_WIDTH = 360;
 const THUMBNAIL_QUALITY = 72;
@@ -66,7 +67,7 @@ export async function getOrCreateThumbnail(sourcePath: string, layoutFile: strin
 
   if (layout) {
     const canvas = await renderPageBackground({
-      baseImagePath: sourcePath,
+      baseImagePath: await resolveBaseImagePath(sourcePath, layout),
       layout,
       languageCode,
       presets: await readPresets(),

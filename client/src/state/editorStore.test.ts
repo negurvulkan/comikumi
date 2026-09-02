@@ -63,6 +63,93 @@ describe("addBubbles", () => {
   });
 });
 
+describe("applyBubbleTextPatches", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("sets text[language] on each named bubble, leaving others untouched", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    const b = createBubble({ id: "b", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a, b] } }));
+
+    useEditorStore.getState().applyBubbleTextPatches([
+      { bubbleId: "a", language: "de", text: "Hallo" },
+      { bubbleId: "b", language: "de", text: "Welt" },
+    ]);
+
+    const bubbles = useEditorStore.getState().layout!.bubbles;
+    expect(bubbles.find((x) => x.id === "a")!.text.de).toBe("Hallo");
+    expect(bubbles.find((x) => x.id === "b")!.text.de).toBe("Welt");
+  });
+
+  it("preserves a bubble's existing text in other languages", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    a.text = { en: "Hello" };
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a] } }));
+
+    useEditorStore.getState().applyBubbleTextPatches([{ bubbleId: "a", language: "de", text: "Hallo" }]);
+
+    const patched = useEditorStore.getState().layout!.bubbles[0];
+    expect(patched.text).toEqual({ en: "Hello", de: "Hallo" });
+  });
+
+  it("silently skips patches for unknown bubbleIds", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a] } }));
+
+    useEditorStore.getState().applyBubbleTextPatches([{ bubbleId: "does-not-exist", language: "de", text: "Hallo" }]);
+
+    expect(useEditorStore.getState().layout!.bubbles).toEqual([a]);
+  });
+
+  it("creates exactly one undo step for the whole batch and marks the layout dirty", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    const b = createBubble({ id: "b", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a, b] }, dirty: false }));
+
+    useEditorStore.getState().applyBubbleTextPatches([
+      { bubbleId: "a", language: "de", text: "Hallo" },
+      { bubbleId: "b", language: "de", text: "Welt" },
+    ]);
+
+    expect(useEditorStore.getState().past.length).toBe(1);
+    expect(useEditorStore.getState().dirty).toBe(true);
+  });
+
+  it("is a no-op when given an empty array (no history entry, no state change)", () => {
+    useEditorStore.getState().applyBubbleTextPatches([]);
+    expect(useEditorStore.getState().past.length).toBe(0);
+  });
+
+  it("is a no-op when there is no layout loaded", () => {
+    useEditorStore.setState({ layout: null });
+    useEditorStore.getState().applyBubbleTextPatches([{ bubbleId: "a", language: "de", text: "Hallo" }]);
+    expect(useEditorStore.getState().layout).toBeNull();
+  });
+});
+
+describe("setUseCleanedBackground", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("flips the layout's useCleanedBackground flag and marks dirty", () => {
+    useEditorStore.getState().setUseCleanedBackground(true);
+    expect(useEditorStore.getState().layout!.useCleanedBackground).toBe(true);
+    expect(useEditorStore.getState().dirty).toBe(true);
+  });
+
+  it("is a no-op (no history entry) when already at the requested value", () => {
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, useCleanedBackground: true }, dirty: false }));
+    useEditorStore.getState().setUseCleanedBackground(true);
+    expect(useEditorStore.getState().past.length).toBe(0);
+    expect(useEditorStore.getState().dirty).toBe(false);
+  });
+
+  it("is a no-op when there is no layout loaded", () => {
+    useEditorStore.setState({ layout: null });
+    useEditorStore.getState().setUseCleanedBackground(true);
+    expect(useEditorStore.getState().layout).toBeNull();
+  });
+});
+
 describe("addBubble", () => {
   beforeEach(resetStoreWithEmptyLayout);
 

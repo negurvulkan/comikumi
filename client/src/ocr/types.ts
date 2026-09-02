@@ -23,13 +23,21 @@ export interface DetectedRegion {
 }
 
 /** worker.ts <-> workerClient.ts message protocol. `RunRequest.imageBitmap` is
- * transferred (not cloned) — see workerClient.ts's postMessage() call. */
+ * transferred (not cloned) — see workerClient.ts's postMessage() call.
+ *
+ * `mode: "detect-only"` (Cleaning/Inpainting, see workerClient.ts's
+ * runCleanupDetection()) skips OCR entirely — no point loading/running the heavy
+ * manga-ocr model just to throw the recognized text away, Cleaning only needs
+ * positions. `ocrEncoderModel`/`ocrDecoderModel` are correspondingly optional: omit
+ * both for `"detect-only"` (the caller never fetches them in the first place). Default
+ * mode is `"detect-and-ocr"` (Auto-Bubbles' existing behavior, unchanged). */
 export interface RunRequest {
   type: "run";
+  mode?: "detect-and-ocr" | "detect-only";
   imageBitmap: ImageBitmap;
   detectorModel: ArrayBuffer;
-  ocrEncoderModel: ArrayBuffer;
-  ocrDecoderModel: ArrayBuffer;
+  ocrEncoderModel?: ArrayBuffer;
+  ocrDecoderModel?: ArrayBuffer;
 }
 
 export type WorkerProgressStage = "loading-runtime" | "detecting" | "recognizing";

@@ -8,6 +8,7 @@ import { readPresets, readSettings, type ActiveProject } from "./projectStore.js
 import { buildVectorPdfPage } from "./vectorPdf/buildPdfPage.js";
 import { buildLayeredPsd } from "./psdExport.js";
 import { resolveImageFilePath } from "./imageResolver.js";
+import { resolveBaseImagePath } from "./inpainting.js";
 
 /**
  * Background export jobs for server-rendered formats (vector PDF / PSD) — the two
@@ -142,10 +143,11 @@ async function runExportJob(job: ExportJobState, params: StartExportJobParams): 
         continue;
       }
       const layout = PageLayoutSchema.parse(JSON.parse(layoutRaw));
+      const baseImagePath = await resolveBaseImagePath(pageInfo.absolutePath, layout);
 
       if (params.format === "vector-pdf") {
         const result = await buildVectorPdfPage({
-          baseImagePath: pageInfo.absolutePath,
+          baseImagePath,
           layout,
           languageCode: params.languageCode,
           presets,
@@ -155,7 +157,7 @@ async function runExportJob(job: ExportJobState, params: StartExportJobParams): 
         await fs.writeFile(path.join(outDir, `${page}.pdf`), result.bytes);
       } else {
         const bytes = await buildLayeredPsd({
-          baseImagePath: pageInfo.absolutePath,
+          baseImagePath,
           layout,
           languageCode: params.languageCode,
           presets,

@@ -214,8 +214,26 @@ async function runRecognition(
   return regions;
 }
 
+/** Detect-only path (Cleaning/Inpainting, see workerClient.ts's
+ * runCleanupDetection()) — same box list as Auto-Bubbles, but returned without ever
+ * loading the OCR model, since Cleaning only needs positions. Shares `DetectedRegion`'s
+ * shape (with `recognizedText: ""`) rather than a separate type, so this can reuse the
+ * exact same "done" message/progress-reporting contract as the detect-and-ocr path —
+ * one less protocol to keep in sync. */
+function boxesToRegions(boxes: Box[]): DetectedRegion[] {
+  return boxes.map((box) => ({
+    id: uuid(),
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
+    confidence: box.confidence,
+    recognizedText: "",
+  }));
+}
+
 self.onmessage = async (event: MessageEvent<RunRequest>) => {
-  const { imageBitmap, detectorModel, ocrEncoderModel, ocrDecoderModel } = event.data;
+  const { mode = "detect-and-ocr", imageBitmap, detectorModel, ocrEncoderModel, ocrDecoderModel } = event.data;
   try {
     post({ type: "progress", stage: "loading-runtime", current: 0, total: 1 });
     const session = await createOrtSession(detectorModel);
@@ -224,6 +242,14 @@ self.onmessage = async (event: MessageEvent<RunRequest>) => {
     const boxes = await runDetection(session, imageBitmap);
     post({ type: "progress", stage: "detecting", current: 1, total: 1 });
 
+    if (mode === "detect-only") {
+      post({ type: "done", regions: boxesToRegions(boxes) });
+      return;
+    }
+
+    if (!ocrEncoderModel || !ocrDecoderModel) {
+      throw new Error("OCR-Modell fehlt für den detect-and-ocr-Modus (ocrEncoderModel/ocrDecoderModel nicht übergeben).");
+    }
     const regions = await runRecognition(imageBitmap, boxes, ocrEncoderModel, ocrDecoderModel);
 
     post({ type: "done", regions });

@@ -124,6 +124,20 @@ interface EditorState {
    * Auto-Bubbles/OCR detections, where "detected 12 bubbles" should undo in one Ctrl+Z,
    * not twelve. */
   addBubbles: (bubbles: Bubble[]) => void;
+  /** Sets `text[language]` on each named EXISTING bubble as ONE undo step — the
+   * apply-side of the AI assistant's "translate missing bubbles" action
+   * (see aiTranslateAction.ts/AiTranslateReviewPanel.tsx), same batch-in-one-step
+   * shape as addBubbles() above but patching rather than inserting. Unknown bubbleIds
+   * are silently skipped (defense in depth — the caller already filters against real
+   * targets, see parseTranslateAction()'s doc comment). Just another local edit: marks
+   * `dirty`, no server call — goes through the normal save() flow like anything else. */
+  applyBubbleTextPatches: (patches: { bubbleId: string; language: string; text: string }[]) => void;
+  /** Toggles between the raw scan and the server's cached cleaned (text-removed)
+   * version — see server/src/lib/inpainting.ts, CleanPageReviewPanel.tsx. One undo
+   * step, marks `dirty`; the actual pixels never live in the layout JSON itself (just
+   * this flag), so this is a cheap, instant toggle either direction, not a re-render
+   * of anything heavy. */
+  setUseCleanedBackground: (value: boolean) => void;
   /** Non-destructive merge of every selected, unlocked, non-"quad" bubble (see
    * Bubble.mergeGroupId/mergePrimary in shared/src/layoutSchema.ts) — a no-op if fewer
    * than 2 such bubbles are selected. */
@@ -551,6 +565,30 @@ export const useEditorStore = create<EditorState>((set, get) => {
         layout: { ...layout, bubbles: [...layout.bubbles, ...bubbles] },
         ...clearSelection(),
         selectedBubbleIds: bubbles.map((b) => b.id),
+        dirty: true,
+      });
+    },
+
+    setUseCleanedBackground(value) {
+      const layout = get().layout;
+      if (!layout || layout.useCleanedBackground === value) return;
+      pushHistory(true);
+      set({ layout: { ...layout, useCleanedBackground: value }, dirty: true });
+    },
+
+    applyBubbleTextPatches(patches) {
+      const layout = get().layout;
+      if (!layout || patches.length === 0) return;
+      pushHistory(true);
+      const byId = new Map(patches.map((p) => [p.bubbleId, p]));
+      set({
+        layout: {
+          ...layout,
+          bubbles: layout.bubbles.map((b) => {
+            const patch = byId.get(b.id);
+            return patch ? { ...b, text: { ...b.text, [patch.language]: patch.text } } : b;
+          }),
+        },
         dirty: true,
       });
     },

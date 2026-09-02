@@ -2,9 +2,11 @@ import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
 import multer from "multer";
+import { z } from "zod";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { findVolume, listPages, PAGE_IMAGE_EXTENSIONS } from "../lib/projectScanner.js";
 import { getOrCreateThumbnail } from "../lib/thumbnails.js";
+import { cleanPage, getCleanedImagePath, type InpaintBox } from "../lib/inpainting.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
 import { readSettings, readLanguages } from "../lib/projectStore.js";
@@ -116,6 +118,70 @@ pagesRouter.get(
     } catch (err) {
       res.status(500).json({ error: "thumbnail_generation_failed", details: String(err) });
     }
+  })
+);
+
+const CleanBoxSchema = z.object({ x: z.number(), y: z.number(), width: z.number().positive(), height: z.number().positive() });
+const CleanRequestSchema = z.object({ boxes: z.array(CleanBoxSchema) });
+
+// Runs Cleaning/Inpainting (see lib/inpainting.ts, docs/inpainting-model-provenance.md)
+// over the given boxes (already detected client-side, same Auto-Bubbles detector — this
+// route only reconstructs pixels, it doesn't detect anything itself) and caches the
+// result. `requireLetterer`-equivalent (not `translator`): unlike a text edit, this
+// permanently alters the page's visual content, the same bar Cut-Panel/placed-image
+// mutations already require. Does NOT touch the page's layout JSON or its
+// useCleanedBackground flag — the client sets that itself via the normal layout save
+// path once it has reviewed the before/after result, same "propose, then an explicit
+// separate confirm actually commits it" principle as every other automation this session.
+pagesRouter.post(
+  "/:id/pages/:page/clean",
+  requireProjectRole("letterer"),
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id, req.activeProject);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const pages = await listPages(volume);
+    const page = pages.find((p) => p.page === req.params.page);
+    if (!page) {
+      res.status(404).json({ error: "page_not_found" });
+      return;
+    }
+    const parsed = CleanRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_boxes", details: parsed.error.flatten() });
+      return;
+    }
+    await cleanPage(page.absolutePath, parsed.data.boxes as InpaintBox[]);
+    res.json({ ok: true });
+  })
+);
+
+// Serves the cached cleaned image if one exists and is still valid (not older than
+// the source scan) — 404 otherwise, so the client can tell "never cleaned" apart from
+// "cleaning failed" without a special error shape. No stricter role than the router's
+// own viewer baseline — reading it is no different from reading the raw page image.
+pagesRouter.get(
+  "/:id/pages/:page/cleaned-image",
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id, req.activeProject);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const pages = await listPages(volume);
+    const page = pages.find((p) => p.page === req.params.page);
+    if (!page) {
+      res.status(404).json({ error: "page_not_found" });
+      return;
+    }
+    const cleanedPath = await getCleanedImagePath(page.absolutePath);
+    if (!cleanedPath) {
+      res.status(404).json({ error: "not_cleaned" });
+      return;
+    }
+    res.sendFile(cleanedPath, { maxAge: "1h" });
   })
 );
 

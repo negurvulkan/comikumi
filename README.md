@@ -44,6 +44,20 @@ React + Konva canvas editor.
   Optimized for Japanese source text today; box detection alone still works for other
   languages. See [`docs/ocr-model-provenance.md`](docs/ocr-model-provenance.md) for the
   open-weight models used and their licenses.
+- **Cleaning (Inpainting)** — a toolbar tool removes the original printed text inside
+  detected speech-bubble regions and reconstructs the artwork underneath, reusing
+  Auto-Bubbles' own detector to find the regions. Shown as a before/after comparison
+  before anything changes; applying only flips a per-page flag (the original scan is
+  never touched, and it can be switched back at any time), which then takes effect
+  everywhere the page background is drawn — editor, exports, thumbnails. See
+  [`docs/inpainting-model-provenance.md`](docs/inpainting-model-provenance.md) for the
+  model used and its license.
+- **AI assistant with one review-gated action** — a chat sidebar (six swappable
+  providers, bring your own API key or self-host Ollama) that can also translate
+  missing bubbles on request ("translate all missing German bubbles"), proposing a
+  reviewable diff instead of a plain chat reply — nothing touches the page until you
+  click Apply, and applying it is just a normal unsaved edit, going through the same
+  save/permission/conflict flow as typing it by hand.
 - **Effect (SFX) bubbles** — a dedicated toolbar tool marks a bubble as a sound effect
   instead of dialogue (existing bubbles can be switched either way from the inspector);
   effect bubbles are excluded from "who says what" reports, auto-generated script
@@ -109,6 +123,9 @@ React + Konva canvas editor.
   prompts to keep your version or load the other one, instead of silently overwriting
   it), serialized writes for comments/script/project metadata, and a warning before
   switching the server's active project while someone else is still working in it.
+
+**User guide** (task-oriented, "how do I…"; German only for now):
+[`docs/User-Guide.de.md`](docs/User-Guide.de.md).
 
 Full feature list: [`docs/FEATURES.md`](docs/FEATURES.md) (also available
 [in German](docs/FEATURES.de.md)). Layout JSON schema:

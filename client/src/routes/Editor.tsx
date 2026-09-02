@@ -45,6 +45,9 @@ import { ReportModal } from "../editor/ReportModal";
 import { AutoBubblesReviewPanel } from "../editor/AutoBubblesReviewPanel";
 import { useAutoBubblesRun } from "../ocr/useAutoBubblesRun";
 import { detectionToBubble } from "../ocr/detectionToBubble";
+import { CleanPageReviewPanel } from "../editor/CleanPageReviewPanel";
+import { CleanPageMaskEditor } from "../editor/CleanPageMaskEditor";
+import { useCleanPageRun } from "../ocr/useCleanPageRun";
 import { characterName, getPageReadingOrder, groupBubblesByPanel, moveBubbleInReadingOrder } from "../editor/reportUtils";
 import { api, downloadBlob, type PageSummary } from "../api/client";
 import { useExportRun } from "../export/useExportRun";
@@ -347,6 +350,7 @@ export function Editor() {
     onlyTranslated: boolean;
   } | null>(null);
   const autoBubbles = useAutoBubblesRun();
+  const cleanPage = useCleanPageRun(volumeId, page);
 
   async function handleAnalyzeUniform(
     selection: Parameters<typeof analyzeNormalize>[0],
@@ -392,6 +396,17 @@ export function Editor() {
     await img.decode();
     const bitmap = await createImageBitmap(img);
     await autoBubbles.start(bitmap);
+  }
+
+  /** Same image-loading approach as handleRunAutoBubbles() above — reuses the same
+   * detector, just for Cleaning/Inpainting's box list instead of new bubbles. */
+  async function handleRunCleanPage() {
+    const img = new Image();
+    img.crossOrigin = "use-credentials";
+    img.src = api.pageImageUrl(volumeId, page);
+    await img.decode();
+    const bitmap = await createImageBitmap(img);
+    await cleanPage.start(bitmap);
   }
 
   /** Renders the current page WITH lettering baked in (same pipeline as the export
@@ -680,6 +695,17 @@ export function Editor() {
       {autoBubbles.progressMsg && (
         <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{autoBubbles.progressMsg}</div>
       )}
+      {cleanPage.progressMsg && (
+        <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{cleanPage.progressMsg}</div>
+      )}
+      {layout.useCleanedBackground && (
+        <div className="error-banner" style={{ background: "#1f2a3a", borderColor: "#2f5a7a", color: "#b3d9ff" }}>
+          {t("editor.cleanPage.active")}{" "}
+          <button type="button" onClick={() => store.setUseCleanedBackground(false)} style={{ padding: 0 }}>
+            {t("editor.cleanPage.revert")}
+          </button>
+        </div>
+      )}
       {store.conflict && (
         <LayoutConflictModal onKeepMine={() => store.resolveConflictOverwrite()} onReload={() => store.resolveConflictReload()} />
       )}
@@ -690,6 +716,27 @@ export function Editor() {
           onInsert={(accepted) => {
             store.addBubbles(accepted.map((r) => detectionToBubble(r, activeLanguage)));
             autoBubbles.cancel();
+          }}
+        />
+      )}
+      {cleanPage.pendingBoxes && (
+        <CleanPageMaskEditor
+          imageUrl={api.pageImageUrl(volumeId, page)}
+          imageWidth={layout.imageWidth}
+          imageHeight={layout.imageHeight}
+          initialBoxes={cleanPage.pendingBoxes}
+          onCancel={cleanPage.cancelMask}
+          onConfirm={(boxes) => cleanPage.confirmMask(boxes)}
+        />
+      )}
+      {cleanPage.pendingPreviewUrl && (
+        <CleanPageReviewPanel
+          beforeUrl={api.pageImageUrl(volumeId, page)}
+          afterUrl={cleanPage.pendingPreviewUrl}
+          onCancel={cleanPage.cancelPreview}
+          onApply={() => {
+            store.setUseCleanedBackground(true);
+            cleanPage.cancelPreview();
           }}
         />
       )}
@@ -776,6 +823,8 @@ export function Editor() {
           onAddCurvedText={() => store.addCurvedText()}
           onRunAutoBubbles={handleRunAutoBubbles}
           autoBubblesRunning={autoBubbles.running}
+          onRunCleanPage={handleRunCleanPage}
+          cleanPageRunning={cleanPage.running}
           creationDisabled={isTranslatorOnly}
           textPanelOpen={showTextPanel}
           onToggleTextPanel={() => {
@@ -946,6 +995,7 @@ export function Editor() {
           contextText={buildPageContextText()}
           contextImageUrl={api.pageImageUrl(volumeId, page)}
           contextRenderedImage={buildRenderedPageImage}
+          enableActions={layout ? { bubbles: layout.bubbles, languages, glossary } : undefined}
         />
         <LanguageStrip languages={languages} active={activeLanguage} onChange={store.setActiveLanguage} onLanguagesChange={setLanguages} />
         <div className="editor-layout">
@@ -953,7 +1003,7 @@ export function Editor() {
             projectName={project?.name}
             volumeId={volumeId}
             page={page}
-            imageUrl={api.pageImageUrl(volumeId, page)}
+            imageUrl={layout.useCleanedBackground ? api.cleanedImageUrl(volumeId, page) : api.pageImageUrl(volumeId, page)}
             imageWidth={layout.imageWidth}
             imageHeight={layout.imageHeight}
             bubbles={layout.bubbles}

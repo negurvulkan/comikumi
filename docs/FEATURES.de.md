@@ -21,6 +21,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Editor — Canvas-Grundlagen](#editor--canvas-grundlagen)
 - [Elementtypen](#elementtypen)
 - [Auto-Bubbles (Erkennung & OCR)](#auto-bubbles-erkennung--ocr)
+- [Bereinigung (Inpainting)](#bereinigung-inpainting)
 - [Sperren](#sperren)
 - [Cut-Panel](#cut-panel)
 - [Text-Liste](#text-liste)
@@ -622,6 +623,56 @@ Review-Panel, wie vor diesem Feature. Beide Modelle sind Drittanbieter-Gewichte 
 freizügiger Lizenz (Apache-2.0/GPL-3.0), vollständig dokumentiert in
 `docs/ocr-model-provenance.md`.
 
+## Bereinigung (Inpainting)
+
+Ein Werkzeug in der Werkzeugleiste ("Seite bereinigen"), das den originalen
+gedruckten Text innerhalb erkannter Sprechblasen-Regionen entfernt und die
+darunterliegende Zeichnung rekonstruiert — nutzt denselben clientseitigen
+Detektor wie Auto-Bubbles (siehe oben) zum Finden der Regionen, schickt sie
+dann an den Server, der die eigentliche Rekonstruktion übernimmt (ein
+deutlich schwereres Modell als der Detektor — siehe unten, warum genau
+dieser Schritt server- statt browserseitig läuft).
+
+Bevor irgendetwas an den Server geschickt wird, öffnen die erkannten
+Regionen einen **Masken-Editor**: der Detektor markiert nur den gefundenen
+TEXT, was oft nicht die ganze Blase (Umriss, Schwänzchen) oder SFX-Schrift
+abdeckt — der Masken-Editor lässt bestehende Regionen verschieben, an der
+Ecke vergrößern/verkleinern, unerwünschte löschen oder völlig neue auf
+freier Fläche aufziehen, sodass die eigentliche Rekonstruktion genau den
+gewünschten Bereich trifft, nicht nur das, was der Detektor zufällig
+gefunden hat. Funktioniert auch, wenn die Erkennung gar nichts gefunden
+hat — dann werden Regionen komplett von Hand markiert.
+
+Das rekonstruierte Ergebnis erscheint danach als **Vorher/Nachher-Vergleich**,
+bevor sich irgendetwas auf der Seite ändert — nichts wird übernommen, bis
+auf "Übernehmen" geklickt wird. Das Übernehmen rührt den rohen Scan selbst
+nicht an: es setzt nur ein Pro-Seite-Flag ("bereinigtes Bild verwenden"),
+das dann überall greift, wo der Seiten-Hintergrund gezeichnet wird —
+Editor-Canvas, PNG-/Vektor-PDF-/PSD-Export, Thumbnails. Der Original-Scan
+wird nie verändert oder gelöscht, und das Flag lässt sich jederzeit wieder
+ausschalten, um ihn sofort wiederherzustellen.
+
+Umfang dieser ersten Version: eine Seite nach der anderen, nur rechteckige
+Maskenregionen (kein Freihand-Pinsel). Batch-/Kapitel-weite Durchläufe sind
+eine mögliche spätere Erweiterung, noch nicht abgedeckt. Die
+Rekonstruktions-Qualität hängt vom zugrunde liegenden Modell ab, das ein
+allgemeines (nicht manga-trainiertes) Checkpoint ist — siehe unten —
+weshalb auch bei sauber gezeichneter Maske auf komplexen handgezeichneten
+Hintergründen sichtbare Artefakte auftreten können; der Masken-Editor löst
+"welcher Bereich wird rekonstruiert", nicht "wie gut wird rekonstruiert".
+
+Das Rekonstruktions-Modell (`Carve/LaMa-ONNX`, Apache-2.0) läuft auf dem
+**Server**, nicht im Browser — bei ~200 MB und einer festen
+512×512-Eingabegröße (Kacheln über die ganze Seite nötig) ist es deutlich
+schwerer als die andernorts genutzten Detektor-/OCR-Modelle, und der Server
+eignet sich gut für diese Art Bildverarbeitung im großen Maßstab. Das ist in
+jeder von dieser App unterstützten Bereitstellung ein lokaler/selbst
+gehosteter Server, bleibt also konsistent mit dem "deine Daten verlassen
+nicht deine Infrastruktur"-Prinzip der App — nur eine andere
+Maschinen-Grenze als beim rein clientseitigen Auto-Bubbles-Feature. Die
+vollständige Lizenz-/Herkunftsprüfung des Modells ist in
+`docs/inpainting-model-provenance.md` dokumentiert.
+
 ## Sperren
 
 Jedes Element (Blase, Panel, Bild, Kurventext) lässt sich einzeln gegen versehentliches
@@ -895,10 +946,26 @@ reihenfolge und Panel-Ausschnitt helfen genauso beim reinen Lettern oder beim Sc
 ## KI-Assistent
 
 Einklappbare Chat-Seitenleiste (Werkzeugleisten-Symbol, gleiche Docking-Stelle wie
-Story Bible/Kontextansicht) im Seiten-Editor und im Skript-Editor — ein reiner
-Frage-Modus-Assistent, keine automatischen Änderungen an Projektdaten oder
-Tool-Calling. Der Chat-Verlauf ist rein clientseitig für die laufende Sitzung, wird
-serverseitig nicht gespeichert.
+Story Bible/Kontextansicht) im Seiten-Editor und im Skript-Editor. Der Chat-Verlauf
+ist rein clientseitig für die laufende Sitzung, wird serverseitig nicht gespeichert.
+
+Größtenteils ein reiner Frage-Modus-Assistent, mit einer einzigen, eng begrenzten
+Ausnahme im Seiten-Editor: **fehlende Übersetzungen füllen**. Eine Anfrage wie
+"Übersetze alle fehlenden deutschen Blasen" beantwortet die KI — sofern auf der
+aktuellen Seite tatsächlich Blasen ohne Text in dieser Sprache existieren — mit
+einem Review-Panel (Quelltext neben jedem Vorschlag, Checkbox zum Annehmen/
+Bearbeiten/Ablehnen pro Zeile, dasselbe Muster wie beim Auto-Bubbles-Review) statt
+mit einer Chat-Nachricht — nichts wird auf die Seite geschrieben, bevor
+"Übernehmen" geklickt wird, und das Übernehmen selbst landet als ganz normale
+unsaved Änderung im Editor, die denselben Speichern-Button, dieselbe
+Rechteprüfung und dieselbe Konflikterkennung durchläuft wie manuell getippter
+Text. Das ist kein natives Tool-Calling des Modells — jeder Provider wird
+stattdessen angewiesen, in einem bestimmten JSON-Format zu antworten, was
+identisch bei allen sechs Providern funktioniert (auch bei Codex, das aktuell
+kein Tool-Calling anbietet), ohne providerspezifische Extra-Anbindung. Jede
+andere Anfrage — alles, was nicht als "fehlende Übersetzungen füllen" erkannt
+wird — wird wie bisher als normaler Chat beantwortet. Weitere automatische
+Aktionen gibt es noch nicht.
 
 - **Sechs austauschbare Provider**, pro Konto konfiguriert unter "Mein Konto"
   (`/account`, verlinkt im Header). Nur die tatsächlich konfigurierten Provider
