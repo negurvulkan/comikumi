@@ -2,8 +2,11 @@
   "name": "comikumi",
   "private": true,
   "version": "0.1.0",
+  "description": "Local-first manga localization workspace — plan, translate, letter, review and publish manga in multiple languages.",
+  "author": "Hanjo Winter",
   "license": "AGPL-3.0-or-later",
   "type": "module",
+  "main": "electron/dist/main.js",
   "scripts": {
     "postinstall": "npm --prefix server install && npm --prefix client install",
     "dev": "concurrently -k -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
@@ -11,12 +14,57 @@
     "test": "npm --prefix server run test && npm --prefix client run test",
     "test:e2e": "npm --prefix e2e run test",
     "broker:dev": "npm --prefix broker run dev",
-    "broker:build": "npm --prefix broker run build"
+    "broker:build": "npm --prefix broker run build",
+    "electron:build:main": "tsc -p electron",
+    "electron:dev": "npm run electron:build:main && concurrently -k -n server,client,electron -c blue,green,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\" \"electron electron/dist/main.js\"",
+    "electron:build": "npm run build && npm run electron:build:main && electron-builder"
   },
   "dependencies": {
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "concurrently": "^10.0.5",
+    "electron": "^44.1.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "^7.0.2"
+  },
+  "build": {
+    "appId": "app.comikumi.desktop",
+    "productName": "ComiKumi",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/dist/**/*",
+      "electron/build/**/*",
+      "electron/package.json",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "server/dist",
+        "to": "server/dist"
+      },
+      {
+        "from": "server/node_modules",
+        "to": "server/node_modules"
+      },
+      {
+        "from": "client/dist",
+        "to": "client/dist"
+      }
+    ],
+    "win": {
+      "icon": "electron/build/icon.png",
+      "target": "nsis"
+    },
+    "mac": {
+      "icon": "electron/build/icon.png",
+      "target": "dmg"
+    },
+    "linux": {
+      "icon": "electron/build/icon.png",
+      "target": "AppImage"
+    }
   }
 }
