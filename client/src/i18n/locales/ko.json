@@ -353,6 +353,8 @@
   },
   "ocr": {
     "progress": {
+      "downloading-models": "인식 모델 다운로드 중 ({{current}} MB / {{total}} MB)…",
+      "downloading-models-unknown": "인식 모델 다운로드 중 ({{current}} MB)…",
       "loading-runtime": "인식 모델 로드 중…",
       "detecting": "말풍선 인식 중…",
       "recognizing": "텍스트 읽는 중 ({{current}}/{{total}})…"
@@ -628,17 +630,71 @@
       "contextSelectedBubble": "선택한 말풍선",
       "contextCurrentPage": "현재 페이지",
       "contextCurrentScript": "현재 스크립트",
+      "contextVolumeOverview": "권 개요",
       "empty": "아직 메시지가 없습니다. 질문을 입력해 시작하세요.",
       "inputPlaceholder": "질문을 입력하세요…",
       "send": "보내기",
-      "action": {
-        "preparing": "제안을 준비하는 중…",
-        "reviewTitle": "번역 제안 {{count}}건 ({{language}})",
-        "reviewHint": "적용하기 전에 텍스트를 검토/수정하고 원하지 않는 제안은 선택 해제하세요.",
-        "sourceLabel": "원문 ({{language}})",
-        "applyCount": "{{count}}건 적용",
-        "applied": "{{count}}건의 번역을 적용했습니다 — 저장하는 것을 잊지 마세요.",
-        "dismissed": "제안을 취소했습니다."
+      "actions": {
+        "common": {
+          "preparing": "제안을 준비하는 중…",
+          "applyCount": "{{count}}건 적용",
+          "dismissed": "제안을 취소했습니다."
+        },
+        "translateMissing": {
+          "reviewTitle": "번역 제안 {{count}}건 ({{language}})",
+          "reviewHint": "적용하기 전에 텍스트를 검토/수정하고 원하지 않는 제안은 선택 해제하세요.",
+          "sourceLabel": "원문 ({{language}})",
+          "applied": "{{count}}건의 번역을 적용했습니다 — 저장하는 것을 잊지 마세요."
+        },
+        "fixGlossaryUsage": {
+          "reviewTitle": "용어집 수정 제안 {{count}}건 ({{language}})",
+          "reviewHint": "적용하기 전에 텍스트를 검토/수정하고 원하지 않는 제안은 선택 해제하세요.",
+          "termHint": "용어 「{{term}}」 → 「{{translation}}」",
+          "applied": "{{count}}건의 수정을 적용했습니다 — 저장하는 것을 잊지 마세요."
+        },
+        "fixOverflow": {
+          "reviewTitle": "텍스트 넘침 수정 제안 {{count}}건",
+          "reviewHint": "제안된 크기/글자 크기를 검토하고 원하지 않는 제안은 선택 해제하세요.",
+          "applied": "{{count}}개 말풍선을 조정했습니다 — 저장하는 것을 잊지 마세요."
+        },
+        "assignCharacters": {
+          "reviewTitle": "캐릭터 할당 제안 {{count}}건",
+          "reviewHint": "할당 내용을 검토하고 원하지 않는 제안은 선택 해제하세요.",
+          "applied": "{{count}}건의 캐릭터 할당을 적용했습니다 — 저장하는 것을 잊지 마세요."
+        },
+        "styleSfx": {
+          "reviewTitle": "효과음 스타일 제안 {{count}}건",
+          "reviewHint": "제안된 프리셋/회전 값을 검토하고 원하지 않는 제안은 선택 해제하세요.",
+          "applied": "{{count}}개 효과음에 스타일을 적용했습니다 — 저장하는 것을 잊지 마세요."
+        },
+        "fixReadingOrder": {
+          "reviewTitle": "읽기 순서 제안",
+          "reviewHint": "적용하기 전에 제안된 순서를 검토하세요.",
+          "accept": "순서 적용",
+          "applied": "읽기 순서를 업데이트했습니다 — 저장하는 것을 잊지 마세요."
+        },
+        "extractGlossary": {
+          "reviewTitle": "새 용어집 항목 {{count}}건 제안됨",
+          "reviewHint": "추가하기 전에 용어와 번역을 검토/수정하고 원하지 않는 제안은 선택 해제하세요.",
+          "applied": "{{count}}건의 용어집 항목을 추가했습니다."
+        },
+        "suggestChapters": {
+          "reviewTitle": "챕터 제안 {{count}}건",
+          "reviewHint": "제안된 구성을 검토하고 원하지 않는 챕터는 선택 해제하세요.",
+          "rangeLabel": "{{from}} – {{to}}",
+          "applied": "{{count}}개 챕터를 생성했습니다."
+        },
+        "suggestPageTypes": {
+          "reviewTitle": "페이지 유형 제안 {{count}}건",
+          "reviewHint": "페이지 이름/위치만으로 추정한 낮은 신뢰도의 제안입니다 — 검토 후 원하지 않는 제안은 선택 해제하세요.",
+          "applied": "{{count}}개 페이지 유형을 업데이트했습니다."
+        },
+        "suggestTranslationNote": {
+          "reviewTitle": "번역 메모 제안됨",
+          "reviewHint": "게시하기 전에 텍스트를 검토/조정하세요.",
+          "postButton": "댓글로 게시",
+          "applied": "메모를 댓글로 게시했습니다."
+        }
       }
     },
     "cleanPage": {

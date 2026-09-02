@@ -55,7 +55,7 @@ async function fetchWithCache(
   cache: Cache,
   url: string,
   isLocal: boolean,
-  onProgress?: (loadedBytes: number) => void
+  onProgress?: (loadedBytes: number, totalBytes: number | null) => void
 ): Promise<ArrayBuffer> {
   const cached = await cache.match(url);
   if (cached) return cached.arrayBuffer();
@@ -68,8 +68,12 @@ async function fetchWithCache(
 
   // Stream + report progress when possible (large files, worth showing a percentage)
   // rather than awaiting the whole response at once; fall back to a plain buffer read
-  // if the response body isn't a readable stream for some reason.
+  // if the response body isn't a readable stream for some reason. Content-Length isn't
+  // guaranteed (a compressing proxy can drop it) — callers treat a null total as
+  // "unknown size", not zero.
   if (res.body && onProgress) {
+    const totalHeader = res.headers.get("content-length");
+    const total = totalHeader ? Number(totalHeader) : null;
     const reader = res.body.getReader();
     const chunks: Uint8Array[] = [];
     let loaded = 0;
@@ -78,7 +82,7 @@ async function fetchWithCache(
       if (done) break;
       chunks.push(value);
       loaded += value.byteLength;
-      onProgress(loaded);
+      onProgress(loaded, total);
     }
     const buffer = new Uint8Array(loaded);
     let offset = 0;
@@ -104,7 +108,7 @@ export interface DetectorModel {
 let detectorLoadingPromise: Promise<DetectorModel> | null = null;
 
 /** Loads (or serves from the persistent browser cache) the text-detection model. */
-export function ensureDetectorLoaded(onProgress?: (loadedBytes: number) => void): Promise<DetectorModel> {
+export function ensureDetectorLoaded(onProgress?: (loadedBytes: number, totalBytes: number | null) => void): Promise<DetectorModel> {
   if (!detectorLoadingPromise) {
     detectorLoadingPromise = (async () => {
       const cache = await caches.open(CACHE_NAME);
@@ -140,7 +144,7 @@ let ocrOnnxLoadingPromise: Promise<OcrOnnxModel> | null = null;
  * pair — no local-mirror support yet (unlike the detector's `OCR_MODELS_DIR` fallback
  * route), same as before this feature's `docs/ocr-model-provenance.md` "Nicht im
  * Umfang" note; only `onProgress` for the (larger) encoder download is reported. */
-export function ensureOcrOnnxLoaded(onProgress?: (loadedBytes: number) => void): Promise<OcrOnnxModel> {
+export function ensureOcrOnnxLoaded(onProgress?: (loadedBytes: number, totalBytes: number | null) => void): Promise<OcrOnnxModel> {
   if (!ocrOnnxLoadingPromise) {
     ocrOnnxLoadingPromise = (async () => {
       const cache = await caches.open(CACHE_NAME);

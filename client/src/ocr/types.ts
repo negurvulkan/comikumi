@@ -40,7 +40,12 @@ export interface RunRequest {
   ocrDecoderModel?: ArrayBuffer;
 }
 
-export type WorkerProgressStage = "loading-runtime" | "detecting" | "recognizing";
+/** "downloading-models" fires from the main thread (workerClient.ts, before the worker
+ * even exists) while modelLoader.ts's ensureDetectorLoaded()/ensureOcrOnnxLoaded() pull
+ * the (often hundreds-of-MB) model files — a real byte count when the server sent
+ * Content-Length, current===total otherwise (nothing to show a fraction of). Every
+ * other stage fires from inside the worker once it's already running. */
+export type WorkerProgressStage = "downloading-models" | "loading-runtime" | "detecting" | "recognizing";
 
 export type WorkerMessage =
   | { type: "progress"; stage: WorkerProgressStage; current: number; total: number }

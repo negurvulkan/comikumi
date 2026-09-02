@@ -3,6 +3,9 @@ import type { Bubble } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import { runQaChecks } from "./qaChecks";
+import { ACTION_FENCE_PREFIX, extractJsonFence } from "./aiActions/actionUtils";
+
+export { ACTION_FENCE_PREFIX };
 
 /** The one agentic action ComiKumi's AI assistant supports today — see
  * docs/FEATURES.md's KI-Assistent section. Deliberately prompted (a fenced ```json
@@ -109,15 +112,8 @@ export function buildTranslateActionPrompt(targets: MissingTranslationTarget[], 
  * Unknown bubbleIds are silently dropped rather than rejecting the whole response —
  * same "don't let one bad item sink the batch" principle as Auto-Bubbles' regions. */
 export function parseTranslateAction(rawText: string, validTargets: MissingTranslationTarget[]): TranslateMissingBubblesAction | null {
-  const match = rawText.match(/```json\s*([\s\S]*?)```/);
-  if (!match) return null;
-
-  let json: unknown;
-  try {
-    json = JSON.parse(match[1]);
-  } catch {
-    return null;
-  }
+  const json = extractJsonFence(rawText);
+  if (!json) return null;
 
   const parsed = TranslateMissingBubblesSchema.safeParse(json);
   if (!parsed.success) return null;
@@ -128,9 +124,3 @@ export function parseTranslateAction(rawText: string, validTargets: MissingTrans
 
   return { ...parsed.data, translations };
 }
-
-/** Text the streaming response is checked against to switch the UI from live text to
- * a "preparing a suggestion" placeholder — see AIPanel.tsx. Matches the fence opener
- * `buildTranslateActionPrompt` instructs the model to use; a plain ``` (no "json") or
- * any prose before it means this isn't a translate-action response. */
-export const ACTION_FENCE_PREFIX = "```json";

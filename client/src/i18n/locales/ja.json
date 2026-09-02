@@ -353,6 +353,8 @@
   },
   "ocr": {
     "progress": {
+      "downloading-models": "検出モデルをダウンロード中（{{current}} MB / {{total}} MB）…",
+      "downloading-models-unknown": "検出モデルをダウンロード中（{{current}} MB）…",
       "loading-runtime": "検出モデルを読み込み中…",
       "detecting": "吹き出しを検出中…",
       "recognizing": "テキストを読み取り中（{{current}}/{{total}}）…"
@@ -628,17 +630,71 @@
       "contextSelectedBubble": "選択中の吹き出し",
       "contextCurrentPage": "現在のページ",
       "contextCurrentScript": "現在のスクリプト",
+      "contextVolumeOverview": "巻の概要",
       "empty": "まだメッセージがありません。質問を入力して始めましょう。",
       "inputPlaceholder": "質問を入力…",
       "send": "送信",
-      "action": {
-        "preparing": "提案を準備しています…",
-        "reviewTitle": "{{count}}件の翻訳提案（{{language}}）",
-        "reviewHint": "適用する前にテキストを確認・修正し、不要な提案は選択を外してください。",
-        "sourceLabel": "原文（{{language}}）",
-        "applyCount": "{{count}}件を適用",
-        "applied": "{{count}}件の翻訳を適用しました — 保存を忘れずに。",
-        "dismissed": "提案を破棄しました。"
+      "actions": {
+        "common": {
+          "preparing": "提案を準備しています…",
+          "applyCount": "{{count}}件を適用",
+          "dismissed": "提案を破棄しました。"
+        },
+        "translateMissing": {
+          "reviewTitle": "{{count}}件の翻訳提案（{{language}}）",
+          "reviewHint": "適用する前にテキストを確認・修正し、不要な提案は選択を外してください。",
+          "sourceLabel": "原文（{{language}}）",
+          "applied": "{{count}}件の翻訳を適用しました — 保存を忘れずに。"
+        },
+        "fixGlossaryUsage": {
+          "reviewTitle": "{{count}}件の用語集修正提案（{{language}}）",
+          "reviewHint": "適用する前にテキストを確認・修正し、不要な提案は選択を外してください。",
+          "termHint": "用語「{{term}}」→「{{translation}}」",
+          "applied": "{{count}}件の修正を適用しました — 保存を忘れずに。"
+        },
+        "fixOverflow": {
+          "reviewTitle": "{{count}}件の文字あふれ修正提案",
+          "reviewHint": "提案されたサイズ・フォントサイズを確認し、不要な提案は選択を外してください。",
+          "applied": "{{count}}件の吹き出しを調整しました — 保存を忘れずに。"
+        },
+        "assignCharacters": {
+          "reviewTitle": "{{count}}件のキャラクター割り当て提案",
+          "reviewHint": "割り当てを確認し、不要な提案は選択を外してください。",
+          "applied": "{{count}}件のキャラクター割り当てを適用しました — 保存を忘れずに。"
+        },
+        "styleSfx": {
+          "reviewTitle": "{{count}}件の効果音スタイル提案",
+          "reviewHint": "提案されたプリセット・回転角度を確認し、不要な提案は選択を外してください。",
+          "applied": "{{count}}件の効果音にスタイルを適用しました — 保存を忘れずに。"
+        },
+        "fixReadingOrder": {
+          "reviewTitle": "読み順の提案",
+          "reviewHint": "適用する前に提案された順序を確認してください。",
+          "accept": "この順序を適用",
+          "applied": "読み順を更新しました — 保存を忘れずに。"
+        },
+        "extractGlossary": {
+          "reviewTitle": "{{count}}件の新しい用語集候補",
+          "reviewHint": "追加する前に用語と訳語を確認・修正し、不要な提案は選択を外してください。",
+          "applied": "{{count}}件の用語集項目を追加しました。"
+        },
+        "suggestChapters": {
+          "reviewTitle": "{{count}}件の章分け提案",
+          "reviewHint": "提案された章分けを確認し、不要な章は選択を外してください。",
+          "rangeLabel": "{{from}} 〜 {{to}}",
+          "applied": "{{count}}件の章を作成しました。"
+        },
+        "suggestPageTypes": {
+          "reviewTitle": "{{count}}件のページ種別提案",
+          "reviewHint": "ページ名・位置のみに基づく確度の低い推測です — 内容を確認し、不要な提案は選択を外してください。",
+          "applied": "{{count}}件のページ種別を更新しました。"
+        },
+        "suggestTranslationNote": {
+          "reviewTitle": "翻訳メモの提案",
+          "reviewHint": "投稿する前にテキストを確認・調整してください。",
+          "postButton": "コメントとして投稿",
+          "applied": "メモをコメントとして投稿しました。"
+        }
       }
     },
     "cleanPage": {

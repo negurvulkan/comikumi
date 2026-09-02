@@ -5,6 +5,7 @@ import { api, type VolumeSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { pollExportJob, type ExportJobResult } from "../export/pollExportJob";
 import type { PdfXVersion } from "./ExportPanel";
+import { LoadingIndicator } from "./LoadingIndicator";
 
 interface Props {
   volumes: VolumeSummary[];
@@ -151,9 +152,12 @@ export function BatchExportQueueModal({ volumes, onClose }: Props) {
       ) : (
         <div className="text-list" style={{ flex: "0 0 auto", maxHeight: 320 }}>
           {queue.map((entry) => (
-            <div key={entry.volumeId} className="text-list-row" style={{ cursor: "default" }}>
+            <div key={entry.volumeId} className="text-list-row" style={{ cursor: "default", display: "flex", alignItems: "center", gap: 8 }}>
               <span className="text-list-type">{entry.bookFolderName}</span>
-              <span className="text-list-content">
+              <span className="text-list-content" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {entry.state === "running" && (
+                  <LoadingIndicator size="sm" progress={entry.total > 0 ? { current: entry.completed, total: entry.total } : null} />
+                )}
                 {t(`batchExportQueue.state.${entry.state}`)}
                 {entry.state === "running" && entry.total > 0 ? ` (${entry.completed}/${entry.total})` : ""}
                 {entry.error ? `: ${entry.error}` : ""}

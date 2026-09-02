@@ -357,6 +357,8 @@
   },
   "ocr": {
     "progress": {
+      "downloading-models": "Downloading detection model ({{current}} MB / {{total}} MB)…",
+      "downloading-models-unknown": "Downloading detection model ({{current}} MB)…",
       "loading-runtime": "Loading detection model…",
       "detecting": "Detecting speech bubbles…",
       "recognizing": "Reading text ({{current}}/{{total}})…"
@@ -651,17 +653,71 @@
       "contextSelectedBubble": "selected bubble",
       "contextCurrentPage": "current page",
       "contextCurrentScript": "current script",
+      "contextVolumeOverview": "volume overview",
       "empty": "No messages yet. Ask a question to get started.",
       "inputPlaceholder": "Ask something…",
       "send": "Send",
-      "action": {
-        "preparing": "Preparing a suggestion…",
-        "reviewTitle": "{{count}} translation suggestion(s) ({{language}})",
-        "reviewHint": "Review/correct the text and deselect any suggestions you don't want before applying.",
-        "sourceLabel": "Source ({{language}})",
-        "applyCount": "Apply {{count}}",
-        "applied": "{{count}} translation(s) applied — remember to save.",
-        "dismissed": "Suggestion dismissed."
+      "actions": {
+        "common": {
+          "preparing": "Preparing a suggestion…",
+          "applyCount": "Apply {{count}}",
+          "dismissed": "Suggestion dismissed."
+        },
+        "translateMissing": {
+          "reviewTitle": "{{count}} translation suggestion(s) ({{language}})",
+          "reviewHint": "Review/correct the text and deselect any suggestions you don't want before applying.",
+          "sourceLabel": "Source ({{language}})",
+          "applied": "{{count}} translation(s) applied — remember to save."
+        },
+        "fixGlossaryUsage": {
+          "reviewTitle": "{{count}} glossary-term correction(s) ({{language}})",
+          "reviewHint": "Review/correct the text and deselect any suggestions you don't want before applying.",
+          "termHint": "Term \"{{term}}\" → \"{{translation}}\"",
+          "applied": "{{count}} correction(s) applied — remember to save."
+        },
+        "fixOverflow": {
+          "reviewTitle": "{{count}} overflow-fix suggestion(s)",
+          "reviewHint": "Review the proposed sizes/font sizes and deselect any you don't want.",
+          "applied": "{{count}} bubble(s) resized — remember to save."
+        },
+        "assignCharacters": {
+          "reviewTitle": "{{count}} character-assignment suggestion(s)",
+          "reviewHint": "Review the assignments and deselect any you don't want.",
+          "applied": "{{count}} character assignment(s) applied — remember to save."
+        },
+        "styleSfx": {
+          "reviewTitle": "{{count}} SFX style suggestion(s)",
+          "reviewHint": "Review the proposed presets/rotations and deselect any you don't want.",
+          "applied": "{{count}} SFX bubble(s) styled — remember to save."
+        },
+        "fixReadingOrder": {
+          "reviewTitle": "Reading-order suggestion",
+          "reviewHint": "Review the proposed order before applying.",
+          "accept": "Apply order",
+          "applied": "Reading order updated — remember to save."
+        },
+        "extractGlossary": {
+          "reviewTitle": "{{count}} new glossary term(s) suggested",
+          "reviewHint": "Review/correct the term and translations before adding, and deselect any you don't want.",
+          "applied": "{{count}} glossary term(s) added."
+        },
+        "suggestChapters": {
+          "reviewTitle": "{{count}} chapter suggestion(s)",
+          "reviewHint": "Review the proposed breakdown and deselect any chapters you don't want.",
+          "rangeLabel": "{{from}} – {{to}}",
+          "applied": "{{count}} chapter(s) created."
+        },
+        "suggestPageTypes": {
+          "reviewTitle": "{{count}} page-type suggestion(s)",
+          "reviewHint": "A low-confidence guess from page name/position alone — please review and deselect any you don't want.",
+          "applied": "{{count}} page type(s) updated."
+        },
+        "suggestTranslationNote": {
+          "reviewTitle": "Translation note suggested",
+          "reviewHint": "Review/adjust the text before posting.",
+          "postButton": "Post as comment",
+          "applied": "Note posted as a comment."
+        }
       }
     },
     "cleanPage": {
@@ -1120,6 +1176,28 @@
     "close": "Close",
     "modeSideBySide": "Side-by-side",
     "modeOverlay": "Overlay (Slider)"
+  },
+  "workflow": {
+    "menuEntry": "Workflow status…",
+    "title": "Workflow Status",
+    "loading": "Loading workflow status…",
+    "noPages": "This volume has no pages yet.",
+    "columnPage": "Page",
+    "unassigned": "— unassigned —",
+    "conflict": "The workflow status was changed by someone else in the meantime — loaded the current version.",
+    "phase": {
+      "cleaning": "Cleaning",
+      "translation": "Translation",
+      "lettering": "Lettering",
+      "qc": "QC"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "review_requested": "Review requested",
+      "changes_requested": "Changes requested",
+      "approved": "Approved"
+    }
   },
   "admin": {
     "title": "Administration & Profile",

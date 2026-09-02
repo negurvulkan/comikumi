@@ -29,6 +29,8 @@ import { QaCheckModal } from "../editor/QaCheckModal";
 import { NewBlankPageDialog } from "../editor/NewBlankPageDialog";
 import { PageOrderConflictModal } from "../editor/PageOrderConflictModal";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
+import { LoadingIndicator } from "../editor/LoadingIndicator";
+import { AIPanel } from "../editor/AIPanel";
 import { ChapterManager } from "../editor/ChapterManager";
 import { ReadIcon, DragHandleIcon } from "../editor/Icons";
 import { useProject } from "../state/ProjectContext";
@@ -113,11 +115,55 @@ function PageCard({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+  // The thumbnail may need server-side generation on first request (see
+  // thumbnails.ts's getOrCreateThumbnail) — without a placeholder, the plain <img> has
+  // no width/height attrs, so it collapses to 0 height until it decodes, making the
+  // whole card look broken/empty rather than "loading" for that window. `display:
+  // contents` once loaded means this wrapper stops affecting layout at all — the <img>
+  // reverts to being a normal direct child of .card, unchanged from before this.
+  const [thumbLoaded, setThumbLoaded] = useState(false);
+  const thumbRef = useRef<HTMLImageElement>(null);
+  // A cached (browser HTTP cache, or already-generated on the server — see
+  // getOrCreateThumbnail above) image can finish loading synchronously as soon as the
+  // browser assigns `src`, before React has even attached the onLoad listener below —
+  // that "load" event fires into the void and thumbLoaded never flips, leaving the
+  // spinner stuck forever even though the image is sitting right there ready. Checking
+  // `.complete` once after mount catches exactly that race.
+  useEffect(() => {
+    if (thumbRef.current?.complete) setThumbLoaded(true);
+  }, []);
 
   return (
     <div ref={setNodeRef} style={style} className="card-wrap">
       <Link to={href} className="card">
-        <img src={api.pageThumbnailUrl(volumeId, page.page)} alt={page.page} loading="lazy" />
+        <div
+          style={{
+            position: "relative",
+            aspectRatio: thumbLoaded ? undefined : "2 / 3",
+            background: thumbLoaded ? undefined : "#111",
+            borderRadius: 4,
+          }}
+        >
+          {/* opacity, not display:none, while unloaded — a display:none image has no
+              layout geometry, so the browser's loading="lazy" IntersectionObserver never
+              sees it enter the viewport and the request never fires at all. Confirmed
+              live: cards in the initial viewport loaded fine, every card below the fold
+              stayed stuck on the spinner forever with zero network request ever made. */}
+          <img
+            ref={thumbRef}
+            src={api.pageThumbnailUrl(volumeId, page.page)}
+            alt={page.page}
+            className="fade-in-content"
+            loading="lazy"
+            onLoad={() => setThumbLoaded(true)}
+            style={{ opacity: thumbLoaded ? 1 : 0 }}
+          />
+          {!thumbLoaded && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <LoadingIndicator />
+            </div>
+          )}
+        </div>
         <div className="label">{page.page}</div>
         <div className="label" style={{ opacity: 0.75, fontSize: 11 }}>
           {t(`pageGrid.pageType_${pageType}`)}
@@ -229,6 +275,7 @@ export function PageGrid() {
   const [showPresets, setShowPresets] = useState(false);
   const [showVolumeReport, setShowVolumeReport] = useState(false);
   const [showQaCheck, setShowQaCheck] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
   const [showNewBlankPage, setShowNewBlankPage] = useState(false);
   const [insertPickerIndex, setInsertPickerIndex] = useState<number | null>(null);
   // Where the next upload/blank-page creation should be spliced into the order —
@@ -534,8 +581,31 @@ export function PageGrid() {
     await refreshPagesAndOrder();
   }
 
-  if (error) return <div className="error-banner">{error}</div>;
-  if (!pages) return <p>{t("pageGrid.loading")}</p>;
+  /** Volume-wide context for the AI panel's "include context" checkbox — a compact
+   * per-page summary (type + bubble count + per-language text coverage), NOT full
+   * dialogue transcripts, so it stays cheap even for a 100+ page volume while still
+   * answering coverage questions like "which pages have no text yet" or "which pages
+   * are missing English". Reuses api.getVolumeReport() (already used by
+   * VolumeReportModal.tsx for the same per-page layout data) rather than a new
+   * endpoint. Rebuilt on every question (see AIPanel.tsx's contextTextAsync doc
+   * comment), so it always reflects the current page/tagging state. */
+  async function buildVolumeContextText(): Promise<string> {
+    const report = await api.getVolumeReport(volumeId);
+    const lines = [`Band ${volumeId}: ${report.length} Seiten`];
+    for (const { page, layout } of report) {
+      const dialogueBubbles = layout.bubbles.filter((b) => !b.isEffect);
+      const type = pageMeta.pages[page]?.type ?? "story";
+      if (dialogueBubbles.length === 0) {
+        lines.push(`${page} (${type}): keine Sprechblasen`);
+        continue;
+      }
+      const perLanguage = languages
+        .map((l) => `${l.code}: ${dialogueBubbles.filter((b) => b.text[l.code]?.trim()).length}/${dialogueBubbles.length}`)
+        .join(", ");
+      lines.push(`${page} (${type}): ${dialogueBubbles.length} Sprechblase(n) — ${perLanguage}`);
+    }
+    return lines.join("\n");
+  }
 
   const menuGroups: MenuGroup[] = [
     {
@@ -578,8 +648,14 @@ export function PageGrid() {
         },
         { type: "separator" },
         { type: "action", label: t("pageGrid.menuManageChapters"), onClick: () => setShowChapterManager(true), disabled: !hasAtLeast("letterer") },
+        {
+          type: "action",
+          label: t("workflow.menuEntry"),
+          onClick: () => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/workflow`),
+        },
         { type: "action", label: t("pageGrid.menuVolumeReport"), onClick: () => setShowVolumeReport(true) },
         { type: "action", label: t("qaChecker.menuEntry"), onClick: () => setShowQaCheck(true) },
+        { type: "action", label: t("editor.toolStrip.aiAssistant"), onClick: () => setShowAIPanel(true) },
         {
           type: "action",
           label: t("reader.menuEntry"),
@@ -639,12 +715,13 @@ export function PageGrid() {
         <span className="canvas-titlebar-name">{t("pageGrid.titlebarPages")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
       </Link>
-      {(message || exportMsg || normalizeMsg) && (
+      {(busy || message || exportMsg || normalizeMsg) && (
         <div
           className="error-banner"
-          style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", margin: "10px 12px 0" }}
+          style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", margin: "10px 12px 0", display: "flex", alignItems: "center", gap: 8 }}
         >
-          {message ?? exportMsg ?? normalizeMsg}
+          {busy && <LoadingIndicator size="sm" />}
+          {message ?? exportMsg ?? normalizeMsg ?? (busy ? t("common.loading") : null)}
         </div>
       )}
       {showExportPanel && (
@@ -785,7 +862,16 @@ export function PageGrid() {
         </Modal>
       )}
       {orderConflict && <PageOrderConflictModal onKeepMine={resolveOrderConflictKeepMine} onReload={resolveOrderConflictReload} />}
-      <div className="page-scroll" style={{ padding: 16 }}>
+      {error ? (
+        <div className="error-banner">{error}</div>
+      ) : !pages ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, flex: "1 1 auto" }}>
+          <LoadingIndicator size="md" />
+          <p style={{ margin: 0, color: "var(--text-muted)" }}>{t("pageGrid.loading")}</p>
+        </div>
+      ) : (
+        <>
+      <div className="page-scroll fade-in" style={{ padding: 16 }}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={pages.map((p) => p.page)} strategy={rectSortingStrategy}>
             <div className="card-grid">
@@ -851,6 +937,28 @@ export function PageGrid() {
       <div className="canvas-statusbar">
         <span>{t("pageGrid.pagesCount", { count: pages.length })}</span>
       </div>
+      <AIPanel
+        open={showAIPanel}
+        onClose={() => setShowAIPanel(false)}
+        contextLabel={t("editor.aiPanel.contextVolumeOverview")}
+        contextTextAsync={buildVolumeContextText}
+        enableVolumeActions={{
+          volumeId,
+          pageNames: pages.map((p) => p.page),
+          pageMeta,
+          metaEtag,
+          onPageMetaSaved: (nextMeta, nextEtag) => {
+            setPageMeta(nextMeta);
+            setMetaEtag(nextEtag);
+          },
+          onPageMetaConflict: () => {
+            setMessage(t("pageGrid.metaConflict"));
+            refreshPagesAndOrder();
+          },
+        }}
+      />
+        </>
+      )}
     </div>
   );
 }

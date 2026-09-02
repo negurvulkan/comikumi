@@ -132,6 +132,13 @@ interface EditorState {
    * targets, see parseTranslateAction()'s doc comment). Just another local edit: marks
    * `dirty`, no server call — goes through the normal save() flow like anything else. */
   applyBubbleTextPatches: (patches: { bubbleId: string; language: string; text: string }[]) => void;
+  /** Applies a DIFFERENT field patch to each named EXISTING bubble as ONE undo step —
+   * the generic apply-side for the AI assistant's field-patch actions (fix overflow,
+   * assign characters, style SFX bubbles — see client/src/editor/aiActions/), which
+   * unlike applyBubbleTextPatches() above don't all touch the same field. A locked
+   * bubble is skipped entirely (same "AI suggestions never override an explicit user
+   * lock" rule as every other mutator here), as is an unknown bubbleId. */
+  applyBubblePatches: (patches: { bubbleId: string; patch: Partial<Bubble> }[]) => void;
   /** Toggles between the raw scan and the server's cached cleaned (text-removed)
    * version — see server/src/lib/inpainting.ts, CleanPageReviewPanel.tsx. One undo
    * step, marks `dirty`; the actual pixels never live in the layout JSON itself (just
@@ -587,6 +594,23 @@ export const useEditorStore = create<EditorState>((set, get) => {
           bubbles: layout.bubbles.map((b) => {
             const patch = byId.get(b.id);
             return patch ? { ...b, text: { ...b.text, [patch.language]: patch.text } } : b;
+          }),
+        },
+        dirty: true,
+      });
+    },
+
+    applyBubblePatches(patches) {
+      const layout = get().layout;
+      if (!layout || patches.length === 0) return;
+      pushHistory(true);
+      const byId = new Map(patches.map((p) => [p.bubbleId, p.patch]));
+      set({
+        layout: {
+          ...layout,
+          bubbles: layout.bubbles.map((b) => {
+            const patch = byId.get(b.id);
+            return patch && !b.locked ? { ...b, ...patch } : b;
           }),
         },
         dirty: true,

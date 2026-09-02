@@ -353,6 +353,8 @@
   },
   "ocr": {
     "progress": {
+      "downloading-models": "正在下载检测模型（{{current}} MB / {{total}} MB）…",
+      "downloading-models-unknown": "正在下载检测模型（{{current}} MB）…",
       "loading-runtime": "正在加载检测模型…",
       "detecting": "正在检测对话气泡…",
       "recognizing": "正在识别文字（{{current}}/{{total}}）…"
@@ -628,17 +630,71 @@
       "contextSelectedBubble": "选中的气泡",
       "contextCurrentPage": "当前页面",
       "contextCurrentScript": "当前脚本",
+      "contextVolumeOverview": "卷概览",
       "empty": "还没有消息。提出一个问题开始吧。",
       "inputPlaceholder": "输入问题…",
       "send": "发送",
-      "action": {
-        "preparing": "正在准备建议…",
-        "reviewTitle": "{{count}} 条翻译建议（{{language}}）",
-        "reviewHint": "应用前请检查/修改文本，并取消勾选不需要的建议。",
-        "sourceLabel": "原文（{{language}}）",
-        "applyCount": "应用 {{count}} 条",
-        "applied": "已应用 {{count}} 条翻译 — 别忘了保存。",
-        "dismissed": "已放弃建议。"
+      "actions": {
+        "common": {
+          "preparing": "正在准备建议…",
+          "applyCount": "应用 {{count}} 条",
+          "dismissed": "已放弃建议。"
+        },
+        "translateMissing": {
+          "reviewTitle": "{{count}} 条翻译建议（{{language}}）",
+          "reviewHint": "应用前请检查/修改文本，并取消勾选不需要的建议。",
+          "sourceLabel": "原文（{{language}}）",
+          "applied": "已应用 {{count}} 条翻译 — 别忘了保存。"
+        },
+        "fixGlossaryUsage": {
+          "reviewTitle": "{{count}} 条术语表修正建议（{{language}}）",
+          "reviewHint": "应用前请检查/修改文本，并取消勾选不需要的建议。",
+          "termHint": "术语「{{term}}」→「{{translation}}」",
+          "applied": "已应用 {{count}} 条修正 — 别忘了保存。"
+        },
+        "fixOverflow": {
+          "reviewTitle": "{{count}} 条文字溢出修复建议",
+          "reviewHint": "请检查建议的尺寸/字号，并取消勾选不需要的建议。",
+          "applied": "已调整 {{count}} 个气泡 — 别忘了保存。"
+        },
+        "assignCharacters": {
+          "reviewTitle": "{{count}} 条角色分配建议",
+          "reviewHint": "请检查分配结果，并取消勾选不需要的建议。",
+          "applied": "已应用 {{count}} 条角色分配 — 别忘了保存。"
+        },
+        "styleSfx": {
+          "reviewTitle": "{{count}} 条拟声词样式建议",
+          "reviewHint": "请检查建议的预设/旋转角度，并取消勾选不需要的建议。",
+          "applied": "已为 {{count}} 个拟声词设置样式 — 别忘了保存。"
+        },
+        "fixReadingOrder": {
+          "reviewTitle": "阅读顺序建议",
+          "reviewHint": "应用前请检查建议的顺序。",
+          "accept": "应用此顺序",
+          "applied": "已更新阅读顺序 — 别忘了保存。"
+        },
+        "extractGlossary": {
+          "reviewTitle": "建议了 {{count}} 个新术语表条目",
+          "reviewHint": "添加前请检查/修改术语和译文，并取消勾选不需要的建议。",
+          "applied": "已添加 {{count}} 个术语表条目。"
+        },
+        "suggestChapters": {
+          "reviewTitle": "{{count}} 条章节划分建议",
+          "reviewHint": "请检查建议的划分方案，并取消勾选不需要的章节。",
+          "rangeLabel": "{{from}} – {{to}}",
+          "applied": "已创建 {{count}} 个章节。"
+        },
+        "suggestPageTypes": {
+          "reviewTitle": "{{count}} 条页面类型建议",
+          "reviewHint": "这是仅根据页面名称/位置做出的低置信度推测 — 请检查并取消勾选不需要的建议。",
+          "applied": "已更新 {{count}} 个页面类型。"
+        },
+        "suggestTranslationNote": {
+          "reviewTitle": "已建议翻译备注",
+          "reviewHint": "发布前请检查/调整文本。",
+          "postButton": "作为评论发布",
+          "applied": "备注已作为评论发布。"
+        }
       }
     },
     "cleanPage": {

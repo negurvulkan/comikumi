@@ -31,6 +31,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [KI-Assistent](#ki-assistent)
 - [Skript-Editor & Skript-Sidebar](#skript-editor--skript-sidebar)
 - [Review-Kommentare](#review-kommentare)
+- [Workflow-Status](#workflow-status)
 - [Read/Review-Oberfläche](#readreview-oberfläche)
 - [Berichte](#berichte)
 - [Export & Import](#export--import)
@@ -961,26 +962,57 @@ reihenfolge und Panel-Ausschnitt helfen genauso beim reinen Lettern oder beim Sc
 ## KI-Assistent
 
 Einklappbare Chat-Seitenleiste (Werkzeugleisten-Symbol, gleiche Docking-Stelle wie
-Story Bible/Kontextansicht) im Seiten-Editor und im Skript-Editor. Der Chat-Verlauf
-ist rein clientseitig für die laufende Sitzung, wird serverseitig nicht gespeichert.
+Story Bible/Kontextansicht) im Seiten-Editor, im Skript-Editor und — für
+bandweite Aktionen — in der Seitenübersicht. Der Chat-Verlauf ist rein
+clientseitig für die laufende Sitzung, wird serverseitig nicht gespeichert.
 
-Größtenteils ein reiner Frage-Modus-Assistent, mit einer einzigen, eng begrenzten
-Ausnahme im Seiten-Editor: **fehlende Übersetzungen füllen**. Eine Anfrage wie
-"Übersetze alle fehlenden deutschen Blasen" beantwortet die KI — sofern auf der
-aktuellen Seite tatsächlich Blasen ohne Text in dieser Sprache existieren — mit
-einem Review-Panel (Quelltext neben jedem Vorschlag, Checkbox zum Annehmen/
-Bearbeiten/Ablehnen pro Zeile, dasselbe Muster wie beim Auto-Bubbles-Review) statt
-mit einer Chat-Nachricht — nichts wird auf die Seite geschrieben, bevor
-"Übernehmen" geklickt wird, und das Übernehmen selbst landet als ganz normale
-unsaved Änderung im Editor, die denselben Speichern-Button, dieselbe
-Rechteprüfung und dieselbe Konflikterkennung durchläuft wie manuell getippter
-Text. Das ist kein natives Tool-Calling des Modells — jeder Provider wird
+Über reinen Chat hinaus unterstützt der Assistent zehn eng begrenzte agentische
+Aktionen, alle nach demselben Muster: Eine passende Anfrage beantwortet die KI —
+sofern auf der aktuellen Seite/im Band tatsächlich etwas Passendes existiert —
+mit einem Review-Panel (Annehmen/Ablehnen pro Zeile, teils mit editierbarem Text)
+statt mit einer Chat-Nachricht — nichts wird geschrieben, bevor "Übernehmen"
+geklickt wird, und das Übernehmen selbst durchläuft denselben Speichern-Button,
+dieselbe Rechteprüfung und dieselbe Konflikterkennung wie eine manuelle
+Bearbeitung. Das ist kein natives Tool-Calling des Modells — jeder Provider wird
 stattdessen angewiesen, in einem bestimmten JSON-Format zu antworten, was
 identisch bei allen sechs Providern funktioniert (auch bei Codex, das aktuell
 kein Tool-Calling anbietet), ohne providerspezifische Extra-Anbindung. Jede
-andere Anfrage — alles, was nicht als "fehlende Übersetzungen füllen" erkannt
-wird — wird wie bisher als normaler Chat beantwortet. Weitere automatische
-Aktionen gibt es noch nicht.
+andere Anfrage wird wie bisher als normaler Chat beantwortet.
+
+Seitenbezogen (Panel im Seiten-Editor, nur die aktuelle Seite):
+
+- **Fehlende Übersetzungen füllen** — ergänzt Blasen, denen in einer
+  konfigurierten Sprache der Text fehlt, anhand einer anderen bereits
+  vorhandenen Sprache derselben Blase.
+- **Textüberlauf beheben** — für Blasen, deren aktueller Text selbst bei
+  minimaler Schriftgröße nicht in die Box passt: Vorschlag für eine größere
+  Box und/oder Schriftgröße.
+- **Charaktere zuweisen** — schlägt vor, welcher Projekt-Charakter eine noch
+  nicht zugewiesene Dialogzeile spricht.
+- **Soundeffekte stylen** — schlägt Preset und Drehung für Soundeffekt-Blasen
+  vor, die noch keinen Stil haben.
+- **Lesereihenfolge korrigieren** — prüft die aktuelle Lesereihenfolge der
+  Seite und schlägt eine korrigierte Abfolge vor (ein Alles-oder-Nichts-
+  Vorschlag, nicht pro Zeile, da eine Teil-Umsortierung keinen Sinn ergibt).
+- **Glossar-Begriffe extrahieren** — durchsucht die Dialogtexte der Seite nach
+  wiederkehrenden Namen/erfundenen Wörtern und schlägt neue Glossar-Einträge vor.
+- **Glossar-Verwendung korrigieren** — findet Blasen, die einen bereits
+  festgelegten Glossar-Begriff unübersetzt lassen, und schlägt eine korrigierte
+  Übersetzung vor.
+- **Übersetzungsnotiz vorschlagen** — formuliert einen Review-Kommentar (auf
+  Seitenebene oder an eine Blase gepinnt) zu einem Wortspiel, einer
+  Zweideutigkeit oder einem kulturellen Verweis, der Aufmerksamkeit verdient.
+
+Bandbezogen (ein zweites KI-Panel in der Seitenübersicht, Eintrag
+"KI-Assistent" im Seite-Menü; rein textbasiert — es werden keine Seitenbilder
+gesendet, da ein Band 100+ Seiten haben kann):
+
+- **Kapiteleinteilung vorschlagen** — schlägt Kapitelnamen und Seitenbereiche
+  anhand von Seitenbenennung/-reihenfolge vor.
+- **Seitentyp vorschlagen** — schlägt Cover-/Kapitel-Zwischenseiten-Tags für
+  Seiten vor, die noch auf dem Standard "Story" stehen, allein anhand von Name
+  und Position (in der UI ausdrücklich als unsichere Vermutung markiert, da
+  hier kein Seitenbild geprüft wird).
 
 - **Sechs austauschbare Provider**, pro Konto konfiguriert unter "Mein Konto"
   (`/account`, verlinkt im Header). Nur die tatsächlich konfigurierten Provider
@@ -1094,6 +1126,37 @@ bedeutet, plus Kommentar-Schreibrecht.
 - **Sidebar**: alle Kommentare des Bands (nicht nur der aktuellen Seite), filterbar nach
   offen/erledigt/"erwähnt mich", springt seitenübergreifend per `?comment=`-Deep-Link
   (derselbe Mechanismus wie die E-Mail-Links).
+
+## Workflow-Status
+
+Ein Produktionsboard pro Band ("Seite → Workflow-Status…" im Seitenübersicht-Menü) —
+für jede Seite ein **Bereinigung**-Status (seitenweit: die rekonstruierte Zeichnung
+wird von jeder Sprache gemeinsam genutzt) plus **Übersetzung**-, **Lettering**- und
+**QC**-Status je Projektsprache, jeweils mit optionaler Zuweisung. Beantwortet "wo
+steht Seite 12?", ohne das aus Chat oder Kommentaren erschließen zu müssen: *Bereinigung
+freigegeben, Übersetzung DE freigegeben, Lettering DE in Arbeit — zugewiesen an Hanjo,
+QC DE ausstehend.*
+
+- **Status-Werte**: Ausstehend → In Arbeit → Review angefragt → Änderungen nötig →
+  Freigegeben. Eine Seite/Phase ohne gesetzten Status gilt überall dort, wo sie
+  gelesen wird, als ausstehend — keine Initialisierung nötig für eine frisch
+  hinzugefügte Seite oder Sprache.
+- **Zuweisung**: jedes aktuelle Projekt-Mitglied, aus derselben nicht Admin-
+  beschränkten Mitgliederliste wie bei den @-Erwähnungen der Review-Kommentare (nicht
+  die Admin-only Mitglieder-/Rollenliste) — ein Übersetzer kann Lettering-Arbeit einem
+  Letterer zuweisen, ohne selbst Admin-Zugriff zu benötigen.
+- **Speicherung**: ein eigenständiges, pro Band gespeichertes JSON-Dokument
+  (`<Band>_workflow.json`, fester Suffix — internes Bookkeeping, kein
+  nutzerseitig umbenennbares Dokument, gleiche Konvention wie Seiten-Tagging/
+  Seitenreihenfolge), unabhängig vom Seiten-Layout und vom eigenen Dokument der
+  Review-Kommentare. Gleiches optimistisches Nebenläufigkeits-Verfahren (ETag/
+  If-Match) wie jedes andere Pro-Band-Dokument — ein veraltetes Speichern lädt die
+  aktuelle Version neu, statt die Änderung eines Teammitglieds stillschweigend zu
+  überschreiben.
+- **Berechtigungen**: jedes Projekt-Mitglied ab "Übersetzer" kann Status und
+  Zuweisung ändern — leichtgewichtige Koordinationsinfo, keine inhaltliche Änderung,
+  daher eine Stufe unter "Letterer", die die meisten inhaltsverändernden Aktionen
+  verlangen. Betrachter können das Board öffnen, aber nicht bearbeiten.
 
 ## Read/Review-Oberfläche
 

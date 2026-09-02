@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readSettings, type ActiveProject } from "./projectStore.js";
-import { pageOrderFileName, pageMetaFileName } from "./paths.js";
+import { pageOrderFileName, pageMetaFileName, workflowFileName } from "./paths.js";
 import { PageOrderDocumentSchema } from "../../../shared/src/pageOrder.js";
 import { EMPTY_PAGE_META_DOCUMENT, PageMetaDocumentSchema, type PageMetaDocument } from "../../../shared/src/pageMeta.js";
 
@@ -127,6 +127,10 @@ export function pageOrderFilePathFor(volume: VolumeInfo): string {
 
 export function pageMetaFilePathFor(volume: VolumeInfo): string {
   return path.join(volume.parentDir, pageMetaFileName(volume.bookFolderName));
+}
+
+export function workflowFilePathFor(volume: VolumeInfo): string {
+  return path.join(volume.parentDir, workflowFileName(volume.bookFolderName));
 }
 
 /** Reads the volume's saved page-tagging (type + chapter) document —

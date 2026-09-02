@@ -33,6 +33,9 @@ export function useCleanPageRun(volumeId: string, page: string) {
   const { t } = useTranslation();
   const [running, setRunning] = useState(false);
   const [progressMsg, setProgressMsg] = useState<string | null>(null);
+  /** See useAutoBubblesRun.ts's identical field for what this is and why null means
+   * "show an indeterminate spinner instead of a bar". */
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [pendingBoxes, setPendingBoxes] = useState<CleanBox[] | null>(null);
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
 
@@ -41,12 +44,19 @@ export function useCleanPageRun(volumeId: string, page: string) {
   async function start(imageBitmap: ImageBitmap) {
     setRunning(true);
     setProgressMsg(null);
+    setProgress(null);
     try {
       const regions = await runCleanupDetection(imageBitmap, (stage, current, total) => {
-        setProgressMsg(t(`ocr.progress.${stage}`, { current, total }));
+        // See useAutoBubblesRun.ts's identical branch for why "downloading-models"
+        // with total<=0 uses the "-unknown" key.
+        const key = stage === "downloading-models" && total <= 0 ? "ocr.progress.downloading-models-unknown" : `ocr.progress.${stage}`;
+        setProgressMsg(t(key, { current, total }));
+        setProgress(total > 0 ? { current, total } : null);
       });
+      setProgress(null);
       setPendingBoxes(regions.map((r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })));
     } catch (e) {
+      setProgress(null);
       setProgressMsg(translateApiError(e, t));
     } finally {
       setRunning(false);
@@ -92,5 +102,5 @@ export function useCleanPageRun(volumeId: string, page: string) {
     setPendingPreviewUrl(null);
   }
 
-  return { running, progressMsg, pendingBoxes, pendingPreviewUrl, start, confirmMask, cancelMask, cancelPreview };
+  return { running, progressMsg, progress, pendingBoxes, pendingPreviewUrl, start, confirmMask, cancelMask, cancelPreview };
 }

@@ -1196,6 +1196,140 @@ button.active {
   padding: 8px 12px;
   border-radius: 6px;
   margin-bottom: 12px;
+  cursor: pointer;
+}
+
+/* LoadingIndicator.tsx — the app's first animation (see its own doc comment: nothing
+   else in the codebase animates yet). A spinning ring for indeterminate waits (most
+   operations), a filled bar for the few with a real current/total. Sized in em so it
+   scales with whatever text it sits next to, rather than needing size variants for
+   every call site's font-size. */
+.loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.loading-indicator-sm {
+  font-size: 11px;
+}
+
+.loading-indicator-md {
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 0.16em solid var(--border);
+  border-top-color: var(--accent);
+  animation: loading-spin 0.7s linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-bar-track {
+  width: 6em;
+  height: 0.45em;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 0.2s ease-out;
+}
+
+/* Two related but distinct fade patterns, both part of making a loading→loaded switch
+   feel like a transition instead of a hard cut:
+   - .fade-in-content: put on an element whose OWN opacity is toggled via inline style
+     (e.g. a lazy thumbnail going from 0 to 1 once it loads) — just supplies the
+     transition, the opacity value itself stays in JS since it depends on load state.
+   - .fade-in: put on a whole container that's freshly mounted once loading finishes
+     (a grid, a canvas) — self-contained keyframe animation, nothing to toggle in JS,
+     since the element wasn't rendered at all a moment ago and now simply is. */
+.fade-in-content {
+  transition: opacity 0.25s ease-out;
+}
+
+.fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Workflow-status board (WorkflowBoard.tsx) — one row per page, one column per phase
+   (page-level Cleaning, plus Translation/Lettering/QC per project language). Each cell's
+   left border is colored by status so the whole board's progress reads at a glance
+   without needing to read every dropdown's text. */
+.workflow-table {
+  border-collapse: collapse;
+  min-width: 100%;
+}
+
+.workflow-table th,
+.workflow-table td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.workflow-table th {
+  background: var(--bg-elevated);
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+.workflow-cell {
+  border-left-width: 4px !important;
+}
+
+.workflow-cell select {
+  display: block;
+  width: 100%;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.workflow-cell select:last-child {
+  margin-bottom: 0;
+}
+
+.workflow-status-pending {
+  border-left-color: var(--border) !important;
+}
+
+.workflow-status-in_progress {
+  border-left-color: var(--accent) !important;
+}
+
+.workflow-status-review_requested {
+  border-left-color: #d9a441 !important;
+}
+
+.workflow-status-changes_requested {
+  border-left-color: var(--danger) !important;
+}
+
+.workflow-status-approved {
+  border-left-color: #2f9e5c !important;
 }
 
 /* Menu bar — Photoshop-style "Seite / Bearbeiten / Hilfe" row directly under the

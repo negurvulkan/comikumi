@@ -6,19 +6,80 @@ import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useResizableSidebarWidth } from "./useResizableSidebarWidth";
 import { SidebarResizeHandle } from "./SidebarResizeHandle";
-import type { Bubble } from "../../../shared/src/layoutSchema";
+import { LoadingIndicator } from "./LoadingIndicator";
+import type { Bubble, Panel } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
+import type { Character } from "../../../shared/src/characters";
+import type { LetteringPreset } from "../../../shared/src/presets";
+import type { PageMetaDocument } from "../../../shared/src/pageMeta";
+import type { ReadingDirection } from "./reportUtils";
 import { useEditorStore } from "../state/editorStore";
+import { extractJsonFence, ACTION_FENCE_PREFIX } from "./aiActions/actionUtils";
 import {
-  ACTION_FENCE_PREFIX,
+  TRANSLATE_MISSING_ACTION,
   buildTranslateActionPrompt,
   findMissingTranslationTargets,
   parseTranslateAction,
   type MissingTranslationTarget,
   type TranslateMissingBubblesAction,
 } from "./aiTranslateAction";
+import {
+  FIX_OVERFLOW_ACTION,
+  buildFixOverflowPrompt,
+  findOverflowTargets,
+  parseFixOverflowAction,
+  type OverflowTarget,
+  type FixOverflowAction,
+} from "./aiActions/fixOverflowAction";
+import {
+  ASSIGN_CHARACTERS_ACTION,
+  buildAssignCharactersPrompt,
+  findAssignCharacterTargets,
+  parseAssignCharactersAction,
+  type AssignCharacterTarget,
+  type AssignCharactersAction,
+} from "./aiActions/assignCharactersAction";
+import { STYLE_SFX_ACTION, buildStyleSfxPrompt, findStyleSfxTargets, parseStyleSfxAction, type StyleSfxTarget, type StyleSfxAction } from "./aiActions/styleSfxAction";
+import {
+  FIX_READING_ORDER_ACTION,
+  buildFixReadingOrderPrompt,
+  findReadingOrderTargets,
+  parseFixReadingOrderAction,
+  readingOrderPatches,
+  type ReadingOrderTarget,
+  type FixReadingOrderAction,
+} from "./aiActions/fixReadingOrderAction";
+import { EXTRACT_GLOSSARY_ACTION, buildExtractGlossaryPrompt, parseExtractGlossaryAction, type ExtractGlossaryAction } from "./aiActions/extractGlossaryAction";
+import {
+  FIX_GLOSSARY_USAGE_ACTION,
+  buildFixGlossaryUsagePrompt,
+  findGlossaryUsageTargets,
+  parseFixGlossaryUsageAction,
+  type GlossaryUsageTarget,
+  type FixGlossaryUsageAction,
+} from "./aiActions/fixGlossaryUsageAction";
+import { SUGGEST_CHAPTERS_ACTION, buildSuggestChaptersPrompt, parseSuggestChaptersAction, type SuggestChaptersAction } from "./aiActions/suggestChaptersAction";
+import {
+  SUGGEST_PAGE_TYPES_ACTION,
+  buildSuggestPageTypesPrompt,
+  findPageTypeCandidates,
+  parseSuggestPageTypesAction,
+  type SuggestPageTypesAction,
+} from "./aiActions/suggestPageTypesAction";
+import {
+  SUGGEST_TRANSLATION_NOTE_ACTION,
+  buildSuggestTranslationNotePrompt,
+  parseSuggestTranslationNoteAction,
+  type SuggestTranslationNoteAction,
+} from "./aiActions/suggestTranslationNoteAction";
 import { AiTranslateReviewPanel } from "./AiTranslateReviewPanel";
+import { AiBubblePatchReviewPanel, type BubblePatchRow } from "./AiBubblePatchReviewPanel";
+import { AiReadingOrderReviewPanel } from "./AiReadingOrderReviewPanel";
+import { AiExtractGlossaryReviewPanel } from "./AiExtractGlossaryReviewPanel";
+import { AiTranslationNoteReviewPanel } from "./AiTranslationNoteReviewPanel";
+import { AiSuggestChaptersReviewPanel } from "./AiSuggestChaptersReviewPanel";
+import { AiSuggestPageTypesReviewPanel } from "./AiSuggestPageTypesReviewPanel";
 
 interface Props {
   /** Always mounted (needed for the slide transition to animate) — same convention as
@@ -30,6 +91,15 @@ interface Props {
    * entirely when the host screen has no natural context to offer. */
   contextLabel?: string;
   contextText?: string;
+  /** Async counterpart to `contextText` — for context that isn't already sitting in
+   * memory and needs a fetch to build (e.g. PageGrid.tsx's whole-volume per-page text
+   * summary, via api.getVolumeReport()). Only invoked when the user has context enabled
+   * and actually sends a message (same "lazy, rebuilt on every question" idea as
+   * `contextRenderedImage` below), never eagerly on mount/open — a large volume's
+   * report is comparatively expensive to fetch. Appended after `contextText` when both
+   * are present. A fetch failure is swallowed (best-effort, same as the image context
+   * below) so a transient error doesn't block the whole question. */
+  contextTextAsync?: () => Promise<string>;
   /** Same-origin URL of the current page's image (e.g. `api.pageImageUrl(...)`) — sent
    * alongside `contextText` so the model can see silent/action panels that carry no
    * bubble text. This is the raw, un-lettered background scan — no bubbles/text baked
@@ -43,13 +113,42 @@ interface Props {
    * and actually sends a message, since rendering is comparatively expensive (loads
    * fonts/placed images). Omitted wherever `contextImageUrl` is omitted. */
   contextRenderedImage?: () => Promise<Blob>;
-  /** Present only on the page editor's mount (ScriptEditor.tsx omits it, so the
-   * feature is automatically inactive there — no bubbles to act on) — enables the
-   * assistant's one agentic action, "translate missing bubbles" (see
-   * aiTranslateAction.ts). Gated behind the same `includeContext` checkbox as
-   * `contextText`/`contextImageUrl`, since the target bubbleIds/source text sent to
-   * the model to make this work is itself page content, same privacy toggle. */
-  enableActions?: { bubbles: Bubble[]; languages: LanguageDef[]; glossary: GlossaryEntry[] };
+  /** Present only on the page editor's mount (ScriptEditor.tsx omits it, so every
+   * page-scoped action is automatically inactive there — no bubbles to act on) —
+   * enables the assistant's PAGE-scoped agentic actions: translate missing bubbles,
+   * fix bubble overflow, assign characters, style SFX bubbles, fix reading order,
+   * extract/fix glossary terms, suggest a translation note (see client/src/editor/
+   * aiActions/ and aiTranslateAction.ts). Gated behind the same `includeContext`
+   * checkbox as `contextText`/`contextImageUrl`, since the page content these actions
+   * need is itself the same privacy-toggled context. */
+  enableActions?: {
+    bubbles: Bubble[];
+    languages: LanguageDef[];
+    glossary: GlossaryEntry[];
+    characters: Character[];
+    presets: LetteringPreset[];
+    panels: Panel[];
+    activeLanguage: string;
+    readingDirection: ReadingDirection;
+    imageWidth: number;
+    imageHeight: number;
+    onGlossaryChange: (next: GlossaryEntry[]) => void;
+    onCommentPosted: (noteText: string, bubbleId?: string) => Promise<void>;
+  };
+  /** Present only on the pages-overview mount (PageGrid.tsx) — enables the assistant's
+   * VOLUME-scoped agentic actions: suggest a chapter breakdown, suggest page-type tags
+   * (see aiActions/suggestChaptersAction.ts/suggestPageTypesAction.ts). Deliberately a
+   * separate bundle from `enableActions` rather than folded into it — PageGrid.tsx has
+   * no bubble/layout data at all (see PageSummary), so a page-scoped action could never
+   * be eligible there anyway. */
+  enableVolumeActions?: {
+    volumeId: string;
+    pageNames: string[];
+    pageMeta: PageMetaDocument;
+    metaEtag: string | null;
+    onPageMetaSaved: (next: PageMetaDocument, nextEtag: string | null) => void;
+    onPageMetaConflict: () => void;
+  };
 }
 
 /** Downscales a blob to at most `maxDim` px on its longest edge and re-encodes it as a
@@ -78,13 +177,42 @@ async function fetchAndDownscaleToDataUrl(url: string, maxDim = 1280): Promise<s
 
 type ProviderId = "openai" | "codex" | "anthropic" | "google" | "openrouter" | "ollama";
 
+/** Every action's own `action` discriminator string mapped to its i18n namespace key
+ * (see locales/*.json's `editor.aiPanel.actions.<key>`) — kept in one place so the
+ * "applied" confirmation message can be looked up generically instead of re-switching
+ * on the action kind a second time. */
+const ACTION_I18N_KEY: Record<string, string> = {
+  [TRANSLATE_MISSING_ACTION]: "translateMissing",
+  [FIX_OVERFLOW_ACTION]: "fixOverflow",
+  [ASSIGN_CHARACTERS_ACTION]: "assignCharacters",
+  [STYLE_SFX_ACTION]: "styleSfx",
+  [FIX_READING_ORDER_ACTION]: "fixReadingOrder",
+  [EXTRACT_GLOSSARY_ACTION]: "extractGlossary",
+  [FIX_GLOSSARY_USAGE_ACTION]: "fixGlossaryUsage",
+  [SUGGEST_CHAPTERS_ACTION]: "suggestChapters",
+  [SUGGEST_PAGE_TYPES_ACTION]: "suggestPageTypes",
+  [SUGGEST_TRANSLATION_NOTE_ACTION]: "suggestTranslationNote",
+};
+
+type AnyAiAction =
+  | TranslateMissingBubblesAction
+  | FixOverflowAction
+  | AssignCharactersAction
+  | StyleSfxAction
+  | FixReadingOrderAction
+  | ExtractGlossaryAction
+  | FixGlossaryUsageAction
+  | SuggestChaptersAction
+  | SuggestPageTypesAction
+  | SuggestTranslationNoteAction;
+
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
-  /** Set once a completed assistant response parses as a valid translate-missing-
-   * bubbles action (see aiTranslateAction.ts's parseTranslateAction()) — when present,
-   * this message renders as a review panel instead of markdown text. */
-  action?: TranslateMissingBubblesAction;
+  /** Set once a completed assistant response parses as a valid action envelope (see
+   * parseAnyAction() below) — when present, this message renders as the matching
+   * review panel instead of markdown text. */
+  action?: AnyAiAction;
 }
 
 /** Markdown → HTML with raw-HTML passthrough disabled and only http(s) links allowed —
@@ -106,22 +234,49 @@ const safeMarked = new Marked({
 });
 
 /** Read-only-conversation AI assistant panel — same `.text-sidebar` scaffolding as
- * StoryBiblePanel.tsx, mountable identically from Editor.tsx and ScriptEditor.tsx.
- * Provider-agnostic: the server normalizes OpenAI/Codex into the same SSE wire format
- * (see server/src/routes/ai.ts), so this component never needs to know which one it's
- * talking to beyond the id the user picked. */
-export function AIPanel({ open, onClose, contextLabel, contextText, contextImageUrl, contextRenderedImage, enableActions }: Props) {
+ * StoryBiblePanel.tsx, mountable identically from Editor.tsx, ScriptEditor.tsx and
+ * PageGrid.tsx. Provider-agnostic: the server normalizes every provider into the same
+ * SSE wire format (see server/src/routes/ai.ts), so this component never needs to know
+ * which one it's talking to beyond the id the user picked. */
+export function AIPanel({ open, onClose, contextLabel, contextText, contextTextAsync, contextImageUrl, contextRenderedImage, enableActions, enableVolumeActions }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const resize = useResizableSidebarWidth();
 
-  // Recomputed whenever the host's bubbles/languages change (not on every render) —
-  // cheap (one page's worth of qaChecks), but no reason to redo it needlessly. Used
-  // both to build the prompt in handleSend() and to resolve source text/language for
-  // already-generated review panels at render time.
+  // Every action's eligibility scan, recomputed only when its own inputs change (not on
+  // every render) — cheap (one page's/volume's worth of scanning), but no reason to redo
+  // it needlessly. Each is used both to build its prompt fragment in handleSend() and to
+  // resolve context for already-generated review panels at render time.
   const missingTargets: MissingTranslationTarget[] = useMemo(
     () => (enableActions ? findMissingTranslationTargets(enableActions.bubbles, enableActions.languages) : []),
     [enableActions]
+  );
+  const overflowTargets: OverflowTarget[] = useMemo(
+    () =>
+      enableActions
+        ? findOverflowTargets(enableActions.bubbles, enableActions.languages, enableActions.presets, enableActions.imageWidth, enableActions.imageHeight)
+        : [],
+    [enableActions]
+  );
+  const assignCharacterTargets: AssignCharacterTarget[] = useMemo(
+    () => (enableActions ? findAssignCharacterTargets(enableActions.bubbles, enableActions.characters) : []),
+    [enableActions]
+  );
+  const styleSfxTargets: StyleSfxTarget[] = useMemo(() => (enableActions ? findStyleSfxTargets(enableActions.bubbles) : []), [enableActions]);
+  const readingOrderTargets: ReadingOrderTarget[] = useMemo(
+    () =>
+      enableActions
+        ? findReadingOrderTargets(enableActions.bubbles, enableActions.panels, enableActions.activeLanguage, enableActions.readingDirection)
+        : [],
+    [enableActions]
+  );
+  const glossaryUsageTargets: GlossaryUsageTarget[] = useMemo(
+    () => (enableActions ? findGlossaryUsageTargets(enableActions.bubbles, enableActions.languages, enableActions.glossary) : []),
+    [enableActions]
+  );
+  const pageTypeCandidates = useMemo(
+    () => (enableVolumeActions ? findPageTypeCandidates(enableVolumeActions.pageNames, enableVolumeActions.pageMeta) : []),
+    [enableVolumeActions]
   );
 
   const [providerStatus, setProviderStatus] = useState<Record<ProviderId, boolean> | null>(null);
@@ -169,6 +324,39 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
     [messages]
   );
 
+  /** Peeks the fenced JSON's `action` field and dispatches to the matching schema's own
+   * parser — every parser re-validates bubbleIds/languages/etc. against the current
+   * targets itself (see each aiActions/*.ts file), so this is just routing, not a
+   * second layer of validation. */
+  function parseAnyAction(rawText: string): AnyAiAction | null {
+    const peek = extractJsonFence(rawText) as { action?: string } | null;
+    if (!peek?.action) return null;
+    switch (peek.action) {
+      case TRANSLATE_MISSING_ACTION:
+        return parseTranslateAction(rawText, missingTargets);
+      case FIX_OVERFLOW_ACTION:
+        return parseFixOverflowAction(rawText, overflowTargets);
+      case ASSIGN_CHARACTERS_ACTION:
+        return enableActions ? parseAssignCharactersAction(rawText, assignCharacterTargets, enableActions.characters) : null;
+      case STYLE_SFX_ACTION:
+        return enableActions ? parseStyleSfxAction(rawText, styleSfxTargets, enableActions.presets) : null;
+      case FIX_READING_ORDER_ACTION:
+        return parseFixReadingOrderAction(rawText, readingOrderTargets);
+      case EXTRACT_GLOSSARY_ACTION:
+        return enableActions ? parseExtractGlossaryAction(rawText, enableActions.glossary) : null;
+      case FIX_GLOSSARY_USAGE_ACTION:
+        return parseFixGlossaryUsageAction(rawText, glossaryUsageTargets);
+      case SUGGEST_CHAPTERS_ACTION:
+        return enableVolumeActions ? parseSuggestChaptersAction(rawText, enableVolumeActions.pageNames) : null;
+      case SUGGEST_PAGE_TYPES_ACTION:
+        return enableVolumeActions ? parseSuggestPageTypesAction(rawText, pageTypeCandidates.map((c) => c.page)) : null;
+      case SUGGEST_TRANSLATION_NOTE_ACTION:
+        return parseSuggestTranslationNoteAction(rawText, enableActions?.bubbles.map((b) => b.id) ?? []);
+      default:
+        return null;
+    }
+  }
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!providerId || !input.trim() || busy) return;
@@ -192,12 +380,30 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
         // contextText already being optional.
         contextImage = await fetchAndDownscaleToDataUrl(contextImageUrl).catch(() => undefined);
       }
+      // Best-effort, same rationale as the image fetches above — a transient failure
+      // (e.g. a slow/failed api.getVolumeReport() call) shouldn't block the question,
+      // just fall back to answering without the volume summary.
+      const asyncContextText = includeContext && contextTextAsync ? await contextTextAsync().catch(() => undefined) : undefined;
       // Appended to contextText (not a separate system message — ChatRequestSchema
       // already accepts "system"-role entries, but AIPanel's own ChatMessage type
-      // doesn't need one just for this one string) — see aiTranslateAction.ts.
-      // "" when there's nothing missing, so a fully-translated page costs nothing extra.
-      const actionPrompt = enableActions ? buildTranslateActionPrompt(missingTargets, enableActions.languages, enableActions.glossary) : "";
-      const combinedContextText = [contextText, actionPrompt].filter(Boolean).join("\n\n") || undefined;
+      // doesn't need one just for this) — every eligible action contributes its own
+      // fragment (empty string when nothing's eligible, so an action with nothing to
+      // suggest costs nothing extra), concatenated into one combined instruction block.
+      const actionPrompt = [
+        enableActions ? buildTranslateActionPrompt(missingTargets, enableActions.languages, enableActions.glossary) : "",
+        enableActions ? buildFixOverflowPrompt(overflowTargets, enableActions.languages) : "",
+        enableActions ? buildAssignCharactersPrompt(assignCharacterTargets, enableActions.characters) : "",
+        enableActions ? buildStyleSfxPrompt(styleSfxTargets, enableActions.presets) : "",
+        enableActions ? buildFixReadingOrderPrompt(readingOrderTargets) : "",
+        enableActions ? buildExtractGlossaryPrompt(enableActions.bubbles, enableActions.languages, enableActions.glossary) : "",
+        enableActions ? buildFixGlossaryUsagePrompt(glossaryUsageTargets, enableActions.languages) : "",
+        enableActions ? buildSuggestTranslationNotePrompt(enableActions.bubbles) : "",
+        enableVolumeActions ? buildSuggestChaptersPrompt(enableVolumeActions.pageNames, enableVolumeActions.pageMeta) : "",
+        enableVolumeActions ? buildSuggestPageTypesPrompt(pageTypeCandidates, enableVolumeActions.pageNames.length) : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      const combinedContextText = [contextText, asyncContextText, actionPrompt].filter(Boolean).join("\n\n") || undefined;
       const res = await api.sendAIChat({
         providerId,
         messages: nextMessages,
@@ -209,7 +415,7 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
       let buffer = "";
       let assistantText = "";
       // null = not yet enough characters to tell; true/false once decided — see
-      // aiTranslateAction.ts's ACTION_FENCE_PREFIX doc comment for why this can't be
+      // aiActions/actionUtils.ts's ACTION_FENCE_PREFIX doc comment for why this can't be
       // known from the very first delta.
       let isActionResponse: boolean | null = null;
       for (;;) {
@@ -237,7 +443,7 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
               // While it's still ambiguous (fewer characters than the fence prefix) OR
               // confirmed NOT an action, show the growing text live as before. Once
               // confirmed an action, switch to a placeholder — never flash raw JSON.
-              const displayText = isActionResponse ? t("editor.aiPanel.action.preparing") : assistantText;
+              const displayText = isActionResponse ? t("editor.aiPanel.actions.common.preparing") : assistantText;
               setMessages((prev) => {
                 const next = [...prev];
                 next[next.length - 1] = { role: "assistant", content: displayText };
@@ -250,10 +456,10 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
         }
       }
       if (isActionResponse) {
-        // Re-validates against `missingTargets` rather than trusting the streamed
+        // Re-validates against the current targets rather than trusting the streamed
         // fence-prefix check alone — a model can still emit invalid JSON or a
-        // hallucinated bubbleId/language after a correct-looking opening fence.
-        const action = parseTranslateAction(assistantText, missingTargets);
+        // hallucinated id after a correct-looking opening fence (see parseAnyAction).
+        const action = parseAnyAction(assistantText);
         setMessages((prev) => {
           const next = [...prev];
           // Fall back to the raw text if it didn't actually validate — never leave the
@@ -269,11 +475,11 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
     }
   }
 
-  function applyActionMessage(index: number, patches: { bubbleId: string; language: string; text: string }[]) {
-    useEditorStore.getState().applyBubbleTextPatches(patches);
+  function setAppliedMessage(index: number, action: AnyAiAction, count?: number) {
     setMessages((prev) => {
       const next = [...prev];
-      next[index] = { role: "assistant", content: t("editor.aiPanel.action.applied", { count: patches.length }) };
+      const key = ACTION_I18N_KEY[action.action];
+      next[index] = { role: "assistant", content: t(`editor.aiPanel.actions.${key}.applied`, { count: count ?? 1 }) };
       return next;
     });
   }
@@ -281,9 +487,193 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
   function dismissActionMessage(index: number) {
     setMessages((prev) => {
       const next = [...prev];
-      next[index] = { role: "assistant", content: t("editor.aiPanel.action.dismissed") };
+      next[index] = { role: "assistant", content: t("editor.aiPanel.actions.common.dismissed") };
       return next;
     });
+  }
+
+  // Shared apply-side for translate_missing_bubbles/fix_glossary_usage — identical
+  // {bubbleId, language, text} patch shape, identical applyBubbleTextPatches() target.
+  function applyTextPatches(index: number, action: TranslateMissingBubblesAction | FixGlossaryUsageAction, patches: { bubbleId: string; language: string; text: string }[]) {
+    useEditorStore.getState().applyBubbleTextPatches(patches);
+    setAppliedMessage(index, action, patches.length);
+  }
+
+  // Shared apply-side for fix_bubble_overflow/assign_characters/style_sfx_bubbles —
+  // each maps its own patch fields onto Partial<Bubble>, then batches through the
+  // generic applyBubblePatches() store mutator as one undo step.
+  function applyFieldPatches(index: number, action: FixOverflowAction | AssignCharactersAction | StyleSfxAction, acceptedIds: string[]) {
+    if (!enableActions) return;
+    const accepted = new Set(acceptedIds);
+    let patches: { bubbleId: string; patch: Partial<Bubble> }[] = [];
+    if (action.action === FIX_OVERFLOW_ACTION) {
+      patches = action.patches
+        .filter((p) => accepted.has(`${p.bubbleId}:${p.language}`))
+        .map((p) => {
+          const bubble = enableActions.bubbles.find((b) => b.id === p.bubbleId);
+          return { bubbleId: p.bubbleId, patch: { width: p.width, height: p.height, fontSizeOverride: { ...bubble?.fontSizeOverride, [p.language]: p.fontSize } } };
+        });
+    } else if (action.action === ASSIGN_CHARACTERS_ACTION) {
+      patches = action.patches.filter((p) => accepted.has(p.bubbleId)).map((p) => ({ bubbleId: p.bubbleId, patch: { characterId: p.characterId } }));
+    } else {
+      patches = action.patches.filter((p) => accepted.has(p.bubbleId)).map((p) => ({ bubbleId: p.bubbleId, patch: { presetId: p.presetId, rotation: p.rotation } }));
+    }
+    useEditorStore.getState().applyBubblePatches(patches);
+    setAppliedMessage(index, action, patches.length);
+  }
+
+  function applyReadingOrder(index: number, action: FixReadingOrderAction) {
+    if (!enableActions) return;
+    const patches = readingOrderPatches(enableActions.bubbles, enableActions.panels, enableActions.activeLanguage, enableActions.readingDirection, action.order).map(
+      (p) => ({ bubbleId: p.bubbleId, patch: { readingOrderOverride: p.readingOrderOverride } })
+    );
+    useEditorStore.getState().applyBubblePatches(patches);
+    setAppliedMessage(index, action);
+  }
+
+  function applyGlossaryExtract(index: number, action: ExtractGlossaryAction, nextGlossary: GlossaryEntry[]) {
+    enableActions?.onGlossaryChange(nextGlossary);
+    setAppliedMessage(index, action, action.terms.length);
+  }
+
+  async function applyTranslationNote(index: number, action: SuggestTranslationNoteAction, noteText: string) {
+    if (!enableActions) return;
+    await enableActions.onCommentPosted(noteText, action.bubbleId);
+    setAppliedMessage(index, action);
+  }
+
+  function applyChapters(index: number, action: SuggestChaptersAction, nextMeta: PageMetaDocument, nextEtag: string | null) {
+    enableVolumeActions?.onPageMetaSaved(nextMeta, nextEtag);
+    setAppliedMessage(index, action, action.chapters.length);
+  }
+
+  function applyPageTypes(index: number, action: SuggestPageTypesAction, nextMeta: PageMetaDocument, nextEtag: string | null) {
+    enableVolumeActions?.onPageMetaSaved(nextMeta, nextEtag);
+    setAppliedMessage(index, action, action.patches.length);
+  }
+
+  function renderActionPanel(action: AnyAiAction, index: number) {
+    switch (action.action) {
+      case TRANSLATE_MISSING_ACTION:
+        return (
+          <AiTranslateReviewPanel
+            action={action}
+            targets={missingTargets}
+            onApply={(patches) => applyTextPatches(index, action, patches)}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        );
+      case FIX_GLOSSARY_USAGE_ACTION:
+        return (
+          <AiTranslateReviewPanel
+            action={action}
+            targets={glossaryUsageTargets}
+            onApply={(patches) => applyTextPatches(index, action, patches)}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        );
+      case FIX_OVERFLOW_ACTION: {
+        const rows: BubblePatchRow[] = action.patches.map((p) => {
+          const target = overflowTargets.find((t2) => t2.bubbleId === p.bubbleId && t2.language === p.language);
+          return {
+            id: `${p.bubbleId}:${p.language}`,
+            bubbleText: target?.text ?? "",
+            summary: `${Math.round(target?.width ?? 0)}×${Math.round(target?.height ?? 0)}px @ ${Math.round(target?.fontSize ?? 0)}px → ${Math.round(p.width)}×${Math.round(p.height)}px @ ${Math.round(p.fontSize)}px`,
+            note: p.note,
+          };
+        });
+        return (
+          <AiBubblePatchReviewPanel
+            titleKey="editor.aiPanel.actions.fixOverflow.reviewTitle"
+            hintKey="editor.aiPanel.actions.fixOverflow.reviewHint"
+            rows={rows}
+            onApply={(ids) => applyFieldPatches(index, action, ids)}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        );
+      }
+      case ASSIGN_CHARACTERS_ACTION: {
+        const rows: BubblePatchRow[] = action.patches.map((p) => {
+          const target = assignCharacterTargets.find((t2) => t2.bubbleId === p.bubbleId);
+          const character = enableActions?.characters.find((c) => c.id === p.characterId);
+          return { id: p.bubbleId, bubbleText: target?.text ?? "", summary: `→ ${character?.name ?? p.characterId}`, note: p.note };
+        });
+        return (
+          <AiBubblePatchReviewPanel
+            titleKey="editor.aiPanel.actions.assignCharacters.reviewTitle"
+            hintKey="editor.aiPanel.actions.assignCharacters.reviewHint"
+            rows={rows}
+            onApply={(ids) => applyFieldPatches(index, action, ids)}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        );
+      }
+      case STYLE_SFX_ACTION: {
+        const rows: BubblePatchRow[] = action.patches.map((p) => {
+          const target = styleSfxTargets.find((t2) => t2.bubbleId === p.bubbleId);
+          const preset = enableActions?.presets.find((pr) => pr.id === p.presetId);
+          return { id: p.bubbleId, bubbleText: target?.text ?? "", summary: `${preset?.name ?? p.presetId}, ${p.rotation}°`, note: p.note };
+        });
+        return (
+          <AiBubblePatchReviewPanel
+            titleKey="editor.aiPanel.actions.styleSfx.reviewTitle"
+            hintKey="editor.aiPanel.actions.styleSfx.reviewHint"
+            rows={rows}
+            onApply={(ids) => applyFieldPatches(index, action, ids)}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        );
+      }
+      case FIX_READING_ORDER_ACTION:
+        return (
+          <AiReadingOrderReviewPanel
+            action={action}
+            targets={readingOrderTargets}
+            onApply={() => applyReadingOrder(index, action)}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        );
+      case EXTRACT_GLOSSARY_ACTION:
+        return (
+          <AiExtractGlossaryReviewPanel
+            action={action}
+            languages={enableActions?.languages ?? []}
+            onApply={(next) => applyGlossaryExtract(index, action, next)}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        );
+      case SUGGEST_TRANSLATION_NOTE_ACTION:
+        return (
+          <AiTranslationNoteReviewPanel action={action} onApply={(text) => applyTranslationNote(index, action, text)} onDismiss={() => dismissActionMessage(index)} />
+        );
+      case SUGGEST_CHAPTERS_ACTION:
+        return enableVolumeActions ? (
+          <AiSuggestChaptersReviewPanel
+            action={action}
+            volumeId={enableVolumeActions.volumeId}
+            pageNames={enableVolumeActions.pageNames}
+            pageMeta={enableVolumeActions.pageMeta}
+            metaEtag={enableVolumeActions.metaEtag}
+            onSaved={(nextMeta, nextEtag) => applyChapters(index, action, nextMeta, nextEtag)}
+            onConflict={() => enableVolumeActions.onPageMetaConflict()}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        ) : null;
+      case SUGGEST_PAGE_TYPES_ACTION:
+        return enableVolumeActions ? (
+          <AiSuggestPageTypesReviewPanel
+            action={action}
+            volumeId={enableVolumeActions.volumeId}
+            pageMeta={enableVolumeActions.pageMeta}
+            metaEtag={enableVolumeActions.metaEtag}
+            onSaved={(nextMeta, nextEtag) => applyPageTypes(index, action, nextMeta, nextEtag)}
+            onConflict={() => enableVolumeActions.onPageMetaConflict()}
+            onDismiss={() => dismissActionMessage(index)}
+          />
+        ) : null;
+      default:
+        return null;
+    }
   }
 
   return (
@@ -321,7 +711,7 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
             {providerStatus?.ollama && <option value="ollama">Ollama</option>}
           </select>
 
-          {contextText !== undefined && (
+          {(contextText !== undefined || contextTextAsync) && (
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
               <input type="checkbox" checked={includeContext} onChange={(e) => setIncludeContext(e.target.checked)} />
               {t("editor.aiPanel.includeContext", { label: contextLabel ?? t("editor.aiPanel.defaultContextLabel") })}
@@ -343,13 +733,15 @@ export function AIPanel({ open, onClose, contextLabel, contextText, contextImage
                   {m.content}
                 </p>
               ) : m.action ? (
-                <AiTranslateReviewPanel
-                  key={i}
-                  action={m.action}
-                  targets={missingTargets}
-                  onApply={(patches) => applyActionMessage(i, patches)}
-                  onDismiss={() => dismissActionMessage(i)}
-                />
+                <div key={i}>{renderActionPanel(m.action, i)}</div>
+              ) : i === renderedMessages.length - 1 && busy && !m.content ? (
+                // The assistant message is inserted with empty content the instant
+                // Send fires (see handleSend), before the fetch even starts — without
+                // this, that gap (page-image rendering + time-to-first-token) shows a
+                // literally empty div with nothing to indicate anything is happening.
+                <div key={i} style={{ margin: 0 }}>
+                  <LoadingIndicator size="sm" />
+                </div>
               ) : (
                 // eslint-disable-next-line react/no-danger
                 <div key={i} style={{ margin: 0 }} dangerouslySetInnerHTML={{ __html: m.html ?? "" }} />

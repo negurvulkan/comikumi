@@ -54,6 +54,7 @@ const router = createHashRouter([
           { path: "volumes/:volumeId", lazy: () => import("./routes/PageGrid").then((m) => ({ Component: m.PageGrid })) },
           { path: "volumes/:volumeId/script", lazy: () => import("./routes/ScriptEditor").then((m) => ({ Component: m.ScriptEditor })) },
           { path: "volumes/:volumeId/exports", lazy: () => import("./routes/ExportViewer").then((m) => ({ Component: m.ExportViewer })) },
+          { path: "volumes/:volumeId/workflow", lazy: () => import("./routes/WorkflowBoard").then((m) => ({ Component: m.WorkflowBoard })) },
           { path: "volumes/:volumeId/pages/:page", lazy: () => import("./routes/Editor").then((m) => ({ Component: m.Editor })) },
           { path: "volumes/:volumeId/read/:page", lazy: () => import("./routes/Reader").then((m) => ({ Component: m.Reader })) },
         ],

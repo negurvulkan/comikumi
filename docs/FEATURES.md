@@ -31,6 +31,7 @@ snapshot — please keep it in sync with larger changes.
 - [AI Assistant](#ai-assistant)
 - [Script Editor & Script Sidebar](#script-editor--script-sidebar)
 - [Review Comments](#review-comments)
+- [Workflow Status](#workflow-status)
 - [Read/Review Interface](#readreview-interface)
 - [Reports](#reports)
 - [Export & Import](#export--import)
@@ -940,24 +941,54 @@ reading order, and panel crop help just as much with pure lettering or writing:
 ## AI Assistant
 
 A collapsible chat sidebar (toolbar icon, same docking spot as Story Bible/
-Context View) in the page editor and the script editor. The chat history is
-purely client-side for the current session, not stored server-side.
+Context View) in the page editor, the script editor, and — for volume-wide
+actions — the pages overview screen. The chat history is purely client-side
+for the current session, not stored server-side.
 
-Mostly a plain ask-only assistant, with one narrow exception in the page
-editor: **translating missing bubbles**. Ask something like "translate all
-missing German bubbles" and, if the current page actually has bubbles
-missing text in that language, the assistant replies with a review panel
-(source text next to each suggestion, per-row accept/edit/reject checkboxes,
-same pattern as the Auto-Bubbles review step) instead of a chat message —
-nothing is written to the page until "Apply" is clicked, and applying stages
-the change as a normal unsaved edit, going through the exact same save
-button, permission check, and conflict detection as typing the text by hand.
-This isn't the model's native tool-calling — every provider is asked to
-reply with a specific JSON format instead, which works identically across
-all six providers (including Codex, which has no tool-calling available
-today) without provider-specific wiring. Every other request — anything not
-recognized as a translate-missing-bubbles ask — is answered as plain chat,
-same as before. No other automatic action exists yet.
+Beyond plain chat, the assistant supports ten narrowly-scoped agentic
+actions, all following the same shape: ask something matching one of them
+and, if the current page/volume actually has anything eligible, the
+assistant replies with a review panel (per-item accept/reject, some with
+inline text editing) instead of a chat message — nothing is written until
+"Apply" is clicked, and applying stages the change through the app's
+existing save button, permission check, and conflict detection exactly like
+a manual edit. This isn't the model's native tool-calling — every provider
+is asked to reply with a specific JSON format instead, which works
+identically across all six providers (including Codex, which has no
+tool-calling available today) without provider-specific wiring. Any other
+request is answered as plain chat, same as before.
+
+Page-scoped (page editor's panel, current page only):
+
+- **Translate missing bubbles** — fills bubbles missing text in a configured
+  language, based on another language already present on the same bubble.
+- **Fix bubble overflow** — for bubbles whose current text still doesn't fit
+  even at the minimum font size, proposes a larger box size and/or font size.
+- **Assign characters** — suggests which project character said which
+  not-yet-assigned line of dialogue.
+- **Style SFX bubbles** — proposes a lettering preset and rotation for
+  sound-effect bubbles that don't have a style yet.
+- **Fix reading order** — reviews the page's current bubble reading order
+  and proposes a corrected sequence (one all-or-nothing suggestion, not
+  per-row, since a partial reorder isn't meaningful).
+- **Extract glossary terms** — scans the page's dialogue for recurring
+  names/invented words worth glossing and proposes new glossary entries.
+- **Fix glossary usage** — finds bubbles that left an approved glossary term
+  untranslated and proposes a corrected translation.
+- **Suggest a translation note** — drafts a review comment (page-level, or
+  pinned to a bubble) flagging a pun, ambiguity, or cultural reference worth
+  a translator's attention.
+
+Volume-scoped (a second AI panel on the pages overview screen, "AI
+Assistant" in the page menu; text-only — no page images are sent, since a
+whole volume can be 100+ pages):
+
+- **Suggest a chapter breakdown** — proposes chapter names and page ranges
+  from page naming/order.
+- **Suggest page types** — proposes cover/chapter-interstitial tags for
+  pages still at the default "story" type, from name and position alone
+  (explicitly flagged in the UI as a low-confidence guess, since no page
+  image is examined here).
 
 - **Six interchangeable providers**, configured per account under "My Account"
   (`/account`, linked in the header). Only the providers actually configured
@@ -1072,6 +1103,36 @@ comment-write permission.
 - **Sidebar**: all comments in the volume (not just the current page),
   filterable by open/resolved/"mentions me", jumps across pages via a
   `?comment=` deep link (same mechanism as the email links).
+
+## Workflow Status
+
+A per-volume production board ("Page → Workflow status…" in the page-overview
+menu) — for each page, a **Cleaning** status (page-level: the reconstructed
+artwork is shared by every language) plus **Translation**, **Lettering**, and
+**QC** status for each project language, each with an optional assignee.
+Answers "where does page 12 stand?" without inferring it from chat or
+comments: *Cleaning approved, Translation DE approved, Lettering DE in
+progress — assigned to Hanjo, QC DE pending.*
+
+- **Statuses**: pending → in progress → review requested → changes requested
+  → approved. A page/phase with no status set yet is treated as pending
+  everywhere this is read — no initialization step needed for a freshly added
+  page or language.
+- **Assignee**: any current project member, picked from the same
+  non-admin-restricted member list Review Comments' @-mentions use (not the
+  admin-only member/role list) — a translator can assign lettering work to a
+  letterer without needing admin access themselves.
+- **Storage**: a standalone per-volume JSON document
+  (`<volume>_workflow.json`, fixed suffix — internal bookkeeping, not a
+  user-facing renameable document, same convention as page tagging/page
+  order), independent of the page layout and of Review Comments' own
+  document. Same optimistic-concurrency (ETag/If-Match) save as every other
+  per-volume document — a stale save reloads the current version instead of
+  silently overwriting a teammate's update.
+- **Permissions**: any project member from "translator" up can update status
+  and assignee — lightweight coordination info, not a content change, so the
+  bar sits one step below the "letterer" role most content-mutating actions
+  require. Viewers can open the board but not edit it.
 
 ## Read/Review Interface
 

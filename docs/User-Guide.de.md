@@ -483,12 +483,18 @@ Ollama-Server).
 
 Größtenteils beantwortet der Assistent einfach Fragen zur aktuellen Seite
 (optional inklusive Seitenbild als Kontext — Checkbox "Aktuelle Seite
-einbeziehen"). Eine besondere Fähigkeit: tippe z. B. **"Übersetze alle
-fehlenden deutschen Blasen"** — findet die KI auf der aktuellen Seite
-Blasen ohne deutschen Text, antwortet sie mit einem Review-Panel
-(Quelltext neben jedem Vorschlag, einzeln annehmbar/bearbeitbar/ablehnbar)
-statt mit einer Chat-Nachricht. Wie überall: nichts wird übernommen, bevor
-du aktiv bestätigst.
+einbeziehen"). Zusätzlich versteht er zehn konkrete Anfragen — z. B.
+**"Übersetze alle fehlenden deutschen Blasen"**, "Behebe die Blasen mit
+Textüberlauf", "Weise diesen Zeilen Charaktere zu", "Style die
+Soundeffekt-Blasen", "Prüfe die Lesereihenfolge", "Schlage Glossar-Begriffe
+für diese Seite vor", "Korrigiere die Glossar-Verwendung hier" oder
+"Schlage eine Übersetzungsnotiz vor" — findet die KI auf der aktuellen
+Seite tatsächlich etwas Passendes, antwortet sie mit einem Review-Panel
+(pro Zeile annehmbar/bearbeitbar/ablehnbar) statt mit einer Chat-Nachricht.
+Aus der Seitenübersicht heraus versteht ein zweites KI-Panel zusätzlich
+"Schlage eine Kapiteleinteilung vor" und "Schlage Seitentypen vor" für den
+ganzen Band. Wie überall: nichts wird übernommen, bevor du aktiv
+bestätigst.
 
 ## 10. Mehrsprachig arbeiten
 

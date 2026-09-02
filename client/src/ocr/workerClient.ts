@@ -1,6 +1,33 @@
 import type { DetectedRegion, RunRequest, WorkerMessage, WorkerProgressStage } from "./types";
 import { ensureDetectorLoaded, ensureOcrOnnxLoaded } from "./modelLoader";
 
+/** Combines byte-progress from N concurrent model downloads (detector + OCR encoder,
+ * fetched in parallel via Promise.all) into a single "downloading-models" progress
+ * report — reporting each download's own onProgress straight through would have the
+ * two callbacks race/overwrite each other's current/total in the shared progressMsg
+ * state (useAutoBubblesRun.ts). MB, not raw bytes: the existing `ocr.progress.*` i18n
+ * strings interpolate `{{current}}/{{total}}` directly, and nobody wants to read
+ * "104857600/209715200 downloaded". `total` is 0 (not, say, NaN) whenever ANY tracked
+ * download's size is unknown — the rendering side (LoadingIndicator) already treats
+ * total<=0 as "unknown", so the bar degrades to an indeterminate spinner instead of a
+ * wrong/jumpy percentage rather than needing its own separate "some totals missing"
+ * branch here. */
+function combinedDownloadProgress(
+  count: number,
+  onProgress: (stage: WorkerProgressStage, current: number, total: number) => void
+): (index: number) => (loadedBytes: number, totalBytes: number | null) => void {
+  const loaded = new Array<number>(count).fill(0);
+  const total = new Array<number | null>(count).fill(null);
+  const toMb = (bytes: number) => Math.round((bytes / (1024 * 1024)) * 10) / 10;
+  return (index: number) => (loadedBytes: number, totalBytes: number | null) => {
+    loaded[index] = loadedBytes;
+    total[index] = totalBytes;
+    const sumLoaded = loaded.reduce((a, b) => a + b, 0);
+    const sumTotal = total.some((t) => t === null) ? 0 : (total as number[]).reduce((a, b) => a + b, 0);
+    onProgress("downloading-models", toMb(sumLoaded), toMb(sumTotal));
+  };
+}
+
 /** Wraps worker.ts's raw postMessage/onmessage protocol in a Promise, matching
  * useExportRun.ts's plain async-function call shape so the busy/progress hook
  * (useAutoBubblesRun.ts) can just `await` it like any other async operation. A fresh
@@ -12,7 +39,11 @@ export async function runAutoBubbles(
   imageBitmap: ImageBitmap,
   onProgress?: (stage: WorkerProgressStage, current: number, total: number) => void
 ): Promise<DetectedRegion[]> {
-  const [{ detector }, { encoder, decoder }] = await Promise.all([ensureDetectorLoaded(), ensureOcrOnnxLoaded()]);
+  const trackProgress = onProgress && combinedDownloadProgress(2, onProgress);
+  const [{ detector }, { encoder, decoder }] = await Promise.all([
+    ensureDetectorLoaded(trackProgress?.(0)),
+    ensureOcrOnnxLoaded(trackProgress?.(1)),
+  ]);
 
   const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
   try {
@@ -53,7 +84,8 @@ export async function runCleanupDetection(
   imageBitmap: ImageBitmap,
   onProgress?: (stage: WorkerProgressStage, current: number, total: number) => void
 ): Promise<DetectedRegion[]> {
-  const { detector } = await ensureDetectorLoaded();
+  const trackProgress = onProgress && combinedDownloadProgress(1, onProgress);
+  const { detector } = await ensureDetectorLoaded(trackProgress?.(0));
 
   const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
   try {

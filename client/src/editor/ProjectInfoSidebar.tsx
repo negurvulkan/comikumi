@@ -2,13 +2,16 @@ import { useTranslation } from "react-i18next";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { VolumeSummary } from "../api/client";
 import { api } from "../api/client";
+import { LoadingIndicator } from "./LoadingIndicator";
 import { BookIcon, PageIcon, PanelToolIcon, BubbleToolIcon } from "./Icons";
 
 interface Props {
   name: string;
   description: string;
   coverImagePath: string;
-  volumes: VolumeSummary[];
+  // null while the volume list is still loading — showing zeroed-out stats in that
+  // window would read as real (empty) data rather than "not loaded yet".
+  volumes: VolumeSummary[] | null;
   languages: LanguageDef[];
 }
 
@@ -21,11 +24,11 @@ interface Props {
 export function ProjectInfoSidebar({ name, description, coverImagePath, volumes, languages }: Props) {
   const { t } = useTranslation();
 
-  const pageCount = volumes.reduce((sum, v) => sum + v.pageCount, 0);
-  const panelCount = volumes.reduce((sum, v) => sum + v.panelCount, 0);
-  const bubbleCount = volumes.reduce((sum, v) => sum + v.bubbleCount, 0);
+  const pageCount = volumes?.reduce((sum, v) => sum + v.pageCount, 0) ?? 0;
+  const panelCount = volumes?.reduce((sum, v) => sum + v.panelCount, 0) ?? 0;
+  const bubbleCount = volumes?.reduce((sum, v) => sum + v.bubbleCount, 0) ?? 0;
   const bubbleCountByLanguage: Record<string, number> = {};
-  for (const v of volumes) {
+  for (const v of volumes ?? []) {
     for (const [code, count] of Object.entries(v.bubbleCountByLanguage)) {
       bubbleCountByLanguage[code] = (bubbleCountByLanguage[code] ?? 0) + count;
     }
@@ -37,42 +40,49 @@ export function ProjectInfoSidebar({ name, description, coverImagePath, volumes,
       <p className="project-info-name">{name}</p>
       {description.trim() && <p className="project-info-description">{description}</p>}
 
-      <div className="project-stats-list">
-        <div className="project-stat-row" title={t("volumeList.statVolumesTooltip")}>
-          <BookIcon />
-          <span className="project-stat-value">{volumes.length}</span>
-          <span>{t("volumeList.statVolumes")}</span>
+      {volumes === null ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-muted)" }}>
+          <LoadingIndicator size="sm" />
+          {t("volumeList.loading")}
         </div>
-        <div className="project-stat-row" title={t("volumeList.statPagesTooltip")}>
-          <PageIcon />
-          <span className="project-stat-value">{pageCount}</span>
-          <span>{t("volumeList.statPages")}</span>
-        </div>
-        <div className="project-stat-row" title={t("volumeList.statPanelsTooltip")}>
-          <PanelToolIcon />
-          <span className="project-stat-value">{panelCount}</span>
-          <span>{t("volumeList.statPanels")}</span>
-        </div>
-        <div className="project-stat-row" title={t("volumeList.statBubblesTooltip")}>
-          <BubbleToolIcon />
-          <span className="project-stat-value">{bubbleCount}</span>
-          <span>{t("volumeList.statBubbles")}</span>
-        </div>
-        {languages.length > 0 && (
-          <div className="project-stat-lang-list">
-            {languages.map((l) => (
-              <div
-                key={l.code}
-                className="project-stat-lang-row"
-                title={t("volumeList.statBubblesByLanguageTooltip", { language: l.label })}
-              >
-                <span className="project-stat-lang-code">{l.code.toUpperCase()}</span>
-                <span className="project-stat-value">{bubbleCountByLanguage[l.code] ?? 0}</span>
-              </div>
-            ))}
+      ) : (
+        <div className="project-stats-list">
+          <div className="project-stat-row" title={t("volumeList.statVolumesTooltip")}>
+            <BookIcon />
+            <span className="project-stat-value">{volumes.length}</span>
+            <span>{t("volumeList.statVolumes")}</span>
           </div>
-        )}
-      </div>
+          <div className="project-stat-row" title={t("volumeList.statPagesTooltip")}>
+            <PageIcon />
+            <span className="project-stat-value">{pageCount}</span>
+            <span>{t("volumeList.statPages")}</span>
+          </div>
+          <div className="project-stat-row" title={t("volumeList.statPanelsTooltip")}>
+            <PanelToolIcon />
+            <span className="project-stat-value">{panelCount}</span>
+            <span>{t("volumeList.statPanels")}</span>
+          </div>
+          <div className="project-stat-row" title={t("volumeList.statBubblesTooltip")}>
+            <BubbleToolIcon />
+            <span className="project-stat-value">{bubbleCount}</span>
+            <span>{t("volumeList.statBubbles")}</span>
+          </div>
+          {languages.length > 0 && (
+            <div className="project-stat-lang-list">
+              {languages.map((l) => (
+                <div
+                  key={l.code}
+                  className="project-stat-lang-row"
+                  title={t("volumeList.statBubblesByLanguageTooltip", { language: l.label })}
+                >
+                  <span className="project-stat-lang-code">{l.code.toUpperCase()}</span>
+                  <span className="project-stat-value">{bubbleCountByLanguage[l.code] ?? 0}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

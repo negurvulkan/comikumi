@@ -354,6 +354,8 @@
   },
   "ocr": {
     "progress": {
+      "downloading-models": "Descargando el modelo de detección ({{current}} MB / {{total}} MB)…",
+      "downloading-models-unknown": "Descargando el modelo de detección ({{current}} MB)…",
       "loading-runtime": "Cargando el modelo de detección…",
       "detecting": "Detectando globos de diálogo…",
       "recognizing": "Leyendo el texto ({{current}}/{{total}})…"
@@ -637,17 +639,71 @@
       "contextSelectedBubble": "el bocadillo seleccionado",
       "contextCurrentPage": "la página actual",
       "contextCurrentScript": "el guion actual",
+      "contextVolumeOverview": "la vista general del tomo",
       "empty": "Aún no hay mensajes. Haz una pregunta para empezar.",
       "inputPlaceholder": "Escribe una pregunta…",
       "send": "Enviar",
-      "action": {
-        "preparing": "Preparando una sugerencia…",
-        "reviewTitle": "{{count}} sugerencia(s) de traducción ({{language}})",
-        "reviewHint": "Revisa/corrige el texto y deselecciona las sugerencias que no quieras antes de aplicar.",
-        "sourceLabel": "Texto original ({{language}})",
-        "applyCount": "Aplicar {{count}}",
-        "applied": "{{count}} traducción(es) aplicada(s) — recuerda guardar.",
-        "dismissed": "Sugerencia descartada."
+      "actions": {
+        "common": {
+          "preparing": "Preparando una sugerencia…",
+          "applyCount": "Aplicar {{count}}",
+          "dismissed": "Sugerencia descartada."
+        },
+        "translateMissing": {
+          "reviewTitle": "{{count}} sugerencia(s) de traducción ({{language}})",
+          "reviewHint": "Revisa/corrige el texto y deselecciona las sugerencias que no quieras antes de aplicar.",
+          "sourceLabel": "Texto original ({{language}})",
+          "applied": "{{count}} traducción(es) aplicada(s) — recuerda guardar."
+        },
+        "fixGlossaryUsage": {
+          "reviewTitle": "{{count}} corrección(es) de términos del glosario ({{language}})",
+          "reviewHint": "Revisa/corrige el texto y deselecciona las sugerencias que no quieras antes de aplicar.",
+          "termHint": "Término «{{term}}» → «{{translation}}»",
+          "applied": "{{count}} corrección(es) aplicada(s) — recuerda guardar."
+        },
+        "fixOverflow": {
+          "reviewTitle": "{{count}} sugerencia(s) para corregir desbordamiento",
+          "reviewHint": "Revisa los tamaños/tamaños de fuente propuestos y deselecciona los que no quieras.",
+          "applied": "{{count}} globo(s) redimensionado(s) — recuerda guardar."
+        },
+        "assignCharacters": {
+          "reviewTitle": "{{count}} sugerencia(s) de asignación de personaje",
+          "reviewHint": "Revisa las asignaciones y deselecciona las que no quieras.",
+          "applied": "{{count}} asignación(es) de personaje aplicada(s) — recuerda guardar."
+        },
+        "styleSfx": {
+          "reviewTitle": "{{count}} sugerencia(s) de estilo para efectos de sonido",
+          "reviewHint": "Revisa los estilos/rotaciones propuestos y deselecciona los que no quieras.",
+          "applied": "{{count}} efecto(s) de sonido estilizado(s) — recuerda guardar."
+        },
+        "fixReadingOrder": {
+          "reviewTitle": "Sugerencia de orden de lectura",
+          "reviewHint": "Revisa el orden propuesto antes de aplicar.",
+          "accept": "Aplicar orden",
+          "applied": "Orden de lectura actualizado — recuerda guardar."
+        },
+        "extractGlossary": {
+          "reviewTitle": "{{count}} término(s) de glosario nuevo(s) sugerido(s)",
+          "reviewHint": "Revisa/corrige el término y las traducciones antes de añadir, y deselecciona los que no quieras.",
+          "applied": "{{count}} término(s) de glosario añadido(s)."
+        },
+        "suggestChapters": {
+          "reviewTitle": "{{count}} sugerencia(s) de capítulo",
+          "reviewHint": "Revisa la división propuesta y deselecciona los capítulos que no quieras.",
+          "rangeLabel": "{{from}} – {{to}}",
+          "applied": "{{count}} capítulo(s) creado(s)."
+        },
+        "suggestPageTypes": {
+          "reviewTitle": "{{count}} sugerencia(s) de tipo de página",
+          "reviewHint": "Una suposición poco fiable basada solo en el nombre/posición de la página — revisa y deselecciona las que no quieras.",
+          "applied": "{{count}} tipo(s) de página actualizado(s)."
+        },
+        "suggestTranslationNote": {
+          "reviewTitle": "Nota de traducción sugerida",
+          "reviewHint": "Revisa/ajusta el texto antes de publicar.",
+          "postButton": "Publicar como comentario",
+          "applied": "Nota publicada como comentario."
+        }
       }
     },
     "cleanPage": {

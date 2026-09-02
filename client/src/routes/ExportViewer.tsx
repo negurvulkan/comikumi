@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
+import { LoadingIndicator } from "../editor/LoadingIndicator";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
 import { CbzMetadataModal } from "../editor/CbzMetadataModal";
@@ -202,6 +203,15 @@ export function ExportViewer() {
       </div>
 
       {error && <div className="error-banner" style={{ margin: "10px 12px 0" }}>{error}</div>}
+      {busy && (
+        <div
+          className="info-banner"
+          style={{ margin: "10px 12px 0", display: "flex", alignItems: "center", gap: 8, cursor: "default" }}
+        >
+          <LoadingIndicator size="sm" />
+          {t("common.loading")}
+        </div>
+      )}
 
       <div style={{ display: "flex", flex: "1 1 auto", minHeight: 0 }}>
         {/* Sidebar: Languages list */}

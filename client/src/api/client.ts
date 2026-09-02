@@ -11,6 +11,7 @@ import type { Comment, CommentDocument, CommentTarget } from "../../../shared/sr
 import type { ProjectRole, PublicUser } from "../../../shared/src/users";
 import type { CbzMetadata } from "../../../shared/src/cbz";
 import type { PageMetaDocument } from "../../../shared/src/pageMeta";
+import type { WorkflowDocument } from "../../../shared/src/workflow";
 import { apiUrl } from "./apiBase";
 import { authFetch, authUrl } from "./authFetch";
 import { getCurrentProjectId } from "./projectScope";
@@ -338,6 +339,37 @@ export const api = {
     if (!res.ok) await throwApiError(res);
     return { conflict: false, etag: res.headers.get("ETag") };
   },
+
+  /** Same "always a complete document" contract as getPageMeta(). */
+  getWorkflow: async (volumeId: string): Promise<{ workflow: WorkflowDocument; etag: string | null }> => {
+    const res = await authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/workflow`));
+    const workflow = await json<WorkflowDocument>(res);
+    return { workflow, etag: res.headers.get("ETag") };
+  },
+
+  /** Same conflict-handling shape as savePageMeta(). */
+  saveWorkflow: async (
+    volumeId: string,
+    workflow: WorkflowDocument,
+    ifMatch?: string
+  ): Promise<{ conflict: false; etag: string | null } | { conflict: true; current: WorkflowDocument }> => {
+    const res = await authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/workflow`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(ifMatch ? { "If-Match": ifMatch } : {}) },
+      body: JSON.stringify(workflow),
+    });
+    if (res.status === 409) {
+      const body = (await res.json()) as { current: WorkflowDocument };
+      return { conflict: true, current: body.current };
+    }
+    if (!res.ok) await throwApiError(res);
+    return { conflict: false, etag: res.headers.get("ETag") };
+  },
+
+  getWorkflowAssignableMembers: (volumeId: string) =>
+    authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/workflow/assignable-members`)).then((r) =>
+      json<{ userId: string; username: string }[]>(r)
+    ),
 
   getLayout: (volumeId: string, page: string) =>
     authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/layout`)).then((r) =>

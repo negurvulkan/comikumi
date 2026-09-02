@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Character } from "../../../shared/src/characters";
@@ -8,6 +8,7 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import { api, type VolumeSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useProject } from "../state/ProjectContext";
+import { LoadingIndicator } from "../editor/LoadingIndicator";
 import { useSession } from "../state/SessionContext";
 import { useProjectRole } from "../state/useProjectRole";
 import { MenuBar } from "../editor/MenuBar";
@@ -21,6 +22,41 @@ import { ProjectInfoSidebar } from "../editor/ProjectInfoSidebar";
 import { BatchFindReplaceModal } from "../editor/BatchFindReplaceModal";
 import { BatchExportQueueModal } from "../editor/BatchExportQueueModal";
 import { PageIcon, PanelToolIcon, BubbleToolIcon } from "../editor/Icons";
+
+/** Stable, module-level component (not defined inline in a `.map`) so its per-item
+ * loaded state survives re-renders correctly — same reasoning as PageGrid.tsx's own
+ * PageCard. `.volume-card-preview` already reserves `aspect-ratio: 3/4` regardless of
+ * load state (see index.css), so — unlike PageCard's thumbnail, which had no fixed
+ * size before loading — this element always has real layout geometry; still uses
+ * opacity (not display:none) to hide the unloaded image, since that's what makes
+ * `loading="lazy"`'s IntersectionObserver work at all (see PageGrid.tsx's PageCard for
+ * the concrete bug this avoids) and what lets the CSS opacity transition below actually
+ * animate. */
+function VolumeCardThumbnail({ volumeId, page }: { volumeId: string; page: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, []);
+  return (
+    <div style={{ position: "relative" }}>
+      <img
+        ref={imgRef}
+        src={api.pageThumbnailUrl(volumeId, page)}
+        alt=""
+        className="volume-card-preview fade-in-content"
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        style={{ opacity: loaded ? 1 : 0 }}
+      />
+      {!loaded && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <LoadingIndicator />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function VolumeList() {
   const { t } = useTranslation();
@@ -148,16 +184,19 @@ export function VolumeList() {
             {error}
           </div>
         ) : !volumes ? (
-          <p style={{ margin: 12 }}>{t("volumeList.loading")}</p>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, flex: "1 1 auto" }}>
+            <LoadingIndicator size="md" />
+            <p style={{ margin: 0, color: "var(--text-muted)" }}>{t("volumeList.loading")}</p>
+          </div>
         ) : volumes.length === 0 ? (
           <p style={{ margin: 12 }}>{t("volumeList.emptyState", { emptySuffix, scanRoot: scanRoot || "…" })}</p>
         ) : (
-          <div className="page-scroll" style={{ padding: 16, flex: "1 1 auto" }}>
+          <div className="page-scroll fade-in" style={{ padding: 16, flex: "1 1 auto" }}>
             <div className="card-grid">
               {volumes.map((v) => (
                 <Link key={v.id} to={`/p/${encodeURIComponent(projectId!)}/volumes/${encodeURIComponent(v.id)}`} className="card">
                   {v.firstPage ? (
-                    <img src={api.pageThumbnailUrl(v.id, v.firstPage)} alt="" className="volume-card-preview" loading="lazy" />
+                    <VolumeCardThumbnail volumeId={v.id} page={v.firstPage} />
                   ) : (
                     <div className="volume-card-preview volume-card-preview-placeholder">
                       <PageIcon />
@@ -195,7 +234,7 @@ export function VolumeList() {
           name={project?.name ?? ""}
           description={description}
           coverImagePath={coverImagePath}
-          volumes={volumes ?? []}
+          volumes={volumes}
           languages={languages}
         />
       </div>

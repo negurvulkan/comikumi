@@ -357,6 +357,8 @@
   },
   "ocr": {
     "progress": {
+      "downloading-models": "Erkennungs-Modell wird heruntergeladen ({{current}} MB / {{total}} MB)…",
+      "downloading-models-unknown": "Erkennungs-Modell wird heruntergeladen ({{current}} MB)…",
       "loading-runtime": "Erkennungs-Modell wird geladen…",
       "detecting": "Sprechblasen werden erkannt…",
       "recognizing": "Text wird gelesen ({{current}}/{{total}})…"
@@ -651,17 +653,71 @@
       "contextSelectedBubble": "Ausgewählte Blase",
       "contextCurrentPage": "Aktuelle Seite",
       "contextCurrentScript": "Aktuelles Skript",
+      "contextVolumeOverview": "Bandübersicht",
       "empty": "Noch keine Nachrichten. Stell eine Frage, um loszulegen.",
       "inputPlaceholder": "Frage stellen…",
       "send": "Senden",
-      "action": {
-        "preparing": "Vorschlag wird vorbereitet …",
-        "reviewTitle": "{{count}} Übersetzungsvorschlag/-vorschläge ({{language}})",
-        "reviewHint": "Text vor der Übernahme prüfen/korrigieren und nicht gewünschte Vorschläge abwählen.",
-        "sourceLabel": "Quelltext ({{language}})",
-        "applyCount": "{{count}} übernehmen",
-        "applied": "{{count}} Übersetzung(en) eingefügt — nicht vergessen zu speichern.",
-        "dismissed": "Vorschlag verworfen."
+      "actions": {
+        "common": {
+          "preparing": "Vorschlag wird vorbereitet …",
+          "applyCount": "{{count}} übernehmen",
+          "dismissed": "Vorschlag verworfen."
+        },
+        "translateMissing": {
+          "reviewTitle": "{{count}} Übersetzungsvorschlag/-vorschläge ({{language}})",
+          "reviewHint": "Text vor der Übernahme prüfen/korrigieren und nicht gewünschte Vorschläge abwählen.",
+          "sourceLabel": "Quelltext ({{language}})",
+          "applied": "{{count}} Übersetzung(en) eingefügt — nicht vergessen zu speichern."
+        },
+        "fixGlossaryUsage": {
+          "reviewTitle": "{{count}} Korrekturvorschlag/-vorschläge für Glossar-Begriffe ({{language}})",
+          "reviewHint": "Text vor der Übernahme prüfen/korrigieren und nicht gewünschte Vorschläge abwählen.",
+          "termHint": "Begriff „{{term}}\" → „{{translation}}\"",
+          "applied": "{{count}} Korrektur(en) eingefügt — nicht vergessen zu speichern."
+        },
+        "fixOverflow": {
+          "reviewTitle": "{{count}} Vorschlag/Vorschläge zur Behebung von Textüberlauf",
+          "reviewHint": "Prüfe die vorgeschlagenen Größen/Schriftgrößen und wähle nicht gewünschte Vorschläge ab.",
+          "applied": "{{count}} Bubble(s) angepasst — nicht vergessen zu speichern."
+        },
+        "assignCharacters": {
+          "reviewTitle": "{{count}} Charakter-Zuweisungsvorschlag/-vorschläge",
+          "reviewHint": "Prüfe die Zuweisungen und wähle nicht gewünschte Vorschläge ab.",
+          "applied": "{{count}} Charakter-Zuweisung(en) übernommen — nicht vergessen zu speichern."
+        },
+        "styleSfx": {
+          "reviewTitle": "{{count}} Stilvorschlag/-vorschläge für Soundeffekte",
+          "reviewHint": "Prüfe die vorgeschlagenen Presets/Drehungen und wähle nicht gewünschte Vorschläge ab.",
+          "applied": "{{count}} Soundeffekt(e) gestylt — nicht vergessen zu speichern."
+        },
+        "fixReadingOrder": {
+          "reviewTitle": "Vorschlag für die Lesereihenfolge",
+          "reviewHint": "Prüfe die vorgeschlagene Reihenfolge vor der Übernahme.",
+          "accept": "Reihenfolge übernehmen",
+          "applied": "Lesereihenfolge aktualisiert — nicht vergessen zu speichern."
+        },
+        "extractGlossary": {
+          "reviewTitle": "{{count}} neue(r) Glossar-Begriff(e) vorgeschlagen",
+          "reviewHint": "Begriff und Übersetzungen vor dem Hinzufügen prüfen/korrigieren und nicht gewünschte Vorschläge abwählen.",
+          "applied": "{{count}} Glossar-Begriff(e) hinzugefügt."
+        },
+        "suggestChapters": {
+          "reviewTitle": "{{count}} Kapitelvorschlag/-vorschläge",
+          "reviewHint": "Prüfe die vorgeschlagene Einteilung und wähle nicht gewünschte Kapitel ab.",
+          "rangeLabel": "{{from}} – {{to}}",
+          "applied": "{{count}} Kapitel angelegt."
+        },
+        "suggestPageTypes": {
+          "reviewTitle": "{{count}} Vorschlag/Vorschläge für Seitentypen",
+          "reviewHint": "Unsichere Vermutung allein aus Seitenname/Position — bitte prüfen und nicht gewünschte Vorschläge abwählen.",
+          "applied": "{{count}} Seitentyp(en) aktualisiert."
+        },
+        "suggestTranslationNote": {
+          "reviewTitle": "Übersetzungsnotiz vorgeschlagen",
+          "reviewHint": "Text vor dem Posten prüfen/anpassen.",
+          "postButton": "Als Kommentar posten",
+          "applied": "Notiz als Kommentar gepostet."
+        }
       }
     },
     "cleanPage": {
@@ -1120,6 +1176,28 @@
     "close": "Schließen",
     "modeSideBySide": "Nebeneinander",
     "modeOverlay": "Überlagerung (Slider)"
+  },
+  "workflow": {
+    "menuEntry": "Workflow-Status…",
+    "title": "Workflow-Status",
+    "loading": "Lade Workflow-Status…",
+    "noPages": "Dieser Band hat noch keine Seiten.",
+    "columnPage": "Seite",
+    "unassigned": "— niemand —",
+    "conflict": "Der Workflow-Status wurde inzwischen von jemand anderem geändert — aktuelle Version geladen.",
+    "phase": {
+      "cleaning": "Bereinigung",
+      "translation": "Übersetzung",
+      "lettering": "Lettering",
+      "qc": "QC"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "in_progress": "In Arbeit",
+      "review_requested": "Review angefragt",
+      "changes_requested": "Änderungen nötig",
+      "approved": "Freigegeben"
+    }
   },
   "admin": {
     "title": "Administration & Profil",

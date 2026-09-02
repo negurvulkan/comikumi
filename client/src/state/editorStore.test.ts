@@ -127,6 +127,66 @@ describe("applyBubbleTextPatches", () => {
   });
 });
 
+describe("applyBubblePatches", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("applies a DIFFERENT patch to each named bubble", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    const b = createBubble({ id: "b", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a, b] } }));
+
+    useEditorStore.getState().applyBubblePatches([
+      { bubbleId: "a", patch: { characterId: "c1" } },
+      { bubbleId: "b", patch: { presetId: "p1", rotation: -8 } },
+    ]);
+
+    const bubbles = useEditorStore.getState().layout!.bubbles;
+    expect(bubbles.find((x) => x.id === "a")!.characterId).toBe("c1");
+    const patchedB = bubbles.find((x) => x.id === "b")!;
+    expect(patchedB.presetId).toBe("p1");
+    expect(patchedB.rotation).toBe(-8);
+  });
+
+  it("skips a locked bubble entirely", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10, locked: true });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a] } }));
+
+    useEditorStore.getState().applyBubblePatches([{ bubbleId: "a", patch: { characterId: "c1" } }]);
+
+    expect(useEditorStore.getState().layout!.bubbles[0].characterId).toBeNull();
+  });
+
+  it("silently skips patches for unknown bubbleIds", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a] } }));
+
+    useEditorStore.getState().applyBubblePatches([{ bubbleId: "does-not-exist", patch: { characterId: "c1" } }]);
+
+    expect(useEditorStore.getState().layout!.bubbles).toEqual([a]);
+  });
+
+  it("creates exactly one undo step for the whole batch and marks the layout dirty", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a] }, dirty: false }));
+
+    useEditorStore.getState().applyBubblePatches([{ bubbleId: "a", patch: { characterId: "c1" } }]);
+
+    expect(useEditorStore.getState().past.length).toBe(1);
+    expect(useEditorStore.getState().dirty).toBe(true);
+  });
+
+  it("is a no-op when given an empty array (no history entry, no state change)", () => {
+    useEditorStore.getState().applyBubblePatches([]);
+    expect(useEditorStore.getState().past.length).toBe(0);
+  });
+
+  it("is a no-op when there is no layout loaded", () => {
+    useEditorStore.setState({ layout: null });
+    useEditorStore.getState().applyBubblePatches([{ bubbleId: "a", patch: { characterId: "c1" } }]);
+    expect(useEditorStore.getState().layout).toBeNull();
+  });
+});
+
 describe("setUseCleanedBackground", () => {
   beforeEach(resetStoreWithEmptyLayout);
 

@@ -465,12 +465,16 @@ via Codex, or a self-hosted Ollama server).
 
 Mostly, the assistant just answers questions about the current page
 (optionally including the page image as context — checkbox "Include
-current page"). One special ability: type something like **"Translate all
-missing German bubbles"** — if the AI finds bubbles without German text
-on the current page, it replies with a review panel (source text next to
-each suggestion, individually acceptable/editable/rejectable) instead of
-a chat message. As everywhere: nothing is applied until you actively
-confirm it.
+current page"). It also understands ten specific requests — e.g. type
+**"Translate all missing German bubbles"**, "Fix the bubbles that overflow",
+"Assign characters to these lines", "Style the SFX bubbles", "Check the
+reading order", "Suggest glossary terms for this page", "Fix glossary usage
+here", or "Suggest a translation note" — and if the current page actually
+has something matching, it replies with a review panel (per-item
+accept/edit/reject) instead of a chat message. From the pages overview, a
+second AI panel additionally understands "Suggest a chapter breakdown" and
+"Suggest page types" for the whole volume. As everywhere: nothing is applied
+until you actively confirm it.
 
 ## 10. Working in Multiple Languages
 

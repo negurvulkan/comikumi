@@ -60,12 +60,15 @@ React + Konva canvas editor.
   everywhere the page background is drawn — editor, exports, thumbnails. See
   [`docs/inpainting-model-provenance.md`](docs/inpainting-model-provenance.md) for the
   model used and its license.
-- **AI assistant with one review-gated action** — a chat sidebar (six swappable
-  providers, bring your own API key or self-host Ollama) that can also translate
-  missing bubbles on request ("translate all missing German bubbles"), proposing a
-  reviewable diff instead of a plain chat reply — nothing touches the page until you
-  click Apply, and applying it is just a normal unsaved edit, going through the same
-  save/permission/conflict flow as typing it by hand.
+- **AI assistant with ten review-gated actions** — a chat sidebar (six swappable
+  providers, bring your own API key or self-host Ollama) that, on request, can
+  translate missing bubbles, fix text overflow, assign characters, style SFX
+  bubbles, fix reading order, extract/fix glossary terms, draft a translation
+  note, or — from the pages overview — suggest a chapter breakdown or page-type
+  tags. Every action proposes a reviewable diff instead of a plain chat reply —
+  nothing touches the page until you click Apply, and applying it is just a
+  normal unsaved edit, going through the same save/permission/conflict flow as
+  typing it by hand.
 - **Effect (SFX) bubbles** — a dedicated toolbar tool marks a bubble as a sound effect
   instead of dialogue (existing bubbles can be switched either way from the inspector);
   effect bubbles are excluded from "who says what" reports, auto-generated script
@@ -109,6 +112,10 @@ React + Konva canvas editor.
 - **Review & QC comments** — pins, box regions, or freehand marks anywhere on a page,
   with @-mentions of specific accounts or roles (and optional email notifications on
   mention) so feedback reaches the right person directly.
+- **Workflow status board** — a per-volume production board tracking Cleaning,
+  Translation, Lettering, and QC status (plus an assignee) per page and per language,
+  so a team can see "page 12: Lettering DE in progress — Hanjo, QC DE pending" at a
+  glance instead of inferring it from chat.
 - **Read/Review viewer** — a dedicated, toolbar-free reading screen for QC passes: free
   zoom/pan, zoom-to-panel, reading-direction-aware page turning, a double-page spread
   view, and a side-by-side comparison of up to four arbitrary pages, with read-only

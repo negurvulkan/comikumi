@@ -156,6 +156,14 @@ export function pageMetaFileName(bookFolderName: string): string {
   return `${bookFolderName}_meta.json`;
 }
 
+/** e.g. "volume_01" -> "volume_01_workflow.json" — per-page production status
+ * (cleaning/translation/lettering/QC + assignee), same fixed-suffix, single-JSON-per-
+ * volume convention as pageMetaFileName()/pageOrderFileName(): internal bookkeeping,
+ * not a user-facing renameable document, see shared/src/workflow.ts. */
+export function workflowFileName(bookFolderName: string): string {
+  return `${bookFolderName}_workflow.json`;
+}
+
 /** Rejects any single-segment file name that could escape its storage directory
  * (path separators, "..", or ".") — used by every "/file/:fileName" route before
  * joining it onto a fixed storage dir, so a request can't read arbitrary files

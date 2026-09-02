@@ -44,6 +44,7 @@ import { PresetManager } from "../editor/PresetManager";
 import { ReportModal } from "../editor/ReportModal";
 import { AutoBubblesReviewPanel } from "../editor/AutoBubblesReviewPanel";
 import { useAutoBubblesRun } from "../ocr/useAutoBubblesRun";
+import { LoadingIndicator } from "../editor/LoadingIndicator";
 import { detectionToBubble } from "../ocr/detectionToBubble";
 import { CleanPageReviewPanel } from "../editor/CleanPageReviewPanel";
 import { CleanPageMaskEditor } from "../editor/CleanPageMaskEditor";
@@ -525,6 +526,19 @@ export function Editor() {
     refetchComments();
   }
 
+  /** Apply-side of the AI assistant's "suggest a translation note" action (see
+   * aiActions/suggestTranslationNoteAction.ts) — posts a normal review comment, same
+   * api.createComment() call as handleSubmitNewComment() above. A bubble-scoped note
+   * becomes a "pin" comment centered on that bubble (there's no dedicated
+   * bubble-target kind in CommentTargetSchema — see shared/src/comments.ts); with no
+   * bubbleId it's a page-level comment instead. */
+  async function handleAiTranslationNote(noteText: string, bubbleId?: string) {
+    const bubble = bubbleId ? layout?.bubbles.find((b) => b.id === bubbleId) : null;
+    const target: CommentTarget = bubble ? { kind: "pin", point: { x: bubble.x + bubble.width / 2, y: bubble.y + bubble.height / 2 } } : { kind: "page" };
+    await api.createComment(volumeId, { page, target, body: noteText });
+    refetchComments();
+  }
+
   async function handleReplyToComment(commentId: string, fields: { body: string; mentionedUserIds: string[]; mentionedRoles: ProjectRole[] }) {
     await api.replyToComment(volumeId, commentId, fields);
     refetchComments();
@@ -540,10 +554,6 @@ export function Editor() {
     await api.deleteComment(volumeId, commentId);
     refetchComments();
   }
-
-  if (loading) return <p>{t("editor.editorRoute.loadingPage")}</p>;
-  if (error) return <div className="error-banner">{error}</div>;
-  if (!layout) return null;
 
   const menuGroups: MenuGroup[] = [
     {
@@ -591,13 +601,13 @@ export function Editor() {
           type: "action",
           label: t("editor.layersPanel.lockAllPanels"),
           onClick: () => store.setAllPanelsLocked(true),
-          disabled: layout.panels.length === 0,
+          disabled: (layout?.panels.length ?? 0) === 0,
         },
         {
           type: "action",
           label: t("editor.layersPanel.unlockAllPanels"),
           onClick: () => store.setAllPanelsLocked(false),
-          disabled: layout.panels.length === 0,
+          disabled: (layout?.panels.length ?? 0) === 0,
         },
       ],
     },
@@ -641,7 +651,7 @@ export function Editor() {
         : []
     )
   );
-  const bubbleCommandItems: CommandItem[] = layout.bubbles.flatMap((b) => {
+  const bubbleCommandItems: CommandItem[] = (layout?.bubbles ?? []).flatMap((b) => {
     const text = (b.text[activeLanguage] ?? "").trim();
     if (!text) return [];
     return [
@@ -684,6 +694,15 @@ export function Editor() {
           </span>
         }
       />
+      {loading ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, flex: "1 1 auto" }}>
+          <LoadingIndicator size="md" />
+          <p style={{ margin: 0, color: "var(--text-muted)" }}>{t("editor.editorRoute.loadingPage")}</p>
+        </div>
+      ) : error ? (
+        <div className="error-banner">{error}</div>
+      ) : !layout ? null : (
+        <>
       <input
         ref={importInputRef}
         type="file"
@@ -691,12 +710,23 @@ export function Editor() {
         onChange={handleImportJsonFile}
         style={{ display: "none" }}
       />
-      {(exportMsg || normalizeMsg) && <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{exportMsg ?? normalizeMsg}</div>}
+      {(exportMsg || normalizeMsg) && (
+        <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", display: "flex", alignItems: "center", gap: 8 }}>
+          <LoadingIndicator size="sm" />
+          {exportMsg ?? normalizeMsg}
+        </div>
+      )}
       {autoBubbles.progressMsg && (
-        <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{autoBubbles.progressMsg}</div>
+        <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", display: "flex", alignItems: "center", gap: 8 }}>
+          <LoadingIndicator size="sm" progress={autoBubbles.progress} />
+          {autoBubbles.progressMsg}
+        </div>
       )}
       {cleanPage.progressMsg && (
-        <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0" }}>{cleanPage.progressMsg}</div>
+        <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", display: "flex", alignItems: "center", gap: 8 }}>
+          <LoadingIndicator size="sm" progress={cleanPage.progress} />
+          {cleanPage.progressMsg}
+        </div>
       )}
       {layout.useCleanedBackground && (
         <div className="error-banner" style={{ background: "#1f2a3a", borderColor: "#2f5a7a", color: "#b3d9ff" }}>
@@ -995,10 +1025,27 @@ export function Editor() {
           contextText={buildPageContextText()}
           contextImageUrl={api.pageImageUrl(volumeId, page)}
           contextRenderedImage={buildRenderedPageImage}
-          enableActions={layout ? { bubbles: layout.bubbles, languages, glossary } : undefined}
+          enableActions={
+            layout
+              ? {
+                  bubbles: layout.bubbles,
+                  languages,
+                  glossary,
+                  characters,
+                  presets,
+                  panels: layout.panels,
+                  activeLanguage,
+                  readingDirection,
+                  imageWidth: layout.imageWidth,
+                  imageHeight: layout.imageHeight,
+                  onGlossaryChange: setGlossary,
+                  onCommentPosted: handleAiTranslationNote,
+                }
+              : undefined
+          }
         />
         <LanguageStrip languages={languages} active={activeLanguage} onChange={store.setActiveLanguage} onLanguagesChange={setLanguages} />
-        <div className="editor-layout">
+        <div className="editor-layout fade-in">
           <PageCanvas
             projectName={project?.name}
             volumeId={volumeId}
@@ -1132,6 +1179,8 @@ export function Editor() {
           )}
         </div>
       </div>
+        </>
+      )}
       {commentThreadState?.mode === "create" && (
         <CommentThread
           mode="create"
