@@ -37,6 +37,14 @@ React + Konva canvas editor.
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
   (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
   panel-reference polygons for reporting.
+- **Import Clip Studio Paint (.clip) files as pages** — add one or more `.clip` project
+  files directly as new pages, no manual flattening/export step in CSP first (no
+  official .clip SDK exists — parsed independently, see
+  [`docs/clip-parser-provenance.md`](docs/clip-parser-provenance.md)). Composites the
+  page at full resolution from the file's own layer tiles when every visible layer is a
+  plain raster/paper layer in a known, verified pixel format, falling back to CSP's own
+  embedded flattened-canvas preview (capped at roughly half the real canvas's
+  resolution, but always complete) for anything else.
 - **Auto-Bubbles (detection + OCR)** — a toolbar tool finds speech-bubble regions on the
   page and reads the text inside them automatically, entirely client-side (WebGPU with
   a WASM fallback, no server round-trip). Every result goes through a review panel
@@ -95,12 +103,6 @@ React + Konva canvas editor.
   an in-editor sidebar that links a script page to a real page (see [screenshot](docs/screenshot/05_editor_sidebar_script.png)) and inserts dialogue
   straight into the selected bubble. Either can be generated with one click from
   already-lettered pages instead of typed up from scratch.
-- **AI assistant** — a chat panel in the page editor and script editor, backed by
-  your own API key for OpenAI, Anthropic (Claude), Google (Gemini), or OpenRouter; a
-  "Sign in with ChatGPT" Codex login; or a self-hosted Ollama server (per account,
-  isolated credentials). Ask-only for now (no automatic edits to project data); each
-  question is sent together with the current page's speech-bubble transcript and,
-  where available, the page image itself.
 - **Project-specific asset folders** — fonts, SVG bubble contours, and the image
   library can live in a shared global library, a per-project folder, or both (project
   wins on a filename collision).

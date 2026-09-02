@@ -243,6 +243,21 @@ dort nur der Schreib-Mutex, kein ETag-Dialog) bleibt ebenfalls offen; siehe
   Stunden, `server/src/index.ts`) räumt den Papierkorb danach selbstständig auf — wie
   lange eine Datei dort verbleibt, bevor sie endgültig entfernt wird, ist über
   Einstellungen → "Papierkorb-Aufbewahrung (Tage)" konfigurierbar (Default: 30 Tage).
+- **Clip Studio Paint (.clip) importieren**: Über "Seite → CLIP-Datei importieren…"
+  lassen sich eine oder mehrere `.clip`-Projektdateien direkt als neue Seiten
+  hinzufügen — kein offizielles .clip-Format-SDK existiert, die Datei wird eigenständig
+  geparst (siehe [`docs/clip-parser-provenance.md`](clip-parser-provenance.md)).
+  ComiKumi setzt die Seite in voller Auflösung aus den einzelnen Ebenen-Kacheln der
+  Datei zusammen, wenn alle sichtbaren Ebenen reine Raster-/Papierebenen mit einem
+  bekannten, verifizierten Pixel-Format sind; ist das nicht der Fall (z. B. Vektor-,
+  3D- oder Verlaufsebenen, oder ein noch nicht unterstütztes CSP-internes
+  Pixel-Format), fällt der Import automatisch auf CSPs eigene, in der Datei
+  eingebettete Vorschau-Rasterung des flachgelegten Canvas zurück — technisch bedingt
+  bei ungefähr der halben linearen Auflösung der echten Zeichenfläche, aber garantiert
+  vollständig. Welche Qualitätsstufe eine importierte Seite bekommen hat, wird nach dem
+  Import angezeigt. Konflikte (bereits vorhandene Seite mit demselben Namen) und eine
+  ungültige `.clip`-Datei werden wie beim normalen Seiten-Upload behandelt bzw.
+  einzeln gemeldet, ohne den restlichen Stapel abzubrechen.
 - **Leere Seite anlegen**: über "Seite → Leere Seite…" lässt sich statt eines Uploads
   auch eine komplett leere (weiße) Seite in gewählter Größe anlegen — für Seiten, die
   nicht aus einem Gesamt-Scan entstehen, sondern Panel für Panel aus bereits fertig
@@ -1322,7 +1337,7 @@ Duplizieren versetzt Kopien um 24 px, damit sie nicht exakt auf dem Original lie
 
 ## Tests
 
-Vitest, aktuell 34 Server- + 4 Client-Testdateien (345 + 78 Tests, Stand aktueller Code):
+Vitest, aktuell 51 Server- + 14 Client-Testdateien (538 + 166 Tests, Stand aktueller Code):
 
 - **Server — Routen-Ebene** (`server/src/routes/*.test.ts`, per `supertest` gegen eine
   echte, temporäre Projekt-/Datenverzeichnis-Instanz — nie das reale `server/data/` oder

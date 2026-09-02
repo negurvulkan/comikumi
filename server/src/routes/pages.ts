@@ -4,9 +4,10 @@ import path from "node:path";
 import multer from "multer";
 import { z } from "zod";
 import { imageSizeFromFile } from "image-size/fromFile";
-import { findVolume, listPages, PAGE_IMAGE_EXTENSIONS } from "../lib/projectScanner.js";
+import { findVolume, listPages, PAGE_IMAGE_EXTENSIONS, type VolumeInfo } from "../lib/projectScanner.js";
 import { getOrCreateThumbnail } from "../lib/thumbnails.js";
 import { cleanPage, getCleanedImagePath, type InpaintBox } from "../lib/inpainting.js";
+import { flattenClipToPng } from "../lib/clipImport.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
 import { readSettings, readLanguages } from "../lib/projectStore.js";
@@ -185,6 +186,21 @@ pagesRouter.get(
   })
 );
 
+/** Returns the target path for `safeName` inside `volume.emptyDir` if it's safe to
+ * write to (doesn't already exist, or the caller explicitly allowed overwriting it) —
+ * or null if it's an unresolved conflict. Shared by the plain-image upload and the
+ * .clip-import routes below, which otherwise duplicate the exact same "don't silently
+ * clobber an existing page" check. */
+async function resolveWriteTarget(volume: VolumeInfo, safeName: string, overwrite: string[]): Promise<string | null> {
+  const absPath = path.join(volume.emptyDir, safeName);
+  const alreadyExists = await fs
+    .access(absPath)
+    .then(() => true)
+    .catch(() => false);
+  if (alreadyExists && !overwrite.includes(safeName)) return null;
+  return absPath;
+}
+
 // Lets a client on a different machine than the server add page-scan images without
 // filesystem/network-share access to scanRoot — the only prior way to add a page.
 // Uploads several files in one request (a whole scan batch); a name that already
@@ -235,12 +251,8 @@ pagesRouter.post(
     const conflicts: string[] = [];
     for (const file of files) {
       const safeName = file.originalname.replace(/[^\w.\- ]/g, "_");
-      const absPath = path.join(volume.emptyDir, safeName);
-      const alreadyExists = await fs
-        .access(absPath)
-        .then(() => true)
-        .catch(() => false);
-      if (alreadyExists && !overwrite.includes(safeName)) {
+      const absPath = await resolveWriteTarget(volume, safeName, overwrite);
+      if (!absPath) {
         conflicts.push(safeName);
         continue;
       }
@@ -248,6 +260,86 @@ pagesRouter.post(
       written.push(safeName);
     }
     res.json({ written, conflicts });
+  })
+);
+
+// Multer's default 50MB-per-file limit (see `upload` above) is sized for scanned page
+// images — .clip project files routinely run much larger (embedded SQLite metadata,
+// full mipmap pyramids per layer), hence the separate, more generous limit here.
+const CLIP_UPLOAD_MAX_BYTES = 300 * 1024 * 1024;
+const clipUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: CLIP_UPLOAD_MAX_BYTES } });
+
+// Imports Clip Studio Paint (.clip) files as new pages — see lib/clipImport.ts for the
+// two extraction strategies (full-resolution layer compositing when possible, CSP's own
+// embedded preview render otherwise) and exactly when each applies. Same role/conflict-
+// handling contract as the plain-image upload above; the response additionally reports
+// which written pages only got the reduced-quality preview extraction, so the client
+// can surface that instead of it being a silent surprise.
+pagesRouter.post(
+  "/:id/pages/import-clip",
+  requireProjectRole("letterer"),
+  clipUpload.array("pages", 50),
+  asyncHandler(async (req, res) => {
+    const volume = await findVolume(req.params.id, req.activeProject);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    if (files.length === 0) {
+      res.status(400).json({ error: "file_required", params: { field: "pages" } });
+      return;
+    }
+    let overwrite: string[] = [];
+    if (typeof req.body.overwrite === "string") {
+      try {
+        const parsed: unknown = JSON.parse(req.body.overwrite);
+        if (Array.isArray(parsed)) overwrite = parsed.filter((v): v is string => typeof v === "string");
+      } catch {
+        // malformed overwrite field -> treat as "no overwrites requested"
+      }
+    }
+
+    for (const file of files) {
+      if (path.extname(file.originalname).toLowerCase() !== ".clip") {
+        res.status(400).json({ error: "unsupported_page_file_type", params: { fileName: file.originalname } });
+        return;
+      }
+    }
+
+    const existingPages = await listPages(volume);
+    if (exceedsDemoPageCap(existingPages.length, files.length)) {
+      res.status(400).json({ error: "demo_page_limit_reached", params: { max: String(DEMO_MAX_PAGES), current: String(existingPages.length) } });
+      return;
+    }
+
+    await fs.mkdir(volume.emptyDir, { recursive: true });
+    const written: string[] = [];
+    const conflicts: string[] = [];
+    const invalid: string[] = [];
+    const reducedQuality: string[] = [];
+    for (const file of files) {
+      const baseName = path.basename(file.originalname, path.extname(file.originalname)).replace(/[^\w.\- ]/g, "_");
+      const safeName = `${baseName}.png`;
+      const absPath = await resolveWriteTarget(volume, safeName, overwrite);
+      if (!absPath) {
+        conflicts.push(safeName);
+        continue;
+      }
+      let result: Awaited<ReturnType<typeof flattenClipToPng>>;
+      try {
+        result = await flattenClipToPng(file.buffer);
+      } catch {
+        // One malformed .clip in a batch shouldn't abort the rest — reported back so the
+        // client can flag exactly that file instead of the whole upload failing opaquely.
+        invalid.push(file.originalname);
+        continue;
+      }
+      await fs.writeFile(absPath, result.png);
+      written.push(safeName);
+      if (result.quality === "preview") reducedQuality.push(safeName);
+    }
+    res.json({ written, conflicts, invalid, reducedQuality });
   })
 );
 

@@ -258,6 +258,20 @@ export const api = {
     );
   },
 
+  /** Imports Clip Studio Paint (.clip) files as new pages — see
+   * server/src/lib/clipImport.ts. Same written/conflicts contract as uploadPages(),
+   * plus `invalid` (files that weren't parseable .clip containers) and
+   * `reducedQuality` (files written successfully but only at CSP's embedded-preview
+   * resolution, not full canvas resolution — see that module's doc comment for why). */
+  importClip: (volumeId: string, files: File[], overwrite?: string[]) => {
+    const form = new FormData();
+    files.forEach((f) => form.append("pages", f));
+    if (overwrite && overwrite.length > 0) form.append("overwrite", JSON.stringify(overwrite));
+    return authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/import-clip`), { method: "POST", body: form }).then((r) =>
+      json<{ written: string[]; conflicts: string[]; invalid: string[]; reducedQuality: string[] }>(r)
+    );
+  },
+
   deletePage: (volumeId: string, page: string) =>
     authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}`), {
       method: "DELETE",

@@ -236,6 +236,7 @@ export function PageGrid() {
   const insertAtIndexRef = useRef<number | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const uploadPagesInputRef = useRef<HTMLInputElement>(null);
+  const importClipInputRef = useRef<HTMLInputElement>(null);
   const { exporting, exportMsg, runExport } = useExportRun(volumeId, languages);
   const { exporting: normalizing, exportMsg: normalizeMsg, analyze: analyzeNormalize, run: runNormalize } = useNormalizeRun(volumeId, languages);
   const [pendingNormalize, setPendingNormalize] = useState<{
@@ -424,6 +425,45 @@ export function PageGrid() {
     }
   }
 
+  async function handleImportClipFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await api.importClip(volumeId, files);
+      let totalWritten = result.written.length;
+      let writtenNames = result.written.map((f) => f.replace(/\.[^.]+$/, ""));
+      let reducedQuality = [...result.reducedQuality];
+      if (result.conflicts.length > 0) {
+        const overwrite = await confirm({
+          title: t("pageGrid.uploadConflictTitle"),
+          message: t("pageGrid.uploadConflictMessage", { list: result.conflicts.join(", ") }),
+          confirmLabel: t("pageGrid.uploadConflictConfirm"),
+        });
+        if (overwrite) {
+          const conflictingFiles = files.filter((f) =>
+            result.conflicts.includes(`${f.name.replace(/\.[^.]+$/, "").replace(/[^\w.\- ]/g, "_")}.png`)
+          );
+          const retry = await api.importClip(volumeId, conflictingFiles, result.conflicts);
+          totalWritten += retry.written.length;
+          writtenNames = [...writtenNames, ...retry.written.map((f) => f.replace(/\.[^.]+$/, ""))];
+          reducedQuality = [...reducedQuality, ...retry.reducedQuality];
+        }
+      }
+      const messages = [t("pageGrid.uploadedMsg", { count: totalWritten })];
+      if (result.invalid.length > 0) messages.push(t("pageGrid.importClipInvalidMsg", { list: result.invalid.join(", ") }));
+      if (reducedQuality.length > 0) messages.push(t("pageGrid.importClipReducedQualityMsg", { list: reducedQuality.join(", ") }));
+      setMessage(messages.join(" "));
+      await placeNewPages(writtenNames);
+    } catch (e) {
+      setMessage(t("pageGrid.uploadErrorPrefix", { message: translateApiError(e, t) }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleCreateBlankPage(width: number, height: number) {
     setShowNewBlankPage(false);
     setBusy(true);
@@ -512,6 +552,12 @@ export function PageGrid() {
         },
         {
           type: "action",
+          label: t("pageGrid.menuImportClip"),
+          onClick: () => importClipInputRef.current?.click(),
+          disabled: busy || !hasAtLeast("letterer"),
+        },
+        {
+          type: "action",
           label: t("pageGrid.menuNewBlankPage"),
           onClick: () => setShowNewBlankPage(true),
           disabled: busy || !hasAtLeast("letterer"),
@@ -587,6 +633,7 @@ export function PageGrid() {
         onChange={handleUploadPagesFiles}
         style={{ display: "none" }}
       />
+      <input ref={importClipInputRef} type="file" multiple accept=".clip" onChange={handleImportClipFiles} style={{ display: "none" }} />
       {confirmDialog}
       <Link to={pBase} className="canvas-titlebar canvas-titlebar-link" title={t("pageGrid.breadcrumbBackToVolumes")}>
         <span className="canvas-titlebar-name">{t("pageGrid.titlebarPages")}</span>

@@ -244,6 +244,20 @@ remains open; see `docs/Professional-Workflow-Gaps.md`.
   `server/src/index.ts`) then cleans up the trash on its own — how long a file
   stays there before being permanently removed is configurable under Settings →
   "Trash retention (days)" (default: 30 days).
+- **Import Clip Studio Paint (.clip)**: via "Page → Import .clip file…" one or
+  more `.clip` project files can be added directly as new pages — no official
+  .clip format SDK exists, the file is parsed independently (see
+  [`docs/clip-parser-provenance.md`](clip-parser-provenance.md)). ComiKumi
+  composites the page at full resolution from the file's own layer tiles
+  whenever every visible layer is a plain raster/paper layer in a known,
+  verified pixel format; otherwise (vector/3D/gradient layers, or a CSP-
+  internal pixel format not yet supported) it automatically falls back to
+  CSP's own embedded flattened-canvas preview raster — by CSP's own design
+  capped at roughly half the linear resolution of the real canvas, but
+  guaranteed complete. Which quality an imported page got is shown after the
+  import. Conflicts (an existing page with the same name) and an invalid
+  `.clip` file are handled the same way as the plain page upload, or
+  reported individually without aborting the rest of the batch.
 - **Create empty page**: via "Page → Empty page…" a completely empty (white)
   page of a chosen size can be created instead of an upload — for pages that
   aren't built from a full scan but are assembled panel by panel from
@@ -1300,7 +1314,7 @@ exactly on top of the original.
 
 ## Tests
 
-Vitest, currently 34 server + 4 client test files (345 + 78 tests, as of the
+Vitest, currently 51 server + 14 client test files (538 + 166 tests, as of the
 current code):
 
 - **Server — route level** (`server/src/routes/*.test.ts`, via `supertest`
