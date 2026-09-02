@@ -124,8 +124,8 @@ React + Konva canvas editor.
   it), serialized writes for comments/script/project metadata, and a warning before
   switching the server's active project while someone else is still working in it.
 
-**User guide** (task-oriented, "how do I…"; German only for now):
-[`docs/User-Guide.de.md`](docs/User-Guide.de.md).
+**User guide** (task-oriented, "how do I…"): [`docs/User-Guide.md`](docs/User-Guide.md)
+(also available [in German](docs/User-Guide.de.md)).
 
 Full feature list: [`docs/FEATURES.md`](docs/FEATURES.md) (also available
 [in German](docs/FEATURES.de.md)). Layout JSON schema:

@@ -12,7 +12,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * deeper — see server/tsconfig.json), which a fixed "resolve(__dirname, '..', '..')"
  * silently got wrong (resolved into server/dist/server instead of server/), breaking
  * every SERVER_ROOT-relative default (demo-seed/, server/data/) in the compiled/
- * Docker build specifically. */
+ * Docker build specifically. IMPORTANT for packaging: whatever deployment copies this
+ * compiled output somewhere (Docker's Dockerfile, Electron's `extraResources` in the
+ * root package.json's "build" config) MUST also copy a real `server/package.json`
+ * alongside `server/dist` — this function has nothing else to walk up to and stop at.
+ * Confirmed the hard way: the Electron installer's `extraResources` list originally
+ * copied `server/dist` and `server/node_modules` but not `server/package.json` itself,
+ * so a real end-user install threw "Could not locate server/package.json above ..."
+ * on startup — `--dir` test builds during development didn't catch it because a stray
+ * `package.json` was already sitting in that test machine's `release/` output folder
+ * from an unrelated earlier build. */
 function findServerRoot(startDir: string): string {
   let dir = startDir;
   while (!fs.existsSync(path.join(dir, "package.json"))) {
