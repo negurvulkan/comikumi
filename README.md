@@ -148,6 +148,16 @@ then use **Project → Switch/create** to point the app at a folder of scanned p
 convention (a `<book>_empty` source-page folder per volume, `<book>_<language>` folders
 for translated exports).
 
+### Desktop app (no Node/browser needed at runtime)
+
+`npm run electron:build` packages ComiKumi as a self-contained desktop app (Electron
+embeds the same Express server and serves the built client from one process) —
+`release/<platform>` gets a Windows NSIS installer, macOS `.dmg`, or Linux `.AppImage`
+depending on the host OS. Project data goes to the OS's per-user app-data directory
+instead of next to the install. No pre-built installer is published yet (build it
+yourself from source); see [`electron/main.ts`](electron/main.ts) for how it wires the
+embedded server together.
+
 ### Running client and server on separate hosts
 
 By default the client talks to `http://localhost:3001` when unconfigured (matching the
