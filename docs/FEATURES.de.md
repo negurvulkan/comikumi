@@ -650,14 +650,21 @@ deutlich schwereres Modell als der Detektor — siehe unten, warum genau
 dieser Schritt server- statt browserseitig läuft).
 
 Bevor irgendetwas an den Server geschickt wird, öffnen die erkannten
-Regionen einen **Masken-Editor**: der Detektor markiert nur den gefundenen
-TEXT, was oft nicht die ganze Blase (Umriss, Schwänzchen) oder SFX-Schrift
-abdeckt — der Masken-Editor lässt bestehende Regionen verschieben, an der
-Ecke vergrößern/verkleinern, unerwünschte löschen oder völlig neue auf
-freier Fläche aufziehen, sodass die eigentliche Rekonstruktion genau den
-gewünschten Bereich trifft, nicht nur das, was der Detektor zufällig
-gefunden hat. Funktioniert auch, wenn die Erkennung gar nichts gefunden
-hat — dann werden Regionen komplett von Hand markiert.
+Regionen einen **Masken-Editor** mit fünf Werkzeugen: **Rechteck** (aufziehen),
+**Freihand** (beliebigen geschlossenen Umriss nachziehen), **Polygon**
+(Eckpunkte anklicken, zum Schließen den ersten Punkt erneut anklicken) sowie
+ein **Pinsel**, der wahlweise zur Maske hinzufügt oder von ihr entfernt
+(aufziehen zum Malen/Löschen, Pinselgröße einstellbar) — der Detektor
+markiert nur den gefundenen TEXT, was oft nicht die ganze Blase (Umriss,
+Schwänzchen) oder SFX-Schrift abdeckt, weshalb diese Werkzeuge die Maske
+frei in genau die gewünschte Form bringen lassen, nicht nur das, was der
+Detektor zufällig gefunden hat oder ein Rechteck ausdrücken kann. Alle
+Werkzeuge malen auf dieselbe zugrunde liegende Maske, sodass ein
+Pinselstrich eine automatisch erkannte oder von Hand gezeichnete Region
+genauso frei nachschärfen kann wie eine komplett neue markieren. Rückgängig
+(Button oder Strg/Cmd+Z) geht die Mal-Historie schrittweise zurück, Leeren
+setzt auf eine leere Maske zurück. Funktioniert auch, wenn die Erkennung gar
+nichts gefunden hat — dann werden Regionen komplett von Hand markiert.
 
 Das rekonstruierte Ergebnis erscheint danach als **Vorher/Nachher-Vergleich**,
 bevor sich irgendetwas auf der Seite ändert — nichts wird übernommen, bis
@@ -668,14 +675,13 @@ Editor-Canvas, PNG-/Vektor-PDF-/PSD-Export, Thumbnails. Der Original-Scan
 wird nie verändert oder gelöscht, und das Flag lässt sich jederzeit wieder
 ausschalten, um ihn sofort wiederherzustellen.
 
-Umfang dieser ersten Version: eine Seite nach der anderen, nur rechteckige
-Maskenregionen (kein Freihand-Pinsel). Batch-/Kapitel-weite Durchläufe sind
-eine mögliche spätere Erweiterung, noch nicht abgedeckt. Die
+Umfang dieser Version: eine Seite nach der anderen — Batch-/Kapitel-weite
+Durchläufe sind eine mögliche spätere Erweiterung, noch nicht abgedeckt. Die
 Rekonstruktions-Qualität hängt vom zugrunde liegenden Modell ab, das ein
 allgemeines (nicht manga-trainiertes) Checkpoint ist — siehe unten —
-weshalb auch bei sauber gezeichneter Maske auf komplexen handgezeichneten
-Hintergründen sichtbare Artefakte auftreten können; der Masken-Editor löst
-"welcher Bereich wird rekonstruiert", nicht "wie gut wird rekonstruiert".
+weshalb auch bei präziser Maske auf komplexen handgezeichneten Hintergründen
+sichtbare Artefakte auftreten können; der Masken-Editor löst "welcher
+Bereich wird rekonstruiert", nicht "wie gut wird rekonstruiert".
 
 Das Rekonstruktions-Modell (`Carve/LaMa-ONNX`, Apache-2.0) läuft auf dem
 **Server**, nicht im Browser — bei ~200 MB und einer festen
@@ -1013,6 +1019,13 @@ gesendet, da ein Band 100+ Seiten haben kann):
   Seiten vor, die noch auf dem Standard "Story" stehen, allein anhand von Name
   und Position (in der UI ausdrücklich als unsichere Vermutung markiert, da
   hier kein Seitenbild geprüft wird).
+
+Ist die Checkbox "Kontext einbeziehen" dieses Panels aktiv, wird zusätzlich
+eine kompakte Seiten-für-Seiten-Übersicht des ganzen Bands mitgeschickt
+(Seitentyp, Anzahl Sprechblasen, und wie viele davon in jeder konfigurierten
+Sprache Text haben) — genug, um reine Chat-Fragen wie "Welche Seiten haben
+noch keine Texte?" oder "Welchen Seiten fehlt noch Englisch?" direkt zu
+beantworten, ganz ohne eine der obigen Aktionen.
 
 - **Sechs austauschbare Provider**, pro Konto konfiguriert unter "Mein Konto"
   (`/account`, verlinkt im Header). Nur die tatsächlich konfigurierten Provider

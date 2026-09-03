@@ -756,7 +756,7 @@ export function Editor() {
           imageHeight={layout.imageHeight}
           initialBoxes={cleanPage.pendingBoxes}
           onCancel={cleanPage.cancelMask}
-          onConfirm={(boxes) => cleanPage.confirmMask(boxes)}
+          onConfirm={(maskDataUrl) => cleanPage.confirmMask(maskDataUrl)}
         />
       )}
       {cleanPage.pendingPreviewUrl && (

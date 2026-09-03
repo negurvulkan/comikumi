@@ -429,15 +429,20 @@ translation)? Click **"Clean Page"** in the toolbar. Steps:
 1. **Detection**: the same detector as Auto-Bubbles finds text regions.
 2. **Mask editor**: the detected regions (marked in red) appear for
    review. The detector only marks the *text*, often not the whole bubble
-   including its tail — here you can:
-   - **move** existing regions (click and drag on the region),
-   - **resize** from the **corner** (small drag handle),
-   - **delete** unwanted regions with **×**,
-   - **draw new regions** on empty space (click and drag) — e.g. for a
-     tail or SFX lettering the detector missed.
+   including its tail — five tools let you shape the mask into exactly
+   what you need:
+   - **Rectangle** — drag out a box, same as before.
+   - **Freehand** — trace an arbitrary closed outline.
+   - **Polygon** — click to place vertices, click the first one again to
+     close the shape.
+   - **Brush +** / **Brush −** — paint onto or erase from the mask with an
+     adjustable-size brush, e.g. to extend a region to cover a tail or SFX
+     lettering the detector missed, or to trim back an over-eager
+     detection.
 
-   This also works when automatic detection found nothing at all — you
-   then mark everything by hand.
+   Undo (button or Ctrl/Cmd+Z) steps back through your edits; Clear resets
+   to a blank mask. This also works when automatic detection found nothing
+   at all — you then mark everything by hand.
 3. Click **"Continue"** — the server reconstructs the image (this can take
    anywhere from seconds to several minutes, depending on how many
    regions there are and your server's hardware).

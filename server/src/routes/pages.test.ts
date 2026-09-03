@@ -168,3 +168,63 @@ describe("GET /:id/pages/:page/thumbnail", () => {
     expect(data[idx + 1]).toBeLessThan(50); // green channel: weak
   });
 });
+
+describe("POST /:id/pages/:page/clean", () => {
+  /** A fully transparent (alpha=0 everywhere) PNG at the given size, as a data: URL —
+   * an "empty mask" (see CleanPageMaskEditor.tsx's alpha-channel-is-the-mask doc
+   * comment), which lets cleanPage() take its copy-through fast path without ever
+   * needing the real (multi-hundred-MB, network-fetched) LaMa ONNX model — exactly
+   * what these route tests should exercise; actual model inference is smoke-tested
+   * separately, not part of this suite (see docs/inpainting-model-provenance.md). */
+  async function emptyMaskDataUrl(width: number, height: number): Promise<string> {
+    const png = await sharp({ create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+      .png()
+      .toBuffer();
+    return `data:image/png;base64,${png.toString("base64")}`;
+  }
+
+  it("404s for an unknown volume", async () => {
+    const mask = await emptyMaskDataUrl(4, 4);
+    const res = await api.post(`/api/volumes/does-not-exist/pages/page_01/clean`).send({ mask });
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe("volume_not_found");
+  });
+
+  it("404s for an unknown page", async () => {
+    const mask = await emptyMaskDataUrl(4, 4);
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/pages/does-not-exist/clean`).send({ mask });
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe("page_not_found");
+  });
+
+  it("400s when the mask field is missing", async () => {
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/pages/page_01/clean`).send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("invalid_mask");
+  });
+
+  it("400s when the mask isn't a decodable image", async () => {
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/pages/page_01/clean`).send({ mask: "data:image/png;base64,not-a-real-png" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("invalid_mask");
+  });
+
+  it("an entirely empty mask copies the source through unchanged (no model inference needed)", async () => {
+    const mask = await emptyMaskDataUrl(4, 4);
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/pages/page_01/clean`).send({ mask });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+
+    const cleaned = await api
+      .get(`/api/volumes/${VOLUME_ID}/pages/page_01/cleaned-image`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => cb(null, Buffer.concat(chunks)));
+      });
+    expect(cleaned.status).toBe(200);
+    const original = await fs.readFile(path.join(EMPTY_DIR(), "page_01.png"));
+    expect((cleaned.body as Buffer).equals(original)).toBe(true);
+  });
+});

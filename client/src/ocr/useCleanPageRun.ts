@@ -16,12 +16,13 @@ export interface CleanBox {
  * catch/finally), but TWO review-gated stages instead of one:
  *
  * 1. `pendingBoxes` — the auto-detected regions (same client-side detector as
- *    Auto-Bubbles, see runCleanupDetection()), shown in CleanPageMaskEditor.tsx for
- *    the user to add/move/resize/delete BEFORE anything runs server-side. Detection
- *    boxes only cover the TEXT a model found, not necessarily the whole bubble
- *    (outline, tail) — letting the user extend the marked area directly addresses
- *    that gap, not something automatic re-detection can fix. Always shown, even when
- *    detection found nothing (an all-manual page is a valid starting point too).
+ *    Auto-Bubbles, see runCleanupDetection()), shown in CleanPageMaskEditor.tsx as the
+ *    STARTING mask for the user to paint over (rectangle/freehand/polygon/brush
+ *    add+remove) BEFORE anything runs server-side. Detection boxes only cover the TEXT
+ *    a model found, not necessarily the whole bubble (outline, tail) — letting the
+ *    user extend the marked area directly addresses that gap, not something automatic
+ *    re-detection can fix. Always shown, even when detection found nothing (an
+ *    all-manual page is a valid starting point too).
  * 2. `pendingPreviewUrl` — the actual server-reconstructed before/after result, once
  *    the user confirms the mask in step 1 (see confirmMask()), shown in
  *    CleanPageReviewPanel.tsx.
@@ -64,17 +65,17 @@ export function useCleanPageRun(volumeId: string, page: string) {
   }
 
   /** The mask editor's "Weiter" action — runs the actual (slow) server-side
-   * reconstruction over the user-confirmed box list and stages the result as
-   * `pendingPreviewUrl`. A no-op-ish empty `boxes` list still round-trips through the
-   * server (cleanPage() just copies the source through, see inpainting.ts), so
-   * CleanPageReviewPanel's before/after still works consistently even if the user
-   * removed every box. */
-  async function confirmMask(boxes: CleanBox[]) {
+   * reconstruction over the user-painted mask (a full-page-resolution PNG data URL,
+   * see CleanPageMaskEditor.tsx) and stages the result as `pendingPreviewUrl`. An
+   * entirely blank mask still round-trips through the server (cleanPage() just copies
+   * the source through, see inpainting.ts), so CleanPageReviewPanel's before/after
+   * still works consistently even if the user cleared every painted region. */
+  async function confirmMask(maskDataUrl: string) {
     setPendingBoxes(null);
     setRunning(true);
     setProgressMsg(t("editor.cleanPage.reconstructing"));
     try {
-      await api.cleanPage(volumeId, page, boxes);
+      await api.cleanPage(volumeId, page, maskDataUrl);
       // Cache-bust: the server may have cleaned this exact page before (same URL),
       // and the browser's own HTTP cache (see the route's maxAge) would otherwise
       // serve the stale prior result instead of the one just generated. The base URL

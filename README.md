@@ -53,13 +53,14 @@ React + Konva canvas editor.
   languages. See [`docs/ocr-model-provenance.md`](docs/ocr-model-provenance.md) for the
   open-weight models used and their licenses.
 - **Cleaning (Inpainting)** — a toolbar tool removes the original printed text inside
-  detected speech-bubble regions and reconstructs the artwork underneath, reusing
-  Auto-Bubbles' own detector to find the regions. Shown as a before/after comparison
-  before anything changes; applying only flips a per-page flag (the original scan is
-  never touched, and it can be switched back at any time), which then takes effect
-  everywhere the page background is drawn — editor, exports, thumbnails. See
-  [`docs/inpainting-model-provenance.md`](docs/inpainting-model-provenance.md) for the
-  model used and its license.
+  a hand-refined mask and reconstructs the artwork underneath, starting from
+  Auto-Bubbles' own detector output and letting you shape the mask further with
+  rectangle, freehand, polygon, and add/remove brush tools. Shown as a before/after
+  comparison before anything changes; applying only flips a per-page flag (the
+  original scan is never touched, and it can be switched back at any time), which then
+  takes effect everywhere the page background is drawn — editor, exports, thumbnails.
+  See [`docs/inpainting-model-provenance.md`](docs/inpainting-model-provenance.md) for
+  the model used and its license.
 - **AI assistant with ten review-gated actions** — a chat sidebar (six swappable
   providers, bring your own API key or self-host Ollama) that, on request, can
   translate missing bubbles, fix text overflow, assign characters, style SFX

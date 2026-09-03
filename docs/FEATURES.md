@@ -629,13 +629,19 @@ reconstruction (a much heavier model than the detector — see below for why
 this one step runs server-side rather than in the browser).
 
 Before anything is sent to the server, detected regions open in a **mask
-editor**: the detector only marks the TEXT it found, which often doesn't
-cover the whole bubble (outline, tail) or SFX lettering — the mask editor
-lets you drag existing regions, resize them from the corner, delete ones
-you don't want, or draw entirely new ones on empty space, so the actual
-reconstruction runs against exactly the area you intend, not just whatever
-the detector happened to find. Works even when detection found nothing at
-all — mark regions from scratch.
+editor** with five tools: **rectangle** (drag out a box), **freehand**
+(trace an arbitrary closed outline), **polygon** (click to place vertices,
+click the first one again to close), and a **brush** that either adds to or
+removes from the mask (drag to paint/erase, adjustable brush size) — the
+detector only marks the TEXT it found, which often doesn't cover the whole
+bubble (outline, tail) or SFX lettering, so these tools let you shape the
+mask into exactly the area you intend, not just whatever the detector
+happened to find or a rectangle can express. Every tool paints onto the
+same underlying mask, so a brush stroke can refine an auto-detected or
+hand-drawn region just as freely as it can mark a brand-new one; Undo
+(button or Ctrl/Cmd+Z) steps back through the painting history, and Clear
+resets to blank. Works even when detection found nothing at all — mark
+regions from scratch.
 
 The reconstructed result is then shown as a **before/after comparison**
 before anything changes on the page — nothing is applied until you click
@@ -645,13 +651,13 @@ page's background is drawn — the editor canvas, PNG/vector-PDF/PSD export,
 thumbnails. The original scan is never modified or deleted, and the flag
 can be switched back off at any time to instantly restore it.
 
-Scope of this first version: one page at a time, rectangular mask regions
-only (no freehand brush). Whole-page or batch/chapter-wide runs are
-possible later extensions, not covered yet. Reconstruction quality depends
-on the underlying model, which is a general-purpose (not manga-trained)
-checkpoint — see below — so results on complex hand-drawn backgrounds can
-still show visible artifacts even with a well-drawn mask; the mask editor
-fixes "which area gets reconstructed," not "how well it gets reconstructed."
+Scope of this version: one page at a time — whole-page or batch/chapter-wide
+runs are possible later extensions, not covered yet. Reconstruction quality
+depends on the underlying model, which is a general-purpose (not
+manga-trained) checkpoint — see below — so results on complex hand-drawn
+backgrounds can still show visible artifacts even with a precise mask; the
+mask editor fixes "which area gets reconstructed," not "how well it gets
+reconstructed."
 
 The reconstruction model (`Carve/LaMa-ONNX`, Apache-2.0) runs on the
 **server**, not the browser — at ~200 MB and a fixed 512×512 input
@@ -989,6 +995,13 @@ whole volume can be 100+ pages):
   pages still at the default "story" type, from name and position alone
   (explicitly flagged in the UI as a low-confidence guess, since no page
   image is examined here).
+
+This panel's "Include context" checkbox, when enabled, also sends a compact
+per-page summary of the whole volume (page type, bubble count, and how many
+of those bubbles have text in each configured language) — enough for plain
+chat questions like "which pages don't have any text yet" or "which pages
+are still missing English" to be answered directly, without needing one of
+the actions above.
 
 - **Six interchangeable providers**, configured per account under "My Account"
   (`/account`, linked in the header). Only the providers actually configured

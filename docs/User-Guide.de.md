@@ -443,17 +443,21 @@ Werkzeugleiste. Ablauf:
    Textregionen.
 2. **Masken-Editor**: die gefundenen Bereiche (rot markiert) erscheinen
    zur Kontrolle. Der Detektor markiert nur den *Text*, oft nicht die
-   ganze Blase inklusive Schwänzchen — hier kannst du:
-   - bestehende Bereiche **verschieben** (auf den Bereich klicken und
-     ziehen),
-   - an der **Ecke vergrößern/verkleinern** (kleiner Ziehpunkt),
-   - unerwünschte Bereiche mit dem **×** löschen,
-   - auf freier Fläche **neue Bereiche aufziehen** (Klicken und Ziehen) —
-     z. B. für ein Schwänzchen oder SFX-Schrift, die der Detektor nicht
-     erfasst hat.
+   ganze Blase inklusive Schwänzchen — fünf Werkzeuge lassen dich die
+   Maske frei in die gewünschte Form bringen:
+   - **Rechteck** — wie bisher aufziehen.
+   - **Freihand** — einen beliebigen geschlossenen Umriss nachziehen.
+   - **Polygon** — Eckpunkte anklicken, zum Schließen den ersten Punkt
+     erneut anklicken.
+   - **Pinsel +** / **Pinsel −** — mit einstellbarer Pinselgröße zur
+     Maske hinzufügen oder von ihr entfernen, z. B. um eine Region auf
+     ein Schwänzchen oder SFX-Schrift zu erweitern, die der Detektor
+     nicht erfasst hat, oder eine zu großzügige Erkennung zu stutzen.
 
-   Funktioniert auch, wenn die automatische Erkennung nichts gefunden
-   hat — dann markierst du komplett von Hand.
+   Rückgängig (Button oder Strg/Cmd+Z) geht deine Änderungen schrittweise
+   zurück, Leeren setzt auf eine leere Maske zurück. Funktioniert auch,
+   wenn die automatische Erkennung nichts gefunden hat — dann markierst
+   du komplett von Hand.
 3. Klicke **"Weiter"** — der Server rekonstruiert das Bild (das kann je
    nach Anzahl der Bereiche und Server-Hardware eine Weile dauern, von
    Sekunden bis zu mehreren Minuten).

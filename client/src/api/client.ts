@@ -236,11 +236,13 @@ export const api = {
    * was already loaded once before, e.g. after re-cleaning). Does NOT touch the page's
    * saved layout — the caller sets `useCleanedBackground` itself once the user
    * confirms the before/after review. */
-  cleanPage: (volumeId: string, page: string, boxes: { x: number; y: number; width: number; height: number }[]) =>
+  /** `mask` is a full-page-resolution PNG data URL (canvas.toDataURL()'s own format)
+   * whose ALPHA channel is the actual mask — see CleanPageMaskEditor.tsx. */
+  cleanPage: (volumeId: string, page: string, mask: string) =>
     authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}/clean`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ boxes }),
+      body: JSON.stringify({ mask }),
     }).then((r) => json<{ ok: true }>(r)),
 
   cleanedImageUrl: (volumeId: string, page: string) =>

@@ -3,10 +3,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import multer from "multer";
 import { z } from "zod";
+import sharp from "sharp";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { findVolume, listPages, PAGE_IMAGE_EXTENSIONS, type VolumeInfo } from "../lib/projectScanner.js";
 import { getOrCreateThumbnail } from "../lib/thumbnails.js";
-import { cleanPage, getCleanedImagePath, type InpaintBox } from "../lib/inpainting.js";
+import { cleanPage, getCleanedImagePath } from "../lib/inpainting.js";
 import { flattenClipToPng } from "../lib/clipImport.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
@@ -122,18 +123,21 @@ pagesRouter.get(
   })
 );
 
-const CleanBoxSchema = z.object({ x: z.number(), y: z.number(), width: z.number().positive(), height: z.number().positive() });
-const CleanRequestSchema = z.object({ boxes: z.array(CleanBoxSchema) });
+// A data: URL ("data:image/png;base64,...") or a bare base64 string either way — the
+// client always sends a data: URL (canvas.toDataURL()'s own format), but accepting a
+// bare string too costs nothing and avoids a confusing rejection if that ever changes.
+const CleanRequestSchema = z.object({ mask: z.string().min(1) });
 
 // Runs Cleaning/Inpainting (see lib/inpainting.ts, docs/inpainting-model-provenance.md)
-// over the given boxes (already detected client-side, same Auto-Bubbles detector — this
-// route only reconstructs pixels, it doesn't detect anything itself) and caches the
-// result. `requireLetterer`-equivalent (not `translator`): unlike a text edit, this
-// permanently alters the page's visual content, the same bar Cut-Panel/placed-image
-// mutations already require. Does NOT touch the page's layout JSON or its
-// useCleanedBackground flag — the client sets that itself via the normal layout save
-// path once it has reviewed the before/after result, same "propose, then an explicit
-// separate confirm actually commits it" principle as every other automation this session.
+// over a client-painted mask (rectangle/freehand/polygon/brush tools, see
+// CleanPageMaskEditor.tsx — this route only reconstructs pixels, it never detects or
+// paints anything itself) and caches the result. `requireLetterer`-equivalent (not
+// `translator`): unlike a text edit, this permanently alters the page's visual
+// content, the same bar Cut-Panel/placed-image mutations already require. Does NOT
+// touch the page's layout JSON or its useCleanedBackground flag — the client sets
+// that itself via the normal layout save path once it has reviewed the before/after
+// result, same "propose, then an explicit separate confirm actually commits it"
+// principle as every other automation this session.
 pagesRouter.post(
   "/:id/pages/:page/clean",
   requireProjectRole("letterer"),
@@ -151,10 +155,33 @@ pagesRouter.post(
     }
     const parsed = CleanRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "invalid_boxes", details: parsed.error.flatten() });
+      res.status(400).json({ error: "invalid_mask", details: parsed.error.flatten() });
       return;
     }
-    await cleanPage(page.absolutePath, parsed.data.boxes as InpaintBox[]);
+    // The mask travels as a full-page-resolution PNG whose ALPHA channel is the
+    // actual 0/1 mask (painted = opaque, unpainted = transparent) — see
+    // CleanPageMaskEditor.tsx's doc comment for why alpha rather than a color channel.
+    const base64 = parsed.data.mask.replace(/^data:image\/\w+;base64,/, "");
+    let maskBuffer: Buffer;
+    try {
+      maskBuffer = Buffer.from(base64, "base64");
+    } catch {
+      res.status(400).json({ error: "invalid_mask" });
+      return;
+    }
+    let alpha: { data: Buffer; info: { width: number; height: number } };
+    try {
+      alpha = await sharp(maskBuffer).ensureAlpha().extractChannel(3).raw().toBuffer({ resolveWithObject: true });
+    } catch {
+      res.status(400).json({ error: "invalid_mask" });
+      return;
+    }
+    try {
+      await cleanPage(page.absolutePath, alpha.data, alpha.info.width, alpha.info.height);
+    } catch (err) {
+      res.status(500).json({ error: "cleaning_failed", details: String(err) });
+      return;
+    }
     res.json({ ok: true });
   })
 );
