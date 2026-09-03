@@ -133,6 +133,11 @@ React + Konva canvas editor.
   prompts to keep your version or load the other one, instead of silently overwriting
   it), serialized writes for comments/script/project metadata, and a warning before
   switching the server's active project while someone else is still working in it.
+- **Desktop installer** — package ComiKumi as a self-contained Windows/macOS/Linux
+  desktop app (Electron embeds the same Express server, no separate Node/browser setup
+  needed). A first-run setup screen chooses between running a local server (data
+  directory and port) or connecting to a remote ComiKumi server already running
+  elsewhere, revisitable anytime via **Datei → Server wechseln…**.
 
 **User guide** (task-oriented, "how do I…"): [`docs/User-Guide.md`](docs/User-Guide.md)
 (also available [in German](docs/User-Guide.de.md)).
@@ -177,13 +182,20 @@ for translated exports).
 
 ### Desktop app (no Node/browser needed at runtime)
 
-`npm run electron:build` packages ComiKumi as a self-contained desktop app (Electron
-embeds the same Express server and serves the built client from one process) —
-`release/<platform>` gets a Windows NSIS installer, macOS `.dmg`, or Linux `.AppImage`
-depending on the host OS. Project data goes to the OS's per-user app-data directory
-instead of next to the install. No pre-built installer is published yet (build it
-yourself from source); see [`electron/main.ts`](electron/main.ts) for how it wires the
-embedded server together.
+`npm run electron:build` (or the platform-specific `electron:build:win`/`:mac`/`:linux`
+variants) packages ComiKumi as a self-contained desktop app (Electron embeds the same
+Express server and serves the built client from one process) — `release/<platform>` gets
+a Windows NSIS installer, macOS `.dmg`, or Linux `.AppImage`. No pre-built installer is
+published yet (build it yourself from source).
+
+On first launch, a small setup screen offers a choice: run a **local** server (asks
+where to store app data — not the manga projects themselves, which are configured
+per-project via the in-app Project Wizard afterward — and which local port to use,
+defaulting to the OS's per-user app-data directory and port 3001), or connect to a
+**remote** ComiKumi server already running elsewhere (just its URL — the desktop app
+then starts nothing locally, it's a thin wrapper around that server's own web UI).
+Revisitable anytime via **Datei → Server wechseln…**. See
+[`electron/README.md`](electron/README.md) for how packaging, setup, and dev mode work.
 
 ### Running client and server on separate hosts
 

@@ -1,7 +1,7 @@
 {
   "name": "comikumi",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.6.0",
   "description": "Local-first manga localization workspace — plan, translate, letter, review and publish manga in multiple languages.",
   "author": "Hanjo Winter",
   "license": "AGPL-3.0-or-later",
@@ -17,7 +17,10 @@
     "broker:build": "npm --prefix broker run build",
     "electron:build:main": "tsc -p electron",
     "electron:dev": "npm run electron:build:main && concurrently -k -n server,client,electron -c blue,green,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\" \"electron electron/dist/main.js\"",
-    "electron:build": "npm run build && npm run electron:build:main && electron-builder"
+    "electron:build": "npm run build && npm run electron:build:main && electron-builder",
+    "electron:build:win": "npm run build && npm run electron:build:main && electron-builder --win",
+    "electron:build:mac": "npm run build && npm run electron:build:main && electron-builder --mac",
+    "electron:build:linux": "npm run build && npm run electron:build:main && electron-builder --linux"
   },
   "dependencies": {
     "zod": "^4.4.3"
@@ -37,6 +40,7 @@
     "files": [
       "electron/dist/**/*",
       "electron/build/**/*",
+      "electron/setup.html",
       "electron/package.json",
       "package.json"
     ],

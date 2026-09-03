@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>ComiKumi einrichten</title>
+    <style>
+      :root {
+        --bg: #1b1c20;
+        --bg-elevated: #26272c;
+        --border: #3a3b41;
+        --text: #e8e8ea;
+        --text-muted: #9a9ba3;
+        --accent: #6c8cff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0 0 4px;
+      }
+      p.hint {
+        color: var(--text-muted);
+        margin: 0 0 20px;
+        line-height: 1.5;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .field {
+        margin-bottom: 18px;
+      }
+      .field p.hint {
+        margin: 6px 0 0;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      input[type="text"],
+      input[type="number"],
+      input[type="url"] {
+        flex: 1 1 auto;
+        min-width: 0;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 4px;
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+      input[type="number"] {
+        max-width: 120px;
+      }
+      button {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 4px;
+        padding: 8px 14px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #101116;
+        font-weight: 600;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .mode-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 20px;
+      }
+      .mode-tabs button {
+        flex: 1 1 auto;
+      }
+      .mode-tabs button.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #101116;
+        font-weight: 600;
+      }
+      .panel[hidden] {
+        display: none;
+      }
+      details {
+        margin-top: 4px;
+      }
+      summary {
+        color: var(--text-muted);
+        cursor: pointer;
+        margin-bottom: 12px;
+      }
+      .warning {
+        color: #ffcf7a;
+        margin: 6px 0 0;
+        line-height: 1.5;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 28px;
+      }
+      .error {
+        color: #ff8a8a;
+        margin: 12px 0 0;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ComiKumi einrichten</h1>
+    <p class="hint" id="introHint">Einmalige Einrichtung, bevor ComiKumi startet.</p>
+
+    <div class="mode-tabs">
+      <button type="button" id="modeLocalBtn">Lokaler Server</button>
+      <button type="button" id="modeRemoteBtn">Remote-Server</button>
+    </div>
+
+    <div class="panel" id="localPanel">
+      <div class="field">
+        <label for="dataDir">Speicherort für App-Daten</label>
+        <p class="hint" style="margin-bottom: 8px">Konten, Einstellungen und zwischengespeicherte Dateien (nicht deine Manga-Projekte selbst — deren Speicherort wählst du separat beim ersten Projekt).</p>
+        <div class="row">
+          <input type="text" id="dataDir" readonly />
+          <button type="button" id="browseBtn">Durchsuchen…</button>
+        </div>
+        <p class="warning" id="dataDirWarning" hidden>Achtung: Ein Ändern verschiebt keine Daten — vorhandene Konten bleiben am bisherigen Ort.</p>
+      </div>
+
+      <details>
+        <summary>Erweitert</summary>
+        <div class="field">
+          <label for="port">Lokaler Port</label>
+          <input type="number" id="port" value="3001" min="1" max="65535" />
+          <p class="hint">Nur ändern, wenn Port 3001 auf diesem Rechner bereits belegt ist.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="panel" id="remotePanel" hidden>
+      <div class="field">
+        <label for="remoteUrl">Server-Adresse</label>
+        <p class="hint" style="margin-bottom: 8px">Die Adresse eines bereits laufenden ComiKumi-Servers (z. B. bei dir im Netzwerk oder im Internet gehostet). ComiKumi startet dann keinen eigenen lokalen Server.</p>
+        <input type="url" id="remoteUrl" placeholder="https://comikumi.beispiel.de" />
+      </div>
+    </div>
+
+    <p class="error" id="error">Bitte gültige Werte angeben.</p>
+
+    <div class="actions">
+      <button type="button" class="primary" id="submitBtn">ComiKumi starten</button>
+    </div>
+
+    <script>
+      const modeLocalBtn = document.getElementById("modeLocalBtn");
+      const modeRemoteBtn = document.getElementById("modeRemoteBtn");
+      const localPanel = document.getElementById("localPanel");
+      const remotePanel = document.getElementById("remotePanel");
+      const dataDirInput = document.getElementById("dataDir");
+      const dataDirWarning = document.getElementById("dataDirWarning");
+      const portInput = document.getElementById("port");
+      const remoteUrlInput = document.getElementById("remoteUrl");
+      const browseBtn = document.getElementById("browseBtn");
+      const submitBtn = document.getElementById("submitBtn");
+      const errorEl = document.getElementById("error");
+      const introHint = document.getElementById("introHint");
+
+      let mode = "local";
+      let defaultLocalDir = "";
+      let hasExistingConfig = false;
+
+      function setMode(next) {
+        mode = next;
+        modeLocalBtn.classList.toggle("active", mode === "local");
+        modeRemoteBtn.classList.toggle("active", mode === "remote");
+        localPanel.hidden = mode !== "local";
+        remotePanel.hidden = mode !== "remote";
+      }
+
+      // Every window.comikumi.setup.* call below is wrapped defensively — event
+      // listeners are attached FIRST, unconditionally, before anything that could
+      // throw (a missing/broken preload bridge should degrade to "buttons don't do
+      // much" with a visible error, never to "the whole page is silently inert
+      // because one synchronous property access threw before the listeners below
+      // ever got attached").
+
+      modeLocalBtn.addEventListener("click", () => setMode("local"));
+      modeRemoteBtn.addEventListener("click", () => setMode("remote"));
+
+      browseBtn.addEventListener("click", async () => {
+        try {
+          const picked = await window.comikumi.setup.pickDirectory();
+          if (picked) dataDirInput.value = picked;
+        } catch {
+          errorEl.textContent = "Ordnerauswahl ist fehlgeschlagen.";
+          errorEl.style.display = "block";
+        }
+      });
+
+      submitBtn.addEventListener("click", async () => {
+        errorEl.style.display = "none";
+        let config;
+        if (mode === "remote") {
+          const remoteUrl = remoteUrlInput.value.trim();
+          let valid = false;
+          try {
+            const parsed = new URL(remoteUrl);
+            valid = parsed.protocol === "http:" || parsed.protocol === "https:";
+          } catch {
+            valid = false;
+          }
+          if (!valid) {
+            errorEl.textContent = "Bitte eine gültige Server-Adresse angeben (z. B. https://comikumi.beispiel.de).";
+            errorEl.style.display = "block";
+            return;
+          }
+          config = { mode: "remote", remoteUrl };
+        } else {
+          const dataDir = dataDirInput.value.trim();
+          const port = Number(portInput.value);
+          if (!dataDir || !Number.isInteger(port) || port <= 0 || port > 65535) {
+            errorEl.textContent = "Bitte gültige Werte angeben.";
+            errorEl.style.display = "block";
+            return;
+          }
+          config = { mode: "local", local: { dataDir, port } };
+        }
+        submitBtn.disabled = true;
+        browseBtn.disabled = true;
+        try {
+          const ok = await window.comikumi.setup.submit(config);
+          if (!ok) throw new Error("rejected");
+          // On success the main process closes this window itself.
+        } catch {
+          errorEl.textContent = "Bitte gültige Werte angeben.";
+          errorEl.style.display = "block";
+          submitBtn.disabled = false;
+          browseBtn.disabled = false;
+        }
+      });
+
+      try {
+        window.comikumi.setup.getPrefill().then(({ defaultLocalDir: dir, current }) => {
+          defaultLocalDir = dir;
+          dataDirInput.value = dir;
+          hasExistingConfig = !!current;
+          if (current) {
+            introHint.textContent = "Einstellungen ändern — wird nach einem Neustart von ComiKumi wirksam.";
+            dataDirWarning.hidden = false;
+            if (current.local) {
+              dataDirInput.value = current.local.dataDir;
+              portInput.value = current.local.port;
+            }
+            if (current.mode === "remote" && current.remoteUrl) {
+              remoteUrlInput.value = current.remoteUrl;
+            }
+            setMode(current.mode === "remote" ? "remote" : "local");
+          } else {
+            setMode("local");
+          }
+        });
+      } catch {
+        // Bridge unavailable — leave fields at their HTML defaults rather than crash;
+        // the user can still fill in the form by hand and Submit still works.
+        setMode("local");
+      }
+    </script>
+  </body>
+</html>
