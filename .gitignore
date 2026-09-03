@@ -27,6 +27,10 @@ server/src/lib/__fixtures__/.tmp/
 # Logs
 *.log
 
+
+# AI
+.claude
+
 # Env
 .env
 .env.*
