@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "docs-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "http-server", "docs", "-p", "4175", "-c-1"],
+      "port": 4175
     }
   ]
 }

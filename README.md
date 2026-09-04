@@ -7,7 +7,10 @@
 
 <p align="center">A local-first lettering &amp; typesetting tool for manga/comic translation projects.</p>
 
-<p align="center"><a href="https://discord.gg/DZ7nnaFzn">Join the Discord</a></p>
+<p align="center">
+  <a href="https://discord.gg/DZ7nnaFzn">Join the Discord</a> ·
+  <a href="https://github.com/negurvulkan/comikumi/releases/latest">Download for Windows/macOS/Linux</a>
+</p>
 
 <p align="center">
   <img alt="ComiKumi Editor Overview" src="docs/screenshot/03_editor_page_26.png" width="100%">
@@ -192,11 +195,14 @@ for translated exports).
 
 ### Desktop app (no Node/browser needed at runtime)
 
-`npm run electron:build` (or the platform-specific `electron:build:win`/`:mac`/`:linux`
-variants) packages ComiKumi as a self-contained desktop app (Electron embeds the same
-Express server and serves the built client from one process) — `release/<platform>` gets
-a Windows NSIS installer, macOS `.dmg`, or Linux `.AppImage`. No pre-built installer is
-published yet (build it yourself from source).
+Prebuilt installers for Windows (NSIS), macOS (`.dmg`), and Linux (`.AppImage`) are
+published on the [GitHub Releases page](https://github.com/negurvulkan/comikumi/releases/latest)
+— download and run, no Node or build step needed.
+
+To build one yourself instead: `npm run electron:build` (or the platform-specific
+`electron:build:win`/`:mac`/`:linux` variants) packages ComiKumi as a self-contained
+desktop app (Electron embeds the same Express server and serves the built client from
+one process) — `release/<platform>` gets the same installer types listed above.
 
 On first launch, a small setup screen offers a choice: run a **local** server (asks
 where to store app data — not the manga projects themselves, which are configured
