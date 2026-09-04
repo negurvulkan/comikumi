@@ -1,7 +1,8 @@
-import type { Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../layoutSchema.js";
+import type { EffectGlow, EffectShadow, Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../layoutSchema.js";
 import { fitHorizontalText } from "./textLayout.js";
 import { drawVerticalText, fitVerticalText } from "./verticalTypesetting.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
+import { drawShadowUnderlayPasses } from "./shadowPasses.js";
 import { pointInQuad } from "./geometry.js";
 import { createOffscreenCanvas } from "./canvasFactory.js";
 
@@ -191,6 +192,8 @@ export interface PerspectiveTextOptions {
   color: string;
   outline?: TextOutline;
   gradient?: TextGradient;
+  glow?: EffectGlow;
+  dropShadow?: EffectShadow;
   direction?: TextDirection;
 }
 
@@ -232,6 +235,8 @@ export function renderPerspectiveText(
       align: opts.align as TextAlign,
       outline: opts.outline,
       gradient: opts.gradient,
+      glow: opts.glow,
+      dropShadow: opts.dropShadow,
       scale: oversample,
     });
   } else {
@@ -250,11 +255,15 @@ export function renderPerspectiveText(
     sctx.direction = opts.direction === "rtl" ? "rtl" : "ltr";
     const anchorX = opts.align === "left" ? padX : opts.align === "right" ? srcW - padX : srcW / 2;
     const startY = srcH / 2 - fitted.blockHeight / 2 + fitted.lineStep / 2;
-    const fillStyle: TextFillStyle = { color: opts.color, outline: opts.outline, gradient: opts.gradient };
+    const fillStyle: TextFillStyle = { color: opts.color, outline: opts.outline, gradient: opts.gradient, glow: opts.glow, dropShadow: opts.dropShadow };
     applyTextFillStyle(sctx, fillStyle, padX, startY - fitted.lineStep / 2, srcW - padX * 2, fitted.blockHeight, oversample);
-    fitted.lines.forEach((line, i) => {
-      drawStyledText(sctx, line.text, anchorX, startY + i * fitted.lineStep, fillStyle);
-    });
+    const drawAllLines = () => {
+      fitted.lines.forEach((line, i) => {
+        drawStyledText(sctx, line.text, anchorX, startY + i * fitted.lineStep, fillStyle);
+      });
+    };
+    drawShadowUnderlayPasses(sctx, fillStyle.glow, fillStyle.dropShadow, drawAllLines);
+    drawAllLines();
   }
   return warpCanvasIntoQuad(quad, srcCanvas);
 }

@@ -244,6 +244,8 @@
       "colorLabel": "색상",
       "textOutlineLabel": "텍스트 외곽선",
       "textGradientLabel": "텍스트 그라데이션",
+      "textGlowLabel": "텍스트 글로우",
+      "textDropShadowLabel": "텍스트 그림자",
       "onLabel": "켜짐",
       "backgroundHeading": "말풍선 배경 (말풍선 전용, 곡선 텍스트 제외)",
       "bubbleStyleLabel": "말풍선 스타일",
@@ -255,6 +257,9 @@
       "fillColorLabel": "채우기 색상",
       "strokeColorLabel": "테두리 색상",
       "strokeWidthLabel": "테두리 두께",
+      "backgroundGradientFillLabel": "배경 그라데이션 채우기",
+      "backgroundGlowLabel": "배경 글로우",
+      "backgroundDropShadowLabel": "배경 그림자",
       "paddingRatioLabel": "내부 여백",
       "balloonAwareWrapLabel": "말풍선 모양에 맞춘 줄바꿈 (타원형만)",
       "tailStyleLabel": "꼬리 스타일",
@@ -456,12 +461,18 @@
     "textEffects": {
       "presetOverrideHint": "프리셋에 의해 지정됨.",
       "gradientOverridesColorHint": "활성화되어 있는 동안 아래 그라데이션으로 대체됩니다.",
-      "outlineAndGradientLabel": "외곽선 및 그라데이션",
+      "outlineAndGradientLabel": "외곽선, 그라데이션, 글로우 및 그림자",
       "strokeColorTextLabel": "외곽선 색상 (텍스트)",
       "strokeWidthTextLabel": "외곽선 두께 (텍스트)",
       "startColorLabel": "시작 색상",
       "endColorLabel": "끝 색상",
-      "angleLabel": "각도 (°)"
+      "angleLabel": "각도 (°)",
+      "glowColorLabel": "글로우 색상",
+      "glowBlurLabel": "글로우 흐림 정도",
+      "shadowColorLabel": "그림자 색상",
+      "shadowBlurLabel": "그림자 흐림 정도",
+      "shadowOffsetXLabel": "그림자 오프셋 X",
+      "shadowOffsetYLabel": "그림자 오프셋 Y"
     },
     "scopeSwitch": {
       "allLanguagesTitle": "모든 언어에 적용",
@@ -846,7 +857,8 @@
       "presetGovernsHint": "프리셋 \"{{name}}\"에 의해 지정됨.",
       "directionVerticalRtl": "세로, 열이 오른쪽 → 왼쪽 (일본어)",
       "textStyleSectionTitle": "텍스트 스타일",
-      "textEffectsSectionTitle": "텍스트 효과",
+      "textEffectsSectionTitle": "효과",
+      "backgroundEffectsHeading": "배경 효과",
       "deleteBubble": "말풍선 삭제"
     },
     "curvedTextInspector": {

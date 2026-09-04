@@ -1,16 +1,22 @@
-import type { TextGradient, TextOutline } from "../layoutSchema.js";
+import type { EffectGlow, EffectShadow, TextGradient, TextOutline } from "../layoutSchema.js";
 
 /**
  * Shared text-fill styling (solid color, optional gradient, optional
- * outline) — one place both the live Konva preview and the PNG export set up
- * before drawing glyphs, so an outlined/gradient bubble looks identical in
- * both. Mirrors the pattern already used for bubble backgrounds/vertical
- * typesetting: one function, called from every text-drawing site.
+ * outline, optional glow/drop-shadow) — one place both the live Konva preview and the
+ * PNG export set up before drawing glyphs, so an outlined/gradient/glow/shadow bubble
+ * looks identical in both. Mirrors the pattern already used for bubble backgrounds/
+ * vertical typesetting: one function, called from every text-drawing site. glow/
+ * dropShadow are NOT applied here — see drawShadowUnderlayPasses in shadowPasses.ts,
+ * which each call site wraps its own draw loop in, once, before calling drawStyledText
+ * for the real crisp draw (applyTextFillStyle/drawStyledText themselves stay unaware of
+ * shadow state, since ctx.fillStyle/strokeStyle persist independently of ctx.shadow*).
  */
 export interface TextFillStyle {
   color: string;
   outline?: TextOutline;
   gradient?: TextGradient;
+  glow?: EffectGlow;
+  dropShadow?: EffectShadow;
 }
 
 /**

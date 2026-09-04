@@ -838,8 +838,9 @@ button.active {
 }
 
 /* Icon-only tab strip for a long inspector (see IconTabs.tsx/BubbleInspector.tsx) —
- * sits above the tab content it controls, each tab a plain emoji glyph with a
- * title/aria-label tooltip instead of a text label, so the strip stays compact. */
+ * sits above the tab content it controls, each tab a lucide-react icon (currentColor
+ * stroke) with a title/aria-label tooltip instead of a text label, so the strip stays
+ * compact. */
 .icon-tabs {
   display: flex;
   gap: 4px;

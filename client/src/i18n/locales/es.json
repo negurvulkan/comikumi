@@ -244,6 +244,8 @@
       "colorLabel": "Color",
       "textOutlineLabel": "Contorno de texto",
       "textGradientLabel": "Degradado de texto",
+      "textGlowLabel": "Resplandor de texto",
+      "textDropShadowLabel": "Sombra paralela de texto",
       "onLabel": "activado",
       "backgroundHeading": "Fondo del bocadillo (solo bocadillos, no texto curvo)",
       "bubbleStyleLabel": "Estilo de bocadillo",
@@ -255,6 +257,9 @@
       "fillColorLabel": "Color de relleno",
       "strokeColorLabel": "Color de borde",
       "strokeWidthLabel": "Grosor de borde",
+      "backgroundGradientFillLabel": "Degradado de fondo",
+      "backgroundGlowLabel": "Resplandor de fondo",
+      "backgroundDropShadowLabel": "Sombra paralela de fondo",
       "paddingRatioLabel": "Margen interno",
       "balloonAwareWrapLabel": "Ajuste de línea según la forma (solo óvalo)",
       "tailStyleLabel": "Estilo de cola",
@@ -459,12 +464,18 @@
     "textEffects": {
       "presetOverrideHint": "Definido por el preajuste.",
       "gradientOverridesColorHint": "Se reemplaza por el degradado de abajo mientras esté activo.",
-      "outlineAndGradientLabel": "Contorno y degradado",
+      "outlineAndGradientLabel": "Contorno, degradado, resplandor y sombra",
       "strokeColorTextLabel": "Color de contorno (texto)",
       "strokeWidthTextLabel": "Grosor de contorno (texto)",
       "startColorLabel": "Color inicial",
       "endColorLabel": "Color final",
-      "angleLabel": "Ángulo (°)"
+      "angleLabel": "Ángulo (°)",
+      "glowColorLabel": "Color del resplandor",
+      "glowBlurLabel": "Desenfoque del resplandor",
+      "shadowColorLabel": "Color de la sombra",
+      "shadowBlurLabel": "Desenfoque de la sombra",
+      "shadowOffsetXLabel": "Desplazamiento de sombra X",
+      "shadowOffsetYLabel": "Desplazamiento de sombra Y"
     },
     "scopeSwitch": {
       "allLanguagesTitle": "Se aplica a todos los idiomas",
@@ -855,7 +866,8 @@
       "presetGovernsHint": "Definido por el preajuste «{{name}}».",
       "directionVerticalRtl": "Vertical, columnas derecha → izquierda (JP)",
       "textStyleSectionTitle": "Estilo de texto",
-      "textEffectsSectionTitle": "Efectos de texto",
+      "textEffectsSectionTitle": "Efectos",
+      "backgroundEffectsHeading": "Efectos de fondo",
       "deleteBubble": "Eliminar bocadillo"
     },
     "curvedTextInspector": {

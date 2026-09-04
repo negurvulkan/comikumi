@@ -244,6 +244,8 @@
       "colorLabel": "色",
       "textOutlineLabel": "テキストの縁取り",
       "textGradientLabel": "グラデーション",
+      "textGlowLabel": "テキストの発光",
+      "textDropShadowLabel": "テキストのドロップシャドウ",
       "onLabel": "有効",
       "backgroundHeading": "吹き出しの背景（吹き出しのみ、曲線テキストには適用されません）",
       "bubbleStyleLabel": "吹き出しスタイル",
@@ -255,6 +257,9 @@
       "fillColorLabel": "塗りの色",
       "strokeColorLabel": "枠線の色",
       "strokeWidthLabel": "枠線の太さ",
+      "backgroundGradientFillLabel": "背景のグラデーション塗り",
+      "backgroundGlowLabel": "背景の発光",
+      "backgroundDropShadowLabel": "背景のドロップシャドウ",
       "paddingRatioLabel": "内側の余白",
       "balloonAwareWrapLabel": "形状に合わせた折り返し（楕円のみ）",
       "tailStyleLabel": "しっぽの形状",
@@ -456,12 +461,18 @@
     "textEffects": {
       "presetOverrideHint": "プリセットで指定されています。",
       "gradientOverridesColorHint": "有効な間は下のグラデーションに置き換えられます。",
-      "outlineAndGradientLabel": "縁取り & グラデーション",
+      "outlineAndGradientLabel": "縁取り・グラデーション・発光・シャドウ",
       "strokeColorTextLabel": "縁取りの色（テキスト）",
       "strokeWidthTextLabel": "縁取りの太さ（テキスト）",
       "startColorLabel": "開始色",
       "endColorLabel": "終了色",
-      "angleLabel": "角度 (°)"
+      "angleLabel": "角度 (°)",
+      "glowColorLabel": "発光の色",
+      "glowBlurLabel": "発光のぼかし",
+      "shadowColorLabel": "シャドウの色",
+      "shadowBlurLabel": "シャドウのぼかし",
+      "shadowOffsetXLabel": "シャドウのオフセット X",
+      "shadowOffsetYLabel": "シャドウのオフセット Y"
     },
     "scopeSwitch": {
       "allLanguagesTitle": "すべての言語に適用",
@@ -846,7 +857,8 @@
       "presetGovernsHint": "プリセット「{{name}}」で指定されています。",
       "directionVerticalRtl": "縦書き、列は右→左（日本語）",
       "textStyleSectionTitle": "テキストスタイル",
-      "textEffectsSectionTitle": "テキスト効果",
+      "textEffectsSectionTitle": "効果",
+      "backgroundEffectsHeading": "背景効果",
       "deleteBubble": "吹き出しを削除"
     },
     "curvedTextInspector": {

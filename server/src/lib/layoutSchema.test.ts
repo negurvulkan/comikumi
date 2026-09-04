@@ -93,6 +93,38 @@ describe("resolveBubbleStyle", () => {
     expect(resolveBubbleStyle({ ...base, presetId: "p1" }, "ja", [p]).balloonAwareWrap).toBe(true);
     expect(resolveBubbleStyle(bubble, "de", [p]).balloonAwareWrap).toBe(false);
   });
+
+  it("textGlow: preset wins over base, per-language override wins over both", () => {
+    expect(resolveBubbleStyle(base, "de").textGlow.enabled).toBe(false);
+    const p = preset({ id: "p1", text: { textGlow: { enabled: true, color: "#66e0ff", blurPx: 16 } } });
+    expect(resolveBubbleStyle({ ...base, presetId: "p1" }, "de", [p]).textGlow).toEqual({ enabled: true, color: "#66e0ff", blurPx: 16 });
+    const bubble = { ...base, presetId: "p1", textGlowOverride: { de: { enabled: true, color: "#ff0000", blurPx: 4 } } };
+    expect(resolveBubbleStyle(bubble, "de", [p]).textGlow).toEqual({ enabled: true, color: "#ff0000", blurPx: 4 });
+  });
+
+  it("textDropShadow: preset wins over base, per-language override wins over both", () => {
+    expect(resolveBubbleStyle(base, "de").textDropShadow.enabled).toBe(false);
+    const p = preset({ id: "p1", text: { textDropShadow: { enabled: true, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 } } });
+    expect(resolveBubbleStyle({ ...base, presetId: "p1" }, "de", [p]).textDropShadow).toEqual({
+      enabled: true,
+      color: "#000000",
+      blurPx: 8,
+      offsetXPx: 4,
+      offsetYPx: 4,
+    });
+    const bubble = {
+      ...base,
+      presetId: "p1",
+      textDropShadowOverride: { de: { enabled: true, color: "#ff0000", blurPx: 2, offsetXPx: 1, offsetYPx: 1 } },
+    };
+    expect(resolveBubbleStyle(bubble, "de", [p]).textDropShadow).toEqual({
+      enabled: true,
+      color: "#ff0000",
+      blurPx: 2,
+      offsetXPx: 1,
+      offsetYPx: 1,
+    });
+  });
 });
 
 describe("resolveBubbleForm", () => {
@@ -129,6 +161,28 @@ describe("resolveBubbleForm", () => {
     expect(form.tail).toEqual({ x: 5, y: 5 });
     expect(form.tailWidth).toBe(77);
   });
+
+  it("backgroundGradientFill/backgroundGlow/backgroundDropShadow all resolve from a linked preset", () => {
+    const p = preset({
+      id: "p1",
+      background: {
+        backgroundGradientFill: { enabled: true, colorStart: "#111111", colorEnd: "#222222", angleDeg: 45 },
+        backgroundGlow: { enabled: true, color: "#66e0ff", blurPx: 20 },
+        backgroundDropShadow: { enabled: true, color: "#000000", blurPx: 10, offsetXPx: 5, offsetYPx: 5 },
+      },
+    });
+    const form = resolveBubbleForm({ ...base, presetId: "p1" }, "de", [p]);
+    expect(form.backgroundGradientFill).toEqual({ enabled: true, colorStart: "#111111", colorEnd: "#222222", angleDeg: 45 });
+    expect(form.backgroundGlow).toEqual({ enabled: true, color: "#66e0ff", blurPx: 20 });
+    expect(form.backgroundDropShadow).toEqual({ enabled: true, color: "#000000", blurPx: 10, offsetXPx: 5, offsetYPx: 5 });
+  });
+
+  it("without a preset, backgroundGlow/backgroundDropShadow/backgroundGradientFill default to disabled", () => {
+    const form = resolveBubbleForm(base, "de");
+    expect(form.backgroundGlow.enabled).toBe(false);
+    expect(form.backgroundDropShadow.enabled).toBe(false);
+    expect(form.backgroundGradientFill.enabled).toBe(false);
+  });
 });
 
 describe("resolveCurvedTextStyle", () => {
@@ -144,6 +198,26 @@ describe("resolveCurvedTextStyle", () => {
     expect(
       resolveCurvedTextStyle({ ...el, presetId: "p1", fontFamilyOverride: { de: "Override" } }, "de", [p]).fontFamily
     ).toBe("Override");
+  });
+
+  it("textGlow/textDropShadow: preset wins over base, per-language override wins over both", () => {
+    expect(resolveCurvedTextStyle(el, "de").textGlow.enabled).toBe(false);
+    const p = preset({
+      id: "p1",
+      text: {
+        textGlow: { enabled: true, color: "#66e0ff", blurPx: 16 },
+        textDropShadow: { enabled: true, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
+      },
+    });
+    const style = resolveCurvedTextStyle({ ...el, presetId: "p1" }, "de", [p]);
+    expect(style.textGlow).toEqual({ enabled: true, color: "#66e0ff", blurPx: 16 });
+    expect(style.textDropShadow).toEqual({ enabled: true, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 });
+    const overridden = resolveCurvedTextStyle(
+      { ...el, presetId: "p1", textGlowOverride: { de: { enabled: false, color: "#000000", blurPx: 0 } } },
+      "de",
+      [p]
+    );
+    expect(overridden.textGlow.enabled).toBe(false);
   });
 });
 

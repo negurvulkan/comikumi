@@ -69,6 +69,8 @@ export function QuadBubbleShape({
       color: style.color,
       outline: style.textOutline,
       gradient: style.textGradient,
+      glow: style.textGlow,
+      dropShadow: style.textDropShadow,
       direction: style.direction,
     });
   }, [text, displayCorners, style, baseFontSize]);

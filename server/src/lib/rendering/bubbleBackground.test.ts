@@ -1,11 +1,15 @@
 import { describe, it, expect } from "vitest";
+import { createCanvas } from "@napi-rs/canvas";
 import type { Point } from "../../../../shared/src/layoutSchema.js";
+import { createBubble, resolveBubbleForm } from "../../../../shared/src/layoutSchema.js";
 import {
+  applyBubbleFillStyle,
   buildSmoothBoundary,
   buildBoundaryForStyle,
   buildCloudBoundary,
   buildJaggedBoundary,
   canHaveTail,
+  drawBubbleBackground,
   insertTail,
   perpendicularOffset,
   tailBasePoints,
@@ -159,5 +163,50 @@ describe("tailBasePoints", () => {
     expect(result.left).toEqual(degenerate[0]);
     expect(result.right).toEqual(degenerate[0]);
     expect(result.nearestPoint).toEqual(degenerate[0]);
+  });
+});
+
+function ctx() {
+  return createCanvas(200, 200).getContext("2d") as unknown as CanvasRenderingContext2D;
+}
+
+describe("applyBubbleFillStyle", () => {
+  const form = resolveBubbleForm(createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 100, bubbleStyle: "speech" }), "de");
+
+  it("sets a plain solid-color fillStyle when backgroundGradientFill is disabled", () => {
+    const c = ctx();
+    applyBubbleFillStyle(c, form, 100, 100);
+    expect(c.fillStyle).toBe(form.fillColor);
+  });
+
+  it("sets a CanvasGradient fillStyle when backgroundGradientFill is enabled", () => {
+    const c = ctx();
+    const gradientForm = {
+      ...form,
+      backgroundGradientFill: { enabled: true, colorStart: "#ffffff", colorEnd: "#000000", angleDeg: 0 },
+    };
+    applyBubbleFillStyle(c, gradientForm, 100, 100);
+    expect(typeof c.fillStyle).not.toBe("string");
+  });
+});
+
+describe("drawBubbleBackground with glow/dropShadow", () => {
+  const baseForm = resolveBubbleForm(createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 100, bubbleStyle: "speech" }), "de");
+
+  it("does not throw and resets shadow state when glow/dropShadow are enabled", () => {
+    const c = ctx();
+    const form = {
+      ...baseForm,
+      backgroundGlow: { enabled: true, color: "#66e0ff", blurPx: 16 },
+      backgroundDropShadow: { enabled: true, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
+    };
+    expect(() => drawBubbleBackground(c, form, "rect", 1)).not.toThrow();
+    expect(c.shadowBlur).toBe(0);
+  });
+
+  it("is a no-op for the shadow underlay when neither effect is enabled (unchanged behavior)", () => {
+    const c = ctx();
+    expect(() => drawBubbleBackground(c, baseForm, "rect", 1)).not.toThrow();
+    expect(c.shadowBlur).toBe(0);
   });
 });

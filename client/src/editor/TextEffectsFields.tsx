@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type { EffectGlow, EffectShadow, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
 import { ScopeSwitch } from "./ScopeSwitch";
 
 interface Props {
@@ -9,12 +9,17 @@ interface Props {
   onOutlineChange: (patch: Partial<TextOutline>) => void;
   gradient: TextGradient;
   onGradientChange: (patch: Partial<TextGradient>) => void;
+  glow: EffectGlow;
+  onGlowChange: (patch: Partial<EffectGlow>) => void;
+  dropShadow: EffectShadow;
+  onDropShadowChange: (patch: Partial<EffectShadow>) => void;
   activeLanguage: string;
   hasLanguageOverride: boolean;
   onToggleLanguageOverride: (checked: boolean) => void;
-  /** True when a linked preset governs color/outline/gradient and no language override
-   * is active for them — inputs still show the preset's resolved value but can't be
-   * edited directly (see BubbleInspector.tsx/CurvedTextInspector.tsx's "Preset"-Zeile). */
+  /** True when a linked preset governs color/outline/gradient/glow/shadow and no
+   * language override is active for them — inputs still show the preset's resolved
+   * value but can't be edited directly (see BubbleInspector.tsx/CurvedTextInspector.tsx's
+   * "Preset"-Zeile). */
   disabled?: boolean;
 }
 
@@ -29,6 +34,10 @@ export function TextEffectsFields({
   onOutlineChange,
   gradient,
   onGradientChange,
+  glow,
+  onGlowChange,
+  dropShadow,
+  onDropShadowChange,
   activeLanguage,
   hasLanguageOverride,
   onToggleLanguageOverride,
@@ -105,6 +114,75 @@ export function TextEffectsFields({
               step={5}
               value={gradient.angleDeg}
               onChange={(e) => onGradientChange({ angleDeg: Number(e.target.value) })}
+              disabled={disabled}
+            />
+          </label>
+        </div>
+      )}
+
+      <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" checked={glow.enabled} onChange={(e) => onGlowChange({ enabled: e.target.checked })} disabled={disabled} />
+        {t("managers.presets.textGlowLabel")}
+      </label>
+      {glow.enabled && (
+        <div className="field-row">
+          <label>
+            {t("editor.textEffects.glowColorLabel")}
+            <input type="color" value={glow.color} onChange={(e) => onGlowChange({ color: e.target.value })} disabled={disabled} />
+          </label>
+          <label>
+            {t("editor.textEffects.glowBlurLabel")}
+            <input
+              type="number"
+              min={0}
+              value={glow.blurPx}
+              onChange={(e) => onGlowChange({ blurPx: Number(e.target.value) })}
+              disabled={disabled}
+            />
+          </label>
+        </div>
+      )}
+
+      <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <input
+          type="checkbox"
+          checked={dropShadow.enabled}
+          onChange={(e) => onDropShadowChange({ enabled: e.target.checked })}
+          disabled={disabled}
+        />
+        {t("managers.presets.textDropShadowLabel")}
+      </label>
+      {dropShadow.enabled && (
+        <div className="field-row">
+          <label>
+            {t("editor.textEffects.shadowColorLabel")}
+            <input type="color" value={dropShadow.color} onChange={(e) => onDropShadowChange({ color: e.target.value })} disabled={disabled} />
+          </label>
+          <label>
+            {t("editor.textEffects.shadowBlurLabel")}
+            <input
+              type="number"
+              min={0}
+              value={dropShadow.blurPx}
+              onChange={(e) => onDropShadowChange({ blurPx: Number(e.target.value) })}
+              disabled={disabled}
+            />
+          </label>
+          <label>
+            {t("editor.textEffects.shadowOffsetXLabel")}
+            <input
+              type="number"
+              value={dropShadow.offsetXPx}
+              onChange={(e) => onDropShadowChange({ offsetXPx: Number(e.target.value) })}
+              disabled={disabled}
+            />
+          </label>
+          <label>
+            {t("editor.textEffects.shadowOffsetYLabel")}
+            <input
+              type="number"
+              value={dropShadow.offsetYPx}
+              onChange={(e) => onDropShadowChange({ offsetYPx: Number(e.target.value) })}
               disabled={disabled}
             />
           </label>

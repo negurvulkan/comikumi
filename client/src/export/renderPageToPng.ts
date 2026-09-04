@@ -2,6 +2,8 @@ import type {
   Bubble,
   BubbleForm,
   CurvedTextElement,
+  EffectGlow,
+  EffectShadow,
   ImageElement,
   PageLayout,
   Panel,
@@ -26,6 +28,7 @@ import { drawVerticalText, fitVerticalText } from "../../../shared/src/rendering
 import { renderPerspectiveText, warpImageIntoQuad } from "../../../shared/src/rendering/perspective";
 import { drawBubbleBackground } from "../../../shared/src/rendering/bubbleBackground";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects";
+import { drawShadowUnderlayPasses } from "../../../shared/src/rendering/shadowPasses";
 import { drawCurvedText, fitCurvedText } from "../../../shared/src/rendering/curvedText";
 import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary } from "./svgBubbleGeometry";
 import { drawCutPanelForeground, fillCutPanelHole } from "../../../shared/src/rendering/cutPanel";
@@ -51,6 +54,8 @@ interface ResolvedStyle {
   color: string;
   textOutline: TextOutline;
   textGradient: TextGradient;
+  textGlow: EffectGlow;
+  textDropShadow: EffectShadow;
 }
 
 function drawHorizontalBubble(
@@ -91,12 +96,22 @@ function drawHorizontalBubble(
   const centerX = form.x + box.x + box.width / 2;
   const anchorX = style.align === "left" ? form.x + box.x : style.align === "right" ? form.x + box.x + box.width : centerX;
 
-  const fillStyle: TextFillStyle = { color: style.color, outline: style.textOutline, gradient: style.textGradient };
+  const fillStyle: TextFillStyle = {
+    color: style.color,
+    outline: style.textOutline,
+    gradient: style.textGradient,
+    glow: style.textGlow,
+    dropShadow: style.textDropShadow,
+  };
   applyTextFillStyle(ctx, fillStyle, form.x, startY - lineStep / 2, form.width, blockHeight, 1);
 
-  lines.forEach((line, i) => {
-    drawStyledText(ctx, line.text, anchorX, startY + i * lineStep, fillStyle);
-  });
+  const drawAllLines = () => {
+    lines.forEach((line, i) => {
+      drawStyledText(ctx, line.text, anchorX, startY + i * lineStep, fillStyle);
+    });
+  };
+  drawShadowUnderlayPasses(ctx, fillStyle.glow, fillStyle.dropShadow, drawAllLines);
+  drawAllLines();
 }
 
 function drawVerticalBubble(
@@ -121,6 +136,8 @@ function drawVerticalBubble(
     align: style.align,
     outline: style.textOutline,
     gradient: style.textGradient,
+    glow: style.textGlow,
+    dropShadow: style.textDropShadow,
     scale: 1,
   });
 }
@@ -276,6 +293,8 @@ export async function renderPageToPng(
         color: style.color,
         outline: style.textOutline,
         gradient: style.textGradient,
+        glow: style.textGlow,
+        dropShadow: style.textDropShadow,
         direction: style.direction,
       });
       if (warped) ctx.drawImage(warped.canvas, warped.x, warped.y);
@@ -347,6 +366,8 @@ export async function renderPageToPng(
       color: style.color,
       outline: style.textOutline,
       gradient: style.textGradient,
+      glow: style.textGlow,
+      dropShadow: style.textDropShadow,
     }, 1);
   }
 

@@ -134,6 +134,11 @@ function createWindow(url: string): void {
     width: 1400,
     height: 900,
     icon: iconPath,
+    // The app has its own in-page header (logo, Projekt/Hilfe menus, account) — showing
+    // the native OS menu bar underneath it doubles up. autoHideMenuBar keeps it (and
+    // "Server wechseln…"/quit/edit-role shortcuts within it) reachable via Alt without
+    // it taking up permanent space. No-op on macOS, which has no in-window menu bar.
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

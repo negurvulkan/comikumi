@@ -244,6 +244,8 @@
       "colorLabel": "颜色",
       "textOutlineLabel": "文字描边",
       "textGradientLabel": "文字渐变",
+      "textGlowLabel": "文字发光",
+      "textDropShadowLabel": "文字投影",
       "onLabel": "启用",
       "backgroundHeading": "气泡背景（仅气泡，不含曲线文字）",
       "bubbleStyleLabel": "气泡样式",
@@ -255,6 +257,9 @@
       "fillColorLabel": "填充颜色",
       "strokeColorLabel": "描边颜色",
       "strokeWidthLabel": "描边宽度",
+      "backgroundGradientFillLabel": "背景渐变填充",
+      "backgroundGlowLabel": "背景发光",
+      "backgroundDropShadowLabel": "背景投影",
       "paddingRatioLabel": "内边距",
       "balloonAwareWrapLabel": "按气泡形状自动换行（仅椭圆形）",
       "tailStyleLabel": "尾巴样式",
@@ -456,12 +461,18 @@
     "textEffects": {
       "presetOverrideHint": "由预设指定。",
       "gradientOverridesColorHint": "启用下方渐变时将被其替代。",
-      "outlineAndGradientLabel": "描边和渐变",
+      "outlineAndGradientLabel": "描边、渐变、发光和阴影",
       "strokeColorTextLabel": "描边颜色（文字）",
       "strokeWidthTextLabel": "描边宽度（文字）",
       "startColorLabel": "起始颜色",
       "endColorLabel": "结束颜色",
-      "angleLabel": "角度 (°)"
+      "angleLabel": "角度 (°)",
+      "glowColorLabel": "发光颜色",
+      "glowBlurLabel": "发光模糊度",
+      "shadowColorLabel": "阴影颜色",
+      "shadowBlurLabel": "阴影模糊度",
+      "shadowOffsetXLabel": "阴影偏移 X",
+      "shadowOffsetYLabel": "阴影偏移 Y"
     },
     "scopeSwitch": {
       "allLanguagesTitle": "适用于所有语言",
@@ -846,7 +857,8 @@
       "presetGovernsHint": "由预设“{{name}}”指定。",
       "directionVerticalRtl": "竖排，从右到左分栏（日文）",
       "textStyleSectionTitle": "文本样式",
-      "textEffectsSectionTitle": "文本效果",
+      "textEffectsSectionTitle": "效果",
+      "backgroundEffectsHeading": "背景效果",
       "deleteBubble": "删除气泡"
     },
     "curvedTextInspector": {

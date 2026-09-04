@@ -395,7 +395,7 @@ Modal im "Projekt"-Menü auf jedem Bildschirm (Anlegen, Bearbeiten per Klick auf
 Eintrag, Löschen). Anwendbar auf Blasen **und** Kurventexte (Kurventexte nutzen nur den
 Textstil-Teil, keinen Blasenhintergrund).
 
-- **Sparse/granular pro Feld**: Ein Preset kann bewusst nur einen Teil der ~17 Felder
+- **Sparse/granular pro Feld**: Ein Preset kann bewusst nur einen Teil der ~24 Felder
   definieren (z. B. nur die Schriftart) — jedes Feld ist einzeln per Checkbox ein-/
   ausschaltbar. Nicht definierte Felder bleiben vollständig Sache der einzelnen
   Blase/des Kurventexts und werden vom Preset nie angefasst. So kann z. B. die
@@ -412,8 +412,9 @@ Textstil-Teil, keinen Blasenhintergrund).
   Sprach-Override der gesamten Blasenform) gewinnt weiterhin immer, unabhängig von
   Presets.
 - **Umfang**: Textstil (Schriftart, Größe, Zeilenhöhe, Ausrichtung, Leserichtung, Farbe,
-  Umrandung, Farbverlauf) und, nur für Blasen, Blasenhintergrund (Blasenstil, Füll-/
-  Randfarbe, Randbreite, Zeigerart inkl. Ketten-Details). Reine Geometrie
+  Umrandung, Farbverlauf, Leuchten, Schlagschatten) und, nur für Blasen,
+  Blasenhintergrund (Blasenstil, Füll-/Randfarbe, Randbreite, Hintergrund-Farbverlauf,
+  Leuchten, Schlagschatten, Zeigerart inkl. Ketten-Details). Reine Geometrie
   (Position/Größe/Rotation, Tail-Spitze/-Anker/-Breite/-Krümmung) ist bewusst kein
   Preset-Feld — das sind Instanz-Eigenschaften einer einzelnen Blase, kein "Stil".
 - **Zuordnung**: über ein Preset-Dropdown im Bubble-/Kurventext-Inspector, oder über das
@@ -479,7 +480,14 @@ Sprechblase, Gedankenblase, Effekt (gezackter Rand), oder eine eigene hochgelade
 SVG-Kontur. Bei sichtbarem Stil: Füll-/Randfarbe, Randbreite, und ein optionaler
 Zeiger/Schwanz mit eigenem Stil — nahtlos verbunden, freistehend, oder eine
 segmentierte "Kette" (Kreis/Rechteck/Raute-Segmente, Anzahl und Abstand konfigurierbar)
-— Position, Breite und Krümmung sind alle per Canvas-Ziehgriff einstellbar.
+— Position, Breite und Krümmung sind alle per Canvas-Ziehgriff einstellbar. Die
+Hintergrundfüllung kann statt einer Volltonfarbe auch ein linearer Farbverlauf sein
+und/oder ein Leuchten und/oder einen Schlagschatten tragen — alle unabhängig
+zu- und abschaltbar und kombinierbar (eine Blase kann Farbverlauf-Füllung,
+farbiges Leuchten und dunklen Schlagschatten gleichzeitig haben). Leuchten/
+Schlagschatten werden auf dem Blasenkörper und einem nahtlos verbundenen Zeiger
+gezeichnet; ein freistehender oder Ketten-Zeiger wirft kein eigenes
+Leuchten/keinen eigenen Schatten (eine bekannte Einschränkung, kein Bug).
 
 Text-Optionen: Schriftart (eigene hochgeladene Schriften), Größe, Zeilenhöhe,
 horizontale Ausrichtung, sowie Leserichtung — horizontal LTR, horizontal RTL, oder
@@ -501,9 +509,14 @@ Hand zu tippen — der Furigana-Button prüft dabei zusätzlich das
 Projekt-Glossar (siehe [Glossar](#glossar)) und trägt eine hinterlegte Lesung
 automatisch ein, wenn die Markierung einem übersetzten Begriff entspricht.
 Text kann eine
-Umrandung und/oder einen linearen Farbverlauf statt Volltonfarbe bekommen. Jedes
-dieser Stil-Felder (und die komplette Form/Position/Größe/Rotation/Hintergrund) ist
-per Sprach-Umschalter überschreibbar. Blasen können einem Panel und einem Charakter
+Umrandung und/oder einen linearen Farbverlauf statt Volltonfarbe bekommen, dazu
+unabhängig zu-/abschaltbares Leuchten und/oder Schlagschatten (alle vier
+kombinierbar). Jedes dieser Stil-Felder (und die komplette
+Form/Position/Größe/Rotation/Hintergrund) ist per Sprach-Umschalter überschreibbar.
+Text-Leuchten/-Schlagschatten erscheinen im Editor, PNG- und PSD-Export; die
+Textebene des Vektor-PDF-Exports bleibt echter Vektortext und trägt keinen der
+vier Texteffekte (dieselbe bereits bestehende Einschränkung wie bei
+Umrandung/Farbverlauf). Blasen können einem Panel und einem Charakter
 zugeordnet werden.
 
 **Effekt-Blasen (SFX)**: ein eigenes Werkzeug in der Werkzeugleiste, direkt
@@ -585,8 +598,9 @@ Lautmalerei wie "BOOM!"), der entlang einer kubischen Bézierkurve mit 4 ziehbar
 Kontrollpunkten verläuft, statt in einer Blasen-Box zu sitzen. Bewusst einzeilig/ohne
 Leserichtungs-Option (ein fokussiertes Titel-/Effekt-Werkzeug, kein zweites
 Volltext-Layoutsystem) — Schriftart, Größe (schrumpft automatisch passend zur Kurve),
-Ausrichtung entlang der Kurve (Anfang/Mitte/Ende), Farbe/Umrandung/Farbverlauf, alle
-mit demselben Sprach-Umschalter-Muster.
+Ausrichtung entlang der Kurve (Anfang/Mitte/Ende),
+Farbe/Umrandung/Farbverlauf/Leuchten/Schlagschatten, alle mit demselben
+Sprach-Umschalter-Muster.
 
 ### Panels
 

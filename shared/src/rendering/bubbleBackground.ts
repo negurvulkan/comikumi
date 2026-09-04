@@ -1,6 +1,7 @@
 import type { BubbleForm, BubbleShapeKind, Point } from "../layoutSchema.js";
 import { resolveEffectiveTailStyle } from "../layoutSchema.js";
 import { tracePolygonPath } from "./cutPanel.js";
+import { drawShadowUnderlayPasses } from "./shadowPasses.js";
 
 /**
  * Shared bubble-background geometry: builds a closed boundary point list for
@@ -271,13 +272,39 @@ function clipHalfPlanePolygon(w: number, h: number, a: Point, b: Point, flip: bo
   ];
 }
 
-function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form: BubbleForm, scale: number) {
+/**
+ * Sets ctx.fillStyle to the bubble's solid fillColor, or a gradient spanning the whole
+ * form (`formW`/`formH`) when backgroundGradientFill is enabled — same "span the whole
+ * block, not each subpath" idea as textEffects.ts's applyTextFillStyle, so the main body
+ * and any tail drawn afterward sample the same continuous gradient instead of each
+ * getting their own independently-scaled one. Exported so bubbleBackground.test.ts can
+ * assert on it directly.
+ */
+export function applyBubbleFillStyle(ctx: CanvasRenderingContext2D, form: BubbleForm, formW: number, formH: number) {
+  if (form.backgroundGradientFill.enabled) {
+    const g = form.backgroundGradientFill;
+    const rad = (g.angleDeg * Math.PI) / 180;
+    const dx = Math.cos(rad);
+    const dy = Math.sin(rad);
+    const halfDiag = Math.max(1, Math.hypot(formW, formH) / 2);
+    const cx = formW / 2;
+    const cy = formH / 2;
+    const gradient = ctx.createLinearGradient(cx - dx * halfDiag, cy - dy * halfDiag, cx + dx * halfDiag, cy + dy * halfDiag);
+    gradient.addColorStop(0, g.colorStart);
+    gradient.addColorStop(1, g.colorEnd);
+    ctx.fillStyle = gradient;
+  } else {
+    ctx.fillStyle = form.fillColor;
+  }
+}
+
+function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form: BubbleForm, scale: number, formW: number, formH: number) {
   if (points.length < 3) return;
   ctx.beginPath();
   ctx.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
   ctx.closePath();
-  ctx.fillStyle = form.fillColor;
+  applyBubbleFillStyle(ctx, form, formW, formH);
   ctx.fill();
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale);
   ctx.strokeStyle = form.strokeColor;
@@ -290,7 +317,7 @@ export function canHaveTail(bubbleStyle: BubbleForm["bubbleStyle"]): boolean {
 }
 
 /** Separate, unspliced tail: a triangle (base-left -> tip -> base-right) with its own fill+stroke, drawn on top of the already-closed body outline — the body's own stroke line stays visible where the triangle overlaps it, unlike insertTail's seamless splice. Bows both edges via native quadraticCurveTo when tailCurve is set (no point-sampling needed — this is already its own explicit path, unlike insertTail's flat boundary list). */
-function drawDetachedTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], anchor: Point, tip: Point, form: BubbleForm, scale: number) {
+function drawDetachedTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], anchor: Point, tip: Point, form: BubbleForm, scale: number, formW: number, formH: number) {
   if (boundaryPoints.length < 3) return;
   const { left, right, nearestPoint } = tailBasePoints(boundaryPoints, anchor, form.tailWidth * scale);
   const curve = form.tailCurve * scale;
@@ -309,15 +336,22 @@ function drawDetachedTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[]
     ctx.lineTo(right.x, right.y);
   }
   ctx.closePath();
-  ctx.fillStyle = form.fillColor;
+  applyBubbleFillStyle(ctx, form, formW, formH);
   ctx.fill();
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale);
   ctx.strokeStyle = form.strokeColor;
   ctx.stroke();
 }
 
-/** Draws one chain segment centered at (x, y), rotated to face `angle` (the direction from bubble edge to tail tip) — rotation only matters for non-circular shapes, a circle looks the same either way. */
-function drawChainSegment(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, angle: number, shape: BubbleForm["tailChainSegmentShape"], form: BubbleForm, scale: number) {
+/** Draws one chain segment centered at (x, y), rotated to face `angle` (the direction
+ * from bubble edge to tail tip) — rotation only matters for non-circular shapes, a
+ * circle looks the same either way. `fillStyle` is resolved once by the caller (see
+ * drawChainTail) rather than re-derived here: a CanvasGradient bakes in the coordinate
+ * space active when it was CREATED (per the Canvas2D spec), so creating it fresh inside
+ * this function's own ctx.translate(x, y) would incorrectly anchor the gradient to each
+ * segment's local origin instead of the whole form — reusing one resolved value keeps
+ * every segment sampling the same continuous form-space gradient. */
+function drawChainSegment(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, angle: number, shape: BubbleForm["tailChainSegmentShape"], form: BubbleForm, scale: number, fillStyle: CanvasRenderingContext2D["fillStyle"]) {
   ctx.save();
   ctx.translate(x, y);
   if (shape !== "circle") ctx.rotate(angle);
@@ -334,7 +368,7 @@ function drawChainSegment(ctx: CanvasRenderingContext2D, x: number, y: number, s
     ctx.lineTo(-size, 0);
     ctx.closePath();
   }
-  ctx.fillStyle = form.fillColor;
+  ctx.fillStyle = fillStyle;
   ctx.fill();
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale * 0.6);
   ctx.strokeStyle = form.strokeColor;
@@ -355,7 +389,7 @@ function drawChainSegment(ctx: CanvasRenderingContext2D, x: number, y: number, s
  * set, segments follow a quadratic bezier from edge to tip instead of a
  * straight line, each rotated to the curve's tangent at its own position.
  */
-function drawChainTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], anchor: Point, tip: Point, form: BubbleForm, scale: number) {
+function drawChainTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], anchor: Point, tip: Point, form: BubbleForm, scale: number, formW: number, formH: number) {
   if (boundaryPoints.length === 0) return;
   const edge = boundaryPoints[nearestBoundaryIndex(boundaryPoints, anchor)];
   const straightAngle = Math.atan2(tip.y - edge.y, tip.x - edge.x);
@@ -364,6 +398,10 @@ function drawChainTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], a
   const count = form.tailChainSegments;
   const shape = form.tailChainSegmentShape;
   const baseStep = 1 / (count + 1);
+  // Resolved once, outside every segment's own ctx.translate() — see drawChainSegment's
+  // doc comment for why a gradient must be created in form-space, not per-segment space.
+  applyBubbleFillStyle(ctx, form, formW, formH);
+  const fillStyle = ctx.fillStyle;
   for (let i = 0; i < count; i++) {
     const t = baseStep * (i + 1) * form.tailChainSpacing;
     let cx: number, cy: number, angle: number;
@@ -380,7 +418,7 @@ function drawChainTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], a
       angle = straightAngle;
     }
     const size = Math.max(1.5 * scale, form.strokeWidthPx * scale * (count - i) * 0.9);
-    drawChainSegment(ctx, cx, cy, size, angle, shape, form, scale);
+    drawChainSegment(ctx, cx, cy, size, angle, shape, form, scale, fillStyle);
   }
 }
 
@@ -433,12 +471,28 @@ export function drawBubbleBackground(
     ctx.clip();
   }
 
-  fillAndStrokePath(ctx, points, form, scale);
+  // Glow/drop-shadow underlay, main body silhouette only — for the default (and most
+  // common) tailStyle "point", the tail is already spliced into `points` above via
+  // insertTail, so body+tail already form one seamless outline and get one correct
+  // shadow for free. "point-detached"/"chain" tails (drawn separately below) don't cast
+  // their own shadow/glow — a documented v1 scope limit, not a bug.
+  if ((form.backgroundGlow.enabled || form.backgroundDropShadow.enabled) && points.length >= 3) {
+    applyBubbleFillStyle(ctx, form, w, h);
+    drawShadowUnderlayPasses(ctx, form.backgroundGlow, form.backgroundDropShadow, () => {
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+      ctx.closePath();
+      ctx.fill();
+    });
+  }
+
+  fillAndStrokePath(ctx, points, form, scale, w, h);
 
   if (hasTail && tip && anchor && effectiveTailStyle === "point-detached") {
-    drawDetachedTail(ctx, points, anchor, tip, form, scale);
+    drawDetachedTail(ctx, points, anchor, tip, form, scale, w, h);
   } else if (hasTail && tip && anchor && effectiveTailStyle === "chain") {
-    drawChainTail(ctx, points, anchor, tip, form, scale);
+    drawChainTail(ctx, points, anchor, tip, form, scale, w, h);
   }
 
   if (hasClip) ctx.restore();

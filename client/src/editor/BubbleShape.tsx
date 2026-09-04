@@ -14,6 +14,7 @@ import {
   tailBasePoints,
 } from "../../../shared/src/rendering/bubbleBackground";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects";
+import { drawShadowUnderlayPasses } from "../../../shared/src/rendering/shadowPasses";
 import { getCachedSvgBubbleBoundary } from "../export/svgBubbleGeometry";
 import { computeMergedBoundary, type MergeMemberInput } from "../export/bubbleMerge";
 import { projectOntoPerpendicularBow } from "./geometry";
@@ -345,11 +346,21 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
                     ? textBox.x + textBox.width
                     : textBox.x + textBox.width / 2;
               const startY = textBox.y + textBox.height / 2 - fitted.blockHeight / 2 + fitted.lineStep / 2;
-              const fillStyle: TextFillStyle = { color: style.color, outline: style.textOutline, gradient: style.textGradient };
+              const fillStyle: TextFillStyle = {
+                color: style.color,
+                outline: style.textOutline,
+                gradient: style.textGradient,
+                glow: style.textGlow,
+                dropShadow: style.textDropShadow,
+              };
               applyTextFillStyle(ctx._context, fillStyle, textBox.x, startY - fitted.lineStep / 2, textBox.width, fitted.blockHeight, scale);
-              fitted.lines.forEach((line, i) => {
-                drawStyledText(ctx._context, line.text, anchorX, startY + i * fitted.lineStep, fillStyle);
-              });
+              const drawAllLines = () => {
+                fitted.lines.forEach((line, i) => {
+                  drawStyledText(ctx._context, line.text, anchorX, startY + i * fitted.lineStep, fillStyle);
+                });
+              };
+              drawShadowUnderlayPasses(ctx._context, fillStyle.glow, fillStyle.dropShadow, drawAllLines);
+              drawAllLines();
             }}
           />
         )}
@@ -363,6 +374,8 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
                 align: style.align,
                 outline: style.textOutline,
                 gradient: style.textGradient,
+                glow: style.textGlow,
+                dropShadow: style.textDropShadow,
                 scale,
               });
             }}

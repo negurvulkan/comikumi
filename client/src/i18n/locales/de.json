@@ -246,6 +246,8 @@
       "colorLabel": "Farbe",
       "textOutlineLabel": "Textumrandung",
       "textGradientLabel": "Farbverlauf",
+      "textGlowLabel": "Text-Leuchten",
+      "textDropShadowLabel": "Text-Schlagschatten",
       "onLabel": "an",
       "backgroundHeading": "Blasenhintergrund (nur für Blasen, nicht für Kurventext)",
       "bubbleStyleLabel": "Blasenstil",
@@ -257,6 +259,9 @@
       "fillColorLabel": "Füllfarbe",
       "strokeColorLabel": "Randfarbe",
       "strokeWidthLabel": "Randbreite",
+      "backgroundGradientFillLabel": "Hintergrund-Farbverlauf",
+      "backgroundGlowLabel": "Hintergrund-Leuchten",
+      "backgroundDropShadowLabel": "Hintergrund-Schlagschatten",
       "paddingRatioLabel": "Innenabstand",
       "balloonAwareWrapLabel": "Formangepasster Umbruch (nur oval)",
       "tailStyleLabel": "Zeigerart",
@@ -473,12 +478,18 @@
     "textEffects": {
       "presetOverrideHint": "Von Preset vorgegeben.",
       "gradientOverridesColorHint": "Wird durch den Farbverlauf unten ersetzt, solange dieser aktiv ist.",
-      "outlineAndGradientLabel": "Umrandung & Farbverlauf",
+      "outlineAndGradientLabel": "Umrandung, Farbverlauf, Leuchten & Schatten",
       "strokeColorTextLabel": "Randfarbe (Text)",
       "strokeWidthTextLabel": "Randbreite (Text)",
       "startColorLabel": "Startfarbe",
       "endColorLabel": "Endfarbe",
-      "angleLabel": "Winkel (°)"
+      "angleLabel": "Winkel (°)",
+      "glowColorLabel": "Leuchtfarbe",
+      "glowBlurLabel": "Leuchten-Weichzeichnung",
+      "shadowColorLabel": "Schattenfarbe",
+      "shadowBlurLabel": "Schatten-Weichzeichnung",
+      "shadowOffsetXLabel": "Schatten-Versatz X",
+      "shadowOffsetYLabel": "Schatten-Versatz Y"
     },
     "scopeSwitch": {
       "allLanguagesTitle": "Gilt für alle Sprachen",
@@ -875,7 +886,8 @@
       "presetGovernsHint": "Von Preset „{{name}}“ vorgegeben.",
       "directionVerticalRtl": "Vertikal, Spalten rechts → links (JP)",
       "textStyleSectionTitle": "Textstil",
-      "textEffectsSectionTitle": "Texteffekte",
+      "textEffectsSectionTitle": "Effekte",
+      "backgroundEffectsHeading": "Hintergrundeffekte",
       "deleteBubble": "Bubble löschen"
     },
     "curvedTextInspector": {

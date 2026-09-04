@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { CurvedTextElement, TextAlign, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type { CurvedTextElement, EffectGlow, EffectShadow, TextAlign, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
 import { resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
@@ -30,9 +30,14 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
   const fontFamilyOverride = element.fontFamilyOverride?.[activeLanguage];
   const alignOverride = element.alignOverride?.[activeLanguage];
   const hasEffectsOverride =
-    element.textOutlineOverride?.[activeLanguage] !== undefined || element.textGradientOverride?.[activeLanguage] !== undefined;
+    element.textOutlineOverride?.[activeLanguage] !== undefined ||
+    element.textGradientOverride?.[activeLanguage] !== undefined ||
+    element.textGlowOverride?.[activeLanguage] !== undefined ||
+    element.textDropShadowOverride?.[activeLanguage] !== undefined;
   const effectiveOutline = style.textOutline;
   const effectiveGradient = style.textGradient;
+  const effectiveGlow = style.textGlow;
+  const effectiveDropShadow = style.textDropShadow;
 
   /** Same idea as BubbleInspector.tsx's textPresetGoverns. */
   function textPresetGoverns(field: keyof LetteringPreset["text"], overrideActive: boolean): boolean {
@@ -48,6 +53,8 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
     if (preset.text.color !== undefined) patch.color = style.color;
     if (preset.text.textOutline !== undefined) patch.textOutline = style.textOutline;
     if (preset.text.textGradient !== undefined) patch.textGradient = style.textGradient;
+    if (preset.text.textGlow !== undefined) patch.textGlow = style.textGlow;
+    if (preset.text.textDropShadow !== undefined) patch.textDropShadow = style.textDropShadow;
     onChange({ ...patch, presetId: null });
   }
 
@@ -93,13 +100,24 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       onChange({
         textOutlineOverride: { ...(element.textOutlineOverride ?? {}), [activeLanguage]: element.textOutline },
         textGradientOverride: { ...(element.textGradientOverride ?? {}), [activeLanguage]: element.textGradient },
+        textGlowOverride: { ...(element.textGlowOverride ?? {}), [activeLanguage]: element.textGlow },
+        textDropShadowOverride: { ...(element.textDropShadowOverride ?? {}), [activeLanguage]: element.textDropShadow },
       });
     } else {
       const nextOutline = { ...(element.textOutlineOverride ?? {}) };
       delete nextOutline[activeLanguage];
       const nextGradient = { ...(element.textGradientOverride ?? {}) };
       delete nextGradient[activeLanguage];
-      onChange({ textOutlineOverride: nextOutline, textGradientOverride: nextGradient });
+      const nextGlow = { ...(element.textGlowOverride ?? {}) };
+      delete nextGlow[activeLanguage];
+      const nextDropShadow = { ...(element.textDropShadowOverride ?? {}) };
+      delete nextDropShadow[activeLanguage];
+      onChange({
+        textOutlineOverride: nextOutline,
+        textGradientOverride: nextGradient,
+        textGlowOverride: nextGlow,
+        textDropShadowOverride: nextDropShadow,
+      });
     }
   }
 
@@ -116,6 +134,22 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       onChange({ textGradientOverride: { ...(element.textGradientOverride ?? {}), [activeLanguage]: { ...effectiveGradient, ...patch } } });
     } else {
       onChange({ textGradient: { ...element.textGradient, ...patch } });
+    }
+  }
+
+  function setTextGlow(patch: Partial<EffectGlow>) {
+    if (hasEffectsOverride) {
+      onChange({ textGlowOverride: { ...(element.textGlowOverride ?? {}), [activeLanguage]: { ...effectiveGlow, ...patch } } });
+    } else {
+      onChange({ textGlow: { ...element.textGlow, ...patch } });
+    }
+  }
+
+  function setTextDropShadow(patch: Partial<EffectShadow>) {
+    if (hasEffectsOverride) {
+      onChange({ textDropShadowOverride: { ...(element.textDropShadowOverride ?? {}), [activeLanguage]: { ...effectiveDropShadow, ...patch } } });
+    } else {
+      onChange({ textDropShadow: { ...element.textDropShadow, ...patch } });
     }
   }
 
@@ -238,12 +272,20 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
         onOutlineChange={setTextOutline}
         gradient={effectiveGradient}
         onGradientChange={setTextGradient}
+        glow={effectiveGlow}
+        onGlowChange={setTextGlow}
+        dropShadow={effectiveDropShadow}
+        onDropShadowChange={setTextDropShadow}
         activeLanguage={activeLanguage}
         hasLanguageOverride={hasEffectsOverride}
         onToggleLanguageOverride={toggleEffectsOverride}
         disabled={
           preset?.text.color !== undefined ||
-          (!hasEffectsOverride && (preset?.text.textOutline !== undefined || preset?.text.textGradient !== undefined))
+          (!hasEffectsOverride &&
+            (preset?.text.textOutline !== undefined ||
+              preset?.text.textGradient !== undefined ||
+              preset?.text.textGlow !== undefined ||
+              preset?.text.textDropShadow !== undefined))
         }
       />
 

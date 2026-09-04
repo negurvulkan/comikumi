@@ -244,6 +244,8 @@
       "colorLabel": "Couleur",
       "textOutlineLabel": "Contour du texte",
       "textGradientLabel": "Dégradé du texte",
+      "textGlowLabel": "Lueur du texte",
+      "textDropShadowLabel": "Ombre portée du texte",
       "onLabel": "activé",
       "backgroundHeading": "Fond de bulle (bulles uniquement, pas le texte courbe)",
       "bubbleStyleLabel": "Style de bulle",
@@ -255,6 +257,9 @@
       "fillColorLabel": "Couleur de remplissage",
       "strokeColorLabel": "Couleur du contour",
       "strokeWidthLabel": "Épaisseur du contour",
+      "backgroundGradientFillLabel": "Dégradé de fond",
+      "backgroundGlowLabel": "Lueur de fond",
+      "backgroundDropShadowLabel": "Ombre portée de fond",
       "paddingRatioLabel": "Marge intérieure",
       "balloonAwareWrapLabel": "Retour à la ligne adapté à la forme (ovale uniquement)",
       "tailStyleLabel": "Style de queue",
@@ -459,12 +464,18 @@
     "textEffects": {
       "presetOverrideHint": "Défini par le préréglage.",
       "gradientOverridesColorHint": "Remplacée par le dégradé ci-dessous tant qu'il est actif.",
-      "outlineAndGradientLabel": "Contour & dégradé",
+      "outlineAndGradientLabel": "Contour, dégradé, lueur & ombre",
       "strokeColorTextLabel": "Couleur du contour (texte)",
       "strokeWidthTextLabel": "Épaisseur du contour (texte)",
       "startColorLabel": "Couleur de départ",
       "endColorLabel": "Couleur de fin",
-      "angleLabel": "Angle (°)"
+      "angleLabel": "Angle (°)",
+      "glowColorLabel": "Couleur de la lueur",
+      "glowBlurLabel": "Flou de la lueur",
+      "shadowColorLabel": "Couleur de l'ombre",
+      "shadowBlurLabel": "Flou de l'ombre",
+      "shadowOffsetXLabel": "Décalage d'ombre X",
+      "shadowOffsetYLabel": "Décalage d'ombre Y"
     },
     "scopeSwitch": {
       "allLanguagesTitle": "S'applique à toutes les langues",
@@ -855,7 +866,8 @@
       "presetGovernsHint": "Défini par le préréglage « {{name}} ».",
       "directionVerticalRtl": "Vertical, colonnes droite → gauche (JP)",
       "textStyleSectionTitle": "Style du texte",
-      "textEffectsSectionTitle": "Effets de texte",
+      "textEffectsSectionTitle": "Effets",
+      "backgroundEffectsHeading": "Effets de fond",
       "deleteBubble": "Supprimer la bulle"
     },
     "curvedTextInspector": {

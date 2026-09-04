@@ -23,6 +23,8 @@ const DEFAULT_TEXT: Required<PresetTextFields> = {
   color: "#000000",
   textOutline: { enabled: false, color: "#000000", widthPx: 4 },
   textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+  textGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
+  textDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
 };
 
 const DEFAULT_BACKGROUND: Required<PresetBackgroundFields> = {
@@ -30,6 +32,9 @@ const DEFAULT_BACKGROUND: Required<PresetBackgroundFields> = {
   fillColor: "#ffffff",
   strokeColor: "#000000",
   strokeWidthPx: 6,
+  backgroundGradientFill: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+  backgroundGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
+  backgroundDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
   svgFileName: null,
   tailStyle: "point",
   tailChainSegmentShape: "circle",
@@ -279,6 +284,39 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
           )}
         </FieldToggle>
 
+        <FieldToggle label={t("managers.presets.textGlowLabel")} value={text.textGlow} defaultValue={DEFAULT_TEXT.textGlow} onChange={(v) => setText("textGlow", v)}>
+          {(v, set) => (
+            <div style={{ display: "flex", gap: 8, flex: 1 }}>
+              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
+                {t("managers.presets.onLabel")}
+              </label>
+              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
+              <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
+            </div>
+          )}
+        </FieldToggle>
+
+        <FieldToggle
+          label={t("managers.presets.textDropShadowLabel")}
+          value={text.textDropShadow}
+          defaultValue={DEFAULT_TEXT.textDropShadow}
+          onChange={(v) => setText("textDropShadow", v)}
+        >
+          {(v, set) => (
+            <div style={{ display: "flex", gap: 8, flex: 1 }}>
+              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
+                {t("managers.presets.onLabel")}
+              </label>
+              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
+              <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
+              <input type="number" value={v.offsetXPx} onChange={(e) => set({ ...v, offsetXPx: Number(e.target.value) })} />
+              <input type="number" value={v.offsetYPx} onChange={(e) => set({ ...v, offsetYPx: Number(e.target.value) })} />
+            </div>
+          )}
+        </FieldToggle>
+
         <p className="report-heading" style={{ margin: "8px 0 0" }}>
           {t("managers.presets.backgroundHeading")}
         </p>
@@ -315,6 +353,62 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
           onChange={(v) => setBackground("strokeWidthPx", v)}
         >
           {(v, set) => <input type="number" min={0} value={v} onChange={(e) => set(Number(e.target.value))} />}
+        </FieldToggle>
+
+        <FieldToggle
+          label={t("managers.presets.backgroundGradientFillLabel")}
+          value={background.backgroundGradientFill}
+          defaultValue={DEFAULT_BACKGROUND.backgroundGradientFill}
+          onChange={(v) => setBackground("backgroundGradientFill", v)}
+        >
+          {(v, set) => (
+            <div style={{ display: "flex", gap: 8, flex: 1 }}>
+              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
+                {t("managers.presets.onLabel")}
+              </label>
+              <input type="color" value={v.colorStart} onChange={(e) => set({ ...v, colorStart: e.target.value })} />
+              <input type="color" value={v.colorEnd} onChange={(e) => set({ ...v, colorEnd: e.target.value })} />
+            </div>
+          )}
+        </FieldToggle>
+
+        <FieldToggle
+          label={t("managers.presets.backgroundGlowLabel")}
+          value={background.backgroundGlow}
+          defaultValue={DEFAULT_BACKGROUND.backgroundGlow}
+          onChange={(v) => setBackground("backgroundGlow", v)}
+        >
+          {(v, set) => (
+            <div style={{ display: "flex", gap: 8, flex: 1 }}>
+              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
+                {t("managers.presets.onLabel")}
+              </label>
+              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
+              <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
+            </div>
+          )}
+        </FieldToggle>
+
+        <FieldToggle
+          label={t("managers.presets.backgroundDropShadowLabel")}
+          value={background.backgroundDropShadow}
+          defaultValue={DEFAULT_BACKGROUND.backgroundDropShadow}
+          onChange={(v) => setBackground("backgroundDropShadow", v)}
+        >
+          {(v, set) => (
+            <div style={{ display: "flex", gap: 8, flex: 1 }}>
+              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
+                {t("managers.presets.onLabel")}
+              </label>
+              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
+              <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
+              <input type="number" value={v.offsetXPx} onChange={(e) => set({ ...v, offsetXPx: Number(e.target.value) })} />
+              <input type="number" value={v.offsetYPx} onChange={(e) => set({ ...v, offsetYPx: Number(e.target.value) })} />
+            </div>
+          )}
         </FieldToggle>
 
         <FieldToggle

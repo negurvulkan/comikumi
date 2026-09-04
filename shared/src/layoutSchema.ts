@@ -76,6 +76,39 @@ export const TextGradientSchema = z.object({
 });
 export type TextGradient = z.infer<typeof TextGradientSchema>;
 
+/** Optional glow: a soft, unoffset colored shadow drawn as an underlay pass behind the
+ * fill/stroke — see shared/src/rendering/shadowPasses.ts. Reused verbatim for text
+ * (textGlow on Bubble/CurvedTextElement) and bubble backgrounds (backgroundGlow). */
+export const EffectGlowSchema = z.object({
+  enabled: z.boolean().default(false),
+  color: z.string().default("#66e0ff"),
+  blurPx: z.number().min(0).default(16),
+});
+export type EffectGlow = z.infer<typeof EffectGlowSchema>;
+
+/** Optional drop shadow: an offset, blurred shadow drawn as an underlay pass behind the
+ * fill/stroke — see shared/src/rendering/shadowPasses.ts. Reused verbatim for text
+ * (textDropShadow) and bubble backgrounds (backgroundDropShadow). */
+export const EffectShadowSchema = z.object({
+  enabled: z.boolean().default(false),
+  color: z.string().default("#000000"),
+  blurPx: z.number().min(0).default(8),
+  offsetXPx: z.number().default(4),
+  offsetYPx: z.number().default(4),
+});
+export type EffectShadow = z.infer<typeof EffectShadowSchema>;
+
+/** Optional linear gradient fill for a bubble's background, replacing the solid
+ * fillColor when enabled — same shape as TextGradientSchema, kept separate since it's
+ * background-only (never used on CurvedTextElement, which has no background). */
+export const BubbleGradientFillSchema = z.object({
+  enabled: z.boolean().default(false),
+  colorStart: z.string().default("#ffffff"),
+  colorEnd: z.string().default("#6c8cff"),
+  angleDeg: z.number().default(0),
+});
+export type BubbleGradientFill = z.infer<typeof BubbleGradientFillSchema>;
+
 /**
  * Everything that defines a bubble's visible geometry + drawn background:
  * position/size/rotation plus (optionally) a real speech/thought/shout
@@ -95,6 +128,13 @@ export const BubbleFormSchema = z.object({
   fillColor: z.string().default("#ffffff"),
   strokeColor: z.string().default("#000000"),
   strokeWidthPx: z.number().positive().default(6),
+  /** Linear gradient fill replacing the solid fillColor when enabled. */
+  backgroundGradientFill: BubbleGradientFillSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
+  /** Soft colored glow behind the bubble body. Only the main body silhouette casts it —
+   * detached/chain tail styles don't (see drawBubbleBackground in bubbleBackground.ts). */
+  backgroundGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
+  /** Offset drop shadow behind the bubble body. Same main-body-only scope as backgroundGlow. */
+  backgroundDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
   /**
    * Speech/shout tail tip, or the thought-trail's target point — in LOCAL,
    * unrotated form coordinates (0,0 = this form's own top-left), so it moves
@@ -167,6 +207,9 @@ export const BubbleSchema = z.object({
   fillColor: z.string().default("#ffffff"),
   strokeColor: z.string().default("#000000"),
   strokeWidthPx: z.number().positive().default(6),
+  backgroundGradientFill: BubbleGradientFillSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
+  backgroundGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
+  backgroundDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
   tail: PointSchema.nullable().default(null),
   tailAnchor: PointSchema.nullable().default(null),
   tailWidth: z.number().positive().default(40),
@@ -223,6 +266,8 @@ export const BubbleSchema = z.object({
   color: z.string().default("#000000"),
   textOutline: TextOutlineSchema.default({ enabled: false, color: "#000000", widthPx: 4 }),
   textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
+  textGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
+  textDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
   text: z.record(z.string(), z.string()).default({}),
   /**
    * Per-language overrides — every field here falls back to the bubble's own
@@ -239,6 +284,8 @@ export const BubbleSchema = z.object({
   balloonAwareWrapOverride: z.record(z.string(), z.boolean()).optional(),
   textOutlineOverride: z.record(z.string(), TextOutlineSchema).optional(),
   textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
+  textGlowOverride: z.record(z.string(), EffectGlowSchema).optional(),
+  textDropShadowOverride: z.record(z.string(), EffectShadowSchema).optional(),
   /** Manual assignment, not derived from geometry — which Panel (this page's
    * panels array) and which Character (project-wide) this bubble belongs to.
    * Null means unassigned; a stale id (panel/character deleted after being
@@ -325,6 +372,8 @@ export function resolveBubbleStyle(bubble: Bubble, languageCode: string, presets
     color: resolvePresetField(preset?.text.color, bubble.color),
     textOutline: resolveLangField(bubble.textOutlineOverride, languageCode, preset?.text.textOutline, bubble.textOutline),
     textGradient: resolveLangField(bubble.textGradientOverride, languageCode, preset?.text.textGradient, bubble.textGradient),
+    textGlow: resolveLangField(bubble.textGlowOverride, languageCode, preset?.text.textGlow, bubble.textGlow),
+    textDropShadow: resolveLangField(bubble.textDropShadowOverride, languageCode, preset?.text.textDropShadow, bubble.textDropShadow),
   };
 }
 
@@ -351,6 +400,9 @@ export function resolveBubbleForm(bubble: Bubble, languageCode: string, presets:
     fillColor: resolvePresetField(preset?.background.fillColor, bubble.fillColor),
     strokeColor: resolvePresetField(preset?.background.strokeColor, bubble.strokeColor),
     strokeWidthPx: resolvePresetField(preset?.background.strokeWidthPx, bubble.strokeWidthPx),
+    backgroundGradientFill: resolvePresetField(preset?.background.backgroundGradientFill, bubble.backgroundGradientFill),
+    backgroundGlow: resolvePresetField(preset?.background.backgroundGlow, bubble.backgroundGlow),
+    backgroundDropShadow: resolvePresetField(preset?.background.backgroundDropShadow, bubble.backgroundDropShadow),
     tail: bubble.tail,
     tailAnchor: bubble.tailAnchor,
     tailWidth: bubble.tailWidth,
@@ -416,6 +468,8 @@ export const CurvedTextElementSchema = z.object({
   color: z.string().default("#000000"),
   textOutline: TextOutlineSchema.default({ enabled: false, color: "#000000", widthPx: 4 }),
   textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
+  textGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
+  textDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
   text: z.record(z.string(), z.string()).default({}),
   /** Same per-language override pattern as Bubble's fontSizeOverride etc. */
   fontSizeOverride: z.record(z.string(), z.number().positive()).optional(),
@@ -423,6 +477,8 @@ export const CurvedTextElementSchema = z.object({
   alignOverride: z.record(z.string(), TextAlignSchema).optional(),
   textOutlineOverride: z.record(z.string(), TextOutlineSchema).optional(),
   textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
+  textGlowOverride: z.record(z.string(), EffectGlowSchema).optional(),
+  textDropShadowOverride: z.record(z.string(), EffectShadowSchema).optional(),
   /** Same live-preset-link idea as Bubble.presetId — only the text-style subset of a
    * preset applies (curved text has no bubble background). */
   presetId: z.string().nullable().default(null),
@@ -446,6 +502,8 @@ export function resolveCurvedTextStyle(el: CurvedTextElement, languageCode: stri
     color: resolvePresetField(preset?.text.color, el.color),
     textOutline: resolveLangField(el.textOutlineOverride, languageCode, preset?.text.textOutline, el.textOutline),
     textGradient: resolveLangField(el.textGradientOverride, languageCode, preset?.text.textGradient, el.textGradient),
+    textGlow: resolveLangField(el.textGlowOverride, languageCode, preset?.text.textGlow, el.textGlow),
+    textDropShadow: resolveLangField(el.textDropShadowOverride, languageCode, preset?.text.textDropShadow, el.textDropShadow),
   };
 }
 
@@ -462,6 +520,8 @@ export function createCurvedTextElement(partial: {
     color: "#000000",
     textOutline: { enabled: false, color: "#000000", widthPx: 4 },
     textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+    textGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
+    textDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
     text: {},
     ...partial,
   });
@@ -874,6 +934,9 @@ export function createBubble(partial: Partial<Bubble> & Pick<Bubble, "id" | "x" 
     fillColor: "#ffffff",
     strokeColor: "#000000",
     strokeWidthPx: 6,
+    backgroundGradientFill: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+    backgroundGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
+    backgroundDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
     tail: null,
     tailWidth: 40,
     svgFileName: null,
@@ -885,6 +948,8 @@ export function createBubble(partial: Partial<Bubble> & Pick<Bubble, "id" | "x" 
     color: "#000000",
     textOutline: { enabled: false, color: "#000000", widthPx: 4 },
     textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+    textGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
+    textDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
     text: {},
     corners: shape === "quad" ? boxCorners(partial.x, partial.y, partial.width, partial.height) : undefined,
     ...partial,

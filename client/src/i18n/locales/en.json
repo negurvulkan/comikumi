@@ -246,6 +246,8 @@
       "colorLabel": "Color",
       "textOutlineLabel": "Text outline",
       "textGradientLabel": "Text gradient",
+      "textGlowLabel": "Text glow",
+      "textDropShadowLabel": "Text drop shadow",
       "onLabel": "on",
       "backgroundHeading": "Bubble background (bubbles only, not curved text)",
       "bubbleStyleLabel": "Bubble style",
@@ -257,6 +259,9 @@
       "fillColorLabel": "Fill color",
       "strokeColorLabel": "Stroke color",
       "strokeWidthLabel": "Stroke width",
+      "backgroundGradientFillLabel": "Background gradient fill",
+      "backgroundGlowLabel": "Background glow",
+      "backgroundDropShadowLabel": "Background drop shadow",
       "paddingRatioLabel": "Inner padding",
       "balloonAwareWrapLabel": "Balloon-aware wrapping (oval only)",
       "tailStyleLabel": "Tail style",
@@ -473,12 +478,18 @@
     "textEffects": {
       "presetOverrideHint": "Set by preset.",
       "gradientOverridesColorHint": "Replaced by the gradient below while it's active.",
-      "outlineAndGradientLabel": "Outline & gradient",
+      "outlineAndGradientLabel": "Outline, gradient, glow & shadow",
       "strokeColorTextLabel": "Stroke color (text)",
       "strokeWidthTextLabel": "Stroke width (text)",
       "startColorLabel": "Start color",
       "endColorLabel": "End color",
-      "angleLabel": "Angle (°)"
+      "angleLabel": "Angle (°)",
+      "glowColorLabel": "Glow color",
+      "glowBlurLabel": "Glow blur",
+      "shadowColorLabel": "Shadow color",
+      "shadowBlurLabel": "Shadow blur",
+      "shadowOffsetXLabel": "Shadow offset X",
+      "shadowOffsetYLabel": "Shadow offset Y"
     },
     "scopeSwitch": {
       "allLanguagesTitle": "Applies to all languages",
@@ -875,7 +886,8 @@
       "presetGovernsHint": "Set by preset \"{{name}}\".",
       "directionVerticalRtl": "Vertical, columns right → left (JP)",
       "textStyleSectionTitle": "Text style",
-      "textEffectsSectionTitle": "Text effects",
+      "textEffectsSectionTitle": "Effects",
+      "backgroundEffectsHeading": "Background effects",
       "deleteBubble": "Delete bubble"
     },
     "curvedTextInspector": {

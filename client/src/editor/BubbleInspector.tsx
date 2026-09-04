@@ -4,8 +4,11 @@ import { useTranslation } from "react-i18next";
 import type {
   Bubble,
   BubbleForm,
+  BubbleGradientFill,
   BubbleShapeKind,
   BubbleVisualStyle,
+  EffectGlow,
+  EffectShadow,
   Panel,
   Point,
   TailChainSegmentShape,
@@ -34,6 +37,7 @@ import { ScopeSwitch } from "./ScopeSwitch";
 import { OptionalToggleField } from "./OptionalToggleField";
 import { GovernedField } from "./GovernedField";
 import { IconTabs } from "./IconTabs";
+import { MessageCircleMore, Palette, Signature, Sparkles } from "lucide-react";
 import { GlossaryHighlightedTextarea, findGlossaryReading } from "./GlossaryHighlightedTextarea";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
@@ -193,11 +197,16 @@ export function BubbleInspector({
     if (preset.text.color !== undefined) textPatch.color = style.color;
     if (preset.text.textOutline !== undefined) textPatch.textOutline = style.textOutline;
     if (preset.text.textGradient !== undefined) textPatch.textGradient = style.textGradient;
+    if (preset.text.textGlow !== undefined) textPatch.textGlow = style.textGlow;
+    if (preset.text.textDropShadow !== undefined) textPatch.textDropShadow = style.textDropShadow;
     if (!hasFormOverride) {
       if (preset.background.bubbleStyle !== undefined) textPatch.bubbleStyle = form.bubbleStyle;
       if (preset.background.fillColor !== undefined) textPatch.fillColor = form.fillColor;
       if (preset.background.strokeColor !== undefined) textPatch.strokeColor = form.strokeColor;
       if (preset.background.strokeWidthPx !== undefined) textPatch.strokeWidthPx = form.strokeWidthPx;
+      if (preset.background.backgroundGradientFill !== undefined) textPatch.backgroundGradientFill = form.backgroundGradientFill;
+      if (preset.background.backgroundGlow !== undefined) textPatch.backgroundGlow = form.backgroundGlow;
+      if (preset.background.backgroundDropShadow !== undefined) textPatch.backgroundDropShadow = form.backgroundDropShadow;
       if (preset.background.svgFileName !== undefined) textPatch.svgFileName = form.svgFileName;
       if (preset.background.tailStyle !== undefined) textPatch.tailStyle = form.tailStyle;
       if (preset.background.tailChainSegmentShape !== undefined) textPatch.tailChainSegmentShape = form.tailChainSegmentShape;
@@ -215,9 +224,14 @@ export function BubbleInspector({
   const directionOverride = bubble.directionOverride?.[activeLanguage];
   const balloonAwareWrapOverride = bubble.balloonAwareWrapOverride?.[activeLanguage];
   const hasEffectsOverride =
-    bubble.textOutlineOverride?.[activeLanguage] !== undefined || bubble.textGradientOverride?.[activeLanguage] !== undefined;
+    bubble.textOutlineOverride?.[activeLanguage] !== undefined ||
+    bubble.textGradientOverride?.[activeLanguage] !== undefined ||
+    bubble.textGlowOverride?.[activeLanguage] !== undefined ||
+    bubble.textDropShadowOverride?.[activeLanguage] !== undefined;
   const effectiveOutline = style.textOutline;
   const effectiveGradient = style.textGradient;
+  const effectiveGlow = style.textGlow;
+  const effectiveDropShadow = style.textDropShadow;
 
   function setText(value: string) {
     onChange({ text: { ...bubble.text, [activeLanguage]: value } });
@@ -355,13 +369,24 @@ export function BubbleInspector({
       onChange({
         textOutlineOverride: { ...(bubble.textOutlineOverride ?? {}), [activeLanguage]: bubble.textOutline },
         textGradientOverride: { ...(bubble.textGradientOverride ?? {}), [activeLanguage]: bubble.textGradient },
+        textGlowOverride: { ...(bubble.textGlowOverride ?? {}), [activeLanguage]: bubble.textGlow },
+        textDropShadowOverride: { ...(bubble.textDropShadowOverride ?? {}), [activeLanguage]: bubble.textDropShadow },
       });
     } else {
       const nextOutline = { ...(bubble.textOutlineOverride ?? {}) };
       delete nextOutline[activeLanguage];
       const nextGradient = { ...(bubble.textGradientOverride ?? {}) };
       delete nextGradient[activeLanguage];
-      onChange({ textOutlineOverride: nextOutline, textGradientOverride: nextGradient });
+      const nextGlow = { ...(bubble.textGlowOverride ?? {}) };
+      delete nextGlow[activeLanguage];
+      const nextDropShadow = { ...(bubble.textDropShadowOverride ?? {}) };
+      delete nextDropShadow[activeLanguage];
+      onChange({
+        textOutlineOverride: nextOutline,
+        textGradientOverride: nextGradient,
+        textGlowOverride: nextGlow,
+        textDropShadowOverride: nextDropShadow,
+      });
     }
   }
 
@@ -379,6 +404,34 @@ export function BubbleInspector({
     } else {
       onChange({ textGradient: { ...bubble.textGradient, ...patch } });
     }
+  }
+
+  function setTextGlow(patch: Partial<EffectGlow>) {
+    if (hasEffectsOverride) {
+      onChange({ textGlowOverride: { ...(bubble.textGlowOverride ?? {}), [activeLanguage]: { ...effectiveGlow, ...patch } } });
+    } else {
+      onChange({ textGlow: { ...bubble.textGlow, ...patch } });
+    }
+  }
+
+  function setTextDropShadow(patch: Partial<EffectShadow>) {
+    if (hasEffectsOverride) {
+      onChange({ textDropShadowOverride: { ...(bubble.textDropShadowOverride ?? {}), [activeLanguage]: { ...effectiveDropShadow, ...patch } } });
+    } else {
+      onChange({ textDropShadow: { ...bubble.textDropShadow, ...patch } });
+    }
+  }
+
+  function setBackgroundGradientFill(patch: Partial<BubbleGradientFill>) {
+    setFormField({ backgroundGradientFill: { ...form.backgroundGradientFill, ...patch } });
+  }
+
+  function setBackgroundGlow(patch: Partial<EffectGlow>) {
+    setFormField({ backgroundGlow: { ...form.backgroundGlow, ...patch } });
+  }
+
+  function setBackgroundDropShadow(patch: Partial<EffectShadow>) {
+    setFormField({ backgroundDropShadow: { ...form.backgroundDropShadow, ...patch } });
   }
 
   function toggleTail(checked: boolean) {
@@ -437,11 +490,11 @@ export function BubbleInspector({
     onChange({ shape });
   }
 
-  const tabs: { id: TabId; icon: string; label: string }[] = [
-    { id: "text", icon: "💬", label: t("editor.bubbleInspector.textTabLabel") },
-    { id: "form", icon: "🎨", label: t("editor.bubbleInspector.formAndStyleLabel") },
-    { id: "textStyle", icon: "🔤", label: t("editor.bubbleInspector.textStyleSectionTitle") },
-    { id: "effects", icon: "✨", label: t("editor.bubbleInspector.textEffectsSectionTitle") },
+  const tabs: { id: TabId; icon: typeof MessageCircleMore; label: string }[] = [
+    { id: "text", icon: MessageCircleMore, label: t("editor.bubbleInspector.textTabLabel") },
+    { id: "form", icon: Palette, label: t("editor.bubbleInspector.formAndStyleLabel") },
+    { id: "textStyle", icon: Signature, label: t("editor.bubbleInspector.textStyleSectionTitle") },
+    { id: "effects", icon: Sparkles, label: t("editor.bubbleInspector.textEffectsSectionTitle") },
   ];
 
   return (
@@ -956,21 +1009,171 @@ export function BubbleInspector({
       )}
 
       {activeTab === "effects" && (
-        <TextEffectsFields
-          color={style.color}
-          onColorChange={(color) => onChange({ color })}
-          outline={effectiveOutline}
-          onOutlineChange={setTextOutline}
-          gradient={effectiveGradient}
-          onGradientChange={setTextGradient}
-          activeLanguage={activeLanguage}
-          hasLanguageOverride={hasEffectsOverride}
-          onToggleLanguageOverride={toggleEffectsOverride}
-          disabled={
-            preset?.text.color !== undefined ||
-            (!hasEffectsOverride && (preset?.text.textOutline !== undefined || preset?.text.textGradient !== undefined))
-          }
-        />
+        <>
+          <TextEffectsFields
+            color={style.color}
+            onColorChange={(color) => onChange({ color })}
+            outline={effectiveOutline}
+            onOutlineChange={setTextOutline}
+            gradient={effectiveGradient}
+            onGradientChange={setTextGradient}
+            glow={effectiveGlow}
+            onGlowChange={setTextGlow}
+            dropShadow={effectiveDropShadow}
+            onDropShadowChange={setTextDropShadow}
+            activeLanguage={activeLanguage}
+            hasLanguageOverride={hasEffectsOverride}
+            onToggleLanguageOverride={toggleEffectsOverride}
+            disabled={
+              preset?.text.color !== undefined ||
+              (!hasEffectsOverride &&
+                (preset?.text.textOutline !== undefined ||
+                  preset?.text.textGradient !== undefined ||
+                  preset?.text.textGlow !== undefined ||
+                  preset?.text.textDropShadow !== undefined))
+            }
+          />
+
+          {bubble.shape !== "quad" && form.bubbleStyle !== "none" && (
+            <>
+              <div className="field-label-row" style={{ marginTop: 8 }}>
+                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("editor.bubbleInspector.backgroundEffectsHeading")}</span>
+              </div>
+
+              <GovernedField
+                label={t("managers.presets.backgroundGradientFillLabel")}
+                governed={backgroundPresetGoverns("backgroundGradientFill")}
+                lockTitle={lockTitle}
+              >
+                <OptionalToggleField
+                  label={t("managers.presets.onLabel")}
+                  checked={form.backgroundGradientFill.enabled}
+                  disabled={backgroundPresetGoverns("backgroundGradientFill")}
+                  onToggle={(enabled) => setBackgroundGradientFill({ enabled })}
+                >
+                  <div className="field-row">
+                    <label>
+                      {t("editor.textEffects.startColorLabel")}
+                      <input
+                        type="color"
+                        value={form.backgroundGradientFill.colorStart}
+                        onChange={(e) => setBackgroundGradientFill({ colorStart: e.target.value })}
+                        disabled={backgroundPresetGoverns("backgroundGradientFill")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.endColorLabel")}
+                      <input
+                        type="color"
+                        value={form.backgroundGradientFill.colorEnd}
+                        onChange={(e) => setBackgroundGradientFill({ colorEnd: e.target.value })}
+                        disabled={backgroundPresetGoverns("backgroundGradientFill")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.angleLabel")}
+                      <input
+                        type="number"
+                        step={5}
+                        value={form.backgroundGradientFill.angleDeg}
+                        onChange={(e) => setBackgroundGradientFill({ angleDeg: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundGradientFill")}
+                      />
+                    </label>
+                  </div>
+                </OptionalToggleField>
+              </GovernedField>
+
+              <GovernedField
+                label={t("managers.presets.backgroundGlowLabel")}
+                governed={backgroundPresetGoverns("backgroundGlow")}
+                lockTitle={lockTitle}
+              >
+                <OptionalToggleField
+                  label={t("managers.presets.onLabel")}
+                  checked={form.backgroundGlow.enabled}
+                  disabled={backgroundPresetGoverns("backgroundGlow")}
+                  onToggle={(enabled) => setBackgroundGlow({ enabled })}
+                >
+                  <div className="field-row">
+                    <label>
+                      {t("editor.textEffects.glowColorLabel")}
+                      <input
+                        type="color"
+                        value={form.backgroundGlow.color}
+                        onChange={(e) => setBackgroundGlow({ color: e.target.value })}
+                        disabled={backgroundPresetGoverns("backgroundGlow")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.glowBlurLabel")}
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.backgroundGlow.blurPx}
+                        onChange={(e) => setBackgroundGlow({ blurPx: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundGlow")}
+                      />
+                    </label>
+                  </div>
+                </OptionalToggleField>
+              </GovernedField>
+
+              <GovernedField
+                label={t("managers.presets.backgroundDropShadowLabel")}
+                governed={backgroundPresetGoverns("backgroundDropShadow")}
+                lockTitle={lockTitle}
+              >
+                <OptionalToggleField
+                  label={t("managers.presets.onLabel")}
+                  checked={form.backgroundDropShadow.enabled}
+                  disabled={backgroundPresetGoverns("backgroundDropShadow")}
+                  onToggle={(enabled) => setBackgroundDropShadow({ enabled })}
+                >
+                  <div className="field-row">
+                    <label>
+                      {t("editor.textEffects.shadowColorLabel")}
+                      <input
+                        type="color"
+                        value={form.backgroundDropShadow.color}
+                        onChange={(e) => setBackgroundDropShadow({ color: e.target.value })}
+                        disabled={backgroundPresetGoverns("backgroundDropShadow")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.shadowBlurLabel")}
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.backgroundDropShadow.blurPx}
+                        onChange={(e) => setBackgroundDropShadow({ blurPx: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundDropShadow")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.shadowOffsetXLabel")}
+                      <input
+                        type="number"
+                        value={form.backgroundDropShadow.offsetXPx}
+                        onChange={(e) => setBackgroundDropShadow({ offsetXPx: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundDropShadow")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.shadowOffsetYLabel")}
+                      <input
+                        type="number"
+                        value={form.backgroundDropShadow.offsetYPx}
+                        onChange={(e) => setBackgroundDropShadow({ offsetYPx: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundDropShadow")}
+                      />
+                    </label>
+                  </div>
+                </OptionalToggleField>
+              </GovernedField>
+            </>
+          )}
+        </>
       )}
 
       <button onClick={onDelete} style={{ color: "#ff8a95" }}>

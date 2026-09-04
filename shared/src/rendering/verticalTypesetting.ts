@@ -1,6 +1,7 @@
-import type { TextAlign, TextGradient, TextOutline } from "../layoutSchema.js";
+import type { EffectGlow, EffectShadow, TextAlign, TextGradient, TextOutline } from "../layoutSchema.js";
 import { MIN_FONT_SIZE, ovalRowWidth, type BalloonGeometry } from "./textLayout.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
+import { drawShadowUnderlayPasses } from "./shadowPasses.js";
 import { createOffscreenCanvas } from "./canvasFactory.js";
 
 /**
@@ -503,6 +504,8 @@ export interface DrawVerticalTextOptions {
   align?: TextAlign;
   outline?: TextOutline;
   gradient?: TextGradient;
+  glow?: EffectGlow;
+  dropShadow?: EffectShadow;
   /** Same scale factor the caller used for rowStep/colPitch — sizes the outline stroke consistently (1 for export's real image px, the display zoom factor for the editor preview). */
   scale?: number;
 }
@@ -584,50 +587,58 @@ export function drawVerticalText(
   const blockHeight = maxRows * rowStep;
   const yStart = originY - blockHeight / 2 + rowStep / 2;
 
-  const style: TextFillStyle = { color: opts.color, outline: opts.outline, gradient: opts.gradient };
+  const style: TextFillStyle = { color: opts.color, outline: opts.outline, gradient: opts.gradient, glow: opts.glow, dropShadow: opts.dropShadow };
   // The gradient/outline must be set up ONCE for the whole block (same
   // reasoning as the block-shared vertical reference above) — the bbox is the
   // block's own extent, not the wider boxWidth it's centered/aligned within.
   applyTextFillStyle(ctx, style, rightX - blockWidth + colPitch, originY - blockHeight / 2, blockWidth, blockHeight, opts.scale ?? 1);
 
-  columns.forEach((column, colIndex) => {
-    const x = rightX - colIndex * colPitch;
-    let y = yStart;
+  const drawAllColumns = () => {
+    columns.forEach((column, colIndex) => {
+      const x = rightX - colIndex * colPitch;
+      let y = yStart;
 
-    for (const token of column) {
-      if (token.kind === "char") {
-        ctx.font = `${fontSize}px "${opts.fontFamily}"`;
-        ctx.textAlign = "center";
-        drawCharToken(ctx, token, x, y, rowStep, fontSize, opts, style);
-        y += rowStep;
-      } else if (token.kind === "word") {
-        ctx.font = `${fontSize}px "${opts.fontFamily}"`;
-        ctx.textAlign = "center";
-        for (const charTok of token.chars) {
-          drawCharToken(ctx, charTok, x, y, rowStep, fontSize, opts, style);
+      for (const token of column) {
+        if (token.kind === "char") {
+          ctx.font = `${fontSize}px "${opts.fontFamily}"`;
+          ctx.textAlign = "center";
+          drawCharToken(ctx, token, x, y, rowStep, fontSize, opts, style);
           y += rowStep;
-        }
-      } else if (token.kind === "tcy") {
-        let tcySize = fontSize * 0.62;
-        ctx.font = `${tcySize}px "${opts.fontFamily}"`;
-        ctx.textAlign = "center";
-        const measured = ctx.measureText(token.text).width;
-        if (measured > rowStep * 0.98) {
-          tcySize *= (rowStep * 0.98) / measured;
+        } else if (token.kind === "word") {
+          ctx.font = `${fontSize}px "${opts.fontFamily}"`;
+          ctx.textAlign = "center";
+          for (const charTok of token.chars) {
+            drawCharToken(ctx, charTok, x, y, rowStep, fontSize, opts, style);
+            y += rowStep;
+          }
+        } else if (token.kind === "tcy") {
+          let tcySize = fontSize * 0.62;
           ctx.font = `${tcySize}px "${opts.fontFamily}"`;
+          ctx.textAlign = "center";
+          const measured = ctx.measureText(token.text).width;
+          if (measured > rowStep * 0.98) {
+            tcySize *= (rowStep * 0.98) / measured;
+            ctx.font = `${tcySize}px "${opts.fontFamily}"`;
+          }
+          drawStyledText(ctx, token.text, x, y, style);
+          y += rowStep;
+        } else if (token.kind === "ruby") {
+          y = drawRubyToken(ctx, token.base, token.reading, x, y, rowStep, colPitch, fontSize, opts, style);
+        } else if (token.kind === "rubyWord") {
+          for (const pair of token.pairs) {
+            y = drawRubyToken(ctx, pair.base, pair.reading, x, y, rowStep, colPitch, fontSize, opts, style);
+          }
         }
-        drawStyledText(ctx, token.text, x, y, style);
-        y += rowStep;
-      } else if (token.kind === "ruby") {
-        y = drawRubyToken(ctx, token.base, token.reading, x, y, rowStep, colPitch, fontSize, opts, style);
-      } else if (token.kind === "rubyWord") {
-        for (const pair of token.pairs) {
-          y = drawRubyToken(ctx, pair.base, pair.reading, x, y, rowStep, colPitch, fontSize, opts, style);
-        }
+        // "break" tokens never appear inside a laid-out column.
       }
-      // "break" tokens never appear inside a laid-out column.
-    }
-  });
+    });
+  };
+  // Glow/drop-shadow underlay passes (see shadowPasses.ts) draw the whole block once per
+  // enabled effect before the real crisp draw — per-glyph shadow means tightly-spaced
+  // vertical/ruby characters may show overlapping shadow seams; accepted as a known v1
+  // limitation (see plan notes), not fixed here.
+  drawShadowUnderlayPasses(ctx, style.glow, style.dropShadow, drawAllColumns);
+  drawAllColumns();
 }
 
 /** Draws one ruby run (stacked base characters, reading spread evenly beside the whole

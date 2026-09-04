@@ -1,6 +1,8 @@
+import type { ComponentType } from "react";
+
 interface TabDef {
   id: string;
-  icon: string;
+  icon: ComponentType<{ size?: number }>;
   label: string;
 }
 
@@ -16,20 +18,23 @@ interface Props {
 export function IconTabs({ tabs, active, onChange }: Props) {
   return (
     <div className="icon-tabs" role="tablist">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          role="tab"
-          aria-selected={tab.id === active}
-          aria-label={tab.label}
-          title={tab.label}
-          className={"icon-tab" + (tab.id === active ? " active" : "")}
-          onClick={() => onChange(tab.id)}
-        >
-          <span aria-hidden="true">{tab.icon}</span>
-        </button>
-      ))}
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={tab.id === active}
+            aria-label={tab.label}
+            title={tab.label}
+            className={"icon-tab" + (tab.id === active ? " active" : "")}
+            onClick={() => onChange(tab.id)}
+          >
+            <Icon size={16} />
+          </button>
+        );
+      })}
     </div>
   );
 }

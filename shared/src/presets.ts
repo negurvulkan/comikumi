@@ -4,6 +4,9 @@ import {
   TextDirectionSchema,
   TextOutlineSchema,
   TextGradientSchema,
+  EffectGlowSchema,
+  EffectShadowSchema,
+  BubbleGradientFillSchema,
   BubbleVisualStyleSchema,
   TailStyleSchema,
   TailChainSegmentShapeSchema,
@@ -29,6 +32,8 @@ export const PresetTextFieldsSchema = z
     color: z.string().optional(),
     textOutline: TextOutlineSchema.optional(),
     textGradient: TextGradientSchema.optional(),
+    textGlow: EffectGlowSchema.optional(),
+    textDropShadow: EffectShadowSchema.optional(),
   })
   .default({});
 export type PresetTextFields = z.infer<typeof PresetTextFieldsSchema>;
@@ -45,6 +50,9 @@ export const PresetBackgroundFieldsSchema = z
     fillColor: z.string().optional(),
     strokeColor: z.string().optional(),
     strokeWidthPx: z.number().positive().optional(),
+    backgroundGradientFill: BubbleGradientFillSchema.optional(),
+    backgroundGlow: EffectGlowSchema.optional(),
+    backgroundDropShadow: EffectShadowSchema.optional(),
     svgFileName: z.string().nullable().optional(),
     tailStyle: TailStyleSchema.optional(),
     tailChainSegmentShape: TailChainSegmentShapeSchema.optional(),

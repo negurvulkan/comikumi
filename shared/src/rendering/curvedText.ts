@@ -1,6 +1,7 @@
 import type { Point, TextAlign } from "../layoutSchema.js";
 import { MIN_FONT_SIZE } from "./textLayout.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
+import { drawShadowUnderlayPasses } from "./shadowPasses.js";
 
 /**
  * Freestanding "text on a Bézier path" — the geometry/drawing core shared by
@@ -153,15 +154,23 @@ export function drawCurvedText(
   const boxH = Math.max(1, Math.max(...ys) - minY);
   applyTextFillStyle(ctx, style, minX, minY, boxW, boxH, scale);
 
-  let dist = startDist;
-  for (const ch of [...flat]) {
-    const chWidth = ctx.measureText(ch).width;
-    const { point, angle } = pointAtArcLength(points, fitted.table, dist + chWidth / 2);
-    ctx.save();
-    ctx.translate(point.x, point.y);
-    ctx.rotate(angle);
-    drawStyledText(ctx, ch, 0, 0, style);
-    ctx.restore();
-    dist += chWidth;
-  }
+  // Glow/drop-shadow underlay (see shadowPasses.ts) redraws every character once per
+  // enabled effect before the real crisp pass — each character casts its own shadow, so
+  // tightly-spaced characters may show overlapping shadow seams; accepted as a known v1
+  // limitation (see plan notes), not fixed here.
+  const drawAllChars = () => {
+    let dist = startDist;
+    for (const ch of [...flat]) {
+      const chWidth = ctx.measureText(ch).width;
+      const { point, angle } = pointAtArcLength(points, fitted.table, dist + chWidth / 2);
+      ctx.save();
+      ctx.translate(point.x, point.y);
+      ctx.rotate(angle);
+      drawStyledText(ctx, ch, 0, 0, style);
+      ctx.restore();
+      dist += chWidth;
+    }
+  };
+  drawShadowUnderlayPasses(ctx, style.glow, style.dropShadow, drawAllChars);
+  drawAllChars();
 }

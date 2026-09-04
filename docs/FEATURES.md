@@ -390,7 +390,7 @@ clicking an entry, delete). Applicable to bubbles **and** curved texts (curved
 texts only use the text-style part, no bubble background).
 
 - **Sparse/granular per field**: a preset can deliberately define only part of
-  the ~17 fields (e.g. just the font) — every field is individually toggleable
+  the ~24 fields (e.g. just the font) — every field is individually toggleable
   via a checkbox. Fields not defined remain entirely up to the individual
   bubble/curved text and are never touched by the preset. This way, for
   example, the font of all SFX bubbles can be changed at once without
@@ -405,11 +405,12 @@ texts only use the text-style part, no bubble background).
   language override of the entire bubble shape) always wins regardless of
   presets.
 - **Scope**: text style (font, size, line height, alignment, reading direction,
-  color, outline, gradient) and, bubbles only, bubble background (bubble style,
-  fill/border color, border width, tail type including chain details). Pure
-  geometry (position/size/rotation, tail tip/anchor/width/curvature) is
-  deliberately not a preset field — those are instance properties of an
-  individual bubble, not "style".
+  color, outline, gradient, glow, drop shadow) and, bubbles only, bubble
+  background (bubble style, fill/border color, border width, gradient fill,
+  glow, drop shadow, tail type including chain details). Pure geometry
+  (position/size/rotation, tail tip/anchor/width/curvature) is deliberately not
+  a preset field — those are instance properties of an individual bubble, not
+  "style".
 - **Assignment**: via a preset dropdown in the bubble/curved-text inspector, or
   via the right-click context menu on the canvas ("Assign preset" submenu,
   bubbles only). Every field controlled by the current preset is shown disabled
@@ -475,7 +476,12 @@ contour. With a visible style: fill/border color, border width, and an optional
 pointer/tail with its own style — seamlessly connected, free-standing, or a
 segmented "chain" (circle/rectangle/diamond segments, count and spacing
 configurable) — position, width, and curvature are all adjustable via canvas
-drag handles.
+drag handles. The background fill can also be a linear gradient instead of a
+solid color, and/or carry a glow and/or a drop shadow — all independently
+toggleable and stackable (a bubble can have a gradient fill, a colored glow,
+and a dark drop shadow all at once). Glow/drop-shadow render on the bubble's
+main body and its seamlessly-connected tail; a free-standing or chain-style
+tail doesn't cast its own glow/shadow (a known limitation, not a bug).
 
 Text options: font (custom uploaded fonts), size, line height, horizontal
 alignment, and reading direction — horizontal LTR, horizontal RTL, or vertical
@@ -494,8 +500,12 @@ current text selection in the right markup automatically instead of typing
 the `{...}` syntax by hand — the furigana button also checks the project
 glossary (see [Glossary](#glossary)) and pre-fills a stored reading when the
 selection matches a translated term. Text can have an outline and/or a linear gradient
-instead of a solid color. Every one of these style fields (and the entire
-shape/position/size/rotation/background) can be overridden per language.
+instead of a solid color, plus an independently toggleable glow and/or drop shadow
+(all four can be combined). Every one of these style fields (and the entire
+shape/position/size/rotation/background) can be overridden per language. Text
+glow/drop-shadow render in the editor, PNG, and PSD export; the vector-PDF export's
+text layer stays real vector text and doesn't carry any of the four text effects
+(same pre-existing limitation as outline/gradient).
 Bubbles can be assigned to a panel and a character.
 
 **Effect (SFX) bubbles**: a dedicated toolbar tool next to the three shape
@@ -568,8 +578,8 @@ onomatopoeia like "BOOM!") that runs along a cubic Bézier curve with 4 draggabl
 control points, instead of sitting in a bubble box. Deliberately single-line/
 without a reading-direction option (a focused title/effect tool, not a second
 full-text layout system) — font, size (shrinks automatically to fit the curve),
-alignment along the curve (start/middle/end), color/outline/gradient, all with
-the same per-language override pattern.
+alignment along the curve (start/middle/end), color/outline/gradient/glow/drop
+shadow, all with the same per-language override pattern.
 
 ### Panels
 
