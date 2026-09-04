@@ -5,7 +5,9 @@
   </picture>
 </p>
 
-<p align="center">A local-first lettering &amp; typesetting tool for manga/comic translation projects.</p>
+<p align="center">A workspace for comic lettering, localization and production.</p>
+<p align="center">Plan, prepare, letter, translate, review and publish comics in one integrated
+workflow — on a single machine, over LAN, or with a shared server.</p>
 
 <p align="center">
   <a href="https://discord.gg/DZ7nnaFzn">Join the Discord</a> ·
@@ -18,11 +20,13 @@
 
 ---
 
-ComiKumi is a desktop-style web app for placing and translating speech bubbles, curved
-titles/SFX, and image patches directly on top of scanned comic pages, and exporting the
-result as ready-to-publish PNGs. It runs entirely on your own machine — a small Express
-server reads/writes files on disk (no cloud, no accounts, no telemetry), paired with a
-React + Konva canvas editor.
+ComiKumi brings the whole production workflow around your artwork into one place — from
+script planning to lettering, localization, review, and publishing — without replacing the
+art itself. Place and letter speech bubbles, curved titles/SFX, and image patches directly
+on top of scanned comic pages, translate them per language, and export the result as
+ready-to-publish PNGs. Run it solo on your machine, on your studio's LAN, or on a shared
+server your whole team connects to — a small Express server reads/writes files on disk (no
+cloud, no accounts, no telemetry), paired with a React + Konva canvas editor.
 
 ## Highlights
 
@@ -205,7 +209,7 @@ desktop app (Electron embeds the same Express server and serves the built client
 one process) — `release/<platform>` gets the same installer types listed above.
 
 On first launch, a small setup screen offers a choice: run a **local** server (asks
-where to store app data — not the manga projects themselves, which are configured
+where to store app data — not the comic projects themselves, which are configured
 per-project via the in-app Project Wizard afterward — and which local port to use,
 defaulting to the OS's per-user app-data directory and port 3001), or connect to a
 **remote** ComiKumi server already running elsewhere (just its URL — the desktop app
