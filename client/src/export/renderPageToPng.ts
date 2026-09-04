@@ -58,7 +58,7 @@ interface ResolvedStyle {
   textDropShadow: EffectShadow;
 }
 
-function drawHorizontalBubble(
+export function drawHorizontalBubble(
   ctx: CanvasRenderingContext2D,
   bubble: Bubble,
   form: BubbleForm,
@@ -114,7 +114,7 @@ function drawHorizontalBubble(
   drawAllLines();
 }
 
-function drawVerticalBubble(
+export function drawVerticalBubble(
   ctx: CanvasRenderingContext2D,
   bubble: Bubble,
   form: BubbleForm,

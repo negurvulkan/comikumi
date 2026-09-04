@@ -3,18 +3,10 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { BUILTIN_PRESETS, type LetteringPreset, type PresetTextFields, type PresetBackgroundFields } from "../../../shared/src/presets";
-import type {
-  BubbleBevelDirection,
-  BubbleBevelStyle,
-  BubbleVisualStyle,
-  TailChainSegmentShape,
-  TailStyle,
-  TextAlign,
-  TextDirection,
-} from "../../../shared/src/layoutSchema";
-import { FontPicker } from "./FontPicker";
 import { useConfirmDialog } from "./ConfirmDialog";
-import { DASH_PRESETS, matchDashPreset, parseDashPattern, formatDashPattern } from "./dashPatterns";
+import { PresetList } from "./PresetList";
+import { PresetPropertiesPanel } from "./PresetPropertiesPanel";
+import { PresetPreview } from "./PresetPreview";
 
 interface Props {
   presets: LetteringPreset[];
@@ -22,110 +14,66 @@ interface Props {
   onClose?: () => void;
 }
 
-const DEFAULT_TEXT: Required<PresetTextFields> = {
-  fontFamily: "Anime Ace",
-  fontSize: 24,
-  lineHeight: 1.2,
-  align: "center",
-  direction: "ltr",
-  balloonAwareWrap: true,
-  color: "#000000",
-  textOutline: { enabled: false, color: "#000000", widthPx: 4 },
-  textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
-  textGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
-  textDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
-};
-
-const DEFAULT_BACKGROUND: Required<PresetBackgroundFields> = {
-  bubbleStyle: "none",
-  fillColor: "#ffffff",
-  strokeColor: "#000000",
-  strokeWidthPx: 6,
-  strokeDashPattern: [],
-  strokeDashOffsetPx: 0,
-  backgroundGradientFill: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
-  backgroundGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
-  backgroundDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
-  backgroundBevel: {
-    enabled: false,
-    style: "inner",
-    direction: "up",
-    sizePx: 6,
-    angleDeg: 120,
-    softenPx: 4,
-    highlightColor: "#ffffff",
-    highlightOpacity: 0.75,
-    shadowColor: "#000000",
-    shadowOpacity: 0.6,
-  },
-  svgFileName: null,
-  tailStyle: "point",
-  tailChainSegmentShape: "circle",
-  tailChainSegments: 3,
-  tailChainSpacing: 1,
-  paddingRatio: 0.15,
-};
-
-function emptyForm() {
-  return { name: "", text: {} as PresetTextFields, background: {} as PresetBackgroundFields };
+interface Form {
+  name: string;
+  text: PresetTextFields;
+  background: PresetBackgroundFields;
 }
 
-/** Row for a simple scalar preset field: a checkbox that toggles whether this preset
- * defines the field at all (sparse — unchecked means "not part of this preset, every
- * linked element keeps its own value"), plus the control itself, shown/enabled only
- * once checked. */
-function FieldToggle<T>({
-  label,
-  value,
-  defaultValue,
-  onChange,
-  children,
-}: {
-  label: string;
-  value: T | undefined;
-  defaultValue: T;
-  onChange: (value: T | undefined) => void;
-  children: (value: T, set: (v: T) => void) => React.ReactNode;
-}) {
-  const active = value !== undefined;
-  return (
-    <div className="field-row" style={{ alignItems: "center" }}>
-      <label style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: "0 0 auto" }}>
-        <input type="checkbox" checked={active} onChange={(e) => onChange(e.target.checked ? defaultValue : undefined)} />
-        {label}
-      </label>
-      {active && children(value, onChange)}
-    </div>
-  );
+function emptyForm(): Form {
+  return { name: "", text: {}, background: {} };
 }
 
 /** Projectwide, live-linked style presets — editable from the "Projekt"-menu on every
  * screen. Each field is individually toggle-able (sparse): only checked fields are part
  * of the saved preset and live-drive every Bubble/CurvedTextElement linked to it via
- * presetId (see resolveBubbleStyle/resolveBubbleForm/resolveCurvedTextStyle). */
+ * presetId (see resolveBubbleStyle/resolveBubbleForm/resolveCurvedTextStyle).
+ *
+ * Orchestrator only — list/selection state, the shared `form` buffer, network calls, and
+ * a dirty-check guard live here; the 3-column layout itself is PresetList (left) +
+ * PresetPropertiesPanel (middle) + PresetPreview (right). */
 export function PresetManager({ presets, onChange, onClose }: Props) {
   const { t } = useTranslation();
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
-  const [form, setForm] = useState(emptyForm());
+  const [form, setForm] = useState<Form>(emptyForm());
+  const [baseline, setBaseline] = useState<Form>(emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  function startEdit(p: LetteringPreset) {
+  const dirty = JSON.stringify(form) !== JSON.stringify(baseline);
+
+  function loadForEdit(p: LetteringPreset) {
+    const next = { name: p.name, text: p.text, background: p.background };
     setEditingId(p.id);
-    setForm({ name: p.name, text: p.text, background: p.background });
+    setForm(next);
+    setBaseline(next);
   }
 
   function resetForm() {
-    setForm(emptyForm());
+    const next = emptyForm();
+    setForm(next);
+    setBaseline(next);
     setEditingId(null);
   }
 
-  function setText<K extends keyof PresetTextFields>(key: K, value: PresetTextFields[K]) {
+  /** Guards any action that would discard the current `form` buffer (switching to a
+   * different preset, starting a fresh draft, or closing) behind a confirm prompt when
+   * there are unsaved edits — fixes a real gap in the previous single-column UI, where
+   * clicking a different preset's name silently threw away whatever was being edited. */
+  async function guardDiscard(next: () => void) {
+    if (!dirty) {
+      next();
+      return;
+    }
+    if (await confirm({ message: t("managers.presets.unsavedChangesConfirmMessage") })) next();
+  }
+
+  function setText<K extends keyof PresetTextFields>(key: K, value: PresetTextFields[K] | undefined) {
     setForm((f) => ({ ...f, text: { ...f.text, [key]: value } }));
   }
 
-  function setBackground<K extends keyof PresetBackgroundFields>(key: K, value: PresetBackgroundFields[K]) {
+  function setBackground<K extends keyof PresetBackgroundFields>(key: K, value: PresetBackgroundFields[K] | undefined) {
     setForm((f) => ({ ...f, background: { ...f.background, [key]: value } }));
   }
 
@@ -173,55 +121,26 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
     }
   }
 
-  const text = form.text;
-  const background = form.background;
-  const showTailChain = background.tailStyle === "chain";
-
   return (
-    <div className="inspector" style={{ maxWidth: 460, maxHeight: "80vh", overflowY: "auto" }}>
+    <div className="inspector preset-manager-root" style={{ width: "min(1180px, 95vw)", maxHeight: "85vh", overflowY: "auto" }}>
       {confirmDialog}
       <p style={{ margin: 0, fontWeight: 600 }}>{t("managers.presets.title")}</p>
 
-      <div className="language-manager-list">
-        {presets.map((p) => (
-          <div key={p.id} className="language-manager-row">
-            <button
-              type="button"
-              onClick={() => startEdit(p)}
-              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit", textAlign: "left" }}
-              title={t("common.edit")}
-            >
-              {p.name}
-            </button>
-            <button onClick={() => handleDelete(p.id)} disabled={busy} title={t("managers.presets.remove")}>
-              ×
-            </button>
-          </div>
-        ))}
-        {presets.length === 0 && <p className="hint">{t("managers.presets.empty")}</p>}
+      <div className="preset-manager-layout">
+        <PresetList
+          presets={presets}
+          selectedId={editingId}
+          onSelect={(id) => guardDiscard(() => loadForEdit(presets.find((p) => p.id === id)!))}
+          onCreate={() => guardDiscard(resetForm)}
+          onDelete={handleDelete}
+          onAddFromLibrary={handleAddFromLibrary}
+          busy={busy}
+        />
+        <PresetPropertiesPanel text={form.text} background={form.background} onTextChange={setText} onBackgroundChange={setBackground} />
+        <PresetPreview text={form.text} background={form.background} />
       </div>
 
-      <p className="hint" style={{ margin: "0 0 4px" }}>
-        {t("managers.presets.libraryHeading")}
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-        {BUILTIN_PRESETS.map((builtin) => {
-          const alreadyAdded = presets.some((p) => p.name === builtin.name);
-          return (
-            <button
-              key={builtin.name}
-              type="button"
-              disabled={busy || alreadyAdded}
-              onClick={() => handleAddFromLibrary(builtin)}
-              title={alreadyAdded ? t("managers.presets.libraryAlreadyAdded") : undefined}
-            >
-              {builtin.name}
-            </button>
-          );
-        })}
-      </div>
-
-      <form onSubmit={handleSubmit} className="language-manager-form">
+      <form onSubmit={handleSubmit} className="language-manager-form" style={{ marginTop: 8 }}>
         <label>
           {t("managers.characters.nameLabel")}
           <input
@@ -232,355 +151,12 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
           />
         </label>
 
-        <p className="report-heading" style={{ margin: "8px 0 0" }}>
-          {t("managers.presets.textStyleHeading")}
-        </p>
-
-        <FieldToggle label={t("managers.presets.fontFamilyLabel")} value={text.fontFamily} defaultValue={DEFAULT_TEXT.fontFamily} onChange={(v) => setText("fontFamily", v)}>
-          {(v, set) => <FontPicker value={v} onChange={set} />}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.fontSizeLabel")} value={text.fontSize} defaultValue={DEFAULT_TEXT.fontSize} onChange={(v) => setText("fontSize", v)}>
-          {(v, set) => <input type="number" min={4} value={v} onChange={(e) => set(Number(e.target.value))} />}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.lineHeightLabel")} value={text.lineHeight} defaultValue={DEFAULT_TEXT.lineHeight} onChange={(v) => setText("lineHeight", v)}>
-          {(v, set) => <input type="number" step={0.1} min={0.8} value={v} onChange={(e) => set(Number(e.target.value))} />}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.alignLabel")} value={text.align} defaultValue={DEFAULT_TEXT.align} onChange={(v) => setText("align", v)}>
-          {(v, set) => (
-            <select value={v} onChange={(e) => set(e.target.value as TextAlign)}>
-              <option value="left">{t("managers.presets.alignLeft")}</option>
-              <option value="center">{t("managers.presets.alignCenter")}</option>
-              <option value="right">{t("managers.presets.alignRight")}</option>
-            </select>
-          )}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.directionLabel")} value={text.direction} defaultValue={DEFAULT_TEXT.direction} onChange={(v) => setText("direction", v)}>
-          {(v, set) => (
-            <select value={v} onChange={(e) => set(e.target.value as TextDirection)}>
-              <option value="ltr">{t("managers.presets.directionLtr")}</option>
-              <option value="rtl">{t("managers.presets.directionRtl")}</option>
-              <option value="vertical-rl">{t("managers.presets.directionVertical")}</option>
-            </select>
-          )}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.balloonAwareWrapLabel")}
-          value={text.balloonAwareWrap}
-          defaultValue={DEFAULT_TEXT.balloonAwareWrap}
-          onChange={(v) => setText("balloonAwareWrap", v)}
-        >
-          {(v, set) => <input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} />}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.colorLabel")} value={text.color} defaultValue={DEFAULT_TEXT.color} onChange={(v) => setText("color", v)}>
-          {(v, set) => <input type="color" value={v} onChange={(e) => set(e.target.value)} />}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.textOutlineLabel")} value={text.textOutline} defaultValue={DEFAULT_TEXT.textOutline} onChange={(v) => setText("textOutline", v)}>
-          {(v, set) => (
-            <div style={{ display: "flex", gap: 8, flex: 1 }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                {t("managers.presets.onLabel")}
-              </label>
-              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
-              <input type="number" min={1} value={v.widthPx} onChange={(e) => set({ ...v, widthPx: Number(e.target.value) })} />
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.textGradientLabel")} value={text.textGradient} defaultValue={DEFAULT_TEXT.textGradient} onChange={(v) => setText("textGradient", v)}>
-          {(v, set) => (
-            <div style={{ display: "flex", gap: 8, flex: 1 }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                {t("managers.presets.onLabel")}
-              </label>
-              <input type="color" value={v.colorStart} onChange={(e) => set({ ...v, colorStart: e.target.value })} />
-              <input type="color" value={v.colorEnd} onChange={(e) => set({ ...v, colorEnd: e.target.value })} />
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.textGlowLabel")} value={text.textGlow} defaultValue={DEFAULT_TEXT.textGlow} onChange={(v) => setText("textGlow", v)}>
-          {(v, set) => (
-            <div style={{ display: "flex", gap: 8, flex: 1 }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                {t("managers.presets.onLabel")}
-              </label>
-              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
-              <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.textDropShadowLabel")}
-          value={text.textDropShadow}
-          defaultValue={DEFAULT_TEXT.textDropShadow}
-          onChange={(v) => setText("textDropShadow", v)}
-        >
-          {(v, set) => (
-            <div style={{ display: "flex", gap: 8, flex: 1 }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                {t("managers.presets.onLabel")}
-              </label>
-              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
-              <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
-              <input type="number" value={v.offsetXPx} onChange={(e) => set({ ...v, offsetXPx: Number(e.target.value) })} />
-              <input type="number" value={v.offsetYPx} onChange={(e) => set({ ...v, offsetYPx: Number(e.target.value) })} />
-            </div>
-          )}
-        </FieldToggle>
-
-        <p className="report-heading" style={{ margin: "8px 0 0" }}>
-          {t("managers.presets.backgroundHeading")}
-        </p>
-
-        <FieldToggle
-          label={t("managers.presets.bubbleStyleLabel")}
-          value={background.bubbleStyle}
-          defaultValue={DEFAULT_BACKGROUND.bubbleStyle}
-          onChange={(v) => setBackground("bubbleStyle", v)}
-        >
-          {(v, set) => (
-            <select value={v} onChange={(e) => set(e.target.value as BubbleVisualStyle)}>
-              <option value="none">{t("managers.presets.bubbleStyleNone")}</option>
-              <option value="speech">{t("managers.presets.bubbleStyleSpeech")}</option>
-              <option value="thought">{t("managers.presets.bubbleStyleThought")}</option>
-              <option value="shout">{t("managers.presets.bubbleStyleShout")}</option>
-              <option value="svg">{t("managers.presets.bubbleStyleSvg")}</option>
-            </select>
-          )}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.fillColorLabel")} value={background.fillColor} defaultValue={DEFAULT_BACKGROUND.fillColor} onChange={(v) => setBackground("fillColor", v)}>
-          {(v, set) => <input type="color" value={v} onChange={(e) => set(e.target.value)} />}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.strokeColorLabel")} value={background.strokeColor} defaultValue={DEFAULT_BACKGROUND.strokeColor} onChange={(v) => setBackground("strokeColor", v)}>
-          {(v, set) => <input type="color" value={v} onChange={(e) => set(e.target.value)} />}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.strokeWidthLabel")}
-          value={background.strokeWidthPx}
-          defaultValue={DEFAULT_BACKGROUND.strokeWidthPx}
-          onChange={(v) => setBackground("strokeWidthPx", v)}
-        >
-          {(v, set) => <input type="number" min={0} value={v} onChange={(e) => set(Number(e.target.value))} />}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.strokeDashLabel")}
-          value={background.strokeDashPattern}
-          defaultValue={DEFAULT_BACKGROUND.strokeDashPattern}
-          onChange={(v) => setBackground("strokeDashPattern", v)}
-        >
-          {(v, set) => (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flex: 1 }}>
-              <select
-                value={matchDashPreset(v)}
-                onChange={(e) => {
-                  const preset = DASH_PRESETS.find((p) => p.id === e.target.value);
-                  if (preset) set(preset.pattern);
-                }}
-              >
-                <option value="solid">{t("managers.presets.strokeDashSolid")}</option>
-                <option value="dotted">{t("managers.presets.strokeDashDotted")}</option>
-                <option value="dashed">{t("managers.presets.strokeDashDashed")}</option>
-                <option value="dashDot">{t("managers.presets.strokeDashDashDot")}</option>
-                <option value="longDash">{t("managers.presets.strokeDashLongDash")}</option>
-                <option value="custom">{t("managers.presets.strokeDashCustom")}</option>
-              </select>
-              <input type="text" value={formatDashPattern(v)} onChange={(e) => set(parseDashPattern(e.target.value))} />
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("editor.textEffects.strokeDashOffsetLabel")}
-          value={background.strokeDashOffsetPx}
-          defaultValue={DEFAULT_BACKGROUND.strokeDashOffsetPx}
-          onChange={(v) => setBackground("strokeDashOffsetPx", v)}
-        >
-          {(v, set) => <input type="number" value={v} onChange={(e) => set(Number(e.target.value))} />}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.backgroundGradientFillLabel")}
-          value={background.backgroundGradientFill}
-          defaultValue={DEFAULT_BACKGROUND.backgroundGradientFill}
-          onChange={(v) => setBackground("backgroundGradientFill", v)}
-        >
-          {(v, set) => (
-            <div style={{ display: "flex", gap: 8, flex: 1 }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                {t("managers.presets.onLabel")}
-              </label>
-              <input type="color" value={v.colorStart} onChange={(e) => set({ ...v, colorStart: e.target.value })} />
-              <input type="color" value={v.colorEnd} onChange={(e) => set({ ...v, colorEnd: e.target.value })} />
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.backgroundGlowLabel")}
-          value={background.backgroundGlow}
-          defaultValue={DEFAULT_BACKGROUND.backgroundGlow}
-          onChange={(v) => setBackground("backgroundGlow", v)}
-        >
-          {(v, set) => (
-            <div style={{ display: "flex", gap: 8, flex: 1 }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                {t("managers.presets.onLabel")}
-              </label>
-              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
-              <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.backgroundDropShadowLabel")}
-          value={background.backgroundDropShadow}
-          defaultValue={DEFAULT_BACKGROUND.backgroundDropShadow}
-          onChange={(v) => setBackground("backgroundDropShadow", v)}
-        >
-          {(v, set) => (
-            <div style={{ display: "flex", gap: 8, flex: 1 }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                {t("managers.presets.onLabel")}
-              </label>
-              <input type="color" value={v.color} onChange={(e) => set({ ...v, color: e.target.value })} />
-              <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
-              <input type="number" value={v.offsetXPx} onChange={(e) => set({ ...v, offsetXPx: Number(e.target.value) })} />
-              <input type="number" value={v.offsetYPx} onChange={(e) => set({ ...v, offsetYPx: Number(e.target.value) })} />
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.backgroundBevelLabel")}
-          value={background.backgroundBevel}
-          defaultValue={DEFAULT_BACKGROUND.backgroundBevel}
-          onChange={(v) => setBackground("backgroundBevel", v)}
-        >
-          {(v, set) => (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flex: 1 }}>
-              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
-                {t("managers.presets.onLabel")}
-              </label>
-              <select value={v.style} onChange={(e) => set({ ...v, style: e.target.value as BubbleBevelStyle })}>
-                <option value="inner">{t("managers.presets.bevelStyleInner")}</option>
-                <option value="outer">{t("managers.presets.bevelStyleOuter")}</option>
-                <option value="emboss">{t("managers.presets.bevelStyleEmboss")}</option>
-              </select>
-              <select value={v.direction} onChange={(e) => set({ ...v, direction: e.target.value as BubbleBevelDirection })}>
-                <option value="up">{t("managers.presets.bevelDirectionUp")}</option>
-                <option value="down">{t("managers.presets.bevelDirectionDown")}</option>
-              </select>
-              <input type="number" min={0} value={v.sizePx} onChange={(e) => set({ ...v, sizePx: Number(e.target.value) })} />
-              <input type="number" step={5} value={v.angleDeg} onChange={(e) => set({ ...v, angleDeg: Number(e.target.value) })} />
-              <input type="number" min={0} value={v.softenPx} onChange={(e) => set({ ...v, softenPx: Number(e.target.value) })} />
-              <input type="color" value={v.highlightColor} onChange={(e) => set({ ...v, highlightColor: e.target.value })} />
-              <input
-                type="number"
-                min={0}
-                max={1}
-                step={0.05}
-                value={v.highlightOpacity}
-                onChange={(e) => set({ ...v, highlightOpacity: Number(e.target.value) })}
-              />
-              <input type="color" value={v.shadowColor} onChange={(e) => set({ ...v, shadowColor: e.target.value })} />
-              <input
-                type="number"
-                min={0}
-                max={1}
-                step={0.05}
-                value={v.shadowOpacity}
-                onChange={(e) => set({ ...v, shadowOpacity: Number(e.target.value) })}
-              />
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle
-          label={t("managers.presets.paddingRatioLabel")}
-          value={background.paddingRatio}
-          defaultValue={DEFAULT_BACKGROUND.paddingRatio}
-          onChange={(v) => setBackground("paddingRatio", v)}
-        >
-          {(v, set) => (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-              <input type="range" min={0} max={90} value={Math.round(v * 100)} onChange={(e) => set(Number(e.target.value) / 100)} style={{ flex: 1 }} />
-              <span className="hint">{Math.round(v * 100)}%</span>
-            </div>
-          )}
-        </FieldToggle>
-
-        <FieldToggle label={t("managers.presets.tailStyleLabel")} value={background.tailStyle} defaultValue={DEFAULT_BACKGROUND.tailStyle} onChange={(v) => setBackground("tailStyle", v)}>
-          {(v, set) => (
-            <select value={v} onChange={(e) => set(e.target.value as TailStyle)}>
-              <option value="point">{t("managers.presets.tailStylePoint")}</option>
-              <option value="point-detached">{t("managers.presets.tailStylePointDetached")}</option>
-              <option value="chain">{t("managers.presets.tailStyleChain")}</option>
-            </select>
-          )}
-        </FieldToggle>
-
-        {showTailChain && (
-          <>
-            <FieldToggle
-              label={t("managers.presets.segmentShapeLabel")}
-              value={background.tailChainSegmentShape}
-              defaultValue={DEFAULT_BACKGROUND.tailChainSegmentShape}
-              onChange={(v) => setBackground("tailChainSegmentShape", v)}
-            >
-              {(v, set) => (
-                <select value={v} onChange={(e) => set(e.target.value as TailChainSegmentShape)}>
-                  <option value="circle">{t("managers.presets.segmentShapeCircle")}</option>
-                  <option value="rect">{t("managers.presets.segmentShapeRect")}</option>
-                  <option value="diamond">{t("managers.presets.segmentShapeDiamond")}</option>
-                </select>
-              )}
-            </FieldToggle>
-            <FieldToggle
-              label={t("managers.presets.segmentsCountLabel")}
-              value={background.tailChainSegments}
-              defaultValue={DEFAULT_BACKGROUND.tailChainSegments}
-              onChange={(v) => setBackground("tailChainSegments", v)}
-            >
-              {(v, set) => <input type="number" min={1} max={8} value={v} onChange={(e) => set(Number(e.target.value))} />}
-            </FieldToggle>
-            <FieldToggle
-              label={t("managers.presets.segmentSpacingLabel")}
-              value={background.tailChainSpacing}
-              defaultValue={DEFAULT_BACKGROUND.tailChainSpacing}
-              onChange={(v) => setBackground("tailChainSpacing", v)}
-            >
-              {(v, set) => <input type="number" step={0.1} min={0.1} value={v} onChange={(e) => set(Number(e.target.value))} />}
-            </FieldToggle>
-          </>
-        )}
-
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <button type="submit" className="primary" disabled={busy}>
             {busy ? "…" : editingId ? t("common.save") : t("common.add")}
           </button>
           {editingId && (
-            <button type="button" onClick={resetForm} disabled={busy}>
+            <button type="button" onClick={() => guardDiscard(resetForm)} disabled={busy}>
               {t("common.cancel")}
             </button>
           )}
@@ -589,7 +165,7 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
       {error && <div className="language-manager-error">{error}</div>}
 
       {onClose && (
-        <button type="button" onClick={onClose}>
+        <button type="button" onClick={() => guardDiscard(onClose)} style={{ marginTop: 8 }}>
           {t("common.close")}
         </button>
       )}

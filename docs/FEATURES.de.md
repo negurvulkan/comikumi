@@ -395,7 +395,18 @@ Modal im "Projekt"-Menü auf jedem Bildschirm (Anlegen, Bearbeiten per Klick auf
 Eintrag, Löschen). Anwendbar auf Blasen **und** Kurventexte (Kurventexte nutzen nur den
 Textstil-Teil, keinen Blasenhintergrund).
 
-- **Sparse/granular pro Feld**: Ein Preset kann bewusst nur einen Teil der ~25 Felder
+Der Editor ist ein 3-Spalten-Layout: links eine Preset-Liste mit "Preset
+anlegen"-Button, daneben eine Eigenschaften-Sidebar (mit Tabs — Text/
+Texteffekte/Hintergrund/Hintergrundeffekte — dieselbe `IconTabs`-Interaktion
+wie im Bubble-Inspector), rechts eine Live-Vorschau, die bei jeder Feldänderung
+eine Beispielblase (oder einen Kurventext, per Modus-Umschalter) mit exakt
+demselben Rendering-Code neu zeichnet, den auch der echte Editor-Canvas und
+der PNG-Export verwenden — das Ergebnis ist damit pixelgleich mit einem
+echten verknüpften Element. Wechselt man bei ungespeicherten Änderungen zu
+einem anderen Preset — oder schließt den Dialog —, fragt eine Bestätigung
+nach, statt die Änderungen stillschweigend zu verwerfen.
+
+- **Sparse/granular pro Feld**: Ein Preset kann bewusst nur einen Teil der ~27 Felder
   definieren (z. B. nur die Schriftart) — jedes Feld ist einzeln per Checkbox ein-/
   ausschaltbar. Nicht definierte Felder bleiben vollständig Sache der einzelnen
   Blase/des Kurventexts und werden vom Preset nie angefasst. So kann z. B. die
@@ -413,10 +424,11 @@ Textstil-Teil, keinen Blasenhintergrund).
   Presets.
 - **Umfang**: Textstil (Schriftart, Größe, Zeilenhöhe, Ausrichtung, Leserichtung, Farbe,
   Umrandung, Farbverlauf, Leuchten, Schlagschatten) und, nur für Blasen,
-  Blasenhintergrund (Blasenstil, Füll-/Randfarbe, Randbreite, Hintergrund-Farbverlauf,
-  Leuchten, Schlagschatten, Abschrägung/Relief, Zeigerart inkl. Ketten-Details). Reine
-  Geometrie (Position/Größe/Rotation, Tail-Spitze/-Anker/-Breite/-Krümmung) ist bewusst
-  kein Preset-Feld — das sind Instanz-Eigenschaften einer einzelnen Blase, kein "Stil".
+  Blasenhintergrund (Blasenstil, SVG-Kontur, Füll-/Randfarbe, Randbreite/-muster,
+  Hintergrund-Farbverlauf, Leuchten, Schlagschatten, Abschrägung/Relief, Zeigerart
+  inkl. Ketten-Details). Reine Geometrie (Position/Größe/Rotation,
+  Tail-Spitze/-Anker/-Breite/-Krümmung) ist bewusst kein Preset-Feld — das sind
+  Instanz-Eigenschaften einer einzelnen Blase, kein "Stil".
 - **Zuordnung**: über ein Preset-Dropdown im Bubble-/Kurventext-Inspector, oder über das
   Rechtsklick-Kontextmenü im Canvas ("Preset zuweisen"-Untermenü, nur für Blasen). Jedes
   vom aktuellen Preset gesteuerte Feld wird im Inspector deaktiviert angezeigt (mit

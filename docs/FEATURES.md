@@ -389,8 +389,18 @@ managed via a modal in the "Project" menu on every screen (create, edit by
 clicking an entry, delete). Applicable to bubbles **and** curved texts (curved
 texts only use the text-style part, no bubble background).
 
+The editor is a 3-column layout: a preset list with a "Create preset" button
+on the left, a properties sidebar on the right of it (tabbed — Text/Text
+Effects/Background/Background Effects — same `IconTabs` interaction language
+as the per-bubble inspector), and a live preview on the far right that
+re-renders a sample bubble (or curved text, via a mode toggle) on every field
+edit using the exact same rendering code the real editor canvas and PNG export
+use, so it's pixel-identical to a real linked element. Switching to a
+different preset — or closing the dialog — while an edit is unsaved prompts
+for confirmation instead of silently discarding it.
+
 - **Sparse/granular per field**: a preset can deliberately define only part of
-  the ~25 fields (e.g. just the font) — every field is individually toggleable
+  the ~27 fields (e.g. just the font) — every field is individually toggleable
   via a checkbox. Fields not defined remain entirely up to the individual
   bubble/curved text and are never touched by the preset. This way, for
   example, the font of all SFX bubbles can be changed at once without
@@ -406,11 +416,11 @@ texts only use the text-style part, no bubble background).
   presets.
 - **Scope**: text style (font, size, line height, alignment, reading direction,
   color, outline, gradient, glow, drop shadow) and, bubbles only, bubble
-  background (bubble style, fill/border color, border width, gradient fill,
-  glow, drop shadow, bevel/emboss, tail type including chain details). Pure
-  geometry (position/size/rotation, tail tip/anchor/width/curvature) is
-  deliberately not a preset field — those are instance properties of an
-  individual bubble, not "style".
+  background (bubble style, SVG contour, fill/border color, border width/dash
+  pattern, gradient fill, glow, drop shadow, bevel/emboss, tail type including
+  chain details). Pure geometry (position/size/rotation, tail tip/anchor/
+  width/curvature) is deliberately not a preset field — those are instance
+  properties of an individual bubble, not "style".
 - **Assignment**: via a preset dropdown in the bubble/curved-text inspector, or
   via the right-click context menu on the canvas ("Assign preset" submenu,
   bubbles only). Every field controlled by the current preset is shown disabled

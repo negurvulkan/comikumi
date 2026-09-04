@@ -457,6 +457,15 @@ body {
   width: 100%;
 }
 
+/* 3-column analog of .editor-layout for PresetManager.tsx's redesigned dialog: preset
+ * list / properties sidebar / live preview. */
+.preset-manager-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(360px, 1fr) 360px;
+  gap: 14px;
+  min-height: 0;
+}
+
 /* Docks like the right-hand inspector column instead of overlaying the canvas —
    grows from 0 to 260px in normal flow when .open is added, so everything after it
    (the language strip, the canvas) shifts right as a natural side effect, with no
