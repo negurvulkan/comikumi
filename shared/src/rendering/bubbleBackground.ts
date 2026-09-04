@@ -1,7 +1,7 @@
 import type { BubbleForm, BubbleShapeKind, Point } from "../layoutSchema.js";
 import { resolveEffectiveTailStyle } from "../layoutSchema.js";
 import { tracePolygonPath } from "./cutPanel.js";
-import { drawShadowUnderlayPasses } from "./shadowPasses.js";
+import { drawShadowUnderlayPasses, resetShadowState } from "./shadowPasses.js";
 
 /**
  * Shared bubble-background geometry: builds a closed boundary point list for
@@ -298,6 +298,24 @@ export function applyBubbleFillStyle(ctx: CanvasRenderingContext2D, form: Bubble
   }
 }
 
+/** Sets ctx.setLineDash()/lineDashOffset from the form's dash pattern (scaled), a no-op
+ * when the pattern is empty (plain solid line, ctx's own default dash state). Must be
+ * paired with resetStrokeDash() after the stroke() call at any site with no enclosing
+ * ctx.save()/restore() of its own — dash state persists on the context otherwise, and
+ * would otherwise leak into whatever draws next (e.g. drawBubbleBevel's own hairline
+ * strokes, which must stay solid regardless of the border's own dash style). */
+export function applyStrokeDash(ctx: CanvasRenderingContext2D, form: BubbleForm, scale: number) {
+  if (form.strokeDashPattern.length > 0) {
+    ctx.setLineDash(form.strokeDashPattern.map((d) => d * scale));
+    ctx.lineDashOffset = form.strokeDashOffsetPx * scale;
+  }
+}
+
+export function resetStrokeDash(ctx: CanvasRenderingContext2D) {
+  ctx.setLineDash([]);
+  ctx.lineDashOffset = 0;
+}
+
 function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form: BubbleForm, scale: number, formW: number, formH: number) {
   if (points.length < 3) return;
   ctx.beginPath();
@@ -308,7 +326,9 @@ function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form:
   ctx.fill();
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale);
   ctx.strokeStyle = form.strokeColor;
+  applyStrokeDash(ctx, form, scale);
   ctx.stroke();
+  resetStrokeDash(ctx);
 }
 
 /** Bubble styles that can carry a tail at all — "none" never draws a background, so a tail on it would be pointless. Exported for BubbleShape.tsx, which needs the same check to decide whether to show the tail-anchor handle. */
@@ -340,7 +360,9 @@ function drawDetachedTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[]
   ctx.fill();
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale);
   ctx.strokeStyle = form.strokeColor;
+  applyStrokeDash(ctx, form, scale);
   ctx.stroke();
+  resetStrokeDash(ctx);
 }
 
 /** Draws one chain segment centered at (x, y), rotated to face `angle` (the direction
@@ -372,6 +394,9 @@ function drawChainSegment(ctx: CanvasRenderingContext2D, x: number, y: number, s
   ctx.fill();
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale * 0.6);
   ctx.strokeStyle = form.strokeColor;
+  // No explicit resetStrokeDash() needed here — the enclosing ctx.save()/restore() (see
+  // top/bottom of this function) already covers line-dash state per the Canvas2D spec.
+  applyStrokeDash(ctx, form, scale);
   ctx.stroke();
   ctx.restore();
 }
@@ -419,6 +444,102 @@ function drawChainTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], a
     }
     const size = Math.max(1.5 * scale, form.strokeWidthPx * scale * (count - i) * 0.9);
     drawChainSegment(ctx, cx, cy, size, angle, shape, form, scale, fillStyle);
+  }
+}
+
+/** Converts a #rrggbb hex color + 0-1 opacity into an "rgba(r, g, b, a)" string — used by
+ * drawBubbleBevel's highlight/shadow colors, which (unlike EffectGlow/EffectShadow) carry
+ * their own independent opacity. Deliberately not the newer #rrggbbaa 8-digit hex syntax,
+ * which — like ctx.filter — hasn't been runtime-verified against @napi-rs/canvas's Skia
+ * binding; plain rgba() is long-established and lower-risk. */
+function hexToRgba(hex: string, opacity: number): string {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.substring(0, 2), 16) || 0;
+  const g = parseInt(clean.substring(2, 4), 16) || 0;
+  const b = parseInt(clean.substring(4, 6), 16) || 0;
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+/**
+ * Draws a soft bevel/emboss band along the bubble's boundary — a highlight pass and a
+ * shadow pass, each a thin hairline stroke of `points` whose CAST SHADOW (ctx.shadow*)
+ * does the actual visual work, offset in opposite directions derived from `angleDeg`
+ * (swapped when direction is "down" — that's what actually flips the raised/recessed
+ * look, matching Photoshop's Up/Down toggle, not reusing the same offset for both).
+ * Canvas2D can't cast a shadow from a fully transparent source — the shadow is a
+ * blurred/tinted copy of the source's own alpha — so the hairline core itself stays
+ * visible too; at default size/soften this reads as an acceptable crisp inner edge to
+ * the bevel, not a stray outline (verify visually — see plan notes).
+ *
+ * Must be called AFTER fillAndStrokePath, not before: unlike glow/drop-shadow (which
+ * extend outward past the bubble's own footprint, so drawing them first still works —
+ * the crisp fill+stroke simply overpaints their interior half), an "inner" bevel is
+ * defined to sit ON TOP of the fill. Drawn earlier, the opaque fill would hide it
+ * entirely.
+ */
+export function drawBubbleBevel(ctx: CanvasRenderingContext2D, points: Point[], form: BubbleForm, w: number, h: number, scale: number) {
+  const bevel = form.backgroundBevel;
+  if (!bevel.enabled || points.length < 3) return;
+
+  const rad = (bevel.angleDeg * Math.PI) / 180;
+  const size = bevel.sizePx * scale;
+  const highlightOffset = { x: Math.cos(rad) * size, y: Math.sin(rad) * size };
+  const shadowOffset = { x: -highlightOffset.x, y: -highlightOffset.y };
+  const [highlightVec, shadowVec] = bevel.direction === "down" ? [shadowOffset, highlightOffset] : [highlightOffset, shadowOffset];
+
+  function strokeBoundary() {
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.closePath();
+    ctx.lineWidth = Math.max(1, 1.5 * scale);
+    ctx.stroke();
+  }
+
+  function passes() {
+    const highlightRgba = hexToRgba(bevel.highlightColor, bevel.highlightOpacity);
+    ctx.strokeStyle = highlightRgba;
+    ctx.shadowColor = highlightRgba;
+    ctx.shadowBlur = bevel.softenPx * scale;
+    ctx.shadowOffsetX = highlightVec.x;
+    ctx.shadowOffsetY = highlightVec.y;
+    strokeBoundary();
+
+    const shadowRgba = hexToRgba(bevel.shadowColor, bevel.shadowOpacity);
+    ctx.strokeStyle = shadowRgba;
+    ctx.shadowColor = shadowRgba;
+    ctx.shadowOffsetX = shadowVec.x;
+    ctx.shadowOffsetY = shadowVec.y;
+    strokeBoundary();
+
+    resetShadowState(ctx);
+  }
+
+  if (bevel.style === "emboss") {
+    passes();
+  } else if (bevel.style === "inner") {
+    ctx.save();
+    tracePolygonPath(ctx, points);
+    ctx.clip();
+    passes();
+    ctx.restore();
+  } else {
+    // "outer" — clip to OUTSIDE the shape via a two-subpath evenodd clip. Built by hand
+    // (not via two tracePolygonPath calls, which each call ctx.beginPath() internally and
+    // would erase the first subpath) — a large rect (same "(w+h)*4+1000, big enough in
+    // local units" margin idiom clipHalfPlanePolygon uses above) as the outer subpath,
+    // `points` as the inner subpath; evenodd is winding-order-independent, so no
+    // direction bookkeeping is needed between the two subpaths.
+    ctx.save();
+    const margin = (w + h) * 2 + 1000;
+    ctx.beginPath();
+    ctx.rect(-margin, -margin, w + margin * 2, h + margin * 2);
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.closePath();
+    ctx.clip("evenodd");
+    passes();
+    ctx.restore();
   }
 }
 
@@ -488,6 +609,7 @@ export function drawBubbleBackground(
   }
 
   fillAndStrokePath(ctx, points, form, scale, w, h);
+  drawBubbleBevel(ctx, points, form, w, h, scale);
 
   if (hasTail && tip && anchor && effectiveTailStyle === "point-detached") {
     drawDetachedTail(ctx, points, anchor, tip, form, scale, w, h);

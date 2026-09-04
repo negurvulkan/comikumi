@@ -390,7 +390,7 @@ clicking an entry, delete). Applicable to bubbles **and** curved texts (curved
 texts only use the text-style part, no bubble background).
 
 - **Sparse/granular per field**: a preset can deliberately define only part of
-  the ~24 fields (e.g. just the font) — every field is individually toggleable
+  the ~25 fields (e.g. just the font) — every field is individually toggleable
   via a checkbox. Fields not defined remain entirely up to the individual
   bubble/curved text and are never touched by the preset. This way, for
   example, the font of all SFX bubbles can be changed at once without
@@ -407,10 +407,10 @@ texts only use the text-style part, no bubble background).
 - **Scope**: text style (font, size, line height, alignment, reading direction,
   color, outline, gradient, glow, drop shadow) and, bubbles only, bubble
   background (bubble style, fill/border color, border width, gradient fill,
-  glow, drop shadow, tail type including chain details). Pure geometry
-  (position/size/rotation, tail tip/anchor/width/curvature) is deliberately not
-  a preset field — those are instance properties of an individual bubble, not
-  "style".
+  glow, drop shadow, bevel/emboss, tail type including chain details). Pure
+  geometry (position/size/rotation, tail tip/anchor/width/curvature) is
+  deliberately not a preset field — those are instance properties of an
+  individual bubble, not "style".
 - **Assignment**: via a preset dropdown in the bubble/curved-text inspector, or
   via the right-click context menu on the canvas ("Assign preset" submenu,
   bubbles only). Every field controlled by the current preset is shown disabled
@@ -476,12 +476,23 @@ contour. With a visible style: fill/border color, border width, and an optional
 pointer/tail with its own style — seamlessly connected, free-standing, or a
 segmented "chain" (circle/rectangle/diamond segments, count and spacing
 configurable) — position, width, and curvature are all adjustable via canvas
-drag handles. The background fill can also be a linear gradient instead of a
-solid color, and/or carry a glow and/or a drop shadow — all independently
-toggleable and stackable (a bubble can have a gradient fill, a colored glow,
-and a dark drop shadow all at once). Glow/drop-shadow render on the bubble's
-main body and its seamlessly-connected tail; a free-standing or chain-style
-tail doesn't cast its own glow/shadow (a known limitation, not a bug).
+drag handles. The border itself doesn't have to be solid — a style dropdown
+(solid, dotted, dashed, dash-dot, long dash) plus a custom numeric pattern
+field (space/comma-separated dash/gap lengths, with a phase offset) covers
+anything from a plain line to an arbitrary dash rhythm; the same pattern
+applies to the main body, a free-standing tail, and chain-tail segments alike,
+just like the border color/width already do. The background fill can also be a linear gradient instead of a
+solid color, and/or carry a glow, a drop shadow, and/or a bevel/emboss — all
+independently toggleable and stackable (a bubble can have a gradient fill, a
+colored glow, a dark drop shadow, and a bevel all at once). Bevel/emboss has
+three styles (inner, outer, emboss) and an up/down direction that flips
+raised-vs-recessed, alongside angle/size/softness and separate
+highlight/shadow color+opacity — a soft, raster-drawn approximation of a real
+lighting-based bevel (Canvas has no native primitive for this), not a
+pixel-perfect emboss. Glow/drop-shadow/bevel render on the bubble's main body
+and its seamlessly-connected tail; a free-standing or chain-style tail doesn't
+cast its own glow/shadow/bevel (a known limitation, not a bug). Bubble effects
+apply to the border/interior surface only — there's no equivalent for text.
 
 Text options: font (custom uploaded fonts), size, line height, horizontal
 alignment, and reading direction — horizontal LTR, horizontal RTL, or vertical
@@ -505,7 +516,13 @@ instead of a solid color, plus an independently toggleable glow and/or drop shad
 shape/position/size/rotation/background) can be overridden per language. Text
 glow/drop-shadow render in the editor, PNG, and PSD export; the vector-PDF export's
 text layer stays real vector text and doesn't carry any of the four text effects
-(same pre-existing limitation as outline/gradient).
+(same pre-existing limitation as outline/gradient — bubble-background bevel/glow/
+drop-shadow/gradient-fill share this too, since PDF only rasterizes the background,
+never bubble text). PSD export bakes every bubble-background effect (including
+bevel/emboss) into the raster layer too, rather than as a native, still-editable
+Photoshop "Bevel and Emboss"/"Drop Shadow"/etc. layer effect — a plausible,
+self-contained future enhancement, since the PSD library ComiKumi already uses can
+actually write those native layer effects.
 Bubbles can be assigned to a panel and a character.
 
 **Effect (SFX) bubbles**: a dedicated toolbar tool next to the three shape

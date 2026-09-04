@@ -3,6 +3,9 @@ import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   Bubble,
+  BubbleBevel,
+  BubbleBevelDirection,
+  BubbleBevelStyle,
   BubbleForm,
   BubbleGradientFill,
   BubbleShapeKind,
@@ -43,6 +46,7 @@ import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { buildProjectSearchIndex, type IndexedBubble } from "./projectSearchIndex";
 import { findSimilarBubbles, type TranslationMemorySuggestion } from "./translationMemory";
+import { DASH_PRESETS, matchDashPreset, parseDashPattern, formatDashPattern } from "./dashPatterns";
 
 interface Props {
   bubble: Bubble;
@@ -204,9 +208,12 @@ export function BubbleInspector({
       if (preset.background.fillColor !== undefined) textPatch.fillColor = form.fillColor;
       if (preset.background.strokeColor !== undefined) textPatch.strokeColor = form.strokeColor;
       if (preset.background.strokeWidthPx !== undefined) textPatch.strokeWidthPx = form.strokeWidthPx;
+      if (preset.background.strokeDashPattern !== undefined) textPatch.strokeDashPattern = form.strokeDashPattern;
+      if (preset.background.strokeDashOffsetPx !== undefined) textPatch.strokeDashOffsetPx = form.strokeDashOffsetPx;
       if (preset.background.backgroundGradientFill !== undefined) textPatch.backgroundGradientFill = form.backgroundGradientFill;
       if (preset.background.backgroundGlow !== undefined) textPatch.backgroundGlow = form.backgroundGlow;
       if (preset.background.backgroundDropShadow !== undefined) textPatch.backgroundDropShadow = form.backgroundDropShadow;
+      if (preset.background.backgroundBevel !== undefined) textPatch.backgroundBevel = form.backgroundBevel;
       if (preset.background.svgFileName !== undefined) textPatch.svgFileName = form.svgFileName;
       if (preset.background.tailStyle !== undefined) textPatch.tailStyle = form.tailStyle;
       if (preset.background.tailChainSegmentShape !== undefined) textPatch.tailChainSegmentShape = form.tailChainSegmentShape;
@@ -432,6 +439,10 @@ export function BubbleInspector({
 
   function setBackgroundDropShadow(patch: Partial<EffectShadow>) {
     setFormField({ backgroundDropShadow: { ...form.backgroundDropShadow, ...patch } });
+  }
+
+  function setBackgroundBevel(patch: Partial<BubbleBevel>) {
+    setFormField({ backgroundBevel: { ...form.backgroundBevel, ...patch } });
   }
 
   function toggleTail(checked: boolean) {
@@ -732,6 +743,47 @@ export function BubbleInspector({
                       onChange={(e) => setFormField({ strokeWidthPx: Number(e.target.value) })}
                       disabled={backgroundPresetGoverns("strokeWidthPx")}
                     />
+                  </GovernedField>
+                  <GovernedField
+                    label={t("managers.presets.strokeDashLabel")}
+                    governed={backgroundPresetGoverns("strokeDashPattern")}
+                    lockTitle={lockTitle}
+                  >
+                    <div className="field-row" style={{ flexWrap: "wrap" }}>
+                      <select
+                        value={matchDashPreset(form.strokeDashPattern)}
+                        onChange={(e) => {
+                          const preset = DASH_PRESETS.find((p) => p.id === e.target.value);
+                          if (preset) setFormField({ strokeDashPattern: preset.pattern });
+                        }}
+                        disabled={backgroundPresetGoverns("strokeDashPattern")}
+                      >
+                        <option value="solid">{t("managers.presets.strokeDashSolid")}</option>
+                        <option value="dotted">{t("managers.presets.strokeDashDotted")}</option>
+                        <option value="dashed">{t("managers.presets.strokeDashDashed")}</option>
+                        <option value="dashDot">{t("managers.presets.strokeDashDashDot")}</option>
+                        <option value="longDash">{t("managers.presets.strokeDashLongDash")}</option>
+                        <option value="custom">{t("managers.presets.strokeDashCustom")}</option>
+                      </select>
+                      <label>
+                        {t("editor.textEffects.strokeDashPatternLabel")}
+                        <input
+                          type="text"
+                          value={formatDashPattern(form.strokeDashPattern)}
+                          onChange={(e) => setFormField({ strokeDashPattern: parseDashPattern(e.target.value) })}
+                          disabled={backgroundPresetGoverns("strokeDashPattern")}
+                        />
+                      </label>
+                      <label>
+                        {t("editor.textEffects.strokeDashOffsetLabel")}
+                        <input
+                          type="number"
+                          value={form.strokeDashOffsetPx}
+                          onChange={(e) => setFormField({ strokeDashOffsetPx: Number(e.target.value) })}
+                          disabled={backgroundPresetGoverns("strokeDashPattern")}
+                        />
+                      </label>
+                    </div>
                   </GovernedField>
                   {(form.bubbleStyle === "speech" ||
                     form.bubbleStyle === "shout" ||
@@ -1166,6 +1218,121 @@ export function BubbleInspector({
                         value={form.backgroundDropShadow.offsetYPx}
                         onChange={(e) => setBackgroundDropShadow({ offsetYPx: Number(e.target.value) })}
                         disabled={backgroundPresetGoverns("backgroundDropShadow")}
+                      />
+                    </label>
+                  </div>
+                </OptionalToggleField>
+              </GovernedField>
+
+              <GovernedField
+                label={t("managers.presets.backgroundBevelLabel")}
+                governed={backgroundPresetGoverns("backgroundBevel")}
+                lockTitle={lockTitle}
+              >
+                <OptionalToggleField
+                  label={t("managers.presets.onLabel")}
+                  checked={form.backgroundBevel.enabled}
+                  disabled={backgroundPresetGoverns("backgroundBevel")}
+                  onToggle={(enabled) => setBackgroundBevel({ enabled })}
+                >
+                  <div className="field-row" style={{ flexWrap: "wrap" }}>
+                    <label>
+                      {t("managers.presets.bevelStyleLabel")}
+                      <select
+                        value={form.backgroundBevel.style}
+                        onChange={(e) => setBackgroundBevel({ style: e.target.value as BubbleBevelStyle })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
+                      >
+                        <option value="inner">{t("managers.presets.bevelStyleInner")}</option>
+                        <option value="outer">{t("managers.presets.bevelStyleOuter")}</option>
+                        <option value="emboss">{t("managers.presets.bevelStyleEmboss")}</option>
+                      </select>
+                    </label>
+                    <label>
+                      {t("managers.presets.bevelDirectionLabel")}
+                      <select
+                        value={form.backgroundBevel.direction}
+                        onChange={(e) => setBackgroundBevel({ direction: e.target.value as BubbleBevelDirection })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
+                      >
+                        <option value="up">{t("managers.presets.bevelDirectionUp")}</option>
+                        <option value="down">{t("managers.presets.bevelDirectionDown")}</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="field-row" style={{ flexWrap: "wrap" }}>
+                    <label>
+                      {t("editor.textEffects.bevelSizeLabel")}
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.backgroundBevel.sizePx}
+                        onChange={(e) => setBackgroundBevel({ sizePx: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.angleLabel")}
+                      <input
+                        type="number"
+                        step={5}
+                        value={form.backgroundBevel.angleDeg}
+                        onChange={(e) => setBackgroundBevel({ angleDeg: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.bevelSoftenLabel")}
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.backgroundBevel.softenPx}
+                        onChange={(e) => setBackgroundBevel({ softenPx: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
+                      />
+                    </label>
+                  </div>
+                  <div className="field-row" style={{ flexWrap: "wrap" }}>
+                    <label>
+                      {t("editor.textEffects.bevelHighlightColorLabel")}
+                      <input
+                        type="color"
+                        value={form.backgroundBevel.highlightColor}
+                        onChange={(e) => setBackgroundBevel({ highlightColor: e.target.value })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.bevelHighlightOpacityLabel")}
+                      <input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={form.backgroundBevel.highlightOpacity}
+                        onChange={(e) => setBackgroundBevel({ highlightOpacity: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.bevelShadowColorLabel")}
+                      <input
+                        type="color"
+                        value={form.backgroundBevel.shadowColor}
+                        onChange={(e) => setBackgroundBevel({ shadowColor: e.target.value })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.bevelShadowOpacityLabel")}
+                      <input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={form.backgroundBevel.shadowOpacity}
+                        onChange={(e) => setBackgroundBevel({ shadowOpacity: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundBevel")}
                       />
                     </label>
                   </div>

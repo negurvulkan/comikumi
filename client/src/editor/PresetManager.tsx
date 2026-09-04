@@ -3,9 +3,18 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { BUILTIN_PRESETS, type LetteringPreset, type PresetTextFields, type PresetBackgroundFields } from "../../../shared/src/presets";
-import type { BubbleVisualStyle, TailChainSegmentShape, TailStyle, TextAlign, TextDirection } from "../../../shared/src/layoutSchema";
+import type {
+  BubbleBevelDirection,
+  BubbleBevelStyle,
+  BubbleVisualStyle,
+  TailChainSegmentShape,
+  TailStyle,
+  TextAlign,
+  TextDirection,
+} from "../../../shared/src/layoutSchema";
 import { FontPicker } from "./FontPicker";
 import { useConfirmDialog } from "./ConfirmDialog";
+import { DASH_PRESETS, matchDashPreset, parseDashPattern, formatDashPattern } from "./dashPatterns";
 
 interface Props {
   presets: LetteringPreset[];
@@ -32,9 +41,23 @@ const DEFAULT_BACKGROUND: Required<PresetBackgroundFields> = {
   fillColor: "#ffffff",
   strokeColor: "#000000",
   strokeWidthPx: 6,
+  strokeDashPattern: [],
+  strokeDashOffsetPx: 0,
   backgroundGradientFill: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
   backgroundGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
   backgroundDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
+  backgroundBevel: {
+    enabled: false,
+    style: "inner",
+    direction: "up",
+    sizePx: 6,
+    angleDeg: 120,
+    softenPx: 4,
+    highlightColor: "#ffffff",
+    highlightOpacity: 0.75,
+    shadowColor: "#000000",
+    shadowOpacity: 0.6,
+  },
   svgFileName: null,
   tailStyle: "point",
   tailChainSegmentShape: "circle",
@@ -356,6 +379,42 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
         </FieldToggle>
 
         <FieldToggle
+          label={t("managers.presets.strokeDashLabel")}
+          value={background.strokeDashPattern}
+          defaultValue={DEFAULT_BACKGROUND.strokeDashPattern}
+          onChange={(v) => setBackground("strokeDashPattern", v)}
+        >
+          {(v, set) => (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flex: 1 }}>
+              <select
+                value={matchDashPreset(v)}
+                onChange={(e) => {
+                  const preset = DASH_PRESETS.find((p) => p.id === e.target.value);
+                  if (preset) set(preset.pattern);
+                }}
+              >
+                <option value="solid">{t("managers.presets.strokeDashSolid")}</option>
+                <option value="dotted">{t("managers.presets.strokeDashDotted")}</option>
+                <option value="dashed">{t("managers.presets.strokeDashDashed")}</option>
+                <option value="dashDot">{t("managers.presets.strokeDashDashDot")}</option>
+                <option value="longDash">{t("managers.presets.strokeDashLongDash")}</option>
+                <option value="custom">{t("managers.presets.strokeDashCustom")}</option>
+              </select>
+              <input type="text" value={formatDashPattern(v)} onChange={(e) => set(parseDashPattern(e.target.value))} />
+            </div>
+          )}
+        </FieldToggle>
+
+        <FieldToggle
+          label={t("editor.textEffects.strokeDashOffsetLabel")}
+          value={background.strokeDashOffsetPx}
+          defaultValue={DEFAULT_BACKGROUND.strokeDashOffsetPx}
+          onChange={(v) => setBackground("strokeDashOffsetPx", v)}
+        >
+          {(v, set) => <input type="number" value={v} onChange={(e) => set(Number(e.target.value))} />}
+        </FieldToggle>
+
+        <FieldToggle
           label={t("managers.presets.backgroundGradientFillLabel")}
           value={background.backgroundGradientFill}
           defaultValue={DEFAULT_BACKGROUND.backgroundGradientFill}
@@ -407,6 +466,52 @@ export function PresetManager({ presets, onChange, onClose }: Props) {
               <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
               <input type="number" value={v.offsetXPx} onChange={(e) => set({ ...v, offsetXPx: Number(e.target.value) })} />
               <input type="number" value={v.offsetYPx} onChange={(e) => set({ ...v, offsetYPx: Number(e.target.value) })} />
+            </div>
+          )}
+        </FieldToggle>
+
+        <FieldToggle
+          label={t("managers.presets.backgroundBevelLabel")}
+          value={background.backgroundBevel}
+          defaultValue={DEFAULT_BACKGROUND.backgroundBevel}
+          onChange={(v) => setBackground("backgroundBevel", v)}
+        >
+          {(v, set) => (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flex: 1 }}>
+              <label style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <input type="checkbox" checked={v.enabled} onChange={(e) => set({ ...v, enabled: e.target.checked })} />
+                {t("managers.presets.onLabel")}
+              </label>
+              <select value={v.style} onChange={(e) => set({ ...v, style: e.target.value as BubbleBevelStyle })}>
+                <option value="inner">{t("managers.presets.bevelStyleInner")}</option>
+                <option value="outer">{t("managers.presets.bevelStyleOuter")}</option>
+                <option value="emboss">{t("managers.presets.bevelStyleEmboss")}</option>
+              </select>
+              <select value={v.direction} onChange={(e) => set({ ...v, direction: e.target.value as BubbleBevelDirection })}>
+                <option value="up">{t("managers.presets.bevelDirectionUp")}</option>
+                <option value="down">{t("managers.presets.bevelDirectionDown")}</option>
+              </select>
+              <input type="number" min={0} value={v.sizePx} onChange={(e) => set({ ...v, sizePx: Number(e.target.value) })} />
+              <input type="number" step={5} value={v.angleDeg} onChange={(e) => set({ ...v, angleDeg: Number(e.target.value) })} />
+              <input type="number" min={0} value={v.softenPx} onChange={(e) => set({ ...v, softenPx: Number(e.target.value) })} />
+              <input type="color" value={v.highlightColor} onChange={(e) => set({ ...v, highlightColor: e.target.value })} />
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step={0.05}
+                value={v.highlightOpacity}
+                onChange={(e) => set({ ...v, highlightOpacity: Number(e.target.value) })}
+              />
+              <input type="color" value={v.shadowColor} onChange={(e) => set({ ...v, shadowColor: e.target.value })} />
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step={0.05}
+                value={v.shadowOpacity}
+                onChange={(e) => set({ ...v, shadowOpacity: Number(e.target.value) })}
+              />
             </div>
           )}
         </FieldToggle>

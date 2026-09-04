@@ -4,16 +4,20 @@ import type { Point } from "../../../../shared/src/layoutSchema.js";
 import { createBubble, resolveBubbleForm } from "../../../../shared/src/layoutSchema.js";
 import {
   applyBubbleFillStyle,
+  applyStrokeDash,
   buildSmoothBoundary,
   buildBoundaryForStyle,
   buildCloudBoundary,
   buildJaggedBoundary,
   canHaveTail,
   drawBubbleBackground,
+  drawBubbleBevel,
   insertTail,
   perpendicularOffset,
+  resetStrokeDash,
   tailBasePoints,
 } from "../../../../shared/src/rendering/bubbleBackground.js";
+import type { BubbleBevelDirection, BubbleBevelStyle } from "../../../../shared/src/layoutSchema.js";
 
 describe("buildSmoothBoundary", () => {
   it("returns a closed, finite point set for an oval", () => {
@@ -208,5 +212,140 @@ describe("drawBubbleBackground with glow/dropShadow", () => {
     const c = ctx();
     expect(() => drawBubbleBackground(c, baseForm, "rect", 1)).not.toThrow();
     expect(c.shadowBlur).toBe(0);
+  });
+});
+
+describe("drawBubbleBevel", () => {
+  const baseForm = resolveBubbleForm(createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 100, bubbleStyle: "speech" }), "de");
+  const boundary = buildSmoothBoundary("rect", 100, 100);
+  const styles: BubbleBevelStyle[] = ["inner", "outer", "emboss"];
+  const directions: BubbleBevelDirection[] = ["up", "down"];
+
+  for (const style of styles) {
+    for (const direction of directions) {
+      it(`does not throw and resets shadow state for style="${style}" direction="${direction}"`, () => {
+        const c = ctx();
+        const form = {
+          ...baseForm,
+          backgroundBevel: {
+            enabled: true,
+            style,
+            direction,
+            sizePx: 6,
+            angleDeg: 120,
+            softenPx: 4,
+            highlightColor: "#ffffff",
+            highlightOpacity: 0.75,
+            shadowColor: "#000000",
+            shadowOpacity: 0.6,
+          },
+        };
+        expect(() => drawBubbleBevel(c, boundary, form, 100, 100, 1)).not.toThrow();
+        expect(c.shadowBlur).toBe(0);
+      });
+    }
+  }
+
+  it("is a no-op when disabled (unchanged behavior)", () => {
+    const c = ctx();
+    c.shadowBlur = 42;
+    drawBubbleBevel(c, boundary, baseForm, 100, 100, 1);
+    // shadowBlur is left untouched (not reset) since the function returns immediately —
+    // callers always run this right after fillAndStrokePath, which doesn't touch shadow
+    // state either, so there's nothing to clean up when bevel itself never ran.
+    expect(c.shadowBlur).toBe(42);
+  });
+
+  it("integrates cleanly via drawBubbleBackground end-to-end (no throw, shadow reset)", () => {
+    const c = ctx();
+    const form = {
+      ...baseForm,
+      backgroundBevel: {
+        enabled: true,
+        style: "inner" as const,
+        direction: "up" as const,
+        sizePx: 6,
+        angleDeg: 120,
+        softenPx: 4,
+        highlightColor: "#ffffff",
+        highlightOpacity: 0.75,
+        shadowColor: "#000000",
+        shadowOpacity: 0.6,
+      },
+    };
+    expect(() => drawBubbleBackground(c, form, "rect", 1)).not.toThrow();
+    expect(c.shadowBlur).toBe(0);
+  });
+});
+
+describe("applyStrokeDash / resetStrokeDash", () => {
+  const baseForm = resolveBubbleForm(createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 100, bubbleStyle: "speech" }), "de");
+
+  it("is a no-op when the pattern is empty (solid line, unchanged behavior)", () => {
+    const c = ctx();
+    applyStrokeDash(c, baseForm, 1);
+    expect(c.getLineDash()).toEqual([]);
+  });
+
+  it("sets the dash list and offset, scaled by `scale`", () => {
+    const c = ctx();
+    const form = { ...baseForm, strokeDashPattern: [8, 4], strokeDashOffsetPx: 2 };
+    applyStrokeDash(c, form, 2);
+    expect(c.getLineDash()).toEqual([16, 8]);
+    expect(c.lineDashOffset).toBe(4);
+  });
+
+  it("resetStrokeDash clears the dash list and offset", () => {
+    const c = ctx();
+    c.setLineDash([8, 4]);
+    c.lineDashOffset = 5;
+    resetStrokeDash(c);
+    expect(c.getLineDash()).toEqual([]);
+    expect(c.lineDashOffset).toBe(0);
+  });
+});
+
+describe("drawBubbleBackground with strokeDashPattern", () => {
+  const baseForm = resolveBubbleForm(createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 100, bubbleStyle: "speech" }), "de");
+
+  it("does not throw with a dash pattern set, and resets dash state afterward", () => {
+    const c = ctx();
+    const form = { ...baseForm, strokeDashPattern: [8, 4] };
+    expect(() => drawBubbleBackground(c, form, "rect", 1)).not.toThrow();
+    expect(c.getLineDash()).toEqual([]);
+  });
+
+  it("does not leak the dash pattern into a subsequent bevel pass (the bug this design avoids) — checked against the highest-risk 'emboss' style, which has no clip/save-restore wrapper of its own", () => {
+    const c = ctx();
+    const form = {
+      ...baseForm,
+      strokeDashPattern: [8, 4],
+      backgroundBevel: {
+        enabled: true,
+        style: "emboss" as const,
+        direction: "up" as const,
+        sizePx: 6,
+        angleDeg: 120,
+        softenPx: 4,
+        highlightColor: "#ffffff",
+        highlightOpacity: 0.75,
+        shadowColor: "#000000",
+        shadowOpacity: 0.6,
+      },
+    };
+    expect(() => drawBubbleBackground(c, form, "rect", 1)).not.toThrow();
+    expect(c.getLineDash()).toEqual([]);
+  });
+
+  it("chain-tail segments pick up the pattern too, consistent with strokeColor/strokeWidthPx", () => {
+    const c = ctx();
+    const form = {
+      ...resolveBubbleForm(createBubble({ id: "b2", x: 0, y: 0, width: 100, height: 100, bubbleStyle: "thought" }), "de"),
+      tail: { x: 50, y: 150 },
+      tailStyle: "chain" as const,
+      strokeDashPattern: [4, 2],
+    };
+    expect(() => drawBubbleBackground(c, form, "rect", 1)).not.toThrow();
+    expect(c.getLineDash()).toEqual([]);
   });
 });

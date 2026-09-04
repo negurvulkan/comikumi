@@ -109,6 +109,36 @@ export const BubbleGradientFillSchema = z.object({
 });
 export type BubbleGradientFill = z.infer<typeof BubbleGradientFillSchema>;
 
+export const BubbleBevelStyleSchema = z.enum(["inner", "outer", "emboss"]);
+export type BubbleBevelStyle = z.infer<typeof BubbleBevelStyleSchema>;
+
+export const BubbleBevelDirectionSchema = z.enum(["up", "down"]);
+export type BubbleBevelDirection = z.infer<typeof BubbleBevelDirectionSchema>;
+
+/** Optional bevel/emboss for a bubble's background — bubble-only (no text equivalent),
+ * bubble-only (no per-language override, same as fillColor/backgroundGlow/etc).
+ * Field names deliberately mirror ag-psd's real LayerEffectBevel (size/angle/style/
+ * direction/highlightColor/shadowColor/highlightOpacity/shadowOpacity/soften) for a
+ * possible future native-PSD-layer-effect exporter — `sizePx` not `depth`: Photoshop's
+ * "Depth" is a separate 0-1000% intensity multiplier (ag-psd calls it `strength`), out
+ * of scope for this v1's rendering. `style` covers 3 of Photoshop's 5 variants —
+ * "pillow emboss" is approximated as `style: "emboss", direction: "down"`, and "stroke
+ * emboss" is skipped (needs a stroke-effect concept this app doesn't have). See
+ * drawBubbleBevel() in bubbleBackground.ts for how these render. */
+export const BubbleBevelSchema = z.object({
+  enabled: z.boolean().default(false),
+  style: BubbleBevelStyleSchema.default("inner"),
+  direction: BubbleBevelDirectionSchema.default("up"),
+  sizePx: z.number().min(0).default(6),
+  angleDeg: z.number().default(120),
+  softenPx: z.number().min(0).default(4),
+  highlightColor: z.string().default("#ffffff"),
+  highlightOpacity: z.number().min(0).max(1).default(0.75),
+  shadowColor: z.string().default("#000000"),
+  shadowOpacity: z.number().min(0).max(1).default(0.6),
+});
+export type BubbleBevel = z.infer<typeof BubbleBevelSchema>;
+
 /**
  * Everything that defines a bubble's visible geometry + drawn background:
  * position/size/rotation plus (optionally) a real speech/thought/shout
@@ -128,6 +158,13 @@ export const BubbleFormSchema = z.object({
   fillColor: z.string().default("#ffffff"),
   strokeColor: z.string().default("#000000"),
   strokeWidthPx: z.number().positive().default(6),
+  /** Dash pattern for the border stroke, in the same units as strokeWidthPx — [] (default)
+   * is a plain solid line, e.g. [8,4] a classic dash, [2,2] a dotted line. Passed straight
+   * to ctx.setLineDash() (scaled) in bubbleBackground.ts; no `enabled` flag needed since an
+   * empty array is already unambiguous. */
+  strokeDashPattern: z.array(z.number().min(0)).default([]),
+  /** Phase offset (same units) for where the dash pattern starts — ctx.lineDashOffset. */
+  strokeDashOffsetPx: z.number().default(0),
   /** Linear gradient fill replacing the solid fillColor when enabled. */
   backgroundGradientFill: BubbleGradientFillSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
   /** Soft colored glow behind the bubble body. Only the main body silhouette casts it —
@@ -135,6 +172,18 @@ export const BubbleFormSchema = z.object({
   backgroundGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
   /** Offset drop shadow behind the bubble body. Same main-body-only scope as backgroundGlow. */
   backgroundDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
+  backgroundBevel: BubbleBevelSchema.default({
+    enabled: false,
+    style: "inner",
+    direction: "up",
+    sizePx: 6,
+    angleDeg: 120,
+    softenPx: 4,
+    highlightColor: "#ffffff",
+    highlightOpacity: 0.75,
+    shadowColor: "#000000",
+    shadowOpacity: 0.6,
+  }),
   /**
    * Speech/shout tail tip, or the thought-trail's target point — in LOCAL,
    * unrotated form coordinates (0,0 = this form's own top-left), so it moves
@@ -207,9 +256,28 @@ export const BubbleSchema = z.object({
   fillColor: z.string().default("#ffffff"),
   strokeColor: z.string().default("#000000"),
   strokeWidthPx: z.number().positive().default(6),
+  /** Dash pattern for the border stroke, in the same units as strokeWidthPx — [] (default)
+   * is a plain solid line, e.g. [8,4] a classic dash, [2,2] a dotted line. Passed straight
+   * to ctx.setLineDash() (scaled) in bubbleBackground.ts; no `enabled` flag needed since an
+   * empty array is already unambiguous. */
+  strokeDashPattern: z.array(z.number().min(0)).default([]),
+  /** Phase offset (same units) for where the dash pattern starts — ctx.lineDashOffset. */
+  strokeDashOffsetPx: z.number().default(0),
   backgroundGradientFill: BubbleGradientFillSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
   backgroundGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
   backgroundDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
+  backgroundBevel: BubbleBevelSchema.default({
+    enabled: false,
+    style: "inner",
+    direction: "up",
+    sizePx: 6,
+    angleDeg: 120,
+    softenPx: 4,
+    highlightColor: "#ffffff",
+    highlightOpacity: 0.75,
+    shadowColor: "#000000",
+    shadowOpacity: 0.6,
+  }),
   tail: PointSchema.nullable().default(null),
   tailAnchor: PointSchema.nullable().default(null),
   tailWidth: z.number().positive().default(40),
@@ -400,9 +468,12 @@ export function resolveBubbleForm(bubble: Bubble, languageCode: string, presets:
     fillColor: resolvePresetField(preset?.background.fillColor, bubble.fillColor),
     strokeColor: resolvePresetField(preset?.background.strokeColor, bubble.strokeColor),
     strokeWidthPx: resolvePresetField(preset?.background.strokeWidthPx, bubble.strokeWidthPx),
+    strokeDashPattern: resolvePresetField(preset?.background.strokeDashPattern, bubble.strokeDashPattern),
+    strokeDashOffsetPx: resolvePresetField(preset?.background.strokeDashOffsetPx, bubble.strokeDashOffsetPx),
     backgroundGradientFill: resolvePresetField(preset?.background.backgroundGradientFill, bubble.backgroundGradientFill),
     backgroundGlow: resolvePresetField(preset?.background.backgroundGlow, bubble.backgroundGlow),
     backgroundDropShadow: resolvePresetField(preset?.background.backgroundDropShadow, bubble.backgroundDropShadow),
+    backgroundBevel: resolvePresetField(preset?.background.backgroundBevel, bubble.backgroundBevel),
     tail: bubble.tail,
     tailAnchor: bubble.tailAnchor,
     tailWidth: bubble.tailWidth,
@@ -934,9 +1005,23 @@ export function createBubble(partial: Partial<Bubble> & Pick<Bubble, "id" | "x" 
     fillColor: "#ffffff",
     strokeColor: "#000000",
     strokeWidthPx: 6,
+    strokeDashPattern: [],
+    strokeDashOffsetPx: 0,
     backgroundGradientFill: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
     backgroundGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
     backgroundDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
+    backgroundBevel: {
+      enabled: false,
+      style: "inner",
+      direction: "up",
+      sizePx: 6,
+      angleDeg: 120,
+      softenPx: 4,
+      highlightColor: "#ffffff",
+      highlightOpacity: 0.75,
+      shadowColor: "#000000",
+      shadowOpacity: 0.6,
+    },
     tail: null,
     tailWidth: 40,
     svgFileName: null,

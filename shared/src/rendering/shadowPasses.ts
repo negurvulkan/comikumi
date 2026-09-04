@@ -1,11 +1,18 @@
 import type { EffectGlow, EffectShadow } from "../layoutSchema.js";
 
+/** Clears ctx.shadow* to a no-op state — exported so other draw routines (e.g.
+ * drawBubbleBevel in bubbleBackground.ts) that set shadow state directly, without going
+ * through drawShadowUnderlayPasses, can reuse the same reset instead of duplicating it. */
+export function resetShadowState(ctx: CanvasRenderingContext2D) {
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+}
+
 function applyShadowState(ctx: CanvasRenderingContext2D, config: EffectGlow | EffectShadow | null, offsetX = 0, offsetY = 0) {
   if (!config?.enabled) {
-    ctx.shadowColor = "transparent";
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
+    resetShadowState(ctx);
     return;
   }
   ctx.shadowColor = config.color;

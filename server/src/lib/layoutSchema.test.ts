@@ -162,26 +162,57 @@ describe("resolveBubbleForm", () => {
     expect(form.tailWidth).toBe(77);
   });
 
-  it("backgroundGradientFill/backgroundGlow/backgroundDropShadow all resolve from a linked preset", () => {
+  it("backgroundGradientFill/backgroundGlow/backgroundDropShadow/backgroundBevel/strokeDashPattern all resolve from a linked preset", () => {
     const p = preset({
       id: "p1",
       background: {
+        strokeDashPattern: [8, 4],
+        strokeDashOffsetPx: 3,
         backgroundGradientFill: { enabled: true, colorStart: "#111111", colorEnd: "#222222", angleDeg: 45 },
         backgroundGlow: { enabled: true, color: "#66e0ff", blurPx: 20 },
         backgroundDropShadow: { enabled: true, color: "#000000", blurPx: 10, offsetXPx: 5, offsetYPx: 5 },
+        backgroundBevel: {
+          enabled: true,
+          style: "outer",
+          direction: "down",
+          sizePx: 10,
+          angleDeg: 90,
+          softenPx: 6,
+          highlightColor: "#eeeeee",
+          highlightOpacity: 0.8,
+          shadowColor: "#111111",
+          shadowOpacity: 0.5,
+        },
       },
     });
     const form = resolveBubbleForm({ ...base, presetId: "p1" }, "de", [p]);
+    expect(form.strokeDashPattern).toEqual([8, 4]);
+    expect(form.strokeDashOffsetPx).toBe(3);
     expect(form.backgroundGradientFill).toEqual({ enabled: true, colorStart: "#111111", colorEnd: "#222222", angleDeg: 45 });
     expect(form.backgroundGlow).toEqual({ enabled: true, color: "#66e0ff", blurPx: 20 });
     expect(form.backgroundDropShadow).toEqual({ enabled: true, color: "#000000", blurPx: 10, offsetXPx: 5, offsetYPx: 5 });
+    expect(form.backgroundBevel).toEqual({
+      enabled: true,
+      style: "outer",
+      direction: "down",
+      sizePx: 10,
+      angleDeg: 90,
+      softenPx: 6,
+      highlightColor: "#eeeeee",
+      highlightOpacity: 0.8,
+      shadowColor: "#111111",
+      shadowOpacity: 0.5,
+    });
   });
 
-  it("without a preset, backgroundGlow/backgroundDropShadow/backgroundGradientFill default to disabled", () => {
+  it("without a preset, backgroundGlow/backgroundDropShadow/backgroundGradientFill/backgroundBevel default to disabled, strokeDashPattern to solid", () => {
     const form = resolveBubbleForm(base, "de");
     expect(form.backgroundGlow.enabled).toBe(false);
     expect(form.backgroundDropShadow.enabled).toBe(false);
     expect(form.backgroundGradientFill.enabled).toBe(false);
+    expect(form.backgroundBevel.enabled).toBe(false);
+    expect(form.strokeDashPattern).toEqual([]);
+    expect(form.strokeDashOffsetPx).toBe(0);
   });
 });
 

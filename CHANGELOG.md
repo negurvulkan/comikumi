@@ -4,6 +4,21 @@ All notable changes to ComiKumi are documented in this file. Entries summarize
 capabilities reached at each version rather than a per-commit history — the
 project didn't tag intermediate versions before 0.6.0.
 
+## [0.7.0] — 2026-09-04
+
+### Bubble & text styling
+- Gradient fill, glow, and drop shadow for a bubble's background and for text (bubble
+  text and curved text), independently toggleable and stackable.
+- Bevel & Emboss for bubble backgrounds — inner/outer/emboss styles, an up/down
+  direction flipping raised-vs-recessed, and adjustable angle/size/softness/
+  highlight+shadow color and opacity.
+- Dashed/dotted/custom border patterns for bubble backgrounds — a preset dropdown
+  (solid/dotted/dashed/dash-dot/long dash) plus a custom numeric dash-pattern field
+  with a phase offset, applied consistently to the main body, free-standing tails,
+  and chain-tail segments.
+- All of the above are assignable per bubble/curved text or bundled into a reusable
+  Lettering Preset, alongside the existing text outline/gradient fields.
+
 ## [0.6.0] — 2026-09-03
 
 First versioned snapshot. Highlights of what ComiKumi can do at this point:

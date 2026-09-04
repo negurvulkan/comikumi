@@ -37,6 +37,11 @@ React + Konva canvas editor.
   speech/thought/shout/custom-SVG backgrounds and configurable tails), placed images
   (perspective-warped into a quad), curved title/SFX text along a Bézier path, and
   panel-reference polygons for reporting.
+- **Bubble styling effects** — gradient fill, glow, drop shadow, and bevel/emboss
+  (inner/outer/emboss, adjustable angle/size/softness/highlight+shadow color) for a
+  bubble's background, all independently stackable, plus dashed/dotted/custom border
+  patterns; text can carry its own outline, gradient, glow, and drop shadow too.
+  Configurable per bubble or bundled into a reusable Lettering Preset.
 - **Import Clip Studio Paint (.clip) files as pages** — add one or more `.clip` project
   files directly as new pages, no manual flattening/export step in CSP first (no
   official .clip SDK exists — parsed independently, see

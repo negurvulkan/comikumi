@@ -138,7 +138,7 @@ async function getOrStartSession(userId: string): Promise<CodexSession> {
   sessions.set(userId, session);
   touchIdleTimer(session);
 
-  session.ready = call(session, "initialize", { clientInfo: { name: "comikumi", version: "0.6.0" } }).then(() => {
+  session.ready = call(session, "initialize", { clientInfo: { name: "comikumi", version: "0.7.0" } }).then(() => {
     notify(session, "initialized", {});
   });
   await session.ready;

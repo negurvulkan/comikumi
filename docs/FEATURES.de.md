@@ -395,7 +395,7 @@ Modal im "Projekt"-Menü auf jedem Bildschirm (Anlegen, Bearbeiten per Klick auf
 Eintrag, Löschen). Anwendbar auf Blasen **und** Kurventexte (Kurventexte nutzen nur den
 Textstil-Teil, keinen Blasenhintergrund).
 
-- **Sparse/granular pro Feld**: Ein Preset kann bewusst nur einen Teil der ~24 Felder
+- **Sparse/granular pro Feld**: Ein Preset kann bewusst nur einen Teil der ~25 Felder
   definieren (z. B. nur die Schriftart) — jedes Feld ist einzeln per Checkbox ein-/
   ausschaltbar. Nicht definierte Felder bleiben vollständig Sache der einzelnen
   Blase/des Kurventexts und werden vom Preset nie angefasst. So kann z. B. die
@@ -414,9 +414,9 @@ Textstil-Teil, keinen Blasenhintergrund).
 - **Umfang**: Textstil (Schriftart, Größe, Zeilenhöhe, Ausrichtung, Leserichtung, Farbe,
   Umrandung, Farbverlauf, Leuchten, Schlagschatten) und, nur für Blasen,
   Blasenhintergrund (Blasenstil, Füll-/Randfarbe, Randbreite, Hintergrund-Farbverlauf,
-  Leuchten, Schlagschatten, Zeigerart inkl. Ketten-Details). Reine Geometrie
-  (Position/Größe/Rotation, Tail-Spitze/-Anker/-Breite/-Krümmung) ist bewusst kein
-  Preset-Feld — das sind Instanz-Eigenschaften einer einzelnen Blase, kein "Stil".
+  Leuchten, Schlagschatten, Abschrägung/Relief, Zeigerart inkl. Ketten-Details). Reine
+  Geometrie (Position/Größe/Rotation, Tail-Spitze/-Anker/-Breite/-Krümmung) ist bewusst
+  kein Preset-Feld — das sind Instanz-Eigenschaften einer einzelnen Blase, kein "Stil".
 - **Zuordnung**: über ein Preset-Dropdown im Bubble-/Kurventext-Inspector, oder über das
   Rechtsklick-Kontextmenü im Canvas ("Preset zuweisen"-Untermenü, nur für Blasen). Jedes
   vom aktuellen Preset gesteuerte Feld wird im Inspector deaktiviert angezeigt (mit
@@ -480,14 +480,28 @@ Sprechblase, Gedankenblase, Effekt (gezackter Rand), oder eine eigene hochgelade
 SVG-Kontur. Bei sichtbarem Stil: Füll-/Randfarbe, Randbreite, und ein optionaler
 Zeiger/Schwanz mit eigenem Stil — nahtlos verbunden, freistehend, oder eine
 segmentierte "Kette" (Kreis/Rechteck/Raute-Segmente, Anzahl und Abstand konfigurierbar)
-— Position, Breite und Krümmung sind alle per Canvas-Ziehgriff einstellbar. Die
+— Position, Breite und Krümmung sind alle per Canvas-Ziehgriff einstellbar. Der Rand
+selbst muss nicht durchgezogen sein — ein Stil-Dropdown (durchgezogen, gepunktet,
+gestrichelt, Strich-Punkt, lange Striche) plus ein eigenes numerisches Musterfeld
+(durch Leerzeichen/Komma getrennte Strich-/Lücken-Längen, mit Phasen-Versatz) deckt
+alles von einer schlichten Linie bis zu einem beliebigen Strich-Rhythmus ab; dasselbe
+Muster gilt für den Blasenkörper, einen freistehenden Zeiger und Ketten-Segmente
+gleichermaßen, genau wie schon Randfarbe/-breite. Die
 Hintergrundfüllung kann statt einer Volltonfarbe auch ein linearer Farbverlauf sein
-und/oder ein Leuchten und/oder einen Schlagschatten tragen — alle unabhängig
-zu- und abschaltbar und kombinierbar (eine Blase kann Farbverlauf-Füllung,
-farbiges Leuchten und dunklen Schlagschatten gleichzeitig haben). Leuchten/
-Schlagschatten werden auf dem Blasenkörper und einem nahtlos verbundenen Zeiger
+und/oder ein Leuchten, einen Schlagschatten und/oder eine Abschrägung/Relief
+tragen — alle unabhängig zu- und abschaltbar und kombinierbar (eine Blase kann
+Farbverlauf-Füllung, farbiges Leuchten, dunklen Schlagschatten und eine
+Abschrägung gleichzeitig haben). Abschrägung/Relief hat drei Stile (innen,
+außen, Relief) und eine Richtung (nach oben/unten), die erhaben/eingedrückt
+umschaltet, dazu Winkel/Größe/Weichzeichnung sowie getrennte
+Glanzlicht-/Schattenfarbe und -Deckkraft — eine weiche, rastergezeichnete
+Annäherung an eine echte lichtbasierte Abschrägung (Canvas hat dafür kein
+natives Primitive), kein pixelgenaues Relief. Leuchten/Schlagschatten/
+Abschrägung werden auf dem Blasenkörper und einem nahtlos verbundenen Zeiger
 gezeichnet; ein freistehender oder Ketten-Zeiger wirft kein eigenes
-Leuchten/keinen eigenen Schatten (eine bekannte Einschränkung, kein Bug).
+Leuchten/keinen eigenen Schatten/keine eigene Abschrägung (eine bekannte
+Einschränkung, kein Bug). Blasen-Effekte gelten nur für Rand/Innenfläche — für
+Text gibt es kein Äquivalent.
 
 Text-Optionen: Schriftart (eigene hochgeladene Schriften), Größe, Zeilenhöhe,
 horizontale Ausrichtung, sowie Leserichtung — horizontal LTR, horizontal RTL, oder
@@ -516,8 +530,15 @@ Form/Position/Größe/Rotation/Hintergrund) ist per Sprach-Umschalter überschre
 Text-Leuchten/-Schlagschatten erscheinen im Editor, PNG- und PSD-Export; die
 Textebene des Vektor-PDF-Exports bleibt echter Vektortext und trägt keinen der
 vier Texteffekte (dieselbe bereits bestehende Einschränkung wie bei
-Umrandung/Farbverlauf). Blasen können einem Panel und einem Charakter
-zugeordnet werden.
+Umrandung/Farbverlauf — Blasenhintergrund-Abschrägung/Leuchten/Schlagschatten/
+Farbverlauf betrifft das ebenso, da PDF nur den Hintergrund rastert, nie
+Blasentext). Der PSD-Export bäckt jeden Blasenhintergrund-Effekt (auch
+Abschrägung/Relief) ebenfalls in die Raster-Ebene ein, statt als echten,
+weiterhin editierbaren Photoshop-Ebenenstil ("Schlagschatten", "Abschrägung
+und Relief" usw.) — eine plausible, in sich abgeschlossene künftige
+Erweiterung, da die bereits verwendete PSD-Bibliothek diese nativen
+Ebenenstile tatsächlich schreiben kann. Blasen können einem Panel und einem
+Charakter zugeordnet werden.
 
 **Effekt-Blasen (SFX)**: ein eigenes Werkzeug in der Werkzeugleiste, direkt
 neben den drei Formen-Werkzeugen, zeichnet eine Blase genau wie das
