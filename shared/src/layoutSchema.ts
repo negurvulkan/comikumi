@@ -139,6 +139,35 @@ export const BubbleBevelSchema = z.object({
 });
 export type BubbleBevel = z.infer<typeof BubbleBevelSchema>;
 
+export const BubbleScreentonePatternSchema = z.enum(["dots", "lines", "crosshatch"]);
+export type BubbleScreentonePattern = z.infer<typeof BubbleScreentonePatternSchema>;
+
+/** Procedural screentone/halftone fill ("Rastereffekt") — usable as a bubble's
+ * background fill (backgroundScreentone on Bubble/BubbleForm) or as a text fill
+ * (textScreentone on Bubble/CurvedTextElement, e.g. for halftone-styled SFX text). Same
+ * schema shape either way — a screentone pattern is defined by the same params
+ * regardless of what it fills. See shared/src/rendering/screentone.ts for how the tile
+ * is generated and shared/src/rendering/textScreentone.ts for why text needs an
+ * offscreen-mask composite in the two places glyphs are drawn with per-glyph rotation
+ * (a CanvasPattern anchors to the CTM at fill() time, unlike CanvasGradient, which bakes
+ * it in at creation time — see drawScreentoneMaskedGlyphs's doc comment). */
+export const BubbleScreentoneSchema = z.object({
+  enabled: z.boolean().default(false),
+  pattern: BubbleScreentonePatternSchema.default("dots"),
+  /** Tile size — distance between dot centers / line repeats, same schema units as
+   * strokeWidthPx (scaled by `scale` at draw time like every other size field). */
+  spacingPx: z.number().positive().default(8),
+  /** 0-1 — dot radius or line thickness as a fraction of spacingPx. This IS the "tone
+   * value": low = sparse/light, high = dense/dark, mirroring real screentone %. */
+  sizeRatio: z.number().min(0).max(1).default(0.5),
+  /** Classic screentone default is 45°. */
+  angleDeg: z.number().default(45),
+  dotColor: z.string().default("#000000"),
+  backgroundColor: z.string().default("#ffffff"),
+  opacity: z.number().min(0).max(1).default(1),
+});
+export type BubbleScreentone = z.infer<typeof BubbleScreentoneSchema>;
+
 /**
  * Everything that defines a bubble's visible geometry + drawn background:
  * position/size/rotation plus (optionally) a real speech/thought/shout
@@ -183,6 +212,16 @@ export const BubbleFormSchema = z.object({
     highlightOpacity: 0.75,
     shadowColor: "#000000",
     shadowOpacity: 0.6,
+  }),
+  backgroundScreentone: BubbleScreentoneSchema.default({
+    enabled: false,
+    pattern: "dots",
+    spacingPx: 8,
+    sizeRatio: 0.5,
+    angleDeg: 45,
+    dotColor: "#000000",
+    backgroundColor: "#ffffff",
+    opacity: 1,
   }),
   /**
    * Speech/shout tail tip, or the thought-trail's target point — in LOCAL,
@@ -278,6 +317,16 @@ export const BubbleSchema = z.object({
     shadowColor: "#000000",
     shadowOpacity: 0.6,
   }),
+  backgroundScreentone: BubbleScreentoneSchema.default({
+    enabled: false,
+    pattern: "dots",
+    spacingPx: 8,
+    sizeRatio: 0.5,
+    angleDeg: 45,
+    dotColor: "#000000",
+    backgroundColor: "#ffffff",
+    opacity: 1,
+  }),
   tail: PointSchema.nullable().default(null),
   tailAnchor: PointSchema.nullable().default(null),
   tailWidth: z.number().positive().default(40),
@@ -336,6 +385,16 @@ export const BubbleSchema = z.object({
   textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
   textGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
   textDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
+  textScreentone: BubbleScreentoneSchema.default({
+    enabled: false,
+    pattern: "dots",
+    spacingPx: 8,
+    sizeRatio: 0.5,
+    angleDeg: 45,
+    dotColor: "#000000",
+    backgroundColor: "#ffffff",
+    opacity: 1,
+  }),
   text: z.record(z.string(), z.string()).default({}),
   /**
    * Per-language overrides — every field here falls back to the bubble's own
@@ -354,6 +413,7 @@ export const BubbleSchema = z.object({
   textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
   textGlowOverride: z.record(z.string(), EffectGlowSchema).optional(),
   textDropShadowOverride: z.record(z.string(), EffectShadowSchema).optional(),
+  textScreentoneOverride: z.record(z.string(), BubbleScreentoneSchema).optional(),
   /** Manual assignment, not derived from geometry — which Panel (this page's
    * panels array) and which Character (project-wide) this bubble belongs to.
    * Null means unassigned; a stale id (panel/character deleted after being
@@ -442,6 +502,7 @@ export function resolveBubbleStyle(bubble: Bubble, languageCode: string, presets
     textGradient: resolveLangField(bubble.textGradientOverride, languageCode, preset?.text.textGradient, bubble.textGradient),
     textGlow: resolveLangField(bubble.textGlowOverride, languageCode, preset?.text.textGlow, bubble.textGlow),
     textDropShadow: resolveLangField(bubble.textDropShadowOverride, languageCode, preset?.text.textDropShadow, bubble.textDropShadow),
+    textScreentone: resolveLangField(bubble.textScreentoneOverride, languageCode, preset?.text.textScreentone, bubble.textScreentone),
   };
 }
 
@@ -474,6 +535,7 @@ export function resolveBubbleForm(bubble: Bubble, languageCode: string, presets:
     backgroundGlow: resolvePresetField(preset?.background.backgroundGlow, bubble.backgroundGlow),
     backgroundDropShadow: resolvePresetField(preset?.background.backgroundDropShadow, bubble.backgroundDropShadow),
     backgroundBevel: resolvePresetField(preset?.background.backgroundBevel, bubble.backgroundBevel),
+    backgroundScreentone: resolvePresetField(preset?.background.backgroundScreentone, bubble.backgroundScreentone),
     tail: bubble.tail,
     tailAnchor: bubble.tailAnchor,
     tailWidth: bubble.tailWidth,
@@ -541,6 +603,16 @@ export const CurvedTextElementSchema = z.object({
   textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
   textGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
   textDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
+  textScreentone: BubbleScreentoneSchema.default({
+    enabled: false,
+    pattern: "dots",
+    spacingPx: 8,
+    sizeRatio: 0.5,
+    angleDeg: 45,
+    dotColor: "#000000",
+    backgroundColor: "#ffffff",
+    opacity: 1,
+  }),
   text: z.record(z.string(), z.string()).default({}),
   /** Same per-language override pattern as Bubble's fontSizeOverride etc. */
   fontSizeOverride: z.record(z.string(), z.number().positive()).optional(),
@@ -550,6 +622,7 @@ export const CurvedTextElementSchema = z.object({
   textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
   textGlowOverride: z.record(z.string(), EffectGlowSchema).optional(),
   textDropShadowOverride: z.record(z.string(), EffectShadowSchema).optional(),
+  textScreentoneOverride: z.record(z.string(), BubbleScreentoneSchema).optional(),
   /** Same live-preset-link idea as Bubble.presetId — only the text-style subset of a
    * preset applies (curved text has no bubble background). */
   presetId: z.string().nullable().default(null),
@@ -575,6 +648,7 @@ export function resolveCurvedTextStyle(el: CurvedTextElement, languageCode: stri
     textGradient: resolveLangField(el.textGradientOverride, languageCode, preset?.text.textGradient, el.textGradient),
     textGlow: resolveLangField(el.textGlowOverride, languageCode, preset?.text.textGlow, el.textGlow),
     textDropShadow: resolveLangField(el.textDropShadowOverride, languageCode, preset?.text.textDropShadow, el.textDropShadow),
+    textScreentone: resolveLangField(el.textScreentoneOverride, languageCode, preset?.text.textScreentone, el.textScreentone),
   };
 }
 
@@ -593,6 +667,7 @@ export function createCurvedTextElement(partial: {
     textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
     textGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
     textDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
+    textScreentone: { enabled: false, pattern: "dots", spacingPx: 8, sizeRatio: 0.5, angleDeg: 45, dotColor: "#000000", backgroundColor: "#ffffff", opacity: 1 },
     text: {},
     ...partial,
   });
@@ -1022,6 +1097,7 @@ export function createBubble(partial: Partial<Bubble> & Pick<Bubble, "id" | "x" 
       shadowColor: "#000000",
       shadowOpacity: 0.6,
     },
+    backgroundScreentone: { enabled: false, pattern: "dots", spacingPx: 8, sizeRatio: 0.5, angleDeg: 45, dotColor: "#000000", backgroundColor: "#ffffff", opacity: 1 },
     tail: null,
     tailWidth: 40,
     svgFileName: null,
@@ -1035,6 +1111,7 @@ export function createBubble(partial: Partial<Bubble> & Pick<Bubble, "id" | "x" 
     textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
     textGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
     textDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
+    textScreentone: { enabled: false, pattern: "dots", spacingPx: 8, sizeRatio: 0.5, angleDeg: 45, dotColor: "#000000", backgroundColor: "#ffffff", opacity: 1 },
     text: {},
     corners: shape === "quad" ? boxCorners(partial.x, partial.y, partial.width, partial.height) : undefined,
     ...partial,

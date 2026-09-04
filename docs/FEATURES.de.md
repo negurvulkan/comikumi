@@ -508,12 +508,25 @@ außen, Relief) und eine Richtung (nach oben/unten), die erhaben/eingedrückt
 umschaltet, dazu Winkel/Größe/Weichzeichnung sowie getrennte
 Glanzlicht-/Schattenfarbe und -Deckkraft — eine weiche, rastergezeichnete
 Annäherung an eine echte lichtbasierte Abschrägung (Canvas hat dafür kein
-natives Primitive), kein pixelgenaues Relief. Leuchten/Schlagschatten/
-Abschrägung werden auf dem Blasenkörper und einem nahtlos verbundenen Zeiger
-gezeichnet; ein freistehender oder Ketten-Zeiger wirft kein eigenes
-Leuchten/keinen eigenen Schatten/keine eigene Abschrägung (eine bekannte
-Einschränkung, kein Bug). Blasen-Effekte gelten nur für Rand/Innenfläche — für
-Text gibt es kein Äquivalent.
+natives Primitive), kein pixelgenaues Relief. Die Hintergrundfüllung kann
+stattdessen auch ein prozeduraler Rastereffekt (Screentone/Halbton) sein —
+Punkte, Linien oder Kreuzschraffur — mit einstellbarem Abstand, Tonwert
+(Punkt-/Liniengröße als Anteil des Abstands), Drehwinkel und getrennten
+Farben für Raster und Papier, für den klassischen Manga-Rasterlook ohne
+eingescannte/importierte Textur; der Rastereffekt gewinnt gegenüber einem
+gleichzeitig aktivierten Farbverlauf. Leuchten/Schlagschatten/Abschrägung/
+Rastereffekt werden auf dem Blasenkörper und einem nahtlos verbundenen
+Zeiger gezeichnet; ein freistehender oder Ketten-Zeiger wirft kein eigenes
+Leuchten/keinen eigenen Schatten/keine eigene Abschrägung und fällt statt
+des Rastermusters auf die einfache Füllfarbe zurück (eine bekannte
+Einschränkung, kein Bug — ein sich wiederholendes Muster lässt sich über
+unabhängig positionierte Zeiger-Segmente hinweg nicht phasengleich
+ausrichten, eine Volltonfarbe schon). Farbverlauf/Leuchten/Schlagschatten/
+Abschrägung gelten nur für Rand/Innenfläche — dafür gibt es kein
+Text-Äquivalent. Der Rastereffekt ist der einzige Hintergrund-Effekt, der
+auch ein Text-Gegenstück hat (siehe unten und [Kurventext](#kurventext)) —
+dieselbe Manga-Technik dient zugleich dazu, Lautmalerei-/SFX-Text individuell
+zu gestalten.
 
 Text-Optionen: Schriftart (eigene hochgeladene Schriften), Größe, Zeilenhöhe,
 horizontale Ausrichtung, sowie Leserichtung — horizontal LTR, horizontal RTL, oder
@@ -537,14 +550,29 @@ automatisch ein, wenn die Markierung einem übersetzten Begriff entspricht.
 Text kann eine
 Umrandung und/oder einen linearen Farbverlauf statt Volltonfarbe bekommen, dazu
 unabhängig zu-/abschaltbares Leuchten und/oder Schlagschatten (alle vier
-kombinierbar). Jedes dieser Stil-Felder (und die komplette
+kombinierbar). Text kann außerdem mit demselben prozeduralen Rastereffekt
+(Screentone/Halbton) gefüllt werden, den auch der Blasenhintergrund
+unterstützt — Punkte, Linien oder Kreuzschraffur, mit denselben
+Abstand-/Tonwert-/Winkel-/Farbreglern — statt Volltonfarbe oder Farbverlauf;
+er gewinnt gegenüber einem gleichzeitig aktivierten Farbverlauf. Das ist der
+Hauptweg, um Lautmalerei-/SFX-Text einen authentischen Manga-Rasterlook zu
+geben, auch auf gekrümmtem/gedrehtem [Kurventext](#kurventext) und den
+gedrehten Satzzeichen-Glyphen (ー〜~ usw.) innerhalb von vertikalem Text —
+beide sind intern pro Glyph gedreht, weshalb das Muster über eine
+Offscreen-Maske pro Glyph/Lauf statt per einfacher Füllung eingeblendet wird,
+damit das Punktfeld über Zeichen hinweg durchgehend bleibt, statt bei jeder
+eigenen Drehung neu anzusetzen. Jedes dieser Stil-Felder (und die komplette
 Form/Position/Größe/Rotation/Hintergrund) ist per Sprach-Umschalter überschreibbar.
 Text-Leuchten/-Schlagschatten erscheinen im Editor, PNG- und PSD-Export; die
 Textebene des Vektor-PDF-Exports bleibt echter Vektortext und trägt keinen der
-vier Texteffekte (dieselbe bereits bestehende Einschränkung wie bei
+fünf Texteffekte (dieselbe bereits bestehende Einschränkung wie bei
 Umrandung/Farbverlauf — Blasenhintergrund-Abschrägung/Leuchten/Schlagschatten/
-Farbverlauf betrifft das ebenso, da PDF nur den Hintergrund rastert, nie
-Blasentext). Der PSD-Export bäckt jeden Blasenhintergrund-Effekt (auch
+Farbverlauf/Rastereffekt betrifft das ebenso, da PDF nur den Hintergrund
+rastert, nie Blasentext). Ist Text-Rastereffekt aktiviert (wie beim
+Farbverlauf), kann der PSD-Export für diese Blase keine editierbare
+Photoshop-Textebene erzeugen — es wird auf dieselbe reine Raster-Textebene
+zurückgegriffen, die auch bei vertikalem/RTL-Text genutzt wird. Der PSD-Export
+bäckt jeden Blasenhintergrund-Effekt (auch
 Abschrägung/Relief) ebenfalls in die Raster-Ebene ein, statt als echten,
 weiterhin editierbaren Photoshop-Ebenenstil ("Schlagschatten", "Abschrägung
 und Relief" usw.) — eine plausible, in sich abgeschlossene künftige
@@ -632,8 +660,14 @@ Kontrollpunkten verläuft, statt in einer Blasen-Box zu sitzen. Bewusst einzeili
 Leserichtungs-Option (ein fokussiertes Titel-/Effekt-Werkzeug, kein zweites
 Volltext-Layoutsystem) — Schriftart, Größe (schrumpft automatisch passend zur Kurve),
 Ausrichtung entlang der Kurve (Anfang/Mitte/Ende),
-Farbe/Umrandung/Farbverlauf/Leuchten/Schlagschatten, alle mit demselben
-Sprach-Umschalter-Muster.
+Farbe/Umrandung/Farbverlauf/Rastereffekt/Leuchten/Schlagschatten, alle mit
+demselben Sprach-Umschalter-Muster. Die Rastereffekt-Füllung ist die
+klassische Manga-Halbton-Technik für SFX-Text und funktioniert hier korrekt,
+obwohl jedes Zeichen entlang der Kurve seine eigene Drehung hat: intern wird
+das Muster über eine Offscreen-Maske statt per einfacher Füllung eingeblendet,
+sodass das Punktfeld über das gesamte Wort hinweg als eine durchgehende Textur
+erscheint, statt bei jeder gedrehten Glyphe neu anzusetzen (und dabei die
+Phase zu verschieben).
 
 ### Panels
 

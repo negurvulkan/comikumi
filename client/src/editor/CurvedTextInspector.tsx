@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { CurvedTextElement, EffectGlow, EffectShadow, TextAlign, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type { BubbleScreentone, CurvedTextElement, EffectGlow, EffectShadow, TextAlign, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
 import { resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
@@ -32,10 +32,12 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
   const hasEffectsOverride =
     element.textOutlineOverride?.[activeLanguage] !== undefined ||
     element.textGradientOverride?.[activeLanguage] !== undefined ||
+    element.textScreentoneOverride?.[activeLanguage] !== undefined ||
     element.textGlowOverride?.[activeLanguage] !== undefined ||
     element.textDropShadowOverride?.[activeLanguage] !== undefined;
   const effectiveOutline = style.textOutline;
   const effectiveGradient = style.textGradient;
+  const effectiveScreentone = style.textScreentone;
   const effectiveGlow = style.textGlow;
   const effectiveDropShadow = style.textDropShadow;
 
@@ -53,6 +55,7 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
     if (preset.text.color !== undefined) patch.color = style.color;
     if (preset.text.textOutline !== undefined) patch.textOutline = style.textOutline;
     if (preset.text.textGradient !== undefined) patch.textGradient = style.textGradient;
+    if (preset.text.textScreentone !== undefined) patch.textScreentone = style.textScreentone;
     if (preset.text.textGlow !== undefined) patch.textGlow = style.textGlow;
     if (preset.text.textDropShadow !== undefined) patch.textDropShadow = style.textDropShadow;
     onChange({ ...patch, presetId: null });
@@ -100,6 +103,7 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       onChange({
         textOutlineOverride: { ...(element.textOutlineOverride ?? {}), [activeLanguage]: element.textOutline },
         textGradientOverride: { ...(element.textGradientOverride ?? {}), [activeLanguage]: element.textGradient },
+        textScreentoneOverride: { ...(element.textScreentoneOverride ?? {}), [activeLanguage]: element.textScreentone },
         textGlowOverride: { ...(element.textGlowOverride ?? {}), [activeLanguage]: element.textGlow },
         textDropShadowOverride: { ...(element.textDropShadowOverride ?? {}), [activeLanguage]: element.textDropShadow },
       });
@@ -108,6 +112,8 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       delete nextOutline[activeLanguage];
       const nextGradient = { ...(element.textGradientOverride ?? {}) };
       delete nextGradient[activeLanguage];
+      const nextScreentone = { ...(element.textScreentoneOverride ?? {}) };
+      delete nextScreentone[activeLanguage];
       const nextGlow = { ...(element.textGlowOverride ?? {}) };
       delete nextGlow[activeLanguage];
       const nextDropShadow = { ...(element.textDropShadowOverride ?? {}) };
@@ -115,6 +121,7 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       onChange({
         textOutlineOverride: nextOutline,
         textGradientOverride: nextGradient,
+        textScreentoneOverride: nextScreentone,
         textGlowOverride: nextGlow,
         textDropShadowOverride: nextDropShadow,
       });
@@ -134,6 +141,14 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       onChange({ textGradientOverride: { ...(element.textGradientOverride ?? {}), [activeLanguage]: { ...effectiveGradient, ...patch } } });
     } else {
       onChange({ textGradient: { ...element.textGradient, ...patch } });
+    }
+  }
+
+  function setTextScreentone(patch: Partial<BubbleScreentone>) {
+    if (hasEffectsOverride) {
+      onChange({ textScreentoneOverride: { ...(element.textScreentoneOverride ?? {}), [activeLanguage]: { ...effectiveScreentone, ...patch } } });
+    } else {
+      onChange({ textScreentone: { ...element.textScreentone, ...patch } });
     }
   }
 
@@ -272,6 +287,8 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
         onOutlineChange={setTextOutline}
         gradient={effectiveGradient}
         onGradientChange={setTextGradient}
+        screentone={effectiveScreentone}
+        onScreentoneChange={setTextScreentone}
         glow={effectiveGlow}
         onGlowChange={setTextGlow}
         dropShadow={effectiveDropShadow}
@@ -284,6 +301,7 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
           (!hasEffectsOverride &&
             (preset?.text.textOutline !== undefined ||
               preset?.text.textGradient !== undefined ||
+              preset?.text.textScreentone !== undefined ||
               preset?.text.textGlow !== undefined ||
               preset?.text.textDropShadow !== undefined))
         }

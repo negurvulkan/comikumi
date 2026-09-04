@@ -2,6 +2,7 @@ import type { Point, TextAlign } from "../layoutSchema.js";
 import { MIN_FONT_SIZE } from "./textLayout.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
 import { drawShadowUnderlayPasses } from "./shadowPasses.js";
+import { drawScreentoneMaskedGlyphs } from "./textScreentone.js";
 
 /**
  * Freestanding "text on a Bézier path" — the geometry/drawing core shared by
@@ -158,19 +159,41 @@ export function drawCurvedText(
   // enabled effect before the real crisp pass — each character casts its own shadow, so
   // tightly-spaced characters may show overlapping shadow seams; accepted as a known v1
   // limitation (see plan notes), not fixed here.
-  const drawAllChars = () => {
+  const drawAllChars = (targetCtx: CanvasRenderingContext2D, mode: "both" | "strokeOnly" | "fillOnly") => {
     let dist = startDist;
     for (const ch of [...flat]) {
       const chWidth = ctx.measureText(ch).width;
       const { point, angle } = pointAtArcLength(points, fitted.table, dist + chWidth / 2);
-      ctx.save();
-      ctx.translate(point.x, point.y);
-      ctx.rotate(angle);
-      drawStyledText(ctx, ch, 0, 0, style);
-      ctx.restore();
+      targetCtx.save();
+      targetCtx.translate(point.x, point.y);
+      targetCtx.rotate(angle);
+      drawStyledText(targetCtx, ch, 0, 0, style, mode);
+      targetCtx.restore();
       dist += chWidth;
     }
   };
-  drawShadowUnderlayPasses(ctx, style.glow, style.dropShadow, drawAllChars);
-  drawAllChars();
+  drawShadowUnderlayPasses(ctx, style.glow, style.dropShadow, () => drawAllChars(ctx, "both"));
+
+  if (style.screentone?.enabled) {
+    // Per-character transforms above mean a plain `fillStyle = pattern` would phase-shift
+    // each glyph's tile independently — route the fill through the offscreen-mask
+    // composite instead (see textScreentone.ts). The outline (if any) has no CTM-phase
+    // problem, so it's drawn directly, unmasked, on the real ctx.
+    drawAllChars(ctx, "strokeOnly");
+    const pad = fitted.fontSize * 0.75 + (style.outline?.enabled ? style.outline.widthPx * scale : 0) + 2;
+    drawScreentoneMaskedGlyphs(
+      ctx,
+      { x: minX - pad, y: minY - pad, width: boxW + pad * 2, height: boxH + pad * 2 },
+      style.screentone,
+      scale,
+      (maskCtx) => {
+        maskCtx.font = ctx.font;
+        maskCtx.textBaseline = ctx.textBaseline;
+        maskCtx.textAlign = ctx.textAlign;
+      },
+      (maskCtx) => drawAllChars(maskCtx, "fillOnly")
+    );
+  } else {
+    drawAllChars(ctx, "both");
+  }
 }

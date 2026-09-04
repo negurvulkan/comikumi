@@ -4,6 +4,7 @@ import type { PresetTextFields, PresetBackgroundFields } from "../../../shared/s
 import type {
   BubbleBevelDirection,
   BubbleBevelStyle,
+  BubbleScreentonePattern,
   BubbleVisualStyle,
   TailChainSegmentShape,
   TailStyle,
@@ -118,6 +119,45 @@ export function PresetPropertiesPanel({ text, background, onTextChange, onBackgr
                 <div className="field-row">
                   <input type="color" value={v.colorStart} onChange={(e) => set({ ...v, colorStart: e.target.value })} />
                   <input type="color" value={v.colorEnd} onChange={(e) => set({ ...v, colorEnd: e.target.value })} />
+                </div>
+              </OptionalToggleField>
+            )}
+          </PresetFieldToggle>
+
+          <PresetFieldToggle
+            label={t("managers.presets.textScreentoneLabel")}
+            value={text.textScreentone}
+            defaultValue={DEFAULT_TEXT.textScreentone}
+            onChange={(v) => onTextChange("textScreentone", v)}
+          >
+            {(v, set) => (
+              <OptionalToggleField label={t("managers.presets.onLabel")} checked={v.enabled} onToggle={(enabled) => set({ ...v, enabled })}>
+                <div className="field-row" style={{ flexWrap: "wrap" }}>
+                  <select value={v.pattern} onChange={(e) => set({ ...v, pattern: e.target.value as BubbleScreentonePattern })}>
+                    <option value="dots">{t("editor.textEffects.screentonePatternDots")}</option>
+                    <option value="lines">{t("editor.textEffects.screentonePatternLines")}</option>
+                    <option value="crosshatch">{t("editor.textEffects.screentonePatternCrosshatch")}</option>
+                  </select>
+                  <input type="number" min={1} value={v.spacingPx} onChange={(e) => set({ ...v, spacingPx: Number(e.target.value) })} />
+                  <input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={v.sizeRatio}
+                    onChange={(e) => set({ ...v, sizeRatio: Number(e.target.value) })}
+                  />
+                  <input type="number" step={5} value={v.angleDeg} onChange={(e) => set({ ...v, angleDeg: Number(e.target.value) })} />
+                  <input type="color" value={v.dotColor} onChange={(e) => set({ ...v, dotColor: e.target.value })} />
+                  <input type="color" value={v.backgroundColor} onChange={(e) => set({ ...v, backgroundColor: e.target.value })} />
+                  <input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={v.opacity}
+                    onChange={(e) => set({ ...v, opacity: Number(e.target.value) })}
+                  />
                 </div>
               </OptionalToggleField>
             )}
@@ -331,6 +371,45 @@ export function PresetPropertiesPanel({ text, background, onTextChange, onBackgr
                 <div className="field-row">
                   <input type="color" value={v.colorStart} onChange={(e) => set({ ...v, colorStart: e.target.value })} />
                   <input type="color" value={v.colorEnd} onChange={(e) => set({ ...v, colorEnd: e.target.value })} />
+                </div>
+              </OptionalToggleField>
+            )}
+          </PresetFieldToggle>
+
+          <PresetFieldToggle
+            label={t("managers.presets.backgroundScreentoneLabel")}
+            value={background.backgroundScreentone}
+            defaultValue={DEFAULT_BACKGROUND.backgroundScreentone}
+            onChange={(v) => onBackgroundChange("backgroundScreentone", v)}
+          >
+            {(v, set) => (
+              <OptionalToggleField label={t("managers.presets.onLabel")} checked={v.enabled} onToggle={(enabled) => set({ ...v, enabled })}>
+                <div className="field-row" style={{ flexWrap: "wrap" }}>
+                  <select value={v.pattern} onChange={(e) => set({ ...v, pattern: e.target.value as BubbleScreentonePattern })}>
+                    <option value="dots">{t("editor.textEffects.screentonePatternDots")}</option>
+                    <option value="lines">{t("editor.textEffects.screentonePatternLines")}</option>
+                    <option value="crosshatch">{t("editor.textEffects.screentonePatternCrosshatch")}</option>
+                  </select>
+                  <input type="number" min={1} value={v.spacingPx} onChange={(e) => set({ ...v, spacingPx: Number(e.target.value) })} />
+                  <input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={v.sizeRatio}
+                    onChange={(e) => set({ ...v, sizeRatio: Number(e.target.value) })}
+                  />
+                  <input type="number" step={5} value={v.angleDeg} onChange={(e) => set({ ...v, angleDeg: Number(e.target.value) })} />
+                  <input type="color" value={v.dotColor} onChange={(e) => set({ ...v, dotColor: e.target.value })} />
+                  <input type="color" value={v.backgroundColor} onChange={(e) => set({ ...v, backgroundColor: e.target.value })} />
+                  <input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={v.opacity}
+                    onChange={(e) => set({ ...v, opacity: Number(e.target.value) })}
+                  />
                 </div>
               </OptionalToggleField>
             )}

@@ -42,6 +42,11 @@ React + Konva canvas editor.
   bubble's background, all independently stackable, plus dashed/dotted/custom border
   patterns; text can carry its own outline, gradient, glow, and drop shadow too.
   Configurable per bubble or bundled into a reusable Lettering Preset.
+- **Procedural screentone (halftone) fills** — dots, lines, or crosshatch, with
+  adjustable spacing, tone, angle, and ink/paper color, as a bubble-background fill
+  *or* a text fill — including on curved/rotated SFX text and vertical text's rotated
+  punctuation, where it's composited so the dot pattern reads as one continuous field
+  instead of restarting at each rotated glyph.
 - **Import Clip Studio Paint (.clip) files as pages** — add one or more `.clip` project
   files directly as new pages, no manual flattening/export step in CSP first (no
   official .clip SDK exists — parsed independently, see

@@ -125,6 +125,41 @@ describe("resolveBubbleStyle", () => {
       offsetYPx: 1,
     });
   });
+
+  it("textScreentone: preset wins over base, per-language override wins over both", () => {
+    expect(resolveBubbleStyle(base, "de").textScreentone.enabled).toBe(false);
+    const p = preset({
+      id: "p1",
+      text: { textScreentone: { enabled: true, pattern: "dots", spacingPx: 8, sizeRatio: 0.5, angleDeg: 45, dotColor: "#000000", backgroundColor: "#ffffff", opacity: 1 } },
+    });
+    expect(resolveBubbleStyle({ ...base, presetId: "p1" }, "de", [p]).textScreentone).toEqual({
+      enabled: true,
+      pattern: "dots",
+      spacingPx: 8,
+      sizeRatio: 0.5,
+      angleDeg: 45,
+      dotColor: "#000000",
+      backgroundColor: "#ffffff",
+      opacity: 1,
+    });
+    const bubble = {
+      ...base,
+      presetId: "p1",
+      textScreentoneOverride: {
+        de: { enabled: true, pattern: "lines" as const, spacingPx: 12, sizeRatio: 0.3, angleDeg: 0, dotColor: "#ff0000", backgroundColor: "#eeeeee", opacity: 0.8 },
+      },
+    };
+    expect(resolveBubbleStyle(bubble, "de", [p]).textScreentone).toEqual({
+      enabled: true,
+      pattern: "lines",
+      spacingPx: 12,
+      sizeRatio: 0.3,
+      angleDeg: 0,
+      dotColor: "#ff0000",
+      backgroundColor: "#eeeeee",
+      opacity: 0.8,
+    });
+  });
 });
 
 describe("resolveBubbleForm", () => {
@@ -162,7 +197,7 @@ describe("resolveBubbleForm", () => {
     expect(form.tailWidth).toBe(77);
   });
 
-  it("backgroundGradientFill/backgroundGlow/backgroundDropShadow/backgroundBevel/strokeDashPattern all resolve from a linked preset", () => {
+  it("backgroundGradientFill/backgroundGlow/backgroundDropShadow/backgroundBevel/backgroundScreentone/strokeDashPattern all resolve from a linked preset", () => {
     const p = preset({
       id: "p1",
       background: {
@@ -171,6 +206,7 @@ describe("resolveBubbleForm", () => {
         backgroundGradientFill: { enabled: true, colorStart: "#111111", colorEnd: "#222222", angleDeg: 45 },
         backgroundGlow: { enabled: true, color: "#66e0ff", blurPx: 20 },
         backgroundDropShadow: { enabled: true, color: "#000000", blurPx: 10, offsetXPx: 5, offsetYPx: 5 },
+        backgroundScreentone: { enabled: true, pattern: "crosshatch", spacingPx: 10, sizeRatio: 0.4, angleDeg: 30, dotColor: "#222222", backgroundColor: "#dddddd", opacity: 0.9 },
         backgroundBevel: {
           enabled: true,
           style: "outer",
@@ -191,6 +227,16 @@ describe("resolveBubbleForm", () => {
     expect(form.backgroundGradientFill).toEqual({ enabled: true, colorStart: "#111111", colorEnd: "#222222", angleDeg: 45 });
     expect(form.backgroundGlow).toEqual({ enabled: true, color: "#66e0ff", blurPx: 20 });
     expect(form.backgroundDropShadow).toEqual({ enabled: true, color: "#000000", blurPx: 10, offsetXPx: 5, offsetYPx: 5 });
+    expect(form.backgroundScreentone).toEqual({
+      enabled: true,
+      pattern: "crosshatch",
+      spacingPx: 10,
+      sizeRatio: 0.4,
+      angleDeg: 30,
+      dotColor: "#222222",
+      backgroundColor: "#dddddd",
+      opacity: 0.9,
+    });
     expect(form.backgroundBevel).toEqual({
       enabled: true,
       style: "outer",
@@ -205,12 +251,13 @@ describe("resolveBubbleForm", () => {
     });
   });
 
-  it("without a preset, backgroundGlow/backgroundDropShadow/backgroundGradientFill/backgroundBevel default to disabled, strokeDashPattern to solid", () => {
+  it("without a preset, backgroundGlow/backgroundDropShadow/backgroundGradientFill/backgroundBevel/backgroundScreentone default to disabled, strokeDashPattern to solid", () => {
     const form = resolveBubbleForm(base, "de");
     expect(form.backgroundGlow.enabled).toBe(false);
     expect(form.backgroundDropShadow.enabled).toBe(false);
     expect(form.backgroundGradientFill.enabled).toBe(false);
     expect(form.backgroundBevel.enabled).toBe(false);
+    expect(form.backgroundScreentone.enabled).toBe(false);
     expect(form.strokeDashPattern).toEqual([]);
     expect(form.strokeDashOffsetPx).toBe(0);
   });
@@ -249,6 +296,37 @@ describe("resolveCurvedTextStyle", () => {
       [p]
     );
     expect(overridden.textGlow.enabled).toBe(false);
+  });
+
+  it("textScreentone: preset wins over base, per-language override wins over both", () => {
+    expect(resolveCurvedTextStyle(el, "de").textScreentone.enabled).toBe(false);
+    const p = preset({
+      id: "p1",
+      text: { textScreentone: { enabled: true, pattern: "dots", spacingPx: 8, sizeRatio: 0.5, angleDeg: 45, dotColor: "#000000", backgroundColor: "#ffffff", opacity: 1 } },
+    });
+    const style = resolveCurvedTextStyle({ ...el, presetId: "p1" }, "de", [p]);
+    expect(style.textScreentone).toEqual({
+      enabled: true,
+      pattern: "dots",
+      spacingPx: 8,
+      sizeRatio: 0.5,
+      angleDeg: 45,
+      dotColor: "#000000",
+      backgroundColor: "#ffffff",
+      opacity: 1,
+    });
+    const overridden = resolveCurvedTextStyle(
+      {
+        ...el,
+        presetId: "p1",
+        textScreentoneOverride: {
+          de: { enabled: false, pattern: "dots", spacingPx: 8, sizeRatio: 0.5, angleDeg: 45, dotColor: "#000000", backgroundColor: "#ffffff", opacity: 1 },
+        },
+      },
+      "de",
+      [p]
+    );
+    expect(overridden.textScreentone.enabled).toBe(false);
   });
 });
 

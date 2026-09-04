@@ -1,8 +1,9 @@
-import type { EffectGlow, EffectShadow, TextAlign, TextGradient, TextOutline } from "../layoutSchema.js";
+import type { BubbleScreentone, EffectGlow, EffectShadow, TextAlign, TextGradient, TextOutline } from "../layoutSchema.js";
 import { MIN_FONT_SIZE, ovalRowWidth, type BalloonGeometry } from "./textLayout.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
 import { drawShadowUnderlayPasses } from "./shadowPasses.js";
 import { createOffscreenCanvas } from "./canvasFactory.js";
+import { drawScreentoneMaskedGlyphs } from "./textScreentone.js";
 
 /**
  * Vertical (tategaki) Japanese typesetting — tokenizes text into the units
@@ -504,10 +505,33 @@ export interface DrawVerticalTextOptions {
   align?: TextAlign;
   outline?: TextOutline;
   gradient?: TextGradient;
+  /** See TextFillStyle.screentone — only the rotated-token case (ー〜~ etc., drawn via
+   *  their own ctx.rotate()) needs the offscreen-mask compositing; every other token kind
+   *  shares the block's ambient CTM and gets a plain pattern fill for free. */
+  screentone?: BubbleScreentone;
   glow?: EffectGlow;
   dropShadow?: EffectShadow;
   /** Same scale factor the caller used for rowStep/colPitch — sizes the outline stroke consistently (1 for export's real image px, the display zoom factor for the editor preview). */
   scale?: number;
+}
+
+/** Draws `text` rotated 90° around (x, y) — the shared body of the rotated-token draw
+ *  path, parameterized by target context + fill mode so the screentone-masked case (see
+ *  drawCharToken) can render the exact same rotated glyph twice: once stroke-only direct
+ *  on the real canvas, once fill-only into the offscreen mask. */
+function drawRotatedChar(
+  targetCtx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  style: TextFillStyle,
+  mode: "both" | "strokeOnly" | "fillOnly"
+) {
+  targetCtx.save();
+  targetCtx.translate(x, y);
+  targetCtx.rotate(Math.PI / 2);
+  drawStyledText(targetCtx, text, 0, 0, style, mode);
+  targetCtx.restore();
 }
 
 /** Draws one char token at (x, y) — applying its rotate/smallOffset/smallKana flags, or the real vertical-form glyph when the font has one — shared by the plain "char" case and each character inside a "word" run. `fontSize` is the column's base size; smallKana temporarily shrinks ctx.font and restores it before returning, so callers can keep reusing the same font across a run without resetting it themselves. */
@@ -528,11 +552,29 @@ function drawCharToken(
   if (verticalForm && hasVerticalFormGlyphs(opts.fontFamily)) {
     drawStyledText(ctx, verticalForm, x, y, style);
   } else if (token.rotate) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(Math.PI / 2);
-    drawStyledText(ctx, token.text, 0, 0, style);
-    ctx.restore();
+    if (style.screentone?.enabled) {
+      // A plain fillStyle=pattern would phase-shift this glyph's tile against every other
+      // glyph in the block (this token alone carries its own ctx.rotate()) — route the
+      // fill through the offscreen-mask composite instead (see textScreentone.ts). The
+      // outline (if any) has no CTM-phase problem, so it's drawn directly, unmasked.
+      drawRotatedChar(ctx, token.text, x, y, style, "strokeOnly");
+      const scale = opts.scale ?? 1;
+      const pad = fontSize * 0.75 + (style.outline?.enabled ? style.outline.widthPx * scale : 0) + 2;
+      drawScreentoneMaskedGlyphs(
+        ctx,
+        { x: x - pad, y: y - pad, width: pad * 2, height: pad * 2 },
+        style.screentone,
+        scale,
+        (maskCtx) => {
+          maskCtx.font = ctx.font;
+          maskCtx.textBaseline = ctx.textBaseline;
+          maskCtx.textAlign = ctx.textAlign;
+        },
+        (maskCtx) => drawRotatedChar(maskCtx, token.text, x, y, style, "fillOnly")
+      );
+    } else {
+      drawRotatedChar(ctx, token.text, x, y, style, "both");
+    }
   } else if (token.smallOffset) {
     drawStyledText(ctx, token.text, x + rowStep * 0.18, y - rowStep * 0.18, style);
   } else {
@@ -587,7 +629,14 @@ export function drawVerticalText(
   const blockHeight = maxRows * rowStep;
   const yStart = originY - blockHeight / 2 + rowStep / 2;
 
-  const style: TextFillStyle = { color: opts.color, outline: opts.outline, gradient: opts.gradient, glow: opts.glow, dropShadow: opts.dropShadow };
+  const style: TextFillStyle = {
+    color: opts.color,
+    outline: opts.outline,
+    gradient: opts.gradient,
+    screentone: opts.screentone,
+    glow: opts.glow,
+    dropShadow: opts.dropShadow,
+  };
   // The gradient/outline must be set up ONCE for the whole block (same
   // reasoning as the block-shared vertical reference above) — the bbox is the
   // block's own extent, not the wider boxWidth it's centered/aligned within.

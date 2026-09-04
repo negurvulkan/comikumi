@@ -1,7 +1,7 @@
 {
   "name": "comikumi",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Local-first manga localization workspace — plan, translate, letter, review and publish manga in multiple languages.",
   "author": "Hanjo Winter",
   "license": "AGPL-3.0-or-later",

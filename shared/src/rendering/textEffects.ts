@@ -1,4 +1,5 @@
-import type { EffectGlow, EffectShadow, TextGradient, TextOutline } from "../layoutSchema.js";
+import type { BubbleScreentone, EffectGlow, EffectShadow, TextGradient, TextOutline } from "../layoutSchema.js";
+import { buildScreentonePattern } from "./screentone.js";
 
 /**
  * Shared text-fill styling (solid color, optional gradient, optional
@@ -15,6 +16,13 @@ export interface TextFillStyle {
   color: string;
   outline?: TextOutline;
   gradient?: TextGradient;
+  /** Fills with a procedural screentone/halftone pattern instead of a solid color or
+   * gradient — wins over both when enabled (see applyTextFillStyle). For the two
+   * call sites that draw glyphs with their own per-glyph rotation (curvedText.ts always,
+   * verticalTypesetting.ts's rotated-token case), a plain `ctx.fillStyle = pattern`
+   * would misalign per glyph — see drawScreentoneMaskedGlyphs in textScreentone.ts for
+   * why and how those two sites route around it. */
+  screentone?: BubbleScreentone;
   glow?: EffectGlow;
   dropShadow?: EffectShadow;
 }
@@ -35,7 +43,9 @@ export function applyTextFillStyle(
   bboxH: number,
   scale: number
 ) {
-  if (style.gradient?.enabled) {
+  if (style.screentone?.enabled) {
+    ctx.fillStyle = buildScreentonePattern(ctx, style.screentone, scale);
+  } else if (style.gradient?.enabled) {
     const rad = (style.gradient.angleDeg * Math.PI) / 180;
     const dx = Math.cos(rad);
     const dy = Math.sin(rad);
@@ -58,10 +68,25 @@ export function applyTextFillStyle(
   }
 }
 
-/** Draws one line/glyph run with the outline (if enabled, stroked first so it forms a border behind the fill) then the fill — call after applyTextFillStyle. */
-export function drawStyledText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, style: TextFillStyle) {
-  if (style.outline?.enabled) {
+/** Draws one line/glyph run with the outline (if enabled, stroked first so it forms a
+ * border behind the fill) then the fill — call after applyTextFillStyle. `mode` lets a
+ * caller split the two into separate passes (see textScreentone.ts's masked-glyph
+ * technique, which needs the outline drawn solid, unmasked, directly on the real
+ * canvas — a stroke has no CTM-phase problem, only a patterned fill does — and only the
+ * fill routed through the offscreen mask); every existing call site keeps its default
+ * "both", unaffected. */
+export function drawStyledText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  style: TextFillStyle,
+  mode: "both" | "strokeOnly" | "fillOnly" = "both"
+) {
+  if (mode !== "fillOnly" && style.outline?.enabled) {
     ctx.strokeText(text, x, y);
   }
-  ctx.fillText(text, x, y);
+  if (mode !== "strokeOnly") {
+    ctx.fillText(text, x, y);
+  }
 }

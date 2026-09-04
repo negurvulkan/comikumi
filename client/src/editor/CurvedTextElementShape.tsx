@@ -103,7 +103,14 @@ export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, p
               fitted,
               style.fontFamily,
               style.align,
-              { color: style.color, outline: style.textOutline, gradient: style.textGradient, glow: style.textGlow, dropShadow: style.textDropShadow },
+              {
+                color: style.color,
+                outline: style.textOutline,
+                gradient: style.textGradient,
+                screentone: style.textScreentone,
+                glow: style.textGlow,
+                dropShadow: style.textDropShadow,
+              },
               scale
             );
           }}

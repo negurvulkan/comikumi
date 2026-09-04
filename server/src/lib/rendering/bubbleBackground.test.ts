@@ -2,6 +2,13 @@ import { describe, it, expect } from "vitest";
 import { createCanvas } from "@napi-rs/canvas";
 import type { Point } from "../../../../shared/src/layoutSchema.js";
 import { createBubble, resolveBubbleForm } from "../../../../shared/src/layoutSchema.js";
+import { setCanvasFactory, type CanvasLike } from "../../../../shared/src/rendering/canvasFactory.js";
+
+// backgroundScreentone (see applyBubbleFillStyle's tests below) builds its tile via
+// createOffscreenCanvas, which needs a real canvas factory installed under Node — the
+// browser-default factory in canvasFactory.ts calls document.createElement, which
+// doesn't exist here. Mirrors pageRaster.ts's own ensurePageRasterReady bootstrap.
+setCanvasFactory((width, height) => createCanvas(width, height) as unknown as CanvasLike);
 import {
   applyBubbleFillStyle,
   applyStrokeDash,
@@ -179,7 +186,7 @@ describe("applyBubbleFillStyle", () => {
 
   it("sets a plain solid-color fillStyle when backgroundGradientFill is disabled", () => {
     const c = ctx();
-    applyBubbleFillStyle(c, form, 100, 100);
+    applyBubbleFillStyle(c, form, 100, 100, 1);
     expect(c.fillStyle).toBe(form.fillColor);
   });
 
@@ -189,8 +196,29 @@ describe("applyBubbleFillStyle", () => {
       ...form,
       backgroundGradientFill: { enabled: true, colorStart: "#ffffff", colorEnd: "#000000", angleDeg: 0 },
     };
-    applyBubbleFillStyle(c, gradientForm, 100, 100);
+    applyBubbleFillStyle(c, gradientForm, 100, 100, 1);
     expect(typeof c.fillStyle).not.toBe("string");
+  });
+
+  it("sets a CanvasPattern fillStyle when backgroundScreentone is enabled, winning over a simultaneously-enabled gradient", () => {
+    const c = ctx();
+    const screentoneForm = {
+      ...form,
+      backgroundGradientFill: { enabled: true, colorStart: "#ffffff", colorEnd: "#000000", angleDeg: 0 },
+      backgroundScreentone: {
+        enabled: true,
+        pattern: "dots" as const,
+        spacingPx: 8,
+        sizeRatio: 0.5,
+        angleDeg: 45,
+        dotColor: "#000000",
+        backgroundColor: "#ffffff",
+        opacity: 1,
+      },
+    };
+    applyBubbleFillStyle(c, screentoneForm, 100, 100, 1);
+    expect(typeof c.fillStyle).not.toBe("string");
+    expect(c.fillStyle.constructor.name).toBe("CanvasPattern");
   });
 });
 
@@ -347,5 +375,25 @@ describe("drawBubbleBackground with strokeDashPattern", () => {
     };
     expect(() => drawBubbleBackground(c, form, "rect", 1)).not.toThrow();
     expect(c.getLineDash()).toEqual([]);
+  });
+
+  it("chain-tail segments fall back to solid fillColor when backgroundScreentone is enabled (a CanvasPattern would misalign per-segment, see the doc comment on drawChainTail)", () => {
+    const c = ctx();
+    const form = {
+      ...resolveBubbleForm(createBubble({ id: "b3", x: 0, y: 0, width: 100, height: 100, bubbleStyle: "thought" }), "de"),
+      tail: { x: 50, y: 150 },
+      tailStyle: "chain" as const,
+      backgroundScreentone: {
+        enabled: true,
+        pattern: "dots" as const,
+        spacingPx: 8,
+        sizeRatio: 0.5,
+        angleDeg: 45,
+        dotColor: "#000000",
+        backgroundColor: "#ffffff",
+        opacity: 1,
+      },
+    };
+    expect(() => drawBubbleBackground(c, form, "rect", 1)).not.toThrow();
   });
 });

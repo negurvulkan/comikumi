@@ -2,6 +2,7 @@ import type { BubbleForm, BubbleShapeKind, Point } from "../layoutSchema.js";
 import { resolveEffectiveTailStyle } from "../layoutSchema.js";
 import { tracePolygonPath } from "./cutPanel.js";
 import { drawShadowUnderlayPasses, resetShadowState } from "./shadowPasses.js";
+import { buildScreentonePattern } from "./screentone.js";
 
 /**
  * Shared bubble-background geometry: builds a closed boundary point list for
@@ -280,8 +281,10 @@ function clipHalfPlanePolygon(w: number, h: number, a: Point, b: Point, flip: bo
  * getting their own independently-scaled one. Exported so bubbleBackground.test.ts can
  * assert on it directly.
  */
-export function applyBubbleFillStyle(ctx: CanvasRenderingContext2D, form: BubbleForm, formW: number, formH: number) {
-  if (form.backgroundGradientFill.enabled) {
+export function applyBubbleFillStyle(ctx: CanvasRenderingContext2D, form: BubbleForm, formW: number, formH: number, scale: number) {
+  if (form.backgroundScreentone.enabled) {
+    ctx.fillStyle = buildScreentonePattern(ctx, form.backgroundScreentone, scale);
+  } else if (form.backgroundGradientFill.enabled) {
     const g = form.backgroundGradientFill;
     const rad = (g.angleDeg * Math.PI) / 180;
     const dx = Math.cos(rad);
@@ -322,7 +325,7 @@ function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form:
   ctx.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
   ctx.closePath();
-  applyBubbleFillStyle(ctx, form, formW, formH);
+  applyBubbleFillStyle(ctx, form, formW, formH, scale);
   ctx.fill();
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale);
   ctx.strokeStyle = form.strokeColor;
@@ -356,7 +359,7 @@ function drawDetachedTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[]
     ctx.lineTo(right.x, right.y);
   }
   ctx.closePath();
-  applyBubbleFillStyle(ctx, form, formW, formH);
+  applyBubbleFillStyle(ctx, form, formW, formH, scale);
   ctx.fill();
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale);
   ctx.strokeStyle = form.strokeColor;
@@ -425,7 +428,17 @@ function drawChainTail(ctx: CanvasRenderingContext2D, boundaryPoints: Point[], a
   const baseStep = 1 / (count + 1);
   // Resolved once, outside every segment's own ctx.translate() — see drawChainSegment's
   // doc comment for why a gradient must be created in form-space, not per-segment space.
-  applyBubbleFillStyle(ctx, form, formW, formH);
+  // A screentone PATTERN, unlike a gradient, anchors its tile-repeat origin to the CTM
+  // active AT FILL TIME (not at createPattern() time), so reusing one pattern instance
+  // across each segment's own translate would give every segment an independently
+  // phase-shifted dot pattern instead of one consistent texture — chain segments fall
+  // back to the plain solid fillColor when screentone is enabled (documented v1 scope
+  // limit, same "main body + one directly-related site" precedent as glow/shadow/bevel).
+  if (form.backgroundScreentone.enabled) {
+    ctx.fillStyle = form.fillColor;
+  } else {
+    applyBubbleFillStyle(ctx, form, formW, formH, scale);
+  }
   const fillStyle = ctx.fillStyle;
   for (let i = 0; i < count; i++) {
     const t = baseStep * (i + 1) * form.tailChainSpacing;
@@ -598,7 +611,7 @@ export function drawBubbleBackground(
   // shadow for free. "point-detached"/"chain" tails (drawn separately below) don't cast
   // their own shadow/glow — a documented v1 scope limit, not a bug.
   if ((form.backgroundGlow.enabled || form.backgroundDropShadow.enabled) && points.length >= 3) {
-    applyBubbleFillStyle(ctx, form, w, h);
+    applyBubbleFillStyle(ctx, form, w, h, scale);
     drawShadowUnderlayPasses(ctx, form.backgroundGlow, form.backgroundDropShadow, () => {
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);

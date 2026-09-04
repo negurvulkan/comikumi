@@ -1,6 +1,7 @@
 import type {
   Bubble,
   BubbleForm,
+  BubbleScreentone,
   CurvedTextElement,
   EffectGlow,
   EffectShadow,
@@ -54,6 +55,7 @@ interface ResolvedStyle {
   color: string;
   textOutline: TextOutline;
   textGradient: TextGradient;
+  textScreentone: BubbleScreentone;
   textGlow: EffectGlow;
   textDropShadow: EffectShadow;
 }
@@ -100,6 +102,7 @@ export function drawHorizontalBubble(
     color: style.color,
     outline: style.textOutline,
     gradient: style.textGradient,
+    screentone: style.textScreentone,
     glow: style.textGlow,
     dropShadow: style.textDropShadow,
   };
@@ -136,6 +139,7 @@ export function drawVerticalBubble(
     align: style.align,
     outline: style.textOutline,
     gradient: style.textGradient,
+    screentone: style.textScreentone,
     glow: style.textGlow,
     dropShadow: style.textDropShadow,
     scale: 1,
@@ -293,6 +297,7 @@ export async function renderPageToPng(
         color: style.color,
         outline: style.textOutline,
         gradient: style.textGradient,
+        screentone: style.textScreentone,
         glow: style.textGlow,
         dropShadow: style.textDropShadow,
         direction: style.direction,
@@ -366,6 +371,7 @@ export async function renderPageToPng(
       color: style.color,
       outline: style.textOutline,
       gradient: style.textGradient,
+      screentone: style.textScreentone,
       glow: style.textGlow,
       dropShadow: style.textDropShadow,
     }, 1);

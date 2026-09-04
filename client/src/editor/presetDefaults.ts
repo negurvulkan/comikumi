@@ -13,6 +13,16 @@ export const DEFAULT_TEXT: Required<PresetTextFields> = {
   color: "#000000",
   textOutline: { enabled: false, color: "#000000", widthPx: 4 },
   textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+  textScreentone: {
+    enabled: false,
+    pattern: "dots",
+    spacingPx: 8,
+    sizeRatio: 0.5,
+    angleDeg: 45,
+    dotColor: "#000000",
+    backgroundColor: "#ffffff",
+    opacity: 1,
+  },
   textGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
   textDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
 };
@@ -25,6 +35,16 @@ export const DEFAULT_BACKGROUND: Required<PresetBackgroundFields> = {
   strokeDashPattern: [],
   strokeDashOffsetPx: 0,
   backgroundGradientFill: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
+  backgroundScreentone: {
+    enabled: false,
+    pattern: "dots",
+    spacingPx: 8,
+    sizeRatio: 0.5,
+    angleDeg: 45,
+    dotColor: "#000000",
+    backgroundColor: "#ffffff",
+    opacity: 1,
+  },
   backgroundGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
   backgroundDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
   backgroundBevel: {

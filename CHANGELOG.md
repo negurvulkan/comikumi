@@ -4,6 +4,25 @@ All notable changes to ComiKumi are documented in this file. Entries summarize
 capabilities reached at each version rather than a per-commit history — the
 project didn't tag intermediate versions before 0.6.0.
 
+## [0.8.0] — 2026-09-04
+
+### Bubble & text styling
+- Procedural screentone (halftone) fills — dots, lines, or crosshatch, with adjustable
+  spacing, tone (dot/line size), rotation angle, and separate ink/paper colors — as a
+  bubble-background fill or a text fill (bubble text and curved text), taking
+  precedence over a gradient fill when both are enabled.
+- Text screentone works correctly even on per-glyph-rotated text (curved/SFX text, and
+  vertical text's rotated punctuation glyphs): the pattern is composited through an
+  offscreen mask instead of a plain fill, so it reads as one continuous dot field
+  across characters instead of restarting at each glyph's own rotation.
+- Assignable per bubble/curved text or bundled into a reusable Lettering Preset,
+  alongside the existing outline/gradient/glow/drop-shadow/bevel fields.
+
+### Lettering Presets
+- Redesigned Preset Manager UI: a 3-column layout (preset list, a tabbed properties
+  sidebar, and a live preview pane that reuses the same rendering code as the editor/
+  PNG export for a pixel-identical preview).
+
 ## [0.7.0] — 2026-09-04
 
 ### Bubble & text styling

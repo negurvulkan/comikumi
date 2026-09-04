@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { EffectGlow, EffectShadow, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type { BubbleScreentone, BubbleScreentonePattern, EffectGlow, EffectShadow, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
 import { ScopeSwitch } from "./ScopeSwitch";
 
 interface Props {
@@ -9,6 +9,8 @@ interface Props {
   onOutlineChange: (patch: Partial<TextOutline>) => void;
   gradient: TextGradient;
   onGradientChange: (patch: Partial<TextGradient>) => void;
+  screentone: BubbleScreentone;
+  onScreentoneChange: (patch: Partial<BubbleScreentone>) => void;
   glow: EffectGlow;
   onGlowChange: (patch: Partial<EffectGlow>) => void;
   dropShadow: EffectShadow;
@@ -34,6 +36,8 @@ export function TextEffectsFields({
   onOutlineChange,
   gradient,
   onGradientChange,
+  screentone,
+  onScreentoneChange,
   glow,
   onGlowChange,
   dropShadow,
@@ -55,9 +59,14 @@ export function TextEffectsFields({
           {t("editor.textEffects.presetOverrideHint")}
         </p>
       )}
-      {gradient.enabled && (
+      {gradient.enabled && !screentone.enabled && (
         <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
           {t("editor.textEffects.gradientOverridesColorHint")}
+        </p>
+      )}
+      {screentone.enabled && (
+        <p style={{ color: "var(--text-muted)", margin: "-4px 0 8px", fontSize: 12 }}>
+          {t("editor.textEffects.screentoneOverridesFillHint")}
         </p>
       )}
 
@@ -118,6 +127,98 @@ export function TextEffectsFields({
             />
           </label>
         </div>
+      )}
+
+      <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <input
+          type="checkbox"
+          checked={screentone.enabled}
+          onChange={(e) => onScreentoneChange({ enabled: e.target.checked })}
+          disabled={disabled}
+        />
+        {t("managers.presets.textScreentoneLabel")}
+      </label>
+      {screentone.enabled && (
+        <>
+          <div className="field-row" style={{ flexWrap: "wrap" }}>
+            <label>
+              {t("editor.textEffects.screentonePatternLabel")}
+              <select
+                value={screentone.pattern}
+                onChange={(e) => onScreentoneChange({ pattern: e.target.value as BubbleScreentonePattern })}
+                disabled={disabled}
+              >
+                <option value="dots">{t("editor.textEffects.screentonePatternDots")}</option>
+                <option value="lines">{t("editor.textEffects.screentonePatternLines")}</option>
+                <option value="crosshatch">{t("editor.textEffects.screentonePatternCrosshatch")}</option>
+              </select>
+            </label>
+            <label>
+              {t("editor.textEffects.screentoneSpacingLabel")}
+              <input
+                type="number"
+                min={1}
+                value={screentone.spacingPx}
+                onChange={(e) => onScreentoneChange({ spacingPx: Number(e.target.value) })}
+                disabled={disabled}
+              />
+            </label>
+            <label>
+              {t("editor.textEffects.screentoneSizeRatioLabel")}
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step={0.05}
+                value={screentone.sizeRatio}
+                onChange={(e) => onScreentoneChange({ sizeRatio: Number(e.target.value) })}
+                disabled={disabled}
+              />
+            </label>
+            <label>
+              {t("editor.textEffects.angleLabel")}
+              <input
+                type="number"
+                step={5}
+                value={screentone.angleDeg}
+                onChange={(e) => onScreentoneChange({ angleDeg: Number(e.target.value) })}
+                disabled={disabled}
+              />
+            </label>
+          </div>
+          <div className="field-row">
+            <label>
+              {t("editor.textEffects.screentoneDotColorLabel")}
+              <input
+                type="color"
+                value={screentone.dotColor}
+                onChange={(e) => onScreentoneChange({ dotColor: e.target.value })}
+                disabled={disabled}
+              />
+            </label>
+            <label>
+              {t("editor.textEffects.screentoneBackgroundColorLabel")}
+              <input
+                type="color"
+                value={screentone.backgroundColor}
+                onChange={(e) => onScreentoneChange({ backgroundColor: e.target.value })}
+                disabled={disabled}
+              />
+            </label>
+            <label>
+              {t("editor.textEffects.screentoneOpacityLabel")}
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step={0.05}
+                value={screentone.opacity}
+                onChange={(e) => onScreentoneChange({ opacity: Number(e.target.value) })}
+                disabled={disabled}
+              />
+            </label>
+          </div>
+        </>
       )}
 
       <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

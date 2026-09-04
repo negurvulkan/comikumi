@@ -499,10 +499,21 @@ three styles (inner, outer, emboss) and an up/down direction that flips
 raised-vs-recessed, alongside angle/size/softness and separate
 highlight/shadow color+opacity — a soft, raster-drawn approximation of a real
 lighting-based bevel (Canvas has no native primitive for this), not a
-pixel-perfect emboss. Glow/drop-shadow/bevel render on the bubble's main body
-and its seamlessly-connected tail; a free-standing or chain-style tail doesn't
-cast its own glow/shadow/bevel (a known limitation, not a bug). Bubble effects
-apply to the border/interior surface only — there's no equivalent for text.
+pixel-perfect emboss. The background fill can instead be a procedural
+screentone (halftone) pattern — dots, lines, or crosshatch — with adjustable
+spacing, tone (dot/line size as a fraction of the spacing), rotation angle,
+and separate ink/paper colors, for the classic manga screentone look without
+a scanned/imported texture; screentone wins over a gradient fill when both are
+enabled on the same bubble. Glow/drop-shadow/bevel/screentone render on the
+bubble's main body and its seamlessly-connected tail; a free-standing or
+chain-style tail doesn't cast its own glow/shadow/bevel and falls back to the
+plain fill color instead of the screentone pattern (a known limitation, not a
+bug — a repeating pattern can't be phase-aligned across independently
+positioned tail segments the way a solid color can). Gradient/glow/drop-shadow/
+bevel apply to the border/interior surface only — there's no text equivalent.
+Screentone is the one background effect that also has a text counterpart (see
+below and [Curved Text](#curved-text)) — the same manga technique doubles as a
+way to individually style onomatopoeia/SFX text.
 
 Text options: font (custom uploaded fonts), size, line height, horizontal
 alignment, and reading direction — horizontal LTR, horizontal RTL, or vertical
@@ -522,13 +533,26 @@ the `{...}` syntax by hand — the furigana button also checks the project
 glossary (see [Glossary](#glossary)) and pre-fills a stored reading when the
 selection matches a translated term. Text can have an outline and/or a linear gradient
 instead of a solid color, plus an independently toggleable glow and/or drop shadow
-(all four can be combined). Every one of these style fields (and the entire
-shape/position/size/rotation/background) can be overridden per language. Text
-glow/drop-shadow render in the editor, PNG, and PSD export; the vector-PDF export's
-text layer stays real vector text and doesn't carry any of the four text effects
-(same pre-existing limitation as outline/gradient — bubble-background bevel/glow/
-drop-shadow/gradient-fill share this too, since PDF only rasterizes the background,
-never bubble text). PSD export bakes every bubble-background effect (including
+(all four can be combined). Text can also be filled with the same procedural
+screentone (halftone) pattern the bubble background supports — dots, lines, or
+crosshatch, with the same spacing/tone/angle/color controls — instead of a
+solid color or gradient; it wins over a gradient when both are enabled. This
+is the main way to give onomatopoeia/SFX text an authentic manga screentone
+fill, including on curved/rotated [Curved Text](#curved-text) and the rotated
+punctuation glyphs (ー〜~ etc.) inside vertical text — both are per-glyph
+rotated internally, so the pattern is composited through an offscreen mask
+per glyph/run instead of a plain fill, keeping the dot field continuous
+across characters instead of restarting at each one's own rotation. Every one
+of these style fields (and the entire shape/position/size/rotation/background)
+can be overridden per language. Text glow/drop-shadow render in the editor,
+PNG, and PSD export; the vector-PDF export's text layer stays real vector text
+and doesn't carry any of the five text effects (same pre-existing limitation as
+outline/gradient — bubble-background bevel/glow/drop-shadow/gradient-fill/
+screentone share this too, since PDF only rasterizes the background, never
+bubble text). Enabling text screentone (like gradient) also means the PSD
+export can't create an editable Photoshop Type layer for that bubble — it
+falls back to the same raster-only text layer used for vertical/RTL text.
+PSD export bakes every bubble-background effect (including
 bevel/emboss) into the raster layer too, rather than as a native, still-editable
 Photoshop "Bevel and Emboss"/"Drop Shadow"/etc. layer effect — a plausible,
 self-contained future enhancement, since the PSD library ComiKumi already uses can
@@ -605,8 +629,14 @@ onomatopoeia like "BOOM!") that runs along a cubic Bézier curve with 4 draggabl
 control points, instead of sitting in a bubble box. Deliberately single-line/
 without a reading-direction option (a focused title/effect tool, not a second
 full-text layout system) — font, size (shrinks automatically to fit the curve),
-alignment along the curve (start/middle/end), color/outline/gradient/glow/drop
-shadow, all with the same per-language override pattern.
+alignment along the curve (start/middle/end),
+color/outline/gradient/screentone/glow/drop shadow, all with the same
+per-language override pattern. The screentone fill is the classic manga
+halftone technique for SFX text, and works correctly here even though every
+character sits at its own rotation along the curve: internally, the pattern
+is composited through an offscreen mask instead of a plain fill, so the dot
+field reads as one continuous texture across the whole word instead of
+restarting (and re-phasing) at each rotated glyph.
 
 ### Panels
 

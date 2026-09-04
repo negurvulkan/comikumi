@@ -8,6 +8,7 @@ import type {
   BubbleBevelStyle,
   BubbleForm,
   BubbleGradientFill,
+  BubbleScreentone,
   BubbleShapeKind,
   BubbleVisualStyle,
   EffectGlow,
@@ -201,6 +202,7 @@ export function BubbleInspector({
     if (preset.text.color !== undefined) textPatch.color = style.color;
     if (preset.text.textOutline !== undefined) textPatch.textOutline = style.textOutline;
     if (preset.text.textGradient !== undefined) textPatch.textGradient = style.textGradient;
+    if (preset.text.textScreentone !== undefined) textPatch.textScreentone = style.textScreentone;
     if (preset.text.textGlow !== undefined) textPatch.textGlow = style.textGlow;
     if (preset.text.textDropShadow !== undefined) textPatch.textDropShadow = style.textDropShadow;
     if (!hasFormOverride) {
@@ -211,6 +213,7 @@ export function BubbleInspector({
       if (preset.background.strokeDashPattern !== undefined) textPatch.strokeDashPattern = form.strokeDashPattern;
       if (preset.background.strokeDashOffsetPx !== undefined) textPatch.strokeDashOffsetPx = form.strokeDashOffsetPx;
       if (preset.background.backgroundGradientFill !== undefined) textPatch.backgroundGradientFill = form.backgroundGradientFill;
+      if (preset.background.backgroundScreentone !== undefined) textPatch.backgroundScreentone = form.backgroundScreentone;
       if (preset.background.backgroundGlow !== undefined) textPatch.backgroundGlow = form.backgroundGlow;
       if (preset.background.backgroundDropShadow !== undefined) textPatch.backgroundDropShadow = form.backgroundDropShadow;
       if (preset.background.backgroundBevel !== undefined) textPatch.backgroundBevel = form.backgroundBevel;
@@ -233,10 +236,12 @@ export function BubbleInspector({
   const hasEffectsOverride =
     bubble.textOutlineOverride?.[activeLanguage] !== undefined ||
     bubble.textGradientOverride?.[activeLanguage] !== undefined ||
+    bubble.textScreentoneOverride?.[activeLanguage] !== undefined ||
     bubble.textGlowOverride?.[activeLanguage] !== undefined ||
     bubble.textDropShadowOverride?.[activeLanguage] !== undefined;
   const effectiveOutline = style.textOutline;
   const effectiveGradient = style.textGradient;
+  const effectiveScreentone = style.textScreentone;
   const effectiveGlow = style.textGlow;
   const effectiveDropShadow = style.textDropShadow;
 
@@ -376,6 +381,7 @@ export function BubbleInspector({
       onChange({
         textOutlineOverride: { ...(bubble.textOutlineOverride ?? {}), [activeLanguage]: bubble.textOutline },
         textGradientOverride: { ...(bubble.textGradientOverride ?? {}), [activeLanguage]: bubble.textGradient },
+        textScreentoneOverride: { ...(bubble.textScreentoneOverride ?? {}), [activeLanguage]: bubble.textScreentone },
         textGlowOverride: { ...(bubble.textGlowOverride ?? {}), [activeLanguage]: bubble.textGlow },
         textDropShadowOverride: { ...(bubble.textDropShadowOverride ?? {}), [activeLanguage]: bubble.textDropShadow },
       });
@@ -384,6 +390,8 @@ export function BubbleInspector({
       delete nextOutline[activeLanguage];
       const nextGradient = { ...(bubble.textGradientOverride ?? {}) };
       delete nextGradient[activeLanguage];
+      const nextScreentone = { ...(bubble.textScreentoneOverride ?? {}) };
+      delete nextScreentone[activeLanguage];
       const nextGlow = { ...(bubble.textGlowOverride ?? {}) };
       delete nextGlow[activeLanguage];
       const nextDropShadow = { ...(bubble.textDropShadowOverride ?? {}) };
@@ -391,6 +399,7 @@ export function BubbleInspector({
       onChange({
         textOutlineOverride: nextOutline,
         textGradientOverride: nextGradient,
+        textScreentoneOverride: nextScreentone,
         textGlowOverride: nextGlow,
         textDropShadowOverride: nextDropShadow,
       });
@@ -410,6 +419,14 @@ export function BubbleInspector({
       onChange({ textGradientOverride: { ...(bubble.textGradientOverride ?? {}), [activeLanguage]: { ...effectiveGradient, ...patch } } });
     } else {
       onChange({ textGradient: { ...bubble.textGradient, ...patch } });
+    }
+  }
+
+  function setTextScreentone(patch: Partial<BubbleScreentone>) {
+    if (hasEffectsOverride) {
+      onChange({ textScreentoneOverride: { ...(bubble.textScreentoneOverride ?? {}), [activeLanguage]: { ...effectiveScreentone, ...patch } } });
+    } else {
+      onChange({ textScreentone: { ...bubble.textScreentone, ...patch } });
     }
   }
 
@@ -443,6 +460,10 @@ export function BubbleInspector({
 
   function setBackgroundBevel(patch: Partial<BubbleBevel>) {
     setFormField({ backgroundBevel: { ...form.backgroundBevel, ...patch } });
+  }
+
+  function setBackgroundScreentone(patch: Partial<BubbleScreentone>) {
+    setFormField({ backgroundScreentone: { ...form.backgroundScreentone, ...patch } });
   }
 
   function toggleTail(checked: boolean) {
@@ -1069,6 +1090,8 @@ export function BubbleInspector({
             onOutlineChange={setTextOutline}
             gradient={effectiveGradient}
             onGradientChange={setTextGradient}
+            screentone={effectiveScreentone}
+            onScreentoneChange={setTextScreentone}
             glow={effectiveGlow}
             onGlowChange={setTextGlow}
             dropShadow={effectiveDropShadow}
@@ -1081,6 +1104,7 @@ export function BubbleInspector({
               (!hasEffectsOverride &&
                 (preset?.text.textOutline !== undefined ||
                   preset?.text.textGradient !== undefined ||
+                  preset?.text.textScreentone !== undefined ||
                   preset?.text.textGlow !== undefined ||
                   preset?.text.textDropShadow !== undefined))
             }
@@ -1130,6 +1154,98 @@ export function BubbleInspector({
                         value={form.backgroundGradientFill.angleDeg}
                         onChange={(e) => setBackgroundGradientFill({ angleDeg: Number(e.target.value) })}
                         disabled={backgroundPresetGoverns("backgroundGradientFill")}
+                      />
+                    </label>
+                  </div>
+                </OptionalToggleField>
+              </GovernedField>
+
+              <GovernedField
+                label={t("managers.presets.backgroundScreentoneLabel")}
+                governed={backgroundPresetGoverns("backgroundScreentone")}
+                lockTitle={lockTitle}
+              >
+                <OptionalToggleField
+                  label={t("managers.presets.onLabel")}
+                  checked={form.backgroundScreentone.enabled}
+                  disabled={backgroundPresetGoverns("backgroundScreentone")}
+                  onToggle={(enabled) => setBackgroundScreentone({ enabled })}
+                >
+                  <div className="field-row" style={{ flexWrap: "wrap" }}>
+                    <label>
+                      {t("editor.textEffects.screentonePatternLabel")}
+                      <select
+                        value={form.backgroundScreentone.pattern}
+                        onChange={(e) => setBackgroundScreentone({ pattern: e.target.value as BubbleScreentone["pattern"] })}
+                        disabled={backgroundPresetGoverns("backgroundScreentone")}
+                      >
+                        <option value="dots">{t("editor.textEffects.screentonePatternDots")}</option>
+                        <option value="lines">{t("editor.textEffects.screentonePatternLines")}</option>
+                        <option value="crosshatch">{t("editor.textEffects.screentonePatternCrosshatch")}</option>
+                      </select>
+                    </label>
+                    <label>
+                      {t("editor.textEffects.screentoneSpacingLabel")}
+                      <input
+                        type="number"
+                        min={1}
+                        value={form.backgroundScreentone.spacingPx}
+                        onChange={(e) => setBackgroundScreentone({ spacingPx: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundScreentone")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.screentoneSizeRatioLabel")}
+                      <input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={form.backgroundScreentone.sizeRatio}
+                        onChange={(e) => setBackgroundScreentone({ sizeRatio: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundScreentone")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.angleLabel")}
+                      <input
+                        type="number"
+                        step={5}
+                        value={form.backgroundScreentone.angleDeg}
+                        onChange={(e) => setBackgroundScreentone({ angleDeg: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundScreentone")}
+                      />
+                    </label>
+                  </div>
+                  <div className="field-row">
+                    <label>
+                      {t("editor.textEffects.screentoneDotColorLabel")}
+                      <input
+                        type="color"
+                        value={form.backgroundScreentone.dotColor}
+                        onChange={(e) => setBackgroundScreentone({ dotColor: e.target.value })}
+                        disabled={backgroundPresetGoverns("backgroundScreentone")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.screentoneBackgroundColorLabel")}
+                      <input
+                        type="color"
+                        value={form.backgroundScreentone.backgroundColor}
+                        onChange={(e) => setBackgroundScreentone({ backgroundColor: e.target.value })}
+                        disabled={backgroundPresetGoverns("backgroundScreentone")}
+                      />
+                    </label>
+                    <label>
+                      {t("editor.textEffects.screentoneOpacityLabel")}
+                      <input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={form.backgroundScreentone.opacity}
+                        onChange={(e) => setBackgroundScreentone({ opacity: Number(e.target.value) })}
+                        disabled={backgroundPresetGoverns("backgroundScreentone")}
                       />
                     </label>
                   </div>

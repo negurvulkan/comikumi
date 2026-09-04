@@ -8,6 +8,7 @@ import {
   EffectShadowSchema,
   BubbleGradientFillSchema,
   BubbleBevelSchema,
+  BubbleScreentoneSchema,
   BubbleVisualStyleSchema,
   TailStyleSchema,
   TailChainSegmentShapeSchema,
@@ -35,6 +36,7 @@ export const PresetTextFieldsSchema = z
     textGradient: TextGradientSchema.optional(),
     textGlow: EffectGlowSchema.optional(),
     textDropShadow: EffectShadowSchema.optional(),
+    textScreentone: BubbleScreentoneSchema.optional(),
   })
   .default({});
 export type PresetTextFields = z.infer<typeof PresetTextFieldsSchema>;
@@ -57,6 +59,7 @@ export const PresetBackgroundFieldsSchema = z
     backgroundGlow: EffectGlowSchema.optional(),
     backgroundDropShadow: EffectShadowSchema.optional(),
     backgroundBevel: BubbleBevelSchema.optional(),
+    backgroundScreentone: BubbleScreentoneSchema.optional(),
     svgFileName: z.string().nullable().optional(),
     tailStyle: TailStyleSchema.optional(),
     tailChainSegmentShape: TailChainSegmentShapeSchema.optional(),

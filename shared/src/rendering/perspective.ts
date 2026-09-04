@@ -1,4 +1,4 @@
-import type { EffectGlow, EffectShadow, Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../layoutSchema.js";
+import type { BubbleScreentone, EffectGlow, EffectShadow, Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../layoutSchema.js";
 import { fitHorizontalText } from "./textLayout.js";
 import { drawVerticalText, fitVerticalText } from "./verticalTypesetting.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
@@ -192,6 +192,7 @@ export interface PerspectiveTextOptions {
   color: string;
   outline?: TextOutline;
   gradient?: TextGradient;
+  screentone?: BubbleScreentone;
   glow?: EffectGlow;
   dropShadow?: EffectShadow;
   direction?: TextDirection;
@@ -235,6 +236,7 @@ export function renderPerspectiveText(
       align: opts.align as TextAlign,
       outline: opts.outline,
       gradient: opts.gradient,
+      screentone: opts.screentone,
       glow: opts.glow,
       dropShadow: opts.dropShadow,
       scale: oversample,
@@ -255,7 +257,14 @@ export function renderPerspectiveText(
     sctx.direction = opts.direction === "rtl" ? "rtl" : "ltr";
     const anchorX = opts.align === "left" ? padX : opts.align === "right" ? srcW - padX : srcW / 2;
     const startY = srcH / 2 - fitted.blockHeight / 2 + fitted.lineStep / 2;
-    const fillStyle: TextFillStyle = { color: opts.color, outline: opts.outline, gradient: opts.gradient, glow: opts.glow, dropShadow: opts.dropShadow };
+    const fillStyle: TextFillStyle = {
+      color: opts.color,
+      outline: opts.outline,
+      gradient: opts.gradient,
+      screentone: opts.screentone,
+      glow: opts.glow,
+      dropShadow: opts.dropShadow,
+    };
     applyTextFillStyle(sctx, fillStyle, padX, startY - fitted.lineStep / 2, srcW - padX * 2, fitted.blockHeight, oversample);
     const drawAllLines = () => {
       fitted.lines.forEach((line, i) => {

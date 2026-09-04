@@ -44,6 +44,7 @@ export function buildPsdTextLayerData(input: PsdTextLayerInput): LayerTextData |
   if (style.direction === "vertical-rl") return null; // ag-psd: writing vertical orientation can crash Photoshop on open
   if (style.direction === "rtl") return null; // characterDirection support is unverified — stay conservative
   if (style.textGradient.enabled) return null; // TextStyle has no gradient fill field
+  if (style.textScreentone.enabled) return null; // TextStyle has no pattern fill field
   if (bubble.mergeGroupId != null) return null; // merged outline is a polygon union, not a rectangle boxBounds can represent
   if (!postscriptName) return null; // font not resolvable to a real file/PostScript name
 
