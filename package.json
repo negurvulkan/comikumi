@@ -72,7 +72,10 @@
     },
     "linux": {
       "icon": "electron/build/icon.png",
-      "target": "AppImage"
+      "target": "AppImage",
+      "category": "Graphics",
+      "desktopName": "ComiKumi",
+      "syncDesktopName": true
     }
   }
 }
