@@ -1,14 +1,16 @@
 {
   "name": "comikumi",
   "private": true,
-  "version": "0.8.2",
+  "version": "0.8.3",
+  "desktopName": "app.comikumi.desktop",
   "description": "Comic lettering, localization & production workspace — plan, prepare, letter, translate, review and publish comics in one integrated workflow.",
   "author": "Hanjo Winter",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "main": "electron/dist/main.js",
   "scripts": {
-    "postinstall": "npm --prefix server install && npm --prefix client install",
+"scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
     "dev": "concurrently -k -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "build": "npm --prefix server run build && npm --prefix client run build",
     "test": "npm --prefix server run test && npm --prefix client run test",
@@ -18,9 +20,9 @@
     "electron:build:main": "tsc -p electron",
     "electron:dev": "npm run electron:build:main && concurrently -k -n server,client,electron -c blue,green,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\" \"electron electron/dist/main.js\"",
     "electron:build": "npm run build && npm run electron:build:main && electron-builder",
-    "electron:build:win": "npm run build && npm run electron:build:main && electron-builder --win",
-    "electron:build:mac": "npm run build && npm run electron:build:main && electron-builder --mac",
-    "electron:build:linux": "npm run build && npm run electron:build:main && electron-builder --linux"
+    "electron:build:win": "npm run build && npm run electron:build:main && electron-builder --win --publish never",
+    "electron:build:mac": "npm run build && npm run electron:build:main && electron-builder --mac --publish never",
+    "electron:build:linux": "npm run build && npm run electron:build:main && electron-builder --linux --publish never"
   },
   "dependencies": {
     "zod": "^4.4.3"
@@ -74,7 +76,6 @@
       "icon": "electron/build/icon.png",
       "target": "AppImage",
       "category": "Graphics",
-      "desktopName": "ComiKumi",
       "syncDesktopName": true
     }
   }
