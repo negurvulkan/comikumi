@@ -1,6 +1,7 @@
 import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createReadStream } from "node:fs";
 import multer from "multer";
 import sharp from "sharp";
 import { findVolume, listPages, readPageMeta, PAGE_IMAGE_EXTENSIONS } from "../lib/projectScanner.js";
@@ -385,7 +386,7 @@ exportRouter.get(
     });
     archive.pipe(res);
     for (const name of orderedFileNames) {
-      archive.file(path.join(dir, name), { name });
+      archive.append(createReadStream(path.join(dir, name)), { name });
     }
     await archive.finalize();
   })
