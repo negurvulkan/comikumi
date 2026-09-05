@@ -1,7 +1,7 @@
 {
   "name": "comikumi",
   "private": true,
-  "version": "0.8.3",
+  "version": "0.8.4",
   "desktopName": "app.comikumi.desktop",
   "description": "Comic lettering, localization & production workspace — plan, prepare, letter, translate, review and publish comics in one integrated workflow.",
   "author": "Hanjo Winter",
