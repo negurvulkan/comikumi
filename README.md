@@ -11,7 +11,7 @@ workflow — on a single machine, over LAN, or with a shared server.</p>
 
 <p align="center">
   <a href="https://discord.gg/DZ7nnaFzn">Join the Discord</a> ·
-  <a href="https://github.com/negurvulkan/comikumi/releases/tag/v.0.8.0">Download for Windows/macOS/Linux</a>
+  <a href="https://github.com/negurvulkan/comikumi/releases/tag/v0.8.5">Download for Windows/macOS/Linux</a>
 </p>
 
 <p align="center">
@@ -197,29 +197,29 @@ desktop package.
 ### 1. Download
 
 Preview builds for Windows, macOS (Apple Silicon), and Linux are attached to the
-[ComiKumi 0.8.0 Preview release](https://github.com/negurvulkan/comikumi/releases/tag/v.0.8.0)
+[ComiKumi 0.8.5 Preview release](https://github.com/negurvulkan/comikumi/releases/tag/v0.8.5)
 — scroll to **Assets** and download the file for your platform. GitHub's own "Source
 code (zip)"/"Source code (tar.gz)" links on that page are **not** installers — they're
 the raw repository source, only useful if you're building from source ([below](#running-from-source-developers)).
 
 | Platform | Download |
 |---|---|
-| Windows | `ComiKumi.Setup.0.8.0.exe` |
-| macOS (Apple Silicon only — no Intel build yet) | `ComiKumi-0.8.0-arm64.dmg` |
-| Linux | `ComiKumi-0.8.0.AppImage` |
+| Windows | `ComiKumi.Setup.0.8.5.exe` |
+| macOS (Apple Silicon only — no Intel build yet) | `ComiKumi-0.8.5-arm64.dmg` |
+| Linux | `ComiKumi-0.8.5.AppImage` |
 
 This is still a **preview** release — see the release page's own notes for known
 limitations before relying on it for real production work.
 
 ### 2. Install and launch
 
-- **Windows**: run `ComiKumi.Setup.0.8.0.exe` and follow the installer.
+- **Windows**: run `ComiKumi.Setup.0.8.5.exe` and follow the installer.
 - **macOS**: open the `.dmg` and drag ComiKumi into Applications.
 - **Linux**: make the AppImage executable, then run it:
 
   ```bash
-  chmod +x ComiKumi-0.8.0.AppImage
-  ./ComiKumi-0.8.0.AppImage
+  chmod +x ComiKumi-0.8.5.AppImage
+  ./ComiKumi-0.8.5.AppImage
   ```
 
 ### 3. Choose a local or remote server

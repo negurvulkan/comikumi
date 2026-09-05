@@ -4,6 +4,35 @@ All notable changes to ComiKumi are documented in this file. Entries summarize
 capabilities reached at each version rather than a per-commit history — the
 project didn't tag intermediate versions before 0.6.0.
 
+## [0.8.5] — 2026-09-05
+
+*(0.8.1–0.8.4 were internal version bumps while the automated release pipeline
+below was being set up — none were published as a GitHub Release, so their
+changes are folded into this entry.)*
+
+### Bubble & text styling
+- SVG bubble contours support an optional outline/interior split (`id="outline"`
+  + `id="interior"` groups on the uploaded SVG): the interior becomes the
+  actual functional bubble shape (fill, tail attachment, clip line, text box),
+  while the outline is purely decorative art drawn on top and filled with the
+  border color instead of getting its own stroke. Built to handle even a
+  hand-drawn "burst"-style effect outline made of hundreds of separate,
+  deliberately overlapping spike shapes — filled as one flat vector shape via
+  the canvas's native nonzero-winding rule, never rasterized, so it stays
+  crisp at any zoom or export resolution. An SVG with just one shape (no
+  `outline`/`interior` ids) keeps working exactly as before.
+
+### Deployment
+- Windows, macOS (Apple Silicon), and Linux desktop installers are now built
+  and published automatically as GitHub Release assets on every tagged
+  version, instead of requiring a manual local build.
+
+### Fixes
+- Review & QC comments: creating a comment could, under load, respond
+  successful before the comment had actually finished being written to disk —
+  an immediate follow-up read could then miss it. The write is now guaranteed
+  to complete before the response (and any @-mention email) is sent.
+
 ## [0.8.0] — 2026-09-04
 
 ### Bubble & text styling
