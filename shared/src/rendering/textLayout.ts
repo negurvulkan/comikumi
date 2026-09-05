@@ -252,6 +252,12 @@ export function clipBoxToLine(box: Box, clipA: Point | null, clipB: Point | null
  * and replaces the plain 0..width*scale/0..height*scale box the padding ratio normally
  * shrinks from — see the merge handling in both callers (renderPageToPng.ts /
  * BubbleShape.tsx), which pass the merged boundary's own bounding box here.
+ *
+ * For an "svg"-style bubble built from an outline+interior pair (see
+ * svgBubbleGeometry.ts), `getCachedSvgBubbleBoundary()` already resolves to the interior
+ * shape's own (smoother, text-safe) contour rather than the decorative outline's — this
+ * function itself needs no special case for that, the existing flat SVG_BUBBLE_PADDING_RATIO
+ * inset already lands comfortably inside it.
  */
 export function textBoxFor(
   bubbleStyle: BubbleVisualStyle,

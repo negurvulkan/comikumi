@@ -319,7 +319,12 @@ export function resetStrokeDash(ctx: CanvasRenderingContext2D) {
   ctx.lineDashOffset = 0;
 }
 
-function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form: BubbleForm, scale: number, formW: number, formH: number) {
+/** `skipStroke` is used for an "svg" bubble built from an outline+interior pair (see
+ * svgBubbleGeometry.ts) — the interior draws only its fill there, with the bubble's
+ * strokeColor repurposed as the separate outline art's own fill color instead of a literal
+ * border line (see drawOutlineSubpaths below and the doc comment on drawBubbleBackground's
+ * svgOutline parameter). */
+function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form: BubbleForm, scale: number, formW: number, formH: number, skipStroke = false) {
   if (points.length < 3) return;
   ctx.beginPath();
   ctx.moveTo(points[0].x, points[0].y);
@@ -327,11 +332,31 @@ function fillAndStrokePath(ctx: CanvasRenderingContext2D, points: Point[], form:
   ctx.closePath();
   applyBubbleFillStyle(ctx, form, formW, formH, scale);
   ctx.fill();
+  if (skipStroke) return;
   ctx.lineWidth = Math.max(1, form.strokeWidthPx * scale);
   ctx.strokeStyle = form.strokeColor;
   applyStrokeDash(ctx, form, scale);
   ctx.stroke();
   resetStrokeDash(ctx);
+}
+
+/** Fills every subpath in `subpaths` (already scaled to the bubble's actual w x h box, see
+ * scaleNormalizedBoundary) as ONE multi-subpath canvas path with a single flat `color` —
+ * canvas's native fill() composites overlapping/adjacent subpaths correctly via the nonzero
+ * winding rule (the same math the SVG spec itself uses), so an arbitrarily complex/
+ * multi-part decorative outline (e.g. a hand-drawn burst's individually-overlapping spikes)
+ * just works, entirely in vector space, no polygon-union or rasterization needed. */
+function drawOutlineSubpaths(ctx: CanvasRenderingContext2D, subpaths: Point[][], color: string) {
+  if (subpaths.length === 0) return;
+  ctx.beginPath();
+  for (const sp of subpaths) {
+    if (sp.length < 3) continue;
+    ctx.moveTo(sp[0].x, sp[0].y);
+    for (let i = 1; i < sp.length; i++) ctx.lineTo(sp[i].x, sp[i].y);
+    ctx.closePath();
+  }
+  ctx.fillStyle = color;
+  ctx.fill();
 }
 
 /** Bubble styles that can carry a tail at all — "none" never draws a background, so a tail on it would be pointless. Exported for BubbleShape.tsx, which needs the same check to decide whether to show the tail-anchor handle. */
@@ -564,6 +589,16 @@ export function drawBubbleBevel(ctx: CanvasRenderingContext2D, points: Point[], 
  * bubble path (bubbleMerge.ts) computes the union of several bubbles' own boundaries and
  * feeds the result back in here so tail-splicing/clip-line/fill/stroke all still run
  * exactly the same as for a procedural boundary.
+ *
+ * `svgOutline` (normalized 0..1 closed subpaths from svgBubbleGeometry.ts's outline+
+ * interior split) is the decorative outline art for that same bubble — drawn LAST, on top
+ * of everything above, filled with the bubble's own `strokeColor` as a single flat color
+ * (see drawOutlineSubpaths). Its presence also means the interior boundary's OWN stroke is
+ * skipped entirely: `strokeColor` is repurposed as the outline's fill instead of a literal
+ * border line around the interior (per the outline/interior design — the outline shape
+ * already reads as the bubble's visible edge, a second border on the interior would be
+ * redundant). Bevel/glow/tail/clip are unaffected either way, still driven by the interior
+ * boundary exactly as for any other bubble.
  */
 export function drawBubbleBackground(
   ctx: CanvasRenderingContext2D,
@@ -571,7 +606,8 @@ export function drawBubbleBackground(
   shape: BubbleShapeKind,
   scale: number,
   svgBoundary?: Point[] | null,
-  precomputedBoundary?: Point[]
+  precomputedBoundary?: Point[],
+  svgOutline?: Point[][] | null
 ) {
   if (form.bubbleStyle === "none") return;
   const w = form.width * scale;
@@ -621,13 +657,18 @@ export function drawBubbleBackground(
     });
   }
 
-  fillAndStrokePath(ctx, points, form, scale, w, h);
+  const hasOutline = !!svgOutline && svgOutline.length > 0;
+  fillAndStrokePath(ctx, points, form, scale, w, h, hasOutline);
   drawBubbleBevel(ctx, points, form, w, h, scale);
 
   if (hasTail && tip && anchor && effectiveTailStyle === "point-detached") {
     drawDetachedTail(ctx, points, anchor, tip, form, scale, w, h);
   } else if (hasTail && tip && anchor && effectiveTailStyle === "chain") {
     drawChainTail(ctx, points, anchor, tip, form, scale, w, h);
+  }
+
+  if (hasOutline) {
+    drawOutlineSubpaths(ctx, svgOutline!.map((sp) => scaleNormalizedBoundary(sp, w, h)), form.strokeColor);
   }
 
   if (hasClip) ctx.restore();

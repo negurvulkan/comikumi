@@ -489,7 +489,23 @@ projektiven Transformation verzerrt (z. B. für ein schräg gesehenes Schild).
 
 Blasen-Hintergrundstile: keine (unsichtbare Überlagerung auf vorhandener Grafik),
 Sprechblase, Gedankenblase, Effekt (gezackter Rand), oder eine eigene hochgeladene
-SVG-Kontur. Bei sichtbarem Stil: Füll-/Randfarbe, Randbreite, und ein optionaler
+SVG-Kontur. Bei einer eigenen SVG-Kontur kann eine Grafik statt einer einzelnen
+geschlossenen Form optional in zwei benannte Gruppen aufgeteilt werden:
+`id="interior"` markiert die eigentliche, textsichere Blasenform (das, was
+ComiKumi füllt, umrandet, woran ein Schwanz ansetzt und wonach sich die Text-Box
+richtet), und `id="outline"` markiert rein dekorative Kunst, die darüber gelegt
+wird — z. B. ein handgezeichneter, gezackter "Burst"-Effekt aus vielen
+einzelnen, absichtlich überlappenden Zacken-Teilformen, die eine einfache
+Einzelkontur-Lesart sprengen würden. Sind beide vorhanden, bekommt das Interior
+die normale Blasenfüllung (Volltonfarbe/Verlauf/Screenton) mit unterdrücktem
+eigenen Rand, während die Outline stattdessen komplett mit der Randfarbe der
+Blase als eine einzige Fläche gefüllt wird — das Randfarbe-Feld wird zur
+Füllfarbe der Outline-Kunst umgewidmet, Randbreite/-stil greifen dann nicht
+mehr. Beides bleibt durchgehend reiner Vektor (Editor, PNG-Export,
+Vektor-PDF-/PSD-Export), egal aus wie vielen einzelnen Teilpfaden die Outline
+besteht. Eine SVG-Datei mit nur einer Form (ohne `outline`-/`interior`-IDs)
+funktioniert weiterhin genau wie bisher und nutzt diese Form direkt als
+Blasenkontur. Bei sichtbarem Stil: Füll-/Randfarbe, Randbreite, und ein optionaler
 Zeiger/Schwanz mit eigenem Stil — nahtlos verbunden, freistehend, oder eine
 segmentierte "Kette" (Kreis/Rechteck/Raute-Segmente, Anzahl und Abstand konfigurierbar)
 — Position, Breite und Krümmung sind alle per Canvas-Ziehgriff einstellbar. Der Rand
@@ -1381,7 +1397,11 @@ geschrieben werden.
   gemeinsame Konturen-/Schwanz-Zeichenlogik für Blasenstile (identisch zwischen
   Live-Vorschau und PNG-Export, damit beide nie auseinanderlaufen), gemeinsame
   Volltonfarbe-/Farbverlauf-/Umrandungs-Zeichenlogik für Text, SVG-Konturen-Parsing
-  (größte Bounding-Box-Geometrie wird gewählt, falls die SVG mehrere enthält).
+  (größte Bounding-Box-Geometrie wird gewählt, falls die SVG mehrere enthält —
+  außer die Datei nutzt die `outline`-/`interior`-Gruppenkonvention von oben,
+  dann gewinnt immer die Interior-Form, und eine mehrteilige Outline wird über
+  die native Nonzero-Winding-Regel des Canvas als eine Fläche gefüllt statt zu
+  einem einzigen Polygon verschmolzen).
 - **JSON-Export/-Import** (Seiten-Ebene): Das Layout einer einzelnen Seite kann als
   JSON heruntergeladen und wieder importiert werden (gegen das Zod-Schema validiert —
   ein Formatfehler zeigt eine Fehlermeldung statt die Seite still zu beschädigen);

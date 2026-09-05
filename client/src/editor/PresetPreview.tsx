@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { PresetTextFields, PresetBackgroundFields } from "../../../shared/src/presets";
 import { ensureFontsLoaded } from "./fontLoader";
-import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary } from "../export/svgBubbleGeometry";
+import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary, getCachedSvgBubbleOutline } from "../export/svgBubbleGeometry";
 import { drawBubblePreview, drawCurvedTextPreview } from "./presetPreviewRender";
 
 interface Props {
@@ -42,7 +42,8 @@ export function PresetPreview({ text, background }: Props) {
     if (!ctx) return;
     if (mode === "bubble") {
       const svgBoundary = background.svgFileName ? getCachedSvgBubbleBoundary(background.svgFileName) : null;
-      drawBubblePreview(ctx, CANVAS_SIZE, text, background, sampleText, svgBoundary);
+      const svgOutline = background.svgFileName ? getCachedSvgBubbleOutline(background.svgFileName) : null;
+      drawBubblePreview(ctx, CANVAS_SIZE, text, background, sampleText, svgBoundary, svgOutline);
     } else {
       drawCurvedTextPreview(ctx, CANVAS_SIZE, text, sampleText);
     }

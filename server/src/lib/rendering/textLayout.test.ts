@@ -4,10 +4,23 @@ import {
   fitHorizontalText,
   wrapHorizontal,
   ovalRowWidth,
+  textBoxFor,
   PADDING_RATIO,
   SVG_BUBBLE_PADDING_RATIO,
   type BalloonGeometry,
 } from "../../../../shared/src/rendering/textLayout.js";
+
+function svgForm(overrides: Partial<{ width: number; height: number; paddingRatio: number | null }> = {}) {
+  return {
+    width: 200,
+    height: 100,
+    clipA: null,
+    clipB: null,
+    clipFlip: false,
+    paddingRatio: null,
+    ...overrides,
+  };
+}
 
 function fakeCtx(widthPerChar: number) {
   return {
@@ -38,6 +51,31 @@ describe("paddingRatioFor", () => {
   it("a null/undefined override falls back to the existing automatic behavior", () => {
     expect(paddingRatioFor("speech", "rect", null)).toBe(PADDING_RATIO.rect);
     expect(paddingRatioFor("speech", "rect", undefined)).toBe(PADDING_RATIO.rect);
+  });
+});
+
+describe("textBoxFor", () => {
+  it("'svg' bubbleStyle insets by the flat SVG_BUBBLE_PADDING_RATIO (outline+interior splits resolve to an ordinary boundary here, no special-casing needed)", () => {
+    const box = textBoxFor("svg", "rect", svgForm(), 1);
+    const inset = SVG_BUBBLE_PADDING_RATIO;
+    expect(box.width).toBeCloseTo(200 * (1 - inset), 6);
+    expect(box.height).toBeCloseTo(100 * (1 - inset), 6);
+  });
+
+  it("a merged bubble insets mergedBounds instead of the plain form box", () => {
+    const mergedBounds = { x: 10, y: 20, width: 300, height: 150 };
+    const box = textBoxFor("svg", "rect", svgForm(), 1, mergedBounds);
+    const inset = SVG_BUBBLE_PADDING_RATIO;
+    expect(box.width).toBeCloseTo(300 * (1 - inset), 6);
+    expect(box.height).toBeCloseTo(150 * (1 - inset), 6);
+    expect(box.x).toBeCloseTo(10 + (300 * inset) / 2, 6);
+    expect(box.y).toBeCloseTo(20 + (150 * inset) / 2, 6);
+  });
+
+  it("an explicit paddingRatio override wins over the flat SVG ratio", () => {
+    const box = textBoxFor("svg", "rect", svgForm({ paddingRatio: 0.5 }), 1);
+    expect(box.width).toBeCloseTo(200 * 0.5, 6);
+    expect(box.height).toBeCloseTo(100 * 0.5, 6);
   });
 });
 

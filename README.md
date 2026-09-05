@@ -11,7 +11,7 @@ workflow — on a single machine, over LAN, or with a shared server.</p>
 
 <p align="center">
   <a href="https://discord.gg/DZ7nnaFzn">Join the Discord</a> ·
-  <a href="https://github.com/negurvulkan/comikumi/releases/latest">Download for Windows/macOS/Linux</a>
+  <a href="https://github.com/negurvulkan/comikumi/releases/tag/v.0.8.0">Download for Windows/macOS/Linux</a>
 </p>
 
 <p align="center">
@@ -26,7 +26,9 @@ art itself. Place and letter speech bubbles, curved titles/SFX, and image patche
 on top of scanned comic pages, translate them per language, and export the result as
 ready-to-publish PNGs. Run it solo on your machine, on your studio's LAN, or on a shared
 server your whole team connects to — a small Express server reads/writes files on disk (no
-cloud, no accounts, no telemetry), paired with a React + Konva canvas editor.
+cloud, no telemetry, no third-party signup), paired with a React + Konva canvas editor. You
+still create your own ComiKumi account on first launch (see [Getting started](#getting-started)
+below) — that account lives on your own server, not a central ComiKumi service.
 
 ## Highlights
 
@@ -176,14 +178,80 @@ docs/     Feature docs, JSON format reference, brand assets
 ```
 
 No database — a project is a single `projekt.json` file (name, languages, characters,
-glossary, presets, settings) plus your existing folder of scanned pages. The server
-never needs its own persistent store beyond a small `server/data/` cache (fonts/images/
-SVG library, page thumbnails, and a pointer to the last-opened project — all
-regenerated on demand, safe to delete).
+glossary, presets, settings) plus your existing folder of scanned pages. The server keeps
+its own state in `server/data/` (or the app-data directory you chose for a desktop
+install) — most of it (fonts/images/SVG library, page thumbnails, a pointer to the
+last-opened project) is a regenerable cache, but this directory **also holds account
+records and the server's own authentication/encryption secrets**, so don't delete or
+reset it as a cache-clearing step. Pointing the app at a *different* data directory (e.g.
+via the desktop setup screen) does not migrate anything from the old one — it starts a
+fresh, empty set of accounts, exactly as if the old directory had never existed.
 
 ## Getting started
 
-Requires Node.js 18+.
+Most users don't need Node.js, a terminal, or a build step at all — just a desktop
+download and an installer/AppImage. Building from source ([below](#running-from-source-developers))
+is only needed for development, or to run the server on a platform without a prebuilt
+desktop package.
+
+### 1. Download
+
+Preview builds for Windows, macOS (Apple Silicon), and Linux are attached to the
+[ComiKumi 0.8.0 Preview release](https://github.com/negurvulkan/comikumi/releases/tag/v.0.8.0)
+— scroll to **Assets** and download the file for your platform. GitHub's own "Source
+code (zip)"/"Source code (tar.gz)" links on that page are **not** installers — they're
+the raw repository source, only useful if you're building from source ([below](#running-from-source-developers)).
+
+| Platform | Download |
+|---|---|
+| Windows | `ComiKumi.Setup.0.8.0.exe` |
+| macOS (Apple Silicon only — no Intel build yet) | `ComiKumi-0.8.0-arm64.dmg` |
+| Linux | `ComiKumi-0.8.0.AppImage` |
+
+This is still a **preview** release — see the release page's own notes for known
+limitations before relying on it for real production work.
+
+### 2. Install and launch
+
+- **Windows**: run `ComiKumi.Setup.0.8.0.exe` and follow the installer.
+- **macOS**: open the `.dmg` and drag ComiKumi into Applications.
+- **Linux**: make the AppImage executable, then run it:
+
+  ```bash
+  chmod +x ComiKumi-0.8.0.AppImage
+  ./ComiKumi-0.8.0.AppImage
+  ```
+
+### 3. Choose a local or remote server
+
+On first launch, a setup screen offers a choice: run a **local** server (asks where to
+store app data — not the comic projects themselves, which are configured per-project
+via the in-app Project Wizard in step 5 — and which local port to use, defaulting to
+the OS's per-user app-data directory and port 3001), or connect to a **remote**
+ComiKumi server someone else is already running (just its URL — the desktop app then
+starts nothing locally, it's a thin wrapper around that server's own web UI).
+Revisitable anytime via **Datei → Server wechseln…**. See
+[`electron/README.md`](electron/README.md) for how packaging, setup, and dev mode work.
+
+### 4. Create an administrator account (new local server only)
+
+The very first time a local server starts with no accounts yet, it shows a one-time
+setup screen instead of a login — pick a username and password. This first account
+automatically becomes **system administrator** and can create further accounts later.
+Connecting to an existing remote server instead just shows that server's normal login.
+
+### 5. Create your first project
+
+Open the in-app **Project Wizard** and point it at a folder of scanned pages — see
+[`docs/FEATURES.md`](docs/FEATURES.md#projektverwaltung) for the expected folder
+convention (a `<book>_empty` source-page folder per volume, `<book>_<language>` folders
+for translated exports).
+
+### Running from source (developers)
+
+Requires Node.js `^20.19.0 || >=22.12.0` (this only matters if you're running from
+source or building your own desktop package — end users of the downloads above don't
+need Node.js at all).
 
 ```bash
 npm install
@@ -191,31 +259,14 @@ npm run dev
 ```
 
 This installs both `client/` and `server/` (via `postinstall`) and starts them together
-(server on `:3001`, client on `:5173`, proxied through Vite). Open the printed client URL,
-then use **Project → Switch/create** to point the app at a folder of scanned pages — see
-[`docs/FEATURES.md`](docs/FEATURES.md#projektverwaltung) for the expected folder
-convention (a `<book>_empty` source-page folder per volume, `<book>_<language>` folders
-for translated exports).
+(server on `:3001`, client on `:5173`, proxied through Vite). Open the printed client
+URL and continue from step 3 above.
 
-### Desktop app (no Node/browser needed at runtime)
-
-Prebuilt installers for Windows (NSIS), macOS (`.dmg`), and Linux (`.AppImage`) are
-published on the [GitHub Releases page](https://github.com/negurvulkan/comikumi/releases/latest)
-— download and run, no Node or build step needed.
-
-To build one yourself instead: `npm run electron:build` (or the platform-specific
-`electron:build:win`/`:mac`/`:linux` variants) packages ComiKumi as a self-contained
-desktop app (Electron embeds the same Express server and serves the built client from
-one process) — `release/<platform>` gets the same installer types listed above.
-
-On first launch, a small setup screen offers a choice: run a **local** server (asks
-where to store app data — not the comic projects themselves, which are configured
-per-project via the in-app Project Wizard afterward — and which local port to use,
-defaulting to the OS's per-user app-data directory and port 3001), or connect to a
-**remote** ComiKumi server already running elsewhere (just its URL — the desktop app
-then starts nothing locally, it's a thin wrapper around that server's own web UI).
-Revisitable anytime via **Datei → Server wechseln…**. See
-[`electron/README.md`](electron/README.md) for how packaging, setup, and dev mode work.
+To build your own desktop package instead of downloading one: `npm run electron:build`
+(or the platform-specific `electron:build:win`/`:mac`/`:linux` variants) packages
+ComiKumi as a self-contained desktop app (Electron embeds the same Express server and
+serves the built client from one process) — `release/<platform>` gets the same
+installer types listed in step 1.
 
 ### Running client and server on separate hosts
 

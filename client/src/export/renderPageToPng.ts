@@ -31,7 +31,7 @@ import { drawBubbleBackground } from "../../../shared/src/rendering/bubbleBackgr
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects";
 import { drawShadowUnderlayPasses } from "../../../shared/src/rendering/shadowPasses";
 import { drawCurvedText, fitCurvedText } from "../../../shared/src/rendering/curvedText";
-import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary } from "./svgBubbleGeometry";
+import { ensureSvgBubbleBoundaryLoaded, getCachedSvgBubbleBoundary, getCachedSvgBubbleOutline } from "./svgBubbleGeometry";
 import { drawCutPanelForeground, fillCutPanelHole } from "../../../shared/src/rendering/cutPanel";
 import { resolveMergeGroups, computeMergedBoundary } from "./bubbleMerge";
 
@@ -349,7 +349,15 @@ export async function renderPageToPng(
     if (form.bubbleStyle !== "none") {
       ctx.save();
       ctx.translate(form.x, form.y);
-      drawBubbleBackground(ctx, form, bubble.shape, 1, getCachedSvgBubbleBoundary(form.svgFileName), precomputedBoundary);
+      drawBubbleBackground(
+        ctx,
+        form,
+        bubble.shape,
+        1,
+        getCachedSvgBubbleBoundary(form.svgFileName),
+        precomputedBoundary,
+        getCachedSvgBubbleOutline(form.svgFileName)
+      );
       ctx.restore();
     }
     if (hasText) {

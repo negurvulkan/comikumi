@@ -1,0 +1,114 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Verify release version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches package version
+        run: |
+          node -e "
+          const pkg = require('./package.json');
+          const tag = process.env.GITHUB_REF_NAME.replace(/^v/, '');
+          if (pkg.version !== tag) {
+            console.error('Version mismatch: package.json=' + pkg.version + ', tag=' + tag);
+            process.exit(1);
+          }
+          console.log('Release version:', tag);
+          "
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: verify
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            os: ubuntu-latest
+            command: npm run electron:build:linux
+            artifact_name: linux-x64
+            artifact_path: release/*.AppImage
+
+          - name: Windows x64
+            os: windows-latest
+            command: npm run electron:build:win
+            artifact_name: windows-x64
+            artifact_path: release/*.exe
+
+          - name: macOS ARM64
+            os: macos-latest
+            command: npm run electron:build:mac
+            artifact_name: macos-arm64
+            artifact_path: release/*.dmg
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Build Electron package
+        run: ${{ matrix.command }}
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download installers
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Show release files
+        run: ls -lah dist
+
+      - name: Create GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/* \
+            --title "ComiKumi ${GITHUB_REF_NAME#v} Preview" \
+            --generate-notes \
+            --prerelease

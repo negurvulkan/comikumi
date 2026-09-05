@@ -15,7 +15,7 @@ import {
 } from "../../../shared/src/rendering/bubbleBackground";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "../../../shared/src/rendering/textEffects";
 import { drawShadowUnderlayPasses } from "../../../shared/src/rendering/shadowPasses";
-import { getCachedSvgBubbleBoundary } from "../export/svgBubbleGeometry";
+import { getCachedSvgBubbleBoundary, getCachedSvgBubbleOutline } from "../export/svgBubbleGeometry";
 import { computeMergedBoundary, type MergeMemberInput } from "../export/bubbleMerge";
 import { projectOntoPerpendicularBow } from "./geometry";
 import { QuadBubbleShape } from "./QuadBubbleShape";
@@ -99,6 +99,7 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
   const style = useMemo(() => resolveBubbleStyle(bubble, activeLanguage, presets), [bubble, activeLanguage, presets]);
   const baseFontSize = style.fontSize * scale;
   const svgBoundary = form.bubbleStyle === "svg" ? getCachedSvgBubbleBoundary(form.svgFileName) : null;
+  const svgOutline = form.bubbleStyle === "svg" ? getCachedSvgBubbleOutline(form.svgFileName) : null;
 
   // Non-destructive bubble merging (Bubble.mergeGroupId/mergePrimary, see
   // shared/src/layoutSchema.ts) — siblings are looked up from `allBubbles` (this bubble's
@@ -314,7 +315,7 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
           <Shape
             listening={false}
             sceneFunc={(ctx) => {
-              drawBubbleBackground(ctx._context, form, bubble.shape, scale, svgBoundary, mergedBoundaryScaled ?? undefined);
+              drawBubbleBackground(ctx._context, form, bubble.shape, scale, svgBoundary, mergedBoundaryScaled ?? undefined, svgOutline);
             }}
           />
         )}

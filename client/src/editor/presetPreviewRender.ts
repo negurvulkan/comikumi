@@ -25,7 +25,8 @@ export function drawBubblePreview(
   text: PresetTextFields,
   background: PresetBackgroundFields,
   sampleText: string,
-  svgBoundary: Point[] | null
+  svgBoundary: Point[] | null,
+  svgOutline: Point[][] | null
 ): void {
   ctx.clearRect(0, 0, size.width, size.height);
   const draftPreset: LetteringPreset = { id: PREVIEW_PRESET_ID, name: "", text, background };
@@ -46,7 +47,7 @@ export function drawBubblePreview(
   if (form.bubbleStyle !== "none") {
     ctx.save();
     ctx.translate(form.x, form.y);
-    drawBubbleBackground(ctx, form, bubble.shape, 1, svgBoundary, undefined);
+    drawBubbleBackground(ctx, form, bubble.shape, 1, svgBoundary, undefined, svgOutline);
     ctx.restore();
   }
   if (!sampleText.trim()) return;

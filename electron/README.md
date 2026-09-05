@@ -73,8 +73,11 @@ npm run electron:build:linux  # explicit Linux target (AppImage)
 
 Each compiles the client, server, and `electron/main.ts`/`preload.ts`
 (`tsc -p electron`), then runs `electron-builder` per the root
-`package.json`'s `"build"` config. Output lands in `release/`. No installer
-is currently published anywhere — building one is a manual, local step.
+`package.json`'s `"build"` config. Output lands in `release/`. Prebuilt
+Windows/macOS (arm64)/Linux installers are published as GitHub Release
+assets (see the root [README.md](../README.md#1-download)) — building your
+own from source (this section) is only needed for development or an
+unpublished platform/architecture.
 
 `extraResources` copies `server/dist`, `server/node_modules`,
 `server/package.json`, and `client/dist` as **plain files**, not packed

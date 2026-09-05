@@ -59,14 +59,20 @@ Referenz.
 
 Du hast zwei Möglichkeiten:
 
-**A) Desktop-App (einfachster Weg)**: Falls für dich ein fertiger Installer
-bereitgestellt wurde (Windows/macOS/Linux), führe ihn aus wie jede andere
-Anwendung — ComiKumi startet danach als normales Programm, mit einem
-eigenen Fenster. Alle deine Projektdaten landen automatisch in einem
-privaten Ordner deines Benutzerkontos, nicht im Installationsverzeichnis.
+**A) Desktop-App (einfachster Weg)**: Lade den Installer für dein
+Betriebssystem (Windows/macOS/Linux) von der [GitHub-Releases-Seite](https://github.com/negurvulkan/comikumi/releases)
+herunter und führe ihn aus wie jede andere Anwendung — ComiKumi startet
+danach als normales Programm mit einem eigenen Fenster. Beim ersten Start
+wählst du, wo die **App-Daten** (Konten, Einstellungen, Caches) liegen
+sollen — das ist getrennt von deinen eigentlichen Comic-**Projektordnern**,
+die du separat pro Projekt über den Projektassistenten festlegst. Änderst
+du den App-Daten-Ordner später, wird nichts aus dem alten Ordner
+automatisch übernommen.
 
 **B) Selbst aus dem Quellcode bauen (für Entwickler/selbst gehostete
-Server)**: Voraussetzung ist Node.js 18 oder neuer.
+Server)**: Voraussetzung ist Node.js `^20.19.0 || >=22.12.0` — das
+betrifft nur den Betrieb aus dem Quellcode; die Desktop-App oben
+benötigt gar kein Node.js.
 
 ```bash
 npm install

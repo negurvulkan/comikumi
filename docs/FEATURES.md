@@ -482,7 +482,21 @@ projective transform (e.g. for a sign seen at an angle).
 
 Bubble background styles: none (an invisible overlay on existing artwork),
 speech bubble, thought bubble, effect (jagged edge), or a custom uploaded SVG
-contour. With a visible style: fill/border color, border width, and an optional
+contour. For a custom SVG contour, an artist can optionally split the artwork
+into two named groups instead of uploading a single closed shape: `id="interior"`
+marks the actual text-safe bubble shape (what ComiKumi fills, strokes, attaches
+a tail to, and lays the text box out against), and `id="outline"` marks purely
+decorative art layered on top of it — e.g. a hand-drawn jagged "burst" effect
+made of many separate, deliberately overlapping spike shapes that would break a
+plain single-contour reading. When both are present, the interior gets the
+bubble's normal fill (solid/gradient/screentone) with its own border suppressed,
+while the outline is filled with the bubble's border color as one flat shape
+instead — the border color field is repurposed as the outline art's fill color,
+and border width/style no longer apply. Both stay pure vector data end to end
+(editor, PNG export, vector PDF/PSD export) no matter how many separate
+subpaths the outline is drawn from. An SVG with only one shape (no
+`outline`/`interior` ids) keeps working exactly as before, using that shape
+directly as the bubble's contour. With a visible style: fill/border color, border width, and an optional
 pointer/tail with its own style — seamlessly connected, free-standing, or a
 segmented "chain" (circle/rectangle/diamond segments, count and spacing
 configurable) — position, width, and curvature are all adjustable via canvas
@@ -1341,7 +1355,11 @@ of via the editor store, since layout data is never written here.
   outline/tail drawing logic for bubble styles (identical between live preview
   and PNG export, so the two never drift apart), shared solid-color/gradient/
   outline drawing logic for text, SVG contour parsing (the largest
-  bounding-box geometry is chosen if the SVG contains several).
+  bounding-box geometry is chosen if the SVG contains several, unless the file
+  uses the `outline`/`interior` group convention above — then the interior
+  shape always wins, and a multi-subpath outline is filled as one shape via
+  the canvas's native nonzero-winding rule instead of being merged into a
+  single polygon).
 - **JSON export/import** (page level): a single page's layout can be
   downloaded as JSON and imported again (validated against the Zod schema — a
   format error shows an error message instead of silently corrupting the
