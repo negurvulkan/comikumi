@@ -50,15 +50,26 @@ async function writeCommentsDocument(file: string, doc: CommentDocument): Promis
 /** Serializes every comments-document read-modify-write against concurrent requests for
  * the same file (see fileLock.ts) — without this, two reviewers posting a comment at
  * the same moment would each read the same old array and one addition would silently
- * overwrite the other's. `mutate` does its own permission/not-found checks and sends
- * the response itself (it needs to reply with just the new comment/reply, not the whole
- * document) — return `null` from it to skip the write for an error response already
- * sent, or the next full document to persist. */
-async function mutateCommentsDocument(file: string, mutate: (doc: CommentDocument) => Promise<CommentDocument | null>): Promise<void> {
+ * overwrite the other's. `mutate` does its own permission/not-found checks: on success
+ * it returns `{ nextDoc, respond }` (the response deferred as a closure, since it needs
+ * to reply with just the new comment/reply, not the whole document); on a rejected
+ * mutation it sends its own error response immediately and returns `null` to skip the
+ * write entirely. `respond` is called only AFTER `nextDoc` has actually been written to
+ * disk — sending the response first (an earlier version of this function did that,
+ * treating the write as fire-and-forget after replying) let a client's own immediate
+ * follow-up read race the write, confirmed to actually happen under real load: a GET
+ * sent right after a 201 occasionally observed the pre-write document, not the one the
+ * 201 had just described. */
+async function mutateCommentsDocument(
+  file: string,
+  mutate: (doc: CommentDocument) => Promise<{ nextDoc: CommentDocument; respond: () => void } | null>
+): Promise<void> {
   await withFileLock(file, async () => {
     const doc = await readCommentsDocument(file);
-    const next = await mutate(doc);
-    if (next) await writeCommentsDocument(file, next);
+    const result = await mutate(doc);
+    if (!result) return;
+    await writeCommentsDocument(file, result.nextDoc);
+    result.respond();
   });
 }
 
@@ -186,18 +197,22 @@ commentsRouter.post(
         replies: [],
         ...parsed.data,
       };
-      res.status(201).json(comment);
-      notifyMentions({
-        volumeId: req.params.id,
-        page: comment.page,
-        commentId: comment.id,
-        authorId: comment.authorId,
-        mentionedUserIds: comment.mentionedUserIds,
-        mentionedRoles: comment.mentionedRoles,
-        body: comment.body,
-        ctx: req.activeProject,
-      }).catch((err) => console.error("[comments] notifyMentions failed:", err));
-      return { comments: [...doc.comments, comment] };
+      return {
+        nextDoc: { comments: [...doc.comments, comment] },
+        respond: () => {
+          res.status(201).json(comment);
+          notifyMentions({
+            volumeId: req.params.id,
+            page: comment.page,
+            commentId: comment.id,
+            authorId: comment.authorId,
+            mentionedUserIds: comment.mentionedUserIds,
+            mentionedRoles: comment.mentionedRoles,
+            body: comment.body,
+            ctx: req.activeProject,
+          }).catch((err) => console.error("[comments] notifyMentions failed:", err));
+        },
+      };
     });
   })
 );
@@ -224,18 +239,22 @@ commentsRouter.post(
       const reply = { id: randomUUID(), authorId: req.user!.sub, createdAt: new Date().toISOString(), ...parsed.data };
       const comments = [...doc.comments];
       comments[idx] = { ...comments[idx], replies: [...comments[idx].replies, reply] };
-      res.status(201).json(comments[idx]);
-      notifyMentions({
-        volumeId: req.params.id,
-        page: comments[idx].page,
-        commentId: comments[idx].id,
-        authorId: reply.authorId,
-        mentionedUserIds: reply.mentionedUserIds,
-        mentionedRoles: reply.mentionedRoles,
-        body: reply.body,
-        ctx: req.activeProject,
-      }).catch((err) => console.error("[comments] notifyMentions failed:", err));
-      return { comments };
+      return {
+        nextDoc: { comments },
+        respond: () => {
+          res.status(201).json(comments[idx]);
+          notifyMentions({
+            volumeId: req.params.id,
+            page: comments[idx].page,
+            commentId: comments[idx].id,
+            authorId: reply.authorId,
+            mentionedUserIds: reply.mentionedUserIds,
+            mentionedRoles: reply.mentionedRoles,
+            body: reply.body,
+            ctx: req.activeProject,
+          }).catch((err) => console.error("[comments] notifyMentions failed:", err));
+        },
+      };
     });
   })
 );
@@ -261,8 +280,7 @@ commentsRouter.patch(
       }
       const comments = [...doc.comments];
       comments[idx] = { ...comments[idx], resolved: parsed.data.resolved || undefined };
-      res.json(comments[idx]);
-      return { comments };
+      return { nextDoc: { comments }, respond: () => res.json(comments[idx]) };
     });
   })
 );
@@ -289,8 +307,7 @@ commentsRouter.delete(
         }
       }
       const comments = doc.comments.filter((c) => c.id !== req.params.commentId);
-      res.json({ ok: true });
-      return { comments };
+      return { nextDoc: { comments }, respond: () => res.json({ ok: true }) };
     });
   })
 );
