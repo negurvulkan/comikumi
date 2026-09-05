@@ -5,7 +5,7 @@
 // only the exact surface this project actually calls (new ZipArchive, .file, .finalize,
 // plus whatever Transform/EventEmitter already provides for .pipe/.on).
 declare module "archiver" {
-  import { Transform } from "node:stream";
+  import { Readable, Transform } from "node:stream";
 
   export interface ZipArchiveOptions {
     zlib?: { level?: number };
@@ -21,7 +21,7 @@ declare module "archiver" {
   export class ZipArchive extends Transform {
     constructor(options?: ZipArchiveOptions);
     file(filepath: string, data: ZipEntryData): this;
-    append(source: string | Buffer, data: ZipEntryData): this;
+    append(source: string | Buffer | Readable, data: ZipEntryData): this;
     directory(dirpath: string, destpath: string | false): this;
     finalize(): Promise<void>;
   }
