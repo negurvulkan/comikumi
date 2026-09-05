@@ -71,7 +71,15 @@ jobs:
             server/package-lock.json
             client/package-lock.json
 
-      - name: Install dependencies
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Install client dependencies
+        working-directory: client
         run: npm ci
 
       - name: Run tests
@@ -79,6 +87,12 @@ jobs:
 
       - name: Build Electron package
         run: ${{ matrix.command }}
+
+      - name: Show build output
+        shell: bash
+        run: |
+          echo "Contents of release directory:"
+          ls -lah release/
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
@@ -106,6 +120,7 @@ jobs:
       - name: Create GitHub pre-release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           gh release create "${GITHUB_REF_NAME}" \
             dist/* \
