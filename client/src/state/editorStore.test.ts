@@ -480,3 +480,41 @@ describe("mergeSelectedBubbles", () => {
     expect(useEditorStore.getState().layout!.bubbles.every((x) => !x.mergeGroupId)).toBe(true);
   });
 });
+
+describe("selectBubble", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("resolves a merged, non-primary bubble's id to its group's primary — a non-primary draws nothing of its own (see BubbleShape.tsx's isMergedNonPrimary), so selecting it directly would open the Inspector on a bubble whose text/style edits have no visible effect", () => {
+    const primary = createBubble({ id: "primary", x: 0, y: 0, width: 10, height: 10, mergeGroupId: "g1", mergePrimary: true });
+    const nonPrimary = createBubble({ id: "nonPrimary", x: 5, y: 5, width: 10, height: 10, mergeGroupId: "g1", mergePrimary: false });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [primary, nonPrimary] } }));
+
+    useEditorStore.getState().selectBubble("nonPrimary");
+
+    expect(useEditorStore.getState().selectedBubbleIds).toEqual(["primary"]);
+  });
+
+  it("selects a plain, unmerged bubble by its own id", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a] } }));
+
+    useEditorStore.getState().selectBubble("a");
+
+    expect(useEditorStore.getState().selectedBubbleIds).toEqual(["a"]);
+  });
+
+  it("selects a merge group's own primary directly, unaffected by the redirect", () => {
+    const primary = createBubble({ id: "primary", x: 0, y: 0, width: 10, height: 10, mergeGroupId: "g1", mergePrimary: true });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [primary] } }));
+
+    useEditorStore.getState().selectBubble("primary");
+
+    expect(useEditorStore.getState().selectedBubbleIds).toEqual(["primary"]);
+  });
+
+  it("clears the selection when given null", () => {
+    useEditorStore.setState({ selectedBubbleIds: ["a"] });
+    useEditorStore.getState().selectBubble(null);
+    expect(useEditorStore.getState().selectedBubbleIds).toEqual([]);
+  });
+});

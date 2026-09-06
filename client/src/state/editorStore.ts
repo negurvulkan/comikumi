@@ -271,9 +271,18 @@ export const useEditorStore = create<EditorState>((set, get) => {
         return;
       }
       const state = get();
+      // A merged, non-primary member draws nothing of its own (see BubbleShape.tsx's
+      // isMergedNonPrimary — only the primary's own background/text/tail ever render for
+      // the whole group), so selecting it directly opened the Inspector on a bubble whose
+      // text/style edits have no visible effect. Resolve to the group's primary instead,
+      // regardless of which selection entry point the id came from (canvas click, Layers
+      // navigator, reading-order Tab-navigation, a "?bubble=" deep link, ...).
+      const bubbles = state.layout?.bubbles ?? [];
+      const target = bubbles.find((b) => b.id === id);
+      const resolvedId = target?.mergeGroupId && !target.mergePrimary ? (bubbles.find((b) => b.mergeGroupId === target.mergeGroupId && b.mergePrimary)?.id ?? id) : id;
       const switchingType = state.selectedImageIds.length > 0 || state.selectedCurvedTextIds.length > 0 || state.selectedPanelIds.length > 0;
       const base = additive && !switchingType ? state.selectedBubbleIds : [];
-      const next = base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
+      const next = base.includes(resolvedId) ? base.filter((x) => x !== resolvedId) : [...base, resolvedId];
       set({ selectedBubbleIds: next, selectedImageIds: [], selectedCurvedTextIds: [], selectedPanelIds: [] });
     },
 
