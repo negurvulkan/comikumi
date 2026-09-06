@@ -692,6 +692,19 @@ body {
   margin-left: 8px;
 }
 
+/* A notice at the top of an inspector, above its tabs — currently only
+   BubbleInspector's "this bubble is a merged, non-primary member" message — needs to
+   read as more attention-worthy than the plain muted .hint text above. */
+.inspector-hint {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 button {
   background: var(--bg-elevated);
   border: 1px solid var(--border);

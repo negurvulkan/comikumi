@@ -896,6 +896,7 @@
     "bubbleInspector": {
       "textTabLabel": "Text",
       "textLabel": "Text ({{language}})",
+      "mergedNonPrimaryHint": "Part of a merged group — only the primary bubble's text and style are shown here. Unmerge to edit this one independently.",
       "furiganaHintPrefix": "Furigana:",
       "furiganaHintSuffix": "· Number/Latin pairs (e.g. \"21\") are automatically set sideways.",
       "monoRubyHintPrefix": "Per-character reading:",

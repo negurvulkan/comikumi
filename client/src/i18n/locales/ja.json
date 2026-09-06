@@ -867,6 +867,7 @@
     "bubbleInspector": {
       "textTabLabel": "テキスト",
       "textLabel": "テキスト ({{language}})",
+      "mergedNonPrimaryHint": "統合されたグループの一部です — プライマリの吹き出しのテキストとスタイルのみが表示されます。個別に編集するには統合を解除してください。",
       "furiganaHintPrefix": "ふりがな:",
       "furiganaHintSuffix": "・数字/ラテン文字のペア（例:「21」）は自動的に横並びになります。",
       "monoRubyHintPrefix": "文字ごとのルビ:",

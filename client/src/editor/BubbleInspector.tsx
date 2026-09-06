@@ -531,6 +531,17 @@ export function BubbleInspector({
 
   return (
     <div className="inspector">
+      {bubble.mergeGroupId && !bubble.mergePrimary && (
+        // A merged, non-primary member draws nothing of its own (see BubbleShape.tsx's
+        // isMergedNonPrimary — only the primary's own background/text/tail ever render for
+        // the whole group) — editing THIS bubble's own fields below still writes to (and
+        // reads from) its own data, exactly like any other bubble, but none of it will be
+        // visible on the page while merged. A plain informational note rather than
+        // silently redirecting the whole inspector to the primary instead: that would make
+        // "Delete bubble" (and panel reassignment) act on a different bubble than the one
+        // actually selected, a worse surprise than an unstyled/invisible text field.
+        <p className="inspector-hint">{t("editor.bubbleInspector.mergedNonPrimaryHint")}</p>
+      )}
       <IconTabs tabs={tabs} active={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
 
       {activeTab === "text" && (

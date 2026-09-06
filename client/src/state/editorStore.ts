@@ -270,19 +270,19 @@ export const useEditorStore = create<EditorState>((set, get) => {
         set(clearSelection());
         return;
       }
+      // Deliberately NOT redirected to a merge group's primary here (an earlier version of
+      // this function did that) — selectedBubbleIds also drives multi-select, which
+      // Merge/Unmerge (see MultiSelectInspector) need to actually see BOTH members: a
+      // redirect collapsed every click within a merged group down to the same primary id,
+      // making selectedCount > 1 impossible to reach for that group at all and silently
+      // hiding the Unmerge button. The "clicking a non-primary member shows a bubble whose
+      // own text/style never renders" confusion this was trying to fix is handled instead,
+      // display-only, by Editor.tsx's own selectedBubble (only where a single selection
+      // actually opens BubbleInspector) — see its doc comment.
       const state = get();
-      // A merged, non-primary member draws nothing of its own (see BubbleShape.tsx's
-      // isMergedNonPrimary — only the primary's own background/text/tail ever render for
-      // the whole group), so selecting it directly opened the Inspector on a bubble whose
-      // text/style edits have no visible effect. Resolve to the group's primary instead,
-      // regardless of which selection entry point the id came from (canvas click, Layers
-      // navigator, reading-order Tab-navigation, a "?bubble=" deep link, ...).
-      const bubbles = state.layout?.bubbles ?? [];
-      const target = bubbles.find((b) => b.id === id);
-      const resolvedId = target?.mergeGroupId && !target.mergePrimary ? (bubbles.find((b) => b.mergeGroupId === target.mergeGroupId && b.mergePrimary)?.id ?? id) : id;
       const switchingType = state.selectedImageIds.length > 0 || state.selectedCurvedTextIds.length > 0 || state.selectedPanelIds.length > 0;
       const base = additive && !switchingType ? state.selectedBubbleIds : [];
-      const next = base.includes(resolvedId) ? base.filter((x) => x !== resolvedId) : [...base, resolvedId];
+      const next = base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
       set({ selectedBubbleIds: next, selectedImageIds: [], selectedCurvedTextIds: [], selectedPanelIds: [] });
     },
 
@@ -777,12 +777,34 @@ export const useEditorStore = create<EditorState>((set, get) => {
       // there's no way to know which the user meant to keep) — the user can always unmerge
       // and re-merge in a different order to pick a different primary either way.
       const primaryId = (targets.find((b) => b.tail) ?? targets[0]).id;
+      const primary = targets.find((b) => b.id === primaryId)!;
+      // Only the primary's own text is ever drawn once merged (see BubbleShape.tsx's
+      // isMergedNonPrimary) — combining every OTHER member's own text into it here (per
+      // language, appended after the primary's own) means a bubble that already had real
+      // dialogue typed into it doesn't just silently vanish the moment it becomes a
+      // non-primary member. Every member's own `text` field is left completely untouched
+      // (primary included, where it already had something of its own) — unmerging still
+      // restores each bubble's own original text exactly; the combined value only ever
+      // lives on the primary, as a starting point the user can edit further from there.
+      const languages = new Set<string>();
+      for (const b of targets) for (const lang of Object.keys(b.text)) languages.add(lang);
+      const combinedText: Record<string, string> = { ...primary.text };
+      for (const lang of languages) {
+        const otherParts = targets
+          .filter((b) => b.id !== primaryId)
+          .map((b) => b.text[lang]?.trim())
+          .filter((s): s is string => !!s);
+        if (otherParts.length === 0) continue;
+        const ownText = primary.text[lang]?.trim();
+        combinedText[lang] = ownText ? [ownText, ...otherParts].join(" ") : otherParts.join(" ");
+      }
       set({
         layout: {
           ...layout,
-          bubbles: layout.bubbles.map((b) =>
-            targetIds.has(b.id) ? { ...b, mergeGroupId: groupId, mergePrimary: b.id === primaryId } : b
-          ),
+          bubbles: layout.bubbles.map((b) => {
+            if (!targetIds.has(b.id)) return b;
+            return { ...b, mergeGroupId: groupId, mergePrimary: b.id === primaryId, ...(b.id === primaryId ? { text: combinedText } : {}) };
+          }),
         },
         dirty: true,
       });

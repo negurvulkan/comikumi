@@ -479,19 +479,55 @@ describe("mergeSelectedBubbles", () => {
     expect(useEditorStore.getState().past.length).toBe(0);
     expect(useEditorStore.getState().layout!.bubbles.every((x) => !x.mergeGroupId)).toBe(true);
   });
+
+  it("copies a non-primary member's own text onto the primary instead of silently losing it — only the primary's own text is ever drawn once merged (see BubbleShape.tsx's isMergedNonPrimary)", () => {
+    const noTail = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10, text: { de: "Hallo Welt" } });
+    const withTail = createBubble({ id: "b", x: 5, y: 5, width: 10, height: 10, tail: { x: 20, y: 20 }, text: {} });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [noTail, withTail] }, selectedBubbleIds: ["a", "b"] }));
+
+    useEditorStore.getState().mergeSelectedBubbles();
+
+    const bubbles = useEditorStore.getState().layout!.bubbles;
+    expect(bubbles.find((b) => b.id === "b")!.text.de).toBe("Hallo Welt");
+    // The non-primary's own stored text is untouched — unmerging restores it exactly.
+    expect(bubbles.find((b) => b.id === "a")!.text.de).toBe("Hallo Welt");
+  });
+
+  it("appends a non-primary member's text after the primary's own, per language, rather than overwriting it", () => {
+    const noTail = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10, text: { de: "zweiter Teil" } });
+    const withTail = createBubble({ id: "b", x: 5, y: 5, width: 10, height: 10, tail: { x: 20, y: 20 }, text: { de: "Erster Teil" } });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [noTail, withTail] }, selectedBubbleIds: ["a", "b"] }));
+
+    useEditorStore.getState().mergeSelectedBubbles();
+
+    const primaryText = useEditorStore.getState().layout!.bubbles.find((b) => b.id === "b")!.text.de;
+    expect(primaryText).toBe("Erster Teil zweiter Teil");
+  });
+
+  it("leaves the primary's text alone when no other member has any text set", () => {
+    const noTail = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    const withTail = createBubble({ id: "b", x: 5, y: 5, width: 10, height: 10, tail: { x: 20, y: 20 }, text: { de: "Nur ich" } });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [noTail, withTail] }, selectedBubbleIds: ["a", "b"] }));
+
+    useEditorStore.getState().mergeSelectedBubbles();
+
+    expect(useEditorStore.getState().layout!.bubbles.find((b) => b.id === "b")!.text.de).toBe("Nur ich");
+  });
 });
 
 describe("selectBubble", () => {
   beforeEach(resetStoreWithEmptyLayout);
 
-  it("resolves a merged, non-primary bubble's id to its group's primary — a non-primary draws nothing of its own (see BubbleShape.tsx's isMergedNonPrimary), so selecting it directly would open the Inspector on a bubble whose text/style edits have no visible effect", () => {
+  it("selects a merged, non-primary bubble by its own id, unredirected — selectedBubbleIds also drives multi-select for Merge/Unmerge (see MultiSelectInspector), which needs to see each member's real id; an earlier version of this function redirected to the group's primary here, which collapsed every click within a merged group down to the same id and made selectedCount > 1 unreachable for that group, hiding the Unmerge button entirely", () => {
     const primary = createBubble({ id: "primary", x: 0, y: 0, width: 10, height: 10, mergeGroupId: "g1", mergePrimary: true });
     const nonPrimary = createBubble({ id: "nonPrimary", x: 5, y: 5, width: 10, height: 10, mergeGroupId: "g1", mergePrimary: false });
     useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [primary, nonPrimary] } }));
 
     useEditorStore.getState().selectBubble("nonPrimary");
+    expect(useEditorStore.getState().selectedBubbleIds).toEqual(["nonPrimary"]);
 
-    expect(useEditorStore.getState().selectedBubbleIds).toEqual(["primary"]);
+    useEditorStore.getState().selectBubble("primary", true);
+    expect(useEditorStore.getState().selectedBubbleIds).toEqual(["nonPrimary", "primary"]);
   });
 
   it("selects a plain, unmerged bubble by its own id", () => {
@@ -501,15 +537,6 @@ describe("selectBubble", () => {
     useEditorStore.getState().selectBubble("a");
 
     expect(useEditorStore.getState().selectedBubbleIds).toEqual(["a"]);
-  });
-
-  it("selects a merge group's own primary directly, unaffected by the redirect", () => {
-    const primary = createBubble({ id: "primary", x: 0, y: 0, width: 10, height: 10, mergeGroupId: "g1", mergePrimary: true });
-    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [primary] } }));
-
-    useEditorStore.getState().selectBubble("primary");
-
-    expect(useEditorStore.getState().selectedBubbleIds).toEqual(["primary"]);
   });
 
   it("clears the selection when given null", () => {

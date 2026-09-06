@@ -867,6 +867,7 @@
     "bubbleInspector": {
       "textTabLabel": "文字",
       "textLabel": "文字（{{language}}）",
+      "mergedNonPrimaryHint": "属于一个已合并的组 — 只有主气泡的文本和样式会显示。取消合并即可单独编辑此气泡。",
       "furiganaHintPrefix": "注音：",
       "furiganaHintSuffix": "· 数字/拉丁字母组合（例如“21”）会自动横排显示。",
       "monoRubyHintPrefix": "逐字注音：",

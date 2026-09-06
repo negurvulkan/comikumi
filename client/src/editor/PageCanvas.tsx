@@ -704,16 +704,6 @@ export function PageCanvas({
               if (!b) return null;
               const panel = b.panelId ? panels.find((p) => p.id === b.panelId) : undefined;
               const siblings = panel ? bubbles.filter((x) => x.panelId === panel.id) : unassignedBubbles;
-              // A merged, non-primary member draws nothing of its own (see BubbleShape.tsx's
-              // isMergedNonPrimary — background/text/tail are all the PRIMARY's alone). Its
-              // context menu (Delete, Merge, style actions — built directly from
-              // contextMenu.id, not routed through the store's own selectBubble) would
-              // otherwise silently act on that invisible ghost instead of the bubble the
-              // user can actually see; onSelect itself needs no equivalent redirect here,
-              // since editorStore's selectBubble already resolves a non-primary id to its
-              // primary centrally, for every selection entry point (canvas click, Layers
-              // navigator, reading-order Tab-navigation, a "?bubble=" deep link, ...).
-              const selectTargetId = b.mergeGroupId && !b.mergePrimary ? (siblings.find((s) => s.mergeGroupId === b.mergeGroupId && s.mergePrimary)?.id ?? b.id) : b.id;
               const bubbleShape = (
                 <BubbleShape
                   key={`${b.id}-${fontsVersion}`}
@@ -726,7 +716,7 @@ export function PageCanvas({
                   selected={selectedIds.includes(b.id)}
                   onSelect={(additive) => onSelect(b.id, additive)}
                   onChange={(patch) => onChange(b.id, patch)}
-                  onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: selectTargetId })}
+                  onContextMenu={(clientX, clientY) => setContextMenu({ x: clientX, y: clientY, kind: "bubble", id: b.id })}
                   onCornerContextMenu={(clientX, clientY, vertexIndex) =>
                     setVertexMenu({ x: clientX, y: clientY, kind: "bubble", targetId: b.id, vertexIndex })
                   }

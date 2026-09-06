@@ -867,6 +867,7 @@
     "bubbleInspector": {
       "textTabLabel": "텍스트",
       "textLabel": "텍스트 ({{language}})",
+      "mergedNonPrimaryHint": "병합된 그룹의 일부입니다 — 기본(primary) 말풍선의 텍스트와 스타일만 표시됩니다. 개별적으로 편집하려면 병합을 해제하세요.",
       "furiganaHintPrefix": "후리가나:",
       "furiganaHintSuffix": "· 숫자/라틴 문자 쌍(예: \"21\")은 자동으로 가로로 표시됩니다.",
       "monoRubyHintPrefix": "글자별 읽기:",

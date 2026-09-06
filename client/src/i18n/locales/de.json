@@ -896,6 +896,7 @@
     "bubbleInspector": {
       "textTabLabel": "Text",
       "textLabel": "Text ({{language}})",
+      "mergedNonPrimaryHint": "Teil einer verschmolzenen Gruppe — nur Text und Stil der primären Blase werden angezeigt. Zum unabhängigen Bearbeiten die Verschmelzung aufheben.",
       "furiganaHintPrefix": "Furigana:",
       "furiganaHintSuffix": "· Zahlen-/Lateinpaare (z. B. „21“) werden automatisch quer gesetzt.",
       "monoRubyHintPrefix": "Lesung pro Zeichen:",

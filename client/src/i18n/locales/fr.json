@@ -876,6 +876,7 @@
     "bubbleInspector": {
       "textTabLabel": "Texte",
       "textLabel": "Texte ({{language}})",
+      "mergedNonPrimaryHint": "Fait partie d'un groupe fusionné — seuls le texte et le style de la bulle principale sont affichés. Annulez la fusion pour modifier celle-ci indépendamment.",
       "furiganaHintPrefix": "Furigana :",
       "furiganaHintSuffix": "· Les paires chiffres/latin (p. ex. « 21 ») sont automatiquement mises en travers.",
       "monoRubyHintPrefix": "Lecture par caractère :",
