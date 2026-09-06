@@ -1,0 +1,23 @@
+# Runs a persistent, self-hosted ComiKumi server for a team/shared deployment — see
+# README.md's "Self-hosting a persistent shared server" section for the full
+# walkthrough (reverse proxy/TLS, backups, updating). Not the public online demo
+# (that's the sibling Dockerfile + broker/, a different deployment entirely).
+services:
+  comikumi:
+    build:
+      context: .
+      dockerfile: Dockerfile.selfhost
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      # App data: accounts, the server's own auth/encryption secrets, the font/SVG/
+      # image library, and page thumbnails. Back this up — see README.md.
+      - comikumi-data:/data
+      # Your actual comic projects (scanned pages). Point ComiKumi's in-app Project
+      # Wizard at a folder under /projects on first run. Replace ./projects with
+      # wherever your scans actually live, or add more mounts the same way.
+      - ./projects:/projects
+
+volumes:
+  comikumi-data:

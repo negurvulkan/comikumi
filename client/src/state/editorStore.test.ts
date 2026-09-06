@@ -443,3 +443,40 @@ describe("bringLayerToFront / sendLayerToBack", () => {
     expect(useEditorStore.getState().past.length).toBe(0);
   });
 });
+
+describe("mergeSelectedBubbles", () => {
+  beforeEach(resetStoreWithEmptyLayout);
+
+  it("prefers a member that has a tail as the primary, even if selected second — only the primary's own tail is drawn once merged (see bubbleBackground.ts), so picking the wrong one would silently make an already-configured tail disappear", () => {
+    const noTail = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    const withTail = createBubble({ id: "b", x: 5, y: 5, width: 10, height: 10, tail: { x: 20, y: 20 } });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [noTail, withTail] }, selectedBubbleIds: ["a", "b"] }));
+
+    useEditorStore.getState().mergeSelectedBubbles();
+
+    const bubbles = useEditorStore.getState().layout!.bubbles;
+    expect(bubbles.find((b) => b.id === "b")!.mergePrimary).toBe(true);
+    expect(bubbles.find((b) => b.id === "a")!.mergePrimary).toBe(false);
+  });
+
+  it("falls back to the first selected bubble when none of them have a tail", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10 });
+    const b = createBubble({ id: "b", x: 5, y: 5, width: 10, height: 10 });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a, b] }, selectedBubbleIds: ["a", "b"] }));
+
+    useEditorStore.getState().mergeSelectedBubbles();
+
+    expect(useEditorStore.getState().layout!.bubbles.find((x) => x.id === "a")!.mergePrimary).toBe(true);
+  });
+
+  it("is a no-op when fewer than two selected bubbles qualify (excludes quad shape and locked)", () => {
+    const a = createBubble({ id: "a", x: 0, y: 0, width: 10, height: 10, shape: "quad" });
+    const b = createBubble({ id: "b", x: 5, y: 5, width: 10, height: 10, locked: true });
+    useEditorStore.setState((s) => ({ layout: { ...s.layout!, bubbles: [a, b] }, selectedBubbleIds: ["a", "b"] }));
+
+    useEditorStore.getState().mergeSelectedBubbles();
+
+    expect(useEditorStore.getState().past.length).toBe(0);
+    expect(useEditorStore.getState().layout!.bubbles.every((x) => !x.mergeGroupId)).toBe(true);
+  });
+});

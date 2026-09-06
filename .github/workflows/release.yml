@@ -71,8 +71,11 @@ jobs:
             server/package-lock.json
             client/package-lock.json
 
+      # --ignore-scripts: this job already installs server/ and client/ explicitly
+      # right below — without this flag, root's own `postinstall` (see package.json)
+      # would redundantly re-run both of those installs a second time here too.
       - name: Install root dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Install server dependencies
         working-directory: server

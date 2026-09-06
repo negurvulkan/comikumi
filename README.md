@@ -288,6 +288,46 @@ The server does all of its file I/O (scan folders, project files, assets, thumbn
 its own local disk, so the actual scanned pages must live on (or be reachable from) the
 machine the server runs on, not the client's.
 
+### Self-hosting a persistent shared server (Docker)
+
+The desktop app's "local server" mode (step 3 above) is meant to run in the foreground
+on one person's machine — for a server that stays up unattended for a whole team, use
+[`docker-compose.yml`](docker-compose.yml) instead:
+
+```bash
+docker compose up -d
+```
+
+This builds the image from [`Dockerfile.selfhost`](Dockerfile.selfhost) (a plain,
+non-demo build of the same server + client) and starts it as a persistent container,
+restarting automatically on failure or host reboot. Two volumes matter:
+
+- `comikumi-data` (named volume, mounted at `/data`) — the server's own app data:
+  accounts, its authentication/encryption secrets, the font/SVG/image library, and page
+  thumbnails. **Back this up** — see [`server/data/`](#architecture) further above for
+  why this isn't just a disposable cache.
+- `./projects:/projects` (bind mount) — put your actual comic projects (scanned pages)
+  here, or point it at wherever they already live; the in-app Project Wizard (step 5
+  above) can then browse to a folder under `/projects` on first run.
+
+Open `http://<host>:3001` and continue from step 4 above (create the administrator
+account). For real team/internet use, put a reverse proxy (nginx, Caddy, Traefik, …) in
+front for TLS — this container itself only serves plain HTTP.
+
+To update, pull the new source and rebuild: `docker compose up -d --build`. The
+`comikumi-data` volume is untouched by a rebuild, so accounts/settings survive.
+
+Prefer to run it without Docker? Build once and start the compiled server directly —
+same [Node.js requirement](#running-from-source-developers) as running from source:
+
+```bash
+npm run build
+PORT=3001 LETTERING_DATA_DIR=/path/to/data CLIENT_DIST_DIR=client/dist npm --prefix server run start
+```
+
+Keeping that running unattended (across reboots/crashes) is then up to your platform's
+own process supervisor (systemd, pm2, Windows Task Scheduler, …) — none is bundled here.
+
 ### Scripts
 
 | Command | Description |

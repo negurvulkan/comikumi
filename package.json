@@ -1,7 +1,7 @@
 {
   "name": "comikumi",
   "private": true,
-  "version": "0.8.5",
+  "version": "0.8.6",
   "desktopName": "app.comikumi.desktop",
   "description": "Comic lettering, localization & production workspace — plan, prepare, letter, translate, review and publish comics in one integrated workflow.",
   "author": "Hanjo Winter",
@@ -9,7 +9,7 @@
   "type": "module",
   "main": "electron/dist/main.js",
   "scripts": {
-    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "postinstall": "npm --prefix server install && npm --prefix client install",
     "dev": "concurrently -k -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "build": "npm --prefix server run build && npm --prefix client run build",
     "test": "npm --prefix server run test && npm --prefix client run test",

@@ -1,0 +1,53 @@
+# Self-hosted production image — builds ComiKumi once and runs the compiled server
+# (which also serves the built client, see server/src/app.ts's staticDir option) as a
+# single persistent process for a real team/shared deployment. This is the counterpart
+# to the sibling `Dockerfile`, which builds the public online demo instead — that one
+# deliberately wipes all data on every container restart (DEMO_MODE=true, no volume);
+# this one expects LETTERING_DATA_DIR to be a persistent volume, see docker-compose.yml.
+#
+# node:20-slim (glibc), not alpine: sharp and @napi-rs/canvas (server dependencies)
+# ship prebuilt native binaries that target glibc most reliably.
+
+FROM node:20-slim AS build
+WORKDIR /app
+
+# Copy only the package manifests first so these installs are cached across builds
+# that only change source, not dependencies. Three separate, deterministic `npm ci`
+# calls (root/server/client) rather than one root `npm install` relying on the root
+# "postinstall" cascade — both work once postinstall is present (see package.json),
+# but `ci` pins exact versions from each package's own lockfile, which matters here:
+# root's own typescript (^7.0.2, for `tsc -p electron`) and server's (^5.6.3) are
+# deliberately different major versions, so anything that lets server end up resolving
+# a hoisted/ambient `tsc` instead of its own local one breaks its build outright
+# (confirmed: produces "TS5011: The common source directory of 'tsconfig.json' is
+# '..'"). Matches .github/workflows/release.yml's own build recipe.
+COPY package.json package-lock.json ./
+COPY server/package.json server/package-lock.json ./server/
+COPY client/package.json client/package-lock.json ./client/
+RUN npm ci
+RUN cd server && npm ci
+RUN cd client && npm ci
+
+COPY . .
+RUN npm run build
+
+FROM node:20-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=build /app/server/dist ./server/dist
+COPY server/package.json server/package-lock.json ./server/
+RUN cd server && npm ci --omit=dev
+
+COPY --from=build /app/client/dist ./client/dist
+
+ENV CLIENT_DIST_DIR=/app/client/dist
+# Accounts, the server's own auth/encryption secrets, the font/SVG/image library, and
+# page thumbnails all live under here — mount a named volume at this exact path (see
+# docker-compose.yml) so they survive a container recreation/image update.
+ENV LETTERING_DATA_DIR=/data
+ENV PORT=3001
+EXPOSE 3001
+VOLUME /data
+
+CMD ["node", "server/dist/server/src/index.js"]

@@ -759,10 +759,15 @@ export const useEditorStore = create<EditorState>((set, get) => {
       pushHistory(true);
       const groupId = uuid();
       const targetIds = new Set(targets.map((b) => b.id));
-      // The first selected bubble becomes the primary (carries the shared text/tail for
-      // the whole merged outline) — an arbitrary but stable choice; the user can always
-      // unmerge and re-merge in a different order if they wanted a different one.
-      const primaryId = targets[0].id;
+      // The primary carries the shared text/tail for the whole merged outline — only ITS
+      // OWN tail is drawn once merged (see drawBubbleBackground in bubbleBackground.ts), so
+      // picking an arbitrary member (the first selected, as this used to do unconditionally)
+      // could silently make an already-configured tail disappear if that member happened not
+      // to be the one carrying it. Prefer whichever selected member actually has a tail;
+      // still falls back to "first selected" when none do (or when more than one does and
+      // there's no way to know which the user meant to keep) — the user can always unmerge
+      // and re-merge in a different order to pick a different primary either way.
+      const primaryId = (targets.find((b) => b.tail) ?? targets[0]).id;
       set({
         layout: {
           ...layout,
