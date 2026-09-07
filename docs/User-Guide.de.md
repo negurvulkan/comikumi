@@ -24,6 +24,7 @@ vollständige technische Feature-Referenz siehe [FEATURES.de.md](FEATURES.de.md)
 15. [Konten, Rollen und Mehrbenutzerbetrieb](#15-konten-rollen-und-mehrbenutzerbetrieb)
 16. [Einstellungen und Anpassung](#16-einstellungen-und-anpassung)
 17. [Tastenkürzel](#17-tastenkürzel)
+18. [Webtoon-Workflow (Langstreifen)](#18-webtoon-workflow-langstreifen)
 
 ---
 
@@ -754,6 +755,40 @@ selbst, siehe [10.3](#103-ui-sprache-vs-projekt-sprachen).
 
 Tastenkürzel sind deaktiviert, solange ein Textfeld fokussiert ist (damit
 z. B. Strg+Z beim Tippen den Text-Editor betrifft, nicht das Layout).
+
+## 18. Webtoon-Workflow (Langstreifen)
+
+Für einen Band, der pro Episode ein durchgehender Langstreifen ist
+(typischerweise 800–1600px breit, 15.000–30.000+px hoch) statt normal
+proportionierter Seiten:
+
+1. **Band als Webtoon markieren.** In der Seitenübersicht „Bandtyp" auf
+   „Webtoon (Langstreifen)" stellen (oben, neben dem Bandnamen — ab Rolle
+   Letterer). Das ist eine Band-, keine Projekteinstellung — ein gedruckter
+   Manga und ein Webtoon können im selben Projekt nebeneinander existieren.
+2. **Lettern.** Die Editor-Canvas wechselt auf Fit-Width statt die ganze
+   Seite geschrumpft anzuzeigen — die Seite lädt nach oben gescrollt, das
+   Mausrad scrollt den Streifen, Strg/Cmd+Mausrad zoomt, und
+   Bild-auf/Bild-ab/Pos1/Ende springen um jeweils eine Viewport-Höhe. Erst das
+   macht das Lettern eines derart hohen Streifens überhaupt praktikabel.
+3. **Prüfen.** Die Read/Review-Ansicht bietet einen „Streifen"-Modus (Standard
+   für Webtoon-Bände), der durchgehend scrollt und am oberen/unteren Rand
+   automatisch zur nächsten/vorherigen Episode springt — „Vergleich" (zwei
+   Sprachen desselben Streifens nebeneinander) funktioniert weiterhin;
+   „Doppelseite" ist nicht sinnvoll und wird nicht angeboten.
+4. **Exportieren.** Das Export-Panel (Seite → Export → Bild…) bietet für einen
+   Webtoon-Band nur PNG/JPEG/WebP — Einheitsformat, Endformat, Druck,
+   Vektor-PDF und PSD sind ausgeblendet, da keins davon für einen Langstreifen
+   sinnvoll ist. Über „In Segmente aufteilen" lässt sich der Streifen in
+   mehrere hochladefertige Bilder schneiden, passend zu einer Ziel-Plattform
+   (Vorlage für Webtoon Canvas/Tapas/Lezhin, oder eine eigene Max-/Min-Höhe) —
+   jeder Schnitt umgeht dabei nach Möglichkeit Bubbles und Panel-Grenzen,
+   benannt `<Seite>_s01`, `<Seite>_s02`, … Ein CBZ-Export packt die Segmente
+   einer gesliceten Seite als separate, korrekt sortierte Archivseiten unter
+   demselben Kapitel wieder ein.
+
+Die vollständige technische Referenz steht im
+[Webtoon-Unterstützung-Abschnitt von FEATURES.de.md](FEATURES.de.md#webtoon-unterstützung).
 
 ---
 

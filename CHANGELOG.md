@@ -4,6 +4,44 @@ All notable changes to ComiKumi are documented in this file. Entries summarize
 capabilities reached at each version rather than a per-commit history — the
 project didn't tag intermediate versions before 0.6.0.
 
+## [0.9.0] — 2026-09-07
+
+### Webtoon (long-strip) support
+- New per-volume "Volume type" toggle — a volume can be marked "Comic pages"
+  (default) or "Webtoon (long strip)" independently of every other volume in
+  the project.
+- Editor canvas: a webtoon volume gets a fit-width, top-aligned, freely
+  scrollable canvas instead of the whole page shrunk to fit both axes —
+  plain mouse wheel scrolls, Ctrl/Cmd+wheel zooms, PageUp/PageDown/Home/End
+  jump by a viewport's worth. Makes lettering a realistic 15,000-30,000px
+  strip workable at all, where the previous contain-fit scaled it down to a
+  fraction of a percent.
+- Read/Review screen: a new "Strip" mode (default for webtoon volumes)
+  scrolls continuously and auto-advances to the next/previous page at the
+  top/bottom edge, so a multi-episode webtoon reads as one continuous scroll.
+- Export panel: hides formats that don't apply to a long strip (Uniform
+  Format, Final Format, Print, Vector PDF, PSD) in webtoon mode; a new
+  resolution-safety check catches a page/resolution combination that would
+  exceed the browser's canvas size limit ahead of time, with a clear
+  translated error, instead of the export failing opaquely partway through —
+  this also fixes that same failure mode for any sufficiently tall page
+  outside webtoon mode. The server independently rejects an oversized
+  Vector-PDF or PSD export request regardless of what the client shows.
+- Export slicing: "Split into segments" cuts a long strip into multiple
+  upload-ready images sized for a target platform (Webtoon Canvas/Tapas/
+  Lezhin presets, or a custom max/min height), avoiding cuts through bubbles/
+  curved text/placed images wherever possible and preferring existing panel
+  gaps. A CBZ export packs a sliced page's segments back in as separate,
+  correctly-ordered archive pages grouped under their original page and
+  chapter bookmark; `<Manga>` in the exported ComicInfo.xml is forced to "No"
+  for a webtoon volume unless explicitly overridden.
+- Auto-Bubbles detection automatically tiles into overlapping horizontal
+  bands for a very tall or very wide page (gated on the page's own
+  proportions, not the webtoon toggle) instead of squashing the whole page
+  down to a size where text becomes undetectable.
+- Thumbnails get a height cap (in addition to the existing width cap) so an
+  extreme aspect ratio doesn't blow up the page-grid layout.
+
 ## [0.8.5] — 2026-09-05
 
 *(0.8.1–0.8.4 were internal version bumps while the automated release pipeline

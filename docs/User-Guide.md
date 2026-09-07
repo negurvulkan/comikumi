@@ -24,6 +24,7 @@ technical feature reference, see [FEATURES.md](FEATURES.md).*
 15. [Accounts, Roles, and Multi-User Operation](#15-accounts-roles-and-multi-user-operation)
 16. [Settings and Customization](#16-settings-and-customization)
 17. [Keyboard Shortcuts](#17-keyboard-shortcuts)
+18. [Webtoon (Long-Strip) Workflow](#18-webtoon-long-strip-workflow)
 
 ---
 
@@ -725,6 +726,39 @@ itself, see [10.3](#103-ui-language-vs-project-languages).
 
 Keyboard shortcuts are disabled while a text field is focused (so, for
 example, Ctrl+Z while typing affects the text editor, not the layout).
+
+## 18. Webtoon (Long-Strip) Workflow
+
+For a volume that's one continuous vertical-scroll strip per episode
+(typically 800–1600px wide, 15,000–30,000+px tall) rather than
+normally-proportioned pages:
+
+1. **Mark the volume as a webtoon.** On the page overview, set "Volume type"
+   to "Webtoon (long strip)" (top of the page, next to the volume title —
+   letterer role or higher). This is per-volume, not per-project, so a
+   printed manga and a webtoon can live side by side in the same project.
+2. **Letter it.** The editor canvas switches to fit-width instead of shrinking
+   the whole page to fit — the page loads scrolled to the top, plain mouse
+   wheel scrolls the strip, Ctrl/Cmd+wheel zooms, and PageUp/PageDown/Home/End
+   jump by a viewport's worth. This is what actually makes lettering a strip
+   this tall workable at all.
+3. **Review it.** The Read/Review screen offers a "Strip" mode (the default
+   for a webtoon volume) that scrolls continuously and automatically advances
+   to the next/previous episode at the top/bottom edge — "Compare" (two
+   languages of the same strip side by side) still works too; "Spread"
+   doesn't apply and isn't offered.
+4. **Export it.** The export panel (Page → Export → Image…) only offers
+   PNG/JPEG/WebP for a webtoon volume — Uniform Format, Final Format, Print,
+   Vector PDF, and PSD are hidden, since none of them make sense for a long
+   strip. Turn on "Split into segments" to cut the strip into multiple
+   upload-ready images sized for a target platform (a Webtoon Canvas/Tapas/
+   Lezhin preset, or your own max/min height) — each cut avoids slicing
+   through a bubble or panel wherever possible, named `<page>_s01`,
+   `<page>_s02`, … A CBZ export packs a sliced page's segments back in as
+   separate, correctly-ordered archive pages under the same chapter.
+
+See [FEATURES.md's Webtoon Support section](FEATURES.md#webtoon-support) for
+the full technical reference.
 
 ---
 
