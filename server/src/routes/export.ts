@@ -5,7 +5,7 @@ import { createReadStream } from "node:fs";
 import multer from "multer";
 import sharp from "sharp";
 import { findVolume, listPages, readPageMeta, PAGE_IMAGE_EXTENSIONS } from "../lib/projectScanner.js";
-import { resolveChapters } from "../../../shared/src/pageMeta.js";
+import { isWebtoonVolume, resolveChapters } from "../../../shared/src/pageMeta.js";
 import { languageFolderName, isSafeFileName, isSafeFolderPath } from "../lib/paths.js";
 import { readPresets, readSettings, getCurrentProjectInfo } from "../lib/projectStore.js";
 import { ZipArchive } from "archiver";
@@ -13,6 +13,7 @@ import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireProjectRole } from "../lib/auth.js";
 import { PageLayoutSchema } from "../../../shared/src/layoutSchema.js";
 import { CbzMetadataSchema, type CbzMetadata } from "../../../shared/src/cbz.js";
+import { parseSliceFileName } from "../../../shared/src/webtoonSlicing.js";
 import { buildVectorPdfPage } from "../lib/vectorPdf/buildPdfPage.js";
 import { buildLayeredPsd } from "../lib/psdExport.js";
 import { resolveImageFilePath } from "../lib/imageResolver.js";
@@ -25,6 +26,29 @@ const requireLetterer = requireProjectRole("letterer");
 /** Fixed print resolution tag (metadata only — see export-print route doc comment for
  * why this never resamples pixels). 300dpi is the standard comic/manga print convention. */
 const PRINT_DPI = 300;
+
+// Batch W — Webtoon support: server-side size guards, independent of any client-side UI
+// hiding (ExportPanel.tsx) — the request body carries the raw layout regardless of what
+// the UI currently shows, so these must hold on their own. Both routes below render a
+// FULL page onto an in-memory raster canvas per element (see buildPdfPage.ts/psdExport.ts's
+// own doc comments) — for a realistic webtoon strip that's either an invalid PDF (past the
+// format's own page-size ceiling) or a genuine multi-GB allocation, not just a slow export.
+
+/** buildPdfPage.ts's PDF_DPI (300) turned into px, against the PDF spec's own 14,400pt
+ * per-side page-size ceiling — kept in sync with that constant by hand (duplicating the
+ * one PDF_DPI number here isn't worth importing across the lib/route boundary for). */
+const MAX_PDF_PAGE_PX = 60_000; // 14400pt / (72/300)
+
+/** PSD's own container format ceiling (above this is PSB territory, a different format
+ * pdsExport.ts doesn't write) — independent of the memory-budget guard below. */
+const MAX_PSD_PAGE_PX = 30_000;
+
+/** width * height * elementCount (background + retouch + every bubble/curved text/placed
+ * image — each gets its own full-page RGBA canvas, see psdExport.ts) budget, chosen so the
+ * resulting `elementCount * width * height * 4` bytes of canvas memory stays under ~2GB —
+ * comfortably below what typically OOMs a Node process, with real headroom left for
+ * everything else running at the same time. */
+const MAX_PSD_COMPLEXITY_PX = 500_000_000;
 
 /** Extensions the raster "/export" route accepts for the web-image path (format/quality/
  * resolution are all decided client-side when rendering the blob — this only guards the
@@ -153,6 +177,11 @@ exportRouter.post(
       return;
     }
 
+    if (parsed.data.imageWidth > MAX_PDF_PAGE_PX || parsed.data.imageHeight > MAX_PDF_PAGE_PX) {
+      res.status(400).json({ error: "pdf_page_too_large", params: { maxPx: String(MAX_PDF_PAGE_PX) } });
+      return;
+    }
+
     const presets = await readPresets(req.activeProject);
     let result: { bytes: Buffer; pdfxStamped: boolean };
     try {
@@ -213,6 +242,19 @@ exportRouter.post(
     const pageInfo = pages.find((p) => p.page === page);
     if (!pageInfo) {
       res.status(404).json({ error: "page_not_found" });
+      return;
+    }
+
+    if (parsed.data.imageWidth > MAX_PSD_PAGE_PX || parsed.data.imageHeight > MAX_PSD_PAGE_PX) {
+      res.status(400).json({ error: "psd_page_too_large", params: { maxPx: String(MAX_PSD_PAGE_PX) } });
+      return;
+    }
+    // +2 for the background + retouch layers every export always writes (see
+    // psdExport.ts) — every bubble, curved text and placed image below also gets its own
+    // full-page canvas regardless of how little of the page it actually covers.
+    const elementCount = 2 + parsed.data.bubbles.length + parsed.data.curvedTexts.length + parsed.data.images.length;
+    if (parsed.data.imageWidth * parsed.data.imageHeight * elementCount > MAX_PSD_COMPLEXITY_PX) {
+      res.status(400).json({ error: "psd_page_too_complex" });
       return;
     }
 
@@ -504,12 +546,31 @@ exportRouter.post(
       res.status(404).json({ error: "export_directory_not_found" });
       return;
     }
-    const imagesByPage = new Map<string, string>();
+    // Batch W — Webtoon support: a sliced page (see shared/src/webtoonSlicing.ts) writes
+    // MULTIPLE files — "page_01_s01.png", "page_01_s02.png", … — that all belong to the
+    // same page id. Grouping by page id (not a strict 1:1 map) is what keeps them from
+    // silently vanishing from the archive: they don't match any page id on their own, so
+    // a strict page-id lookup would just filter them out entirely.
+    const imagesByPage = new Map<string, string[]>();
     for (const entry of entries) {
       if (!entry.isFile()) continue;
       const ext = path.extname(entry.name).toLowerCase();
       if (!PAGE_IMAGE_EXTENSIONS.has(ext)) continue;
-      imagesByPage.set(path.basename(entry.name, ext), entry.name);
+      const baseName = path.basename(entry.name, ext);
+      const sliceInfo = parseSliceFileName(baseName);
+      const pageId = sliceInfo ? sliceInfo.pageId : baseName;
+      const forPage = imagesByPage.get(pageId) ?? [];
+      forPage.push(entry.name);
+      imagesByPage.set(pageId, forPage);
+    }
+    // Natural slice order within a page — plain filenames (the non-sliced case) always
+    // have exactly one entry, so this sort is a no-op for them.
+    for (const files of imagesByPage.values()) {
+      files.sort((a, b) => {
+        const ia = parseSliceFileName(path.basename(a, path.extname(a)))?.index ?? 0;
+        const ib = parseSliceFileName(path.basename(b, path.extname(b)))?.index ?? 0;
+        return ia - ib;
+      });
     }
     // Optional page-subset filter (e.g. "just this chapter" from ExportViewer.tsx,
     // resolved client-side via shared/src/pageMeta.ts's resolveChapters()). Unrelated
@@ -519,7 +580,15 @@ exportRouter.post(
     let pages = await listPages(volume);
     if (requestedPageIds) pages = pages.filter((p) => requestedPageIds.has(p.page));
     const orderedPages = pages.filter((p) => imagesByPage.has(p.page));
-    const orderedFiles = orderedPages.map((p) => imagesByPage.get(p.page)!);
+    // Flattens each page's (possibly multiple) segment files, in page order — the index
+    // of each page's FIRST segment in this flattened list is what a chapter Bookmark
+    // below must point at, not the page's own index in `orderedPages`.
+    const pageStartIndex = new Map<string, number>();
+    const orderedFiles: string[] = [];
+    for (const p of orderedPages) {
+      pageStartIndex.set(p.page, orderedFiles.length);
+      orderedFiles.push(...imagesByPage.get(p.page)!);
+    }
     if (orderedFiles.length === 0) {
       res.status(404).json({ error: "no_exported_images_found" });
       return;
@@ -536,18 +605,27 @@ exportRouter.post(
     const bookmarkByIndex = new Map<number, string>();
     for (const { chapter, pageIds } of resolvedChapters) {
       const firstPageId = pageIds[0];
-      const index = orderedPages.findIndex((p) => p.page === firstPageId);
-      if (index !== -1) bookmarkByIndex.set(index, chapter.name);
+      const index = pageStartIndex.get(firstPageId);
+      if (index !== undefined) bookmarkByIndex.set(index, chapter.name);
     }
 
     const projectInfo = await getCurrentProjectInfo(req.activeProject);
+    // Batch W — Webtoon support: <Manga> otherwise always derives from the project's
+    // readingDirection (right below) — meaningless for a webtoon volume (a long-strip
+    // scroll comic isn't page-turned in either direction). Still fully overridable via
+    // an explicit `metadata.manga`, same as the readingDirection-derived case.
     const manga =
       metadata.manga && metadata.manga !== "Unknown"
         ? metadata.manga
-        : projectInfo?.readingDirection === "rtl"
-          ? "YesAndRightToLeft"
-          : "Yes";
+        : isWebtoonVolume(pageMeta)
+          ? "No"
+          : projectInfo?.readingDirection === "rtl"
+            ? "YesAndRightToLeft"
+            : "Yes";
     const title = metadata.title || volume.bookFolderName;
+    // orderedFiles.length is already the flattened (segments-included) count — correct as
+    // a CBZ reader's own PageCount, since every archive entry really is one "page" to it.
+    // Don't "simplify" this back to orderedPages.length.
     const comicInfoXml = buildComicInfoXml(metadata, title, orderedFiles.length, manga, bookmarkByIndex);
 
     const cbzFileNameSuffix = requestedPageIds ? `${folderSuffix}_chapter` : folderSuffix;

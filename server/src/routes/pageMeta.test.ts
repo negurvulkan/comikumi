@@ -27,7 +27,7 @@ describe("GET /:id/pages/meta", () => {
   it("returns an empty document and a NEW_DOCUMENT_ETAG when nothing was saved yet", async () => {
     const res = await api.get(`/api/volumes/${VOLUME_ID}/pages/meta`);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ chapters: [], pages: {} });
+    expect(res.body).toEqual({ chapters: [], pages: {}, format: "page" });
     expect(res.headers["etag"]).toBe('"new"');
   });
 });
@@ -49,6 +49,7 @@ describe("PUT /:id/pages/meta", () => {
     const doc = {
       chapters: [{ id: "ch1", name: "Kapitel 1" }],
       pages: { page_01: { type: "cover" as const }, page_02: { type: "chapterInterstitial" as const, chapterId: "ch1" } },
+      format: "page" as const,
     };
     const put = await api.put(`/api/volumes/${VOLUME_ID}/pages/meta`).send(doc);
     expect(put.status).toBe(200);
@@ -57,14 +58,34 @@ describe("PUT /:id/pages/meta", () => {
     const get = await api.get(`/api/volumes/${VOLUME_ID}/pages/meta`);
     expect(get.body).toEqual(doc);
   });
+
+  it("saves and round-trips format: 'webtoon'", async () => {
+    const doc = { chapters: [], pages: {}, format: "webtoon" as const };
+    const put = await api.put(`/api/volumes/${VOLUME_ID}/pages/meta`).send(doc);
+    expect(put.status).toBe(200);
+
+    const get = await api.get(`/api/volumes/${VOLUME_ID}/pages/meta`);
+    expect(get.body.format).toBe("webtoon");
+  });
+
+  it("defaults format to 'page' when omitted from the saved body", async () => {
+    const put = await api.put(`/api/volumes/${VOLUME_ID}/pages/meta`).send({ chapters: [], pages: {} });
+    expect(put.status).toBe(200);
+
+    const get = await api.get(`/api/volumes/${VOLUME_ID}/pages/meta`);
+    expect(get.body.format).toBe("page");
+  });
 });
 
 describe("optimistic concurrency (ETag / If-Match)", () => {
   it("PUT with a stale If-Match 409s instead of overwriting a newer save", async () => {
-    const first = await api.get(`/api/volumes/${VOLUME_ID}/pages/meta`);
-    const staleEtag = first.headers["etag"] as string;
+    // Self-contained baseline (not "whatever the previous test happened to leave
+    // behind") — otherSave below must write something that actually differs from
+    // this, or its write is a no-op and the ETag never changes, defeating the test.
+    const baseline = await api.put(`/api/volumes/${VOLUME_ID}/pages/meta`).send({ chapters: [], pages: {} });
+    const staleEtag = baseline.headers["etag"] as string;
 
-    const otherSave = await api.put(`/api/volumes/${VOLUME_ID}/pages/meta`).send({ chapters: [], pages: {} });
+    const otherSave = await api.put(`/api/volumes/${VOLUME_ID}/pages/meta`).send({ chapters: [{ id: "distinct", name: "Distinct" }], pages: {} });
     expect(otherSave.status).toBe(200);
 
     const conflicting = await api

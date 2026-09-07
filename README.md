@@ -64,6 +64,12 @@ below) — that account lives on your own server, not a central ComiKumi service
   plain raster/paper layer in a known, verified pixel format, falling back to CSP's own
   embedded flattened-canvas preview (capped at roughly half the real canvas's
   resolution, but always complete) for anything else.
+- **Webtoon (long-strip) support** — mark a volume "Webtoon" and the editor switches to a
+  fit-width, scrollable canvas instead of shrinking a 20,000px-tall strip down to an
+  unusable thumbnail, the Reader gets a continuous-scroll strip mode that auto-advances
+  across episode boundaries, and the export panel hides formats that don't apply to long
+  strips while guarding against the canvas-size limits a very tall page can hit. See
+  [`docs/FEATURES.md`](docs/FEATURES.md#webtoon-support).
 - **Auto-Bubbles (detection + OCR)** — a toolbar tool finds speech-bubble regions on the
   page and reads the text inside them automatically, entirely client-side (WebGPU with
   a WASM fallback, no server round-trip). Every result goes through a review panel

@@ -12,6 +12,7 @@ snapshot — please keep it in sync with larger changes.
 - [Multi-User Operation](#multi-user-operation)
 - [UI Language](#ui-language)
 - [Volumes & Pages](#volumes--pages)
+- [Webtoon Support](#webtoon-support)
 - [Chapters](#chapters)
 - [Language Management](#language-management)
 - [Character Management](#character-management)
@@ -270,6 +271,56 @@ remains open; see `docs/Professional-Workflow-Gaps.md`.
   open settings) as well as a menu bar with import/export actions (see
   [Export & Import](#export--import)), a "Report for volume" entry, and a
   status/message bar for background operations.
+
+## Webtoon Support
+
+- **Volume format toggle**: each volume can be marked "Comic pages" (default) or
+  "Webtoon (long strip)" from a dropdown at the top of the page overview
+  (letterer role or higher). It's a per-volume setting, not per-project — one
+  project can hold both a printed manga and a webtoon side by side. The volume
+  list shows a small badge on any volume set to webtoon format.
+- **Editor — fit-width canvas**: a webtoon page (typically one very tall image
+  per episode, e.g. 800×20,000px) opens fit to the viewport's width instead of
+  the whole page shrunk to fit — the normal "contain" fit that a realistic long
+  strip would otherwise squeeze down to an unusable ~0.03× scale. The page
+  loads scrolled to the top, mouse wheel scrolls the strip (Ctrl/Cmd+wheel
+  still zooms), and PageUp/PageDown/Home/End jump by a viewport's worth at a
+  time. Dragging is clamped so the page can't be scrolled fully off-screen.
+- **Reader — continuous strip mode**: the Read/Review view offers a "Strip"
+  mode (default for webtoon volumes) alongside Single/Compare — Spread is
+  hidden, since two long strips side by side isn't meaningful. Scrolling past
+  the very top or bottom of the current episode automatically advances to the
+  previous/next page, so a multi-episode webtoon reads as one continuous
+  scroll instead of stopping at every page boundary.
+- **Export safeguards**: browsers cap how large a single canvas can be —
+  rendering a tall page at a high resolution multiplier can silently exceed
+  that limit. The export panel now catches this ahead of time with a clear,
+  translated error naming the affected page and the maximum resolution factor
+  it can safely use, instead of the export failing with an opaque error partway
+  through. In webtoon mode, formats built around normally-proportioned pages
+  (Uniform Format, Final Format, Print, Vector PDF, PSD) are hidden — each is
+  either meaningless for a long strip or a real memory/format-limit risk (see
+  the size guards below) — leaving PNG/JPEG/WebP export available. The server
+  independently rejects a Vector-PDF or PSD export whose page exceeds the
+  format's own safe size (and, for PSD, its per-element rendering cost) with a
+  translated error, regardless of what the client currently shows.
+- **Export slicing**: in webtoon mode, the PNG export panel offers "Split into
+  segments" — cuts a long strip into multiple upload-ready images sized for a
+  target platform (Webtoon Canvas, Tapas, Lezhin, or a custom max/min height),
+  named `<page>_s01`, `<page>_s02`, … Each cut avoids slicing through a bubble,
+  curved text, or placed image wherever possible (preferring an existing panel
+  gap), and prefers not to fail outright — an unavoidable cut through an
+  element still completes, with a warning shown after export instead of an
+  error. A sliced page's segments are packed into the CBZ export as separate,
+  correctly-ordered archive pages, grouped back under their original page for
+  chapter bookmarks.
+- **Tiled Auto-Bubbles detection**: detection automatically splits a very tall
+  or very wide page into overlapping horizontal bands, each analyzed at full
+  detail and merged back into one result — the normal single-pass detection a
+  regular page uses would otherwise squash a long strip down so far that text
+  becomes unreadable to the detector. This kicks in based on the page's own
+  proportions (not the volume's webtoon toggle), so it also helps a single
+  unusually tall page or panel outside webtoon mode.
 
 ## Chapters
 

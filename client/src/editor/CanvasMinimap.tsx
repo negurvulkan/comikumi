@@ -19,6 +19,15 @@ interface Props {
 
 const MAX_WIDTH_PX = 160;
 const MAX_HEIGHT_PX = 120;
+// Batch W — Webtoon support: MAX_WIDTH_PX/MAX_HEIGHT_PX alone would collapse a 1:25
+// aspect-ratio strip to a ~5px sliver (fit by the SMALLER of the two ratios, i.e. by
+// height). A dedicated tall-and-narrow box, picked only when the page itself is
+// unusually tall, keeps the map actually readable without changing anything for a
+// normal-proportioned page.
+const TALL_PAGE_ASPECT_THRESHOLD = 2.5;
+const MAX_WIDTH_PX_TALL = 40;
+const MAX_HEIGHT_PX_TALL = 420;
+const MIN_WIDTH_PX_TALL = 24;
 // Below this many elements, the full-size canvas already shows everything at once —
 // a minimap would just be a redundant tiny copy of what's already fully on screen
 // (see the TODO's own "bei Seiten mit vielen Panels/Bubbles" framing).
@@ -61,7 +70,10 @@ export function CanvasMinimap({ imageWidth, imageHeight, bubbles, panels, visibl
   const { t } = useTranslation();
   if (imageWidth <= 0 || imageHeight <= 0 || bubbles.length + panels.length < MIN_ELEMENT_COUNT) return null;
 
-  const mapScale = Math.min(MAX_WIDTH_PX / imageWidth, MAX_HEIGHT_PX / imageHeight);
+  const isTallPage = imageHeight / Math.max(1, imageWidth) >= TALL_PAGE_ASPECT_THRESHOLD;
+  const mapScale = isTallPage
+    ? Math.max(MIN_WIDTH_PX_TALL / imageWidth, Math.min(MAX_WIDTH_PX_TALL / imageWidth, MAX_HEIGHT_PX_TALL / imageHeight))
+    : Math.min(MAX_WIDTH_PX / imageWidth, MAX_HEIGHT_PX / imageHeight);
   const mapWidth = imageWidth * mapScale;
   const mapHeight = imageHeight * mapScale;
 

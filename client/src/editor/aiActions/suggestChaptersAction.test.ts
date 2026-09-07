@@ -17,7 +17,7 @@ describe("buildSuggestChaptersPrompt", () => {
   });
 
   it("lists already-existing chapters so the model doesn't re-propose them", () => {
-    const prompt = buildSuggestChaptersPrompt(pageNames, { chapters: [{ id: "c1", name: "Kapitel 1" }], pages: {} });
+    const prompt = buildSuggestChaptersPrompt(pageNames, { chapters: [{ id: "c1", name: "Kapitel 1" }], pages: {}, format: "page" });
     expect(prompt).toContain("Kapitel 1");
   });
 });

@@ -14,7 +14,7 @@ describe("findPageTypeCandidates", () => {
   });
 
   it("excludes a page that's already tagged as something other than story", () => {
-    const meta = { chapters: [], pages: { cover: { type: "cover" as const } } };
+    const meta = { chapters: [], pages: { cover: { type: "cover" as const } }, format: "page" as const };
     expect(findPageTypeCandidates(pageNames, meta).map((c) => c.page)).toEqual(["page_01", "page_02"]);
   });
 });

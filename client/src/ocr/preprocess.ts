@@ -8,8 +8,10 @@ import { computePreprocessInfo, type Box, type PreprocessInfo } from "./detectio
  * that's the OCR pipeline's own job (transformers.js's image processor), not this
  * detector-specific preprocessing. Clamps to the bitmap's own bounds defensively (a
  * region's `unclipBox` expansion is already clamped upstream, but a caller-supplied
- * region isn't guaranteed to be). Returns `null` for a degenerate (zero-area) region. */
-export function cropToCanvas(bitmap: ImageBitmap, region: Box): OffscreenCanvas | null {
+ * region isn't guaranteed to be). Returns `null` for a degenerate (zero-area) region.
+ * Only needs `x`/`y`/`width`/`height` — accepts a plain rect (e.g. tiling.ts's `Band`,
+ * which has no `confidence`) as well as a detector `Box`. */
+export function cropToCanvas(bitmap: ImageBitmap, region: Pick<Box, "x" | "y" | "width" | "height">): OffscreenCanvas | null {
   const x = Math.max(0, Math.round(region.x));
   const y = Math.max(0, Math.round(region.y));
   const width = Math.min(bitmap.width - x, Math.round(region.width));

@@ -107,6 +107,9 @@
     "print_export_failed": "无法创建印刷文件：{{reason}}",
     "vector_pdf_export_failed": "无法创建矢量 PDF：{{reason}}",
     "psd_export_failed": "无法创建分层 PSD：{{reason}}",
+    "pdf_page_too_large": "此页面对矢量 PDF 导出而言太大（300dpi 下每边最大 {{maxPx}}px）。",
+    "psd_page_too_large": "此页面对 PSD 导出而言太大（每边最大 {{maxPx}}px）。",
+    "psd_page_too_complex": "此页面对 PSD 导出而言过于复杂（相对于该页面尺寸图层过多）——PSD 导出所需内存过大。",
     "invalid_character": "角色数据无效。",
     "character_not_found": "未找到该角色。",
     "invalid_glossary_entry": "术语表条目无效。",
@@ -328,6 +331,8 @@
     "noLanguages": "无",
     "statVolumes": "卷数",
     "statVolumesTooltip": "此项目中的卷数",
+    "webtoonBadge": "条漫",
+    "webtoonBadgeTooltip": "此卷已设置为条漫（长条）格式",
     "statPages": "页数",
     "statPagesTooltip": "所有卷的扫描页面总数",
     "statPanels": "分格",
@@ -337,6 +342,9 @@
     "statBubblesByLanguageTooltip": "含有{{language}}文本的对话框"
   },
   "pageGrid": {
+    "volumeFormatLabel": "卷类型：",
+    "volumeFormatPage": "漫画页面",
+    "volumeFormatWebtoon": "条漫（长条）",
     "menuPageLabel": "页面",
     "menuImportLabel": "导入",
     "menuImportZip": "JSON（ZIP）",
@@ -971,6 +979,11 @@
     "formatVectorPdfHint": "对话框文字将变为真正的、可选中/可复制的PDF矢量文字（而非像素图像）——矩形/椭圆/曲线文字精确还原，四边形对话框采用仿射近似（真正的透视在PDF格式本身中技术上是不可能的）。竖排文字（纵书）将在后续阶段支持。若服务器未配置ICC描述文件，该文件不是经认证的PDF/X（导出后请查看提示信息）。",
     "pdfxVersionLabel": "PDF/X 版本",
     "formatPsd": "PSD（图层）",
+    "webtoonFormatsHidden": "在条漫卷中已隐藏：这些格式面向比例正常的漫画页面（统一格式、成品尺寸、印刷、矢量 PDF、PSD）——对长条页要么没有意义，要么存在技术风险（详见文档）。",
+    "sliceEnabled": "拆分为多个分段（用于条漫平台）",
+    "slicePresetLabel": "平台预设",
+    "sliceMaxHeightLabel": "每段最大高度（像素）",
+    "sliceMinHeightLabel": "每段最小高度（像素）",
     "formatPsdHint": "导出分层的Photoshop文件：背景／修图-切割面板-图片／每个对话框和曲线文字各一层。每个图层都是可以显示/隐藏、移动、遮罩的栅格图像。",
     "psdEditableTextLayersLabel": "可编辑文字图层（实验性）",
     "psdEditableTextLayersHint": "还会尝试为符合条件的对话框（简单矩形/椭圆、横排、纯色、未合并）附加一个可用Photoshop文字工具编辑的真实文字对象——其余部分照旧保持栅格图像。此时该对话框会拆分为两个图层（\"……（背景）\"／\"……（文字）\"），因为Photoshop的文字图层无法同时承载对话框的描边/填充。首次打开文件时，Photoshop会在该图层上提示「更新」，点击更新后文字即可编辑。",
@@ -984,7 +997,11 @@
     "progress": "已导出 {{count}} 个…",
     "noneFound": "未找到匹配的页面。",
     "done": "已完成 {{count}} 个页面语言导出。",
-    "pdfxNotStamped": "提示：至少有一个文件不是经认证的PDF/X（服务器未配置ICC描述文件）——文字为真正的矢量文字，但不正式符合PDF/X规范。"
+    "pdfxNotStamped": "提示：至少有一个文件不是经认证的PDF/X（服务器未配置ICC描述文件）——文字为真正的矢量文字，但不正式符合PDF/X规范。",
+    "sliceWarnings": "提示：{{count}} 处切割线穿过了某个元素（未找到干净的切割点）。",
+    "errors": {
+      "resolutionTooLarge": "第 {{page}} 页：所选分辨率对该页面尺寸而言超出浏览器限制。此页面的最大倍数：{{maxScale}}x。"
+    }
   },
   "normalizePreview": {
     "title": "需要确认的页面",
@@ -1141,6 +1158,8 @@
     "viewModeSingle": "单页",
     "viewModeSingleShort": "1",
     "viewModeSpread": "跨页",
+    "viewModeStrip": "连续滚动(条漫)",
+    "viewModeStripShort": "S",
     "viewModeCompare": "比较页面…",
     "comparePickerTitle": "比较页面",
     "comparePickerHint": "最多选择 {{max}} 个页面并排显示。",

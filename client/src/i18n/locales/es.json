@@ -107,6 +107,9 @@
     "print_export_failed": "No se pudo crear el archivo de impresión: {{reason}}",
     "vector_pdf_export_failed": "No se pudo crear el PDF vectorial: {{reason}}",
     "psd_export_failed": "No se pudo crear el PSD por capas: {{reason}}",
+    "pdf_page_too_large": "Esta página es demasiado grande para una exportación PDF vectorial (máx. {{maxPx}}px por lado a 300dpi).",
+    "psd_page_too_large": "Esta página es demasiado grande para una exportación PSD (máx. {{maxPx}}px por lado).",
+    "psd_page_too_complex": "Esta página es demasiado compleja para una exportación PSD (demasiadas capas para este tamaño de página) — la exportación PSD necesitaría demasiada memoria.",
     "invalid_character": "Datos de personaje no válidos.",
     "character_not_found": "Personaje no encontrado.",
     "invalid_glossary_entry": "Entrada de glosario no válida.",
@@ -328,6 +331,8 @@
     "noLanguages": "ninguno",
     "statVolumes": "Tomos",
     "statVolumesTooltip": "Número de tomos en este proyecto",
+    "webtoonBadge": "Webtoon",
+    "webtoonBadgeTooltip": "Este tomo está configurado en formato Webtoon (tira larga)",
     "statPages": "Páginas",
     "statPagesTooltip": "Total de páginas escaneadas en todos los tomos",
     "statPanels": "Viñetas",
@@ -337,6 +342,9 @@
     "statBubblesByLanguageTooltip": "Globos con texto en {{language}}"
   },
   "pageGrid": {
+    "volumeFormatLabel": "Tipo de volumen:",
+    "volumeFormatPage": "Páginas de cómic",
+    "volumeFormatWebtoon": "Webtoon (tira larga)",
     "menuPageLabel": "Página",
     "menuImportLabel": "Importar",
     "menuImportZip": "JSON (ZIP)",
@@ -980,6 +988,11 @@
     "formatVectorPdfHint": "El texto de las burbujas se convierte en texto vectorial real de PDF, seleccionable/copiable (no un mapa de píxeles) — texto rectangular/oval/curvo exacto, burbujas en cuadrilátero mediante una aproximación afín (la perspectiva real es técnicamente imposible en el propio formato PDF). El texto vertical (tategaki) llegará más adelante. Sin un perfil ICC configurado, el archivo no es un PDF/X certificado (ver el informe tras la exportación).",
     "pdfxVersionLabel": "Variante PDF/X",
     "formatPsd": "PSD (capas)",
+    "webtoonFormatsHidden": "Ocultos para volúmenes webtoon: estos formatos están pensados para páginas de cómic con proporciones normales (uniforme, formato final, impresión, PDF vectorial, PSD) — sin sentido o técnicamente arriesgados para una tira larga (ver la documentación).",
+    "sliceEnabled": "Dividir en segmentos (para plataformas de webtoon)",
+    "slicePresetLabel": "Plantilla de plataforma",
+    "sliceMaxHeightLabel": "Altura máx. por segmento (px)",
+    "sliceMinHeightLabel": "Altura mín. por segmento (px)",
     "formatPsdHint": "Exporta un archivo de Photoshop por capas: fondo / retoques-recortes-imágenes / una capa por cada bocadillo y texto curvo. Cada capa es una imagen rasterizada que se puede ocultar/mover/enmascarar.",
     "psdEditableTextLayersLabel": "Capas de texto editables (experimental)",
     "psdEditableTextLayersHint": "Intenta además añadir un objeto de texto real, editable con la herramienta de texto de Photoshop, a los bocadillos compatibles (rectángulo/óvalo simple, horizontal, color sólido, sin fusionar) — todo lo demás sigue siendo una imagen rasterizada, como siempre. Un bocadillo así se convierte en dos capas (\"… (Fondo)\" / \"… (Texto)\"), ya que una capa de texto de Photoshop no puede llevar también el contorno/relleno del bocadillo. Photoshop mostrará un aviso de \"Actualizar\" la primera vez que abras el archivo; haz clic en Actualizar para que el texto sea editable.",
@@ -993,7 +1006,12 @@
     "progress": "{{count}} exportado(s)…",
     "noneFound": "No se encontraron páginas coincidentes.",
     "done": "{{count}} exportación(es) de página/idioma completada(s).",
-    "pdfxNotStamped": "Nota: al menos un archivo no es un PDF/X certificado (no hay perfil ICC configurado en el servidor) — texto vectorial real, pero no formalmente conforme con PDF/X."
+    "pdfxNotStamped": "Nota: al menos un archivo no es un PDF/X certificado (no hay perfil ICC configurado en el servidor) — texto vectorial real, pero no formalmente conforme con PDF/X.",
+    "sliceWarnings_one": "Nota: {{count}} corte tuvo que atravesar un elemento (no se encontró un punto de corte limpio).",
+    "sliceWarnings_other": "Nota: {{count}} cortes tuvieron que atravesar un elemento (no se encontró un punto de corte limpio).",
+    "errors": {
+      "resolutionTooLarge": "Página {{page}}: la resolución elegida es demasiado grande para el navegador con este tamaño de página. Factor máximo para esta página: {{maxScale}}x."
+    }
   },
   "normalizePreview": {
     "title": "Páginas que requieren una decisión",
@@ -1151,6 +1169,8 @@
     "viewModeSingle": "Página única",
     "viewModeSingleShort": "1",
     "viewModeSpread": "Doble página",
+    "viewModeStrip": "Desplazamiento continuo (webtoon)",
+    "viewModeStripShort": "S",
     "viewModeCompare": "Comparar páginas…",
     "comparePickerTitle": "Comparar páginas",
     "comparePickerHint": "Elige hasta {{max}} páginas para verlas una junto a otra.",

@@ -19,8 +19,12 @@ export type ReaderDrawTool = Extract<DrawTool, "comment-pin" | "comment-box" | "
 /** "single" = the routed page alone (the original/default Reader view). "spread" =
  * that page auto-paired with its logical neighbor, reading-direction ordered. "compare"
  * = an arbitrary, manually picked set of up to 4 pages (see ReaderComparePicker.tsx) —
- * has no "current page" concept, so page-flip navigation is disabled while active. */
-export type ReaderViewMode = "single" | "spread" | "compare";
+ * has no "current page" concept, so page-flip navigation is disabled while active.
+ * "strip" — Batch W — Webtoon support: the routed page alone, like "single", but its
+ * PageCanvas runs in fit-width mode and auto-advances to the next/previous page when
+ * scrolled past its top/bottom edge (see Reader.tsx). Only offered (and default) for a
+ * webtoon-format volume — see isWebtoonVolumeReader prop below. */
+export type ReaderViewMode = "single" | "spread" | "strip" | "compare";
 
 interface Props {
   drawTool: ReaderDrawTool | null;
@@ -38,14 +42,19 @@ interface Props {
   canGoPrev: boolean;
   canGoNext: boolean;
   viewMode: ReaderViewMode;
-  /** Switches directly to "single" or "spread" — "compare" is never set this way, see
-   * onOpenComparePicker (there's no such thing as "just" compare mode without first
+  /** Switches directly to "single", "spread" or "strip" — "compare" is never set this way,
+   * see onOpenComparePicker (there's no such thing as "just" compare mode without first
    * picking which pages). */
-  onSetViewMode: (mode: "single" | "spread") => void;
+  onSetViewMode: (mode: "single" | "spread" | "strip") => void;
   /** Always opens the picker — both to enter compare mode fresh and to adjust an
    * already-active comparison's page set (Reader.tsx passes the current selection in
    * either case). */
   onOpenComparePicker: () => void;
+  /** Batch W — Webtoon support: offers "strip" instead of "spread" (two 20,000px strips
+   * side by side is useless — see the plan's W2 section) when the current volume is
+   * webtoon-format. "compare" stays available either way — two languages of the same
+   * strip side by side, each fit-width, is genuinely useful. */
+  isWebtoonVolume: boolean;
 }
 
 /** Slim toolbar for the read-only QC Reader — the three comment tools ToolStrip.tsx
@@ -73,6 +82,7 @@ export function ReaderToolStrip({
   viewMode,
   onSetViewMode,
   onOpenComparePicker,
+  isWebtoonVolume,
 }: Props) {
   const { t } = useTranslation();
   const forwardIsLeft = readingDirection === "rtl";
@@ -101,13 +111,23 @@ export function ReaderToolStrip({
       >
         {t("reader.viewModeSingleShort")}
       </button>
-      <button
-        className={`tool-btn${viewMode === "spread" ? " active" : ""}`}
-        onClick={() => onSetViewMode("spread")}
-        title={t("reader.viewModeSpread")}
-      >
-        <SpreadViewIcon />
-      </button>
+      {isWebtoonVolume ? (
+        <button
+          className={`tool-btn${viewMode === "strip" ? " active" : ""}`}
+          onClick={() => onSetViewMode("strip")}
+          title={t("reader.viewModeStrip")}
+        >
+          {t("reader.viewModeStripShort")}
+        </button>
+      ) : (
+        <button
+          className={`tool-btn${viewMode === "spread" ? " active" : ""}`}
+          onClick={() => onSetViewMode("spread")}
+          title={t("reader.viewModeSpread")}
+        >
+          <SpreadViewIcon />
+        </button>
+      )}
       <button
         className={`tool-btn${viewMode === "compare" ? " active" : ""}`}
         onClick={onOpenComparePicker}

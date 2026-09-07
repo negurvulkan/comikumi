@@ -202,8 +202,17 @@ export function VolumeList() {
                       <PageIcon />
                     </div>
                   )}
-                  <div className="label" style={{ fontSize: 16, color: "var(--text)" }}>
+                  <div className="label" style={{ fontSize: 16, color: "var(--text)", display: "flex", alignItems: "center", gap: 6 }}>
                     {v.bookFolderName}
+                    {v.format === "webtoon" && (
+                      <span
+                        className="volume-format-badge"
+                        title={t("volumeList.webtoonBadgeTooltip")}
+                        style={{ fontSize: 11, fontWeight: 600, padding: "1px 6px", borderRadius: 999, background: "var(--accent)", color: "#12131a" }}
+                      >
+                        {t("volumeList.webtoonBadge")}
+                      </span>
+                    )}
                   </div>
                   <div className="label">{project ? `${project.name}/${v.id}` : v.id}</div>
                   <div className="label">

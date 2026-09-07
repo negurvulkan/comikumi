@@ -1,11 +1,12 @@
 import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { scanVolumes, listPages, type VolumeInfo } from "../lib/projectScanner.js";
+import { scanVolumes, listPages, readPageMeta, type VolumeInfo } from "../lib/projectScanner.js";
 import { readLanguages, readSettings } from "../lib/projectStore.js";
 import { letteringFolderName } from "../lib/paths.js";
 import { PageLayoutSchema } from "../../../shared/src/layoutSchema.js";
 import type { LanguageDef } from "../../../shared/src/languages.js";
+import type { VolumeFormat } from "../../../shared/src/pageMeta.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 
 export const volumesRouter = Router();
@@ -25,8 +26,13 @@ async function statsFor(
   bubbleCount: number;
   bubbleCountByLanguage: Record<string, number>;
   firstPage: string | null;
+  /** Batch W — Webtoon support: "pageCount" is an episode count, not a page count, for a
+   * webtoon volume — see VolumeList.tsx's badge and shared/src/pageMeta.ts's
+   * VolumeFormatSchema doc comment. */
+  format: VolumeFormat;
 }> {
   const pages = await listPages(volume);
+  const meta = await readPageMeta(volume);
   const dir = path.join(volume.parentDir, letteringFolderName(volume.bookFolderName, letteringSuffix));
   let files: string[] = [];
   try {
@@ -56,7 +62,7 @@ async function statsFor(
     }
   }
 
-  return { pageCount: pages.length, panelCount, bubbleCount, bubbleCountByLanguage, firstPage: pages[0]?.page ?? null };
+  return { pageCount: pages.length, panelCount, bubbleCount, bubbleCountByLanguage, firstPage: pages[0]?.page ?? null, format: meta.format };
 }
 
 volumesRouter.get(

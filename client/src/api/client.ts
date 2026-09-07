@@ -10,7 +10,7 @@ import type { ScriptDocument } from "../../../shared/src/script";
 import type { Comment, CommentDocument, CommentTarget } from "../../../shared/src/comments";
 import type { ProjectRole, PublicUser } from "../../../shared/src/users";
 import type { CbzMetadata } from "../../../shared/src/cbz";
-import type { PageMetaDocument } from "../../../shared/src/pageMeta";
+import type { PageMetaDocument, VolumeFormat } from "../../../shared/src/pageMeta";
 import type { WorkflowDocument } from "../../../shared/src/workflow";
 import { apiUrl } from "./apiBase";
 import { authFetch, authUrl } from "./authFetch";
@@ -94,6 +94,10 @@ export interface VolumeSummary {
   /** First scanned page's name (for a card preview thumbnail), or null if the volume
    * has no scanned pages yet. */
   firstPage: string | null;
+  /** Batch W — Webtoon support: "webtoon" volumes have `pageCount` episodes, not
+   * traditional pages — see VolumeList.tsx's badge and shared/src/pageMeta.ts's
+   * VolumeFormatSchema doc comment. */
+  format: VolumeFormat;
 }
 
 export interface ProjectMemberView {

@@ -158,6 +158,23 @@ describe("POST /:id/export-vector-pdf", () => {
     });
     expect(res.status).toBe(404);
   });
+
+  // Batch W — Webtoon support: a real webtoon strip's height sails past the PDF format's
+  // own 14,400pt-per-side ceiling (see export.ts's MAX_PDF_PAGE_PX) — this must be caught
+  // before buildVectorPdfPage ever runs, not surfaced as a corrupt/unopenable PDF file.
+  it("rejects a page taller than the PDF page-size ceiling with pdf_page_too_large", async () => {
+    const { createEmptyLayout } = await import("../../../shared/src/layoutSchema.js");
+    const layout = createEmptyLayout("page_01", "page_01.png", 800, 70_000);
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-vector-pdf`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      pdfxVersion: "x4",
+      layout,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("pdf_page_too_large");
+  });
 });
 
 describe("POST /:id/export-psd", () => {
@@ -206,6 +223,42 @@ describe("POST /:id/export-psd", () => {
       layout,
     });
     expect(res.status).toBe(404);
+  });
+
+  // Batch W — Webtoon support: psdExport.ts allocates a FULL-PAGE canvas per element
+  // (background, retouch, every bubble/curved text/placed image) — these two guards catch
+  // the two independent ways a webtoon strip blows past what that architecture can handle,
+  // before any rendering work (or memory allocation) actually starts.
+  it("rejects a page taller than the PSD page-size ceiling with psd_page_too_large", async () => {
+    const { createEmptyLayout } = await import("../../../shared/src/layoutSchema.js");
+    const layout = createEmptyLayout("page_01", "page_01.png", 800, 40_000);
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-psd`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      layout,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("psd_page_too_large");
+  });
+
+  it("rejects a page under the size ceiling but with too many bubbles with psd_page_too_complex", async () => {
+    const { createEmptyLayout, createBubble } = await import("../../../shared/src/layoutSchema.js");
+    const layout = createEmptyLayout("page_01", "page_01.png", 20_000, 20_000);
+    // width * height * elementCount must exceed MAX_PSD_COMPLEXITY_PX (500,000,000) —
+    // 20000*20000 = 4e8 per element, so even a handful of bubbles (on top of the +2 for
+    // background/retouch) pushes it well past that.
+    layout.bubbles = Array.from({ length: 5 }, (_, i) =>
+      createBubble({ id: `b${i}`, x: 0, y: 0, width: 100, height: 100 })
+    );
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/export-psd`).send({
+      folderSuffix: "german",
+      page: "page_01",
+      languageCode: "de",
+      layout,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("psd_page_too_complex");
   });
 });
 
@@ -392,6 +445,32 @@ describe("Export-Viewer Routes", () => {
       expect(xml).toContain("<Manga>No</Manga>");
     });
 
+    // Batch W — Webtoon support: <Manga> otherwise derives from the project's
+    // readingDirection (rtl -> YesAndRightToLeft, see the test right above) — meaningless
+    // for a long-strip scroll comic, which isn't page-turned in either direction.
+    it("forces Manga to 'No' for a webtoon-format volume, unless explicitly overridden", async () => {
+      const metaPath = path.join(env.scanRoot, "Volume_01", "volume_01_meta.json");
+      const originalMeta = await fs.readFile(metaPath, "utf-8").catch(() => null);
+      try {
+        await fs.writeFile(metaPath, JSON.stringify({ chapters: [], pages: {}, format: "webtoon" }));
+        const res = await bufferedPost(`/api/volumes/${VOLUME_ID}/exports/german/cbz`, {});
+        const AdmZip = (await import("adm-zip")).default;
+        const zip = new AdmZip(res.body as Buffer);
+        const xml = zip.readAsText("ComicInfo.xml");
+        expect(xml).toContain("<Manga>No</Manga>");
+
+        const overridden = await bufferedPost(`/api/volumes/${VOLUME_ID}/exports/german/cbz`, { manga: "Yes" });
+        const overriddenXml = new AdmZip(overridden.body as Buffer).readAsText("ComicInfo.xml");
+        expect(overriddenXml).toContain("<Manga>Yes</Manga>");
+      } finally {
+        // Restore the "page"-format state every later test in this file (and its own
+        // chapter-scoped describe block, which writes its own chapters into this same
+        // file) expects.
+        if (originalMeta !== null) await fs.writeFile(metaPath, originalMeta);
+        else await fs.rm(metaPath, { force: true });
+      }
+    });
+
     it("includes a <Pages> block with per-page Type/DoublePage when supplied", async () => {
       const res = await bufferedPost(`/api/volumes/${VOLUME_ID}/exports/german/cbz`, {
         pages: [
@@ -468,6 +547,49 @@ describe("Export-Viewer Routes", () => {
       // Unlike CBZ, the plain ZIP keeps original filenames (no sequential rename) —
       // just assert page_02.png comes before page_01.png in archive order.
       expect(names.indexOf("page_02.png")).toBeLessThan(names.indexOf("page_01.png"));
+    });
+  });
+
+  describe("webtoon export slicing (CBZ groups segments under their page)", () => {
+    // Builds on the two-page fixture above (page_02, page_01, saved order
+    // ["page_02", "page_01"]) and adds a THIRD page whose export folder holds two
+    // sliced segment files (see shared/src/webtoonSlicing.ts's sliceFileName) instead
+    // of one plain page image — the case export.ts's CBZ route must group back
+    // together rather than silently dropping.
+    beforeAll(async () => {
+      await api.post(`/api/volumes/${VOLUME_ID}/pages`).attach("pages", await tinyPngBuffer(), "page_03.png");
+      const dir = path.join(env.scanRoot, "Volume_01", "volume_01_german");
+      await fs.writeFile(path.join(dir, "page_03_s01.png"), "dummy slice 1");
+      await fs.writeFile(path.join(dir, "page_03_s02.png"), "dummy slice 2");
+      await api.put(`/api/volumes/${VOLUME_ID}/pages/order`).send({ order: ["page_02", "page_01", "page_03"] });
+    });
+
+    it("CBZ archives both segments of a sliced page, in slice order, without dropping either", async () => {
+      const res = await api
+        .post(`/api/volumes/${VOLUME_ID}/exports/german/cbz`)
+        .send({})
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+      expect(res.status).toBe(200);
+
+      const AdmZip = (await import("adm-zip")).default;
+      const zip = new AdmZip(res.body as Buffer);
+      const pageEntries = zip
+        .getEntries()
+        .map((e) => e.entryName)
+        .filter((name) => name !== "ComicInfo.xml")
+        .sort();
+      // page_02 (1 file) + page_01 (1 file) + page_03 (2 sliced files) = 4 archive pages.
+      expect(pageEntries).toEqual(["0001.png", "0002.png", "0003.png", "0004.png"]);
+      expect(zip.readFile("0003.png")!.toString()).toBe("dummy slice 1");
+      expect(zip.readFile("0004.png")!.toString()).toBe("dummy slice 2");
+
+      const xml = zip.readAsText("ComicInfo.xml");
+      expect(xml).toContain("<PageCount>4</PageCount>");
     });
   });
 

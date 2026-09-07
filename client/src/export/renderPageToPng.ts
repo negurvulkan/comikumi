@@ -146,6 +146,32 @@ export function drawVerticalBubble(
   });
 }
 
+// Batch W — Webtoon support: browsers cap 2D-canvas size well below what a webtoon page ×
+// a high resolution multiplier can reach — canvasToBlob()'s toBlob() then just resolves
+// null, which canvasToBlob turns into the opaque "Bild-Export fehlgeschlagen" with no hint
+// of WHY. These two numbers are conservative, common-denominator limits (not a single spec
+// value — actual browser ceilings vary and are usually higher, especially per-side), picked
+// so the guard below fires before the render even starts rather than after minutes of
+// drawing work. This is a real pre-existing bug for ANY sufficiently tall/high-res page,
+// not something new to webtoon support — a webtoon strip just makes it easy to hit.
+export const MAX_CANVAS_DIMENSION_PX = 16_384;
+// Deliberately well below MAX_CANVAS_DIMENSION_PX², not equal to it — a canvas that's
+// nowhere near either side's limit can still fail on total-pixel/memory grounds on some
+// browsers (mobile Safari is the classic example, capping total canvas area far below
+// 16384², while allowing either side that large individually). 100MP is a conservative
+// number comfortably clear of that class of limit.
+export const MAX_CANVAS_AREA_PX = 100_000_000;
+
+/** The largest resolution multiplier that keeps a `width`×`height` page's rendered canvas
+ * within both the per-side and total-area limits above. 1 for degenerate (<=0) input —
+ * callers already can't render those at all, that's not this function's problem to flag. */
+export function maxSafeRasterScale(width: number, height: number): number {
+  if (width <= 0 || height <= 0) return 1;
+  const dimensionLimit = Math.min(MAX_CANVAS_DIMENSION_PX / width, MAX_CANVAS_DIMENSION_PX / height);
+  const areaLimit = Math.sqrt(MAX_CANVAS_AREA_PX / (width * height));
+  return Math.min(dimensionLimit, areaLimit);
+}
+
 export type RasterImageFormat = "png" | "jpeg" | "webp";
 
 export interface RasterExportOptions {
@@ -155,6 +181,16 @@ export interface RasterExportOptions {
   quality?: number;
   /** Resolution multiplier applied to the layout's native pixel size (e.g. 2 = 2x/"retina"). */
   scale?: number;
+  /** Batch W — Webtoon support: renders only the `[cropY, cropY + cropHeight)` image-space
+   * band instead of the full page — used for export slicing (see shared/src/
+   * webtoonSlicing.ts). Both default to the full page when omitted, so every existing
+   * caller is unaffected. Rendering each segment independently like this (rather than
+   * rendering the whole page once and cropping the result afterward) is deliberate — a
+   * full 20,000px-tall intermediate canvas would hit the exact size ceiling
+   * maxSafeRasterScale() above guards against; cropping post-render just moves the
+   * problem instead of avoiding it. */
+  cropY?: number;
+  cropHeight?: number;
 }
 
 const MIME_TYPE_BY_FORMAT: Record<RasterImageFormat, string> = {
@@ -190,9 +226,11 @@ export async function renderPageToPng(
   exportOptions: RasterExportOptions = {}
 ): Promise<Blob> {
   const { format = "png", quality, scale = 1 } = exportOptions;
+  const cropY = exportOptions.cropY ?? 0;
+  const cropHeight = exportOptions.cropHeight ?? layout.imageHeight;
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(layout.imageWidth * scale);
-  canvas.height = Math.round(layout.imageHeight * scale);
+  canvas.height = Math.round(cropHeight * scale);
   const maybeCtx = canvas.getContext("2d");
   if (!maybeCtx) throw new Error("2D-Canvas-Kontext konnte nicht erstellt werden");
   // Rebound as its own const (rather than just narrowing `maybeCtx` in place) so the
@@ -204,6 +242,12 @@ export async function renderPageToPng(
   // context once up front (rather than threading a scale factor through every draw
   // call) lets the whole render pipeline stay resolution-agnostic.
   if (scale !== 1) ctx.scale(scale, scale);
+  // Batch W — Webtoon support: shifts the whole coordinate space up by cropY BEFORE
+  // anything is drawn, so every draw call below keeps using the page's normal, native-
+  // origin coordinates (no threading a cropY offset through every single one) while only
+  // the [cropY, cropY+cropHeight) band actually lands inside the canvas's bounds — the
+  // canvas clips the rest for free. A no-op when cropY is 0 (the default/whole-page case).
+  if (cropY !== 0) ctx.translate(0, -cropY);
 
   ctx.drawImage(baseImage, 0, 0, layout.imageWidth, layout.imageHeight);
 

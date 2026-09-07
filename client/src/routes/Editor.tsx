@@ -8,6 +8,7 @@ import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import type { Comment, CommentTarget } from "../../../shared/src/comments";
 import type { ProjectRole } from "../../../shared/src/users";
+import { EMPTY_PAGE_META_DOCUMENT, isWebtoonVolume, type PageMetaDocument } from "../../../shared/src/pageMeta";
 import { useEditorStore } from "../state/editorStore";
 import { PageCanvas } from "../editor/PageCanvas";
 import { BubbleInspector } from "../editor/BubbleInspector";
@@ -130,6 +131,11 @@ export function Editor() {
   // of this same state below, so markers and the sidebar can never disagree.
   const [comments, setComments] = useState<Comment[]>([]);
   const [mentionableMembers, setMentionableMembers] = useState<MentionableMember[]>([]);
+  // Batch W — Webtoon support: drives PageCanvas's fitMode (fit-width + scroll instead of
+  // fit-both-axes) below. Defaults to EMPTY_PAGE_META_DOCUMENT (format: "page") until the
+  // real value loads, same "safe non-webtoon default while fetching" convention as
+  // PageGrid.tsx already uses for the same document.
+  const [pageMeta, setPageMeta] = useState<PageMetaDocument>(EMPTY_PAGE_META_DOCUMENT);
   const [commentThreadState, setCommentThreadState] = useState<CommentThreadState | null>(null);
   const { user } = useSession();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -166,6 +172,10 @@ export function Editor() {
 
   useEffect(() => {
     api.getMentionableMembers(volumeId).then(setMentionableMembers);
+  }, [volumeId]);
+
+  useEffect(() => {
+    api.getPageMeta(volumeId).then((res) => setPageMeta(res.meta));
   }, [volumeId]);
 
   // Deep-link support: a comment-mention email (Phase C) or a CommentsPanel row for a
@@ -776,8 +786,9 @@ export function Editor() {
             volumeId={volumeId}
             languages={languages}
             currentPage={page}
+            volumeFormat={pageMeta.format}
             exporting={exporting || normalizing}
-            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions, psdEditableTextLayers) =>
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions, psdEditableTextLayers, sliceOptions) =>
               runExport(
                 selection,
                 onlyTranslated,
@@ -787,7 +798,8 @@ export function Editor() {
                 pdfxVersion,
                 imageOptions,
                 finalFormatOptions,
-                psdEditableTextLayers
+                psdEditableTextLayers,
+                sliceOptions
               )
             }
             onAnalyzeUniform={handleAnalyzeUniform}
@@ -1067,6 +1079,7 @@ export function Editor() {
             fontsVersion={fontsVersion}
             drawTool={drawTool}
             readOnly={isTranslatorOnly}
+            fitMode={isWebtoonVolume(pageMeta) ? "width" : "contain"}
             onSelect={store.selectBubble}
             onChange={store.updateBubble}
             onCreate={(shape, box, opts) => {

@@ -11,6 +11,18 @@ import { resolveBaseImagePath } from "./inpainting.js";
 
 const THUMBNAIL_WIDTH = 360;
 const THUMBNAIL_QUALITY = 72;
+// Batch W — Webtoon support: width-only resize left a 1:25-proportioned webtoon strip's
+// thumbnail 9,000px tall — technically a valid JPEG, but a page-grid card sized for that
+// blows up the whole grid layout. `fit: "inside"` (below) still respects THUMBNAIL_WIDTH
+// for a normal page — this cap only actually bites for something this disproportionate.
+const THUMBNAIL_MAX_HEIGHT = 1200;
+// Compositing a full-resolution layout (see the `layout` branch below) allocates a
+// full-page canvas before ever downscaling it — for a realistic webtoon strip that's a
+// real, avoidable allocation on every cache miss. Above this pixel-count, skip the
+// composite and fall back to a plain resize of the raw source file — loses Cut-Panel/
+// placed-image content in the thumbnail for a page this large, which is an acceptable
+// trade against allocating tens of megapixels just to immediately throw them away.
+const THUMBNAIL_COMPOSITE_MAX_MEGAPIXELS = 40_000_000;
 
 /** Hashes the absolute source path so cache files never collide across volumes/scan roots, without mirroring the source's folder structure. */
 function cacheFileFor(dir: string, sourcePath: string): string {
@@ -63,7 +75,8 @@ export async function getOrCreateThumbnail(sourcePath: string, layoutFile: strin
     return cachePath;
   }
 
-  const layout = layoutStat && layoutFile ? await readLayoutIfPresent(layoutFile) : null;
+  const rawLayout = layoutStat && layoutFile ? await readLayoutIfPresent(layoutFile) : null;
+  const layout = rawLayout && rawLayout.imageWidth * rawLayout.imageHeight <= THUMBNAIL_COMPOSITE_MAX_MEGAPIXELS ? rawLayout : null;
 
   if (layout) {
     const canvas = await renderPageBackground({
@@ -74,11 +87,14 @@ export async function getOrCreateThumbnail(sourcePath: string, layoutFile: strin
       resolveImagePath: resolveImageFilePath,
     });
     await sharp(canvas.toBuffer("image/png"))
-      .resize({ width: THUMBNAIL_WIDTH, withoutEnlargement: true })
+      .resize({ width: THUMBNAIL_WIDTH, height: THUMBNAIL_MAX_HEIGHT, fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: THUMBNAIL_QUALITY })
       .toFile(cachePath);
   } else {
-    await sharp(sourcePath).resize({ width: THUMBNAIL_WIDTH, withoutEnlargement: true }).jpeg({ quality: THUMBNAIL_QUALITY }).toFile(cachePath);
+    await sharp(sourcePath)
+      .resize({ width: THUMBNAIL_WIDTH, height: THUMBNAIL_MAX_HEIGHT, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: THUMBNAIL_QUALITY })
+      .toFile(cachePath);
   }
   return cachePath;
 }

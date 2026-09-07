@@ -4,6 +4,7 @@ import { AutoTokenizer, type PreTrainedTokenizer } from "@huggingface/transforme
 import { v4 as uuid } from "uuid";
 import { decodeDetections, type Box } from "./detection";
 import { resizeAndPadToTensor, preprocessForOcr, cropToCanvas } from "./preprocess";
+import { computeDetectionBands, mergeBandBoxes } from "./tiling";
 import type { RunRequest, WorkerMessage, DetectedRegion } from "./types";
 
 // Static-copied by vite-plugin-static-copy (see vite.config.ts) — served as plain
@@ -71,7 +72,25 @@ async function createOrtSession(modelBuffer: ArrayBuffer): Promise<ort.Inference
   }
 }
 
-async function runDetection(session: ort.InferenceSession, imageBitmap: ImageBitmap): Promise<Box[]> {
+// Batch W — Webtoon support: gates band-tiled detection on the CROP'S OWN geometry, not
+// a "this is a webtoon volume" flag — an unusually tall/wide crop (a double-page scan, a
+// tall single panel, or indeed a webtoon strip) benefits the same way regardless of
+// whether anyone remembered to mark the volume as one; a normally-proportioned page stays
+// on the exact single-pass path it always used, byte-for-byte. See tiling.ts's
+// computeDetectionBands doc comment for what actually happens once tiling kicks in.
+const TILING_ASPECT_RATIO_THRESHOLD = 2;
+const TILING_MAX_SIDE_THRESHOLD = 2048;
+
+function needsBandTiling(width: number, height: number): boolean {
+  const maxSide = Math.max(width, height);
+  const minSide = Math.max(1, Math.min(width, height));
+  return maxSide / minSide > TILING_ASPECT_RATIO_THRESHOLD || maxSide > TILING_MAX_SIDE_THRESHOLD;
+}
+
+/** Runs the detector on exactly one bitmap (a whole page, or one band's crop) — the
+ * original single-pass body, unchanged, just extracted so runDetection can call it once
+ * per band instead of inlining the same steps twice. */
+async function runDetectionOnCrop(session: ort.InferenceSession, imageBitmap: ImageBitmap): Promise<Box[]> {
   const { tensorData, info } = resizeAndPadToTensor(imageBitmap, DETECTOR_INPUT_SIZE);
   const inputTensor = new ort.Tensor("float32", tensorData, [1, 3, DETECTOR_INPUT_SIZE, DETECTOR_INPUT_SIZE]);
   const inputName = session.inputNames[0];
@@ -95,6 +114,37 @@ async function runDetection(session: ort.InferenceSession, imageBitmap: ImageBit
   // internally), not raw logits — see decodeDetections' doc comment for the full
   // "double sigmoid" story this fixes.
   return decodeDetections(outputTensor.data as Float32Array, mapWidth, mapHeight, info, true);
+}
+
+/** `onProgress` reports band *i* of *N* (or a plain 0/1→1/1 pair when tiling doesn't
+ * apply) — a 15-band strip is otherwise a long wait with no feedback at all, see
+ * self.onmessage's own "detecting" progress post below. */
+async function runDetection(
+  session: ort.InferenceSession,
+  imageBitmap: ImageBitmap,
+  onProgress?: (current: number, total: number) => void
+): Promise<Box[]> {
+  if (!needsBandTiling(imageBitmap.width, imageBitmap.height)) {
+    onProgress?.(0, 1);
+    const boxes = await runDetectionOnCrop(session, imageBitmap);
+    onProgress?.(1, 1);
+    return boxes;
+  }
+
+  const bands = computeDetectionBands(imageBitmap.width, imageBitmap.height, DETECTOR_INPUT_SIZE);
+  const boxesPerBand: Box[][] = [];
+  for (let i = 0; i < bands.length; i++) {
+    onProgress?.(i, bands.length);
+    const bandCanvas = cropToCanvas(imageBitmap, bands[i]);
+    if (!bandCanvas) {
+      boxesPerBand.push([]);
+      continue;
+    }
+    const bandBitmap = await createImageBitmap(bandCanvas);
+    boxesPerBand.push(await runDetectionOnCrop(session, bandBitmap));
+  }
+  onProgress?.(bands.length, bands.length);
+  return mergeBandBoxes(boxesPerBand, bands);
 }
 
 /** PNG data URL for a crop, so the review panel can show exactly what OCR saw —
@@ -238,9 +288,9 @@ self.onmessage = async (event: MessageEvent<RunRequest>) => {
     post({ type: "progress", stage: "loading-runtime", current: 0, total: 1 });
     const session = await createOrtSession(detectorModel);
 
-    post({ type: "progress", stage: "detecting", current: 0, total: 1 });
-    const boxes = await runDetection(session, imageBitmap);
-    post({ type: "progress", stage: "detecting", current: 1, total: 1 });
+    const boxes = await runDetection(session, imageBitmap, (current, total) =>
+      post({ type: "progress", stage: "detecting", current, total })
+    );
 
     if (mode === "detect-only") {
       post({ type: "done", regions: boxesToRegions(boxes) });

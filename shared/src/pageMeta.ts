@@ -33,13 +33,31 @@ export const PageMetaEntrySchema = z.object({
 });
 export type PageMetaEntry = z.infer<typeof PageMetaEntrySchema>;
 
+/** "webtoon" = a long-strip, vertical-scroll volume (typically one very tall image per
+ * episode instead of many normally-proportioned pages) — see docs/FEATURES.md's Webtoon
+ * section. Volume-level (not project-level, `shared/src/settings.ts`): one project can hold
+ * both a printed manga and a webtoon side by side. Deliberately a plain, user-set toggle
+ * rather than derived from page aspect ratio — an unusually tall *traditional* page
+ * shouldn't silently flip every webtoon-only behavior (fit-width editor scrolling, Reader's
+ * "strip" mode, hiding print/uniform-format export options, export slicing). */
+export const VolumeFormatSchema = z.enum(["page", "webtoon"]);
+export type VolumeFormat = z.infer<typeof VolumeFormatSchema>;
+
 export const PageMetaDocumentSchema = z.object({
   chapters: z.array(ChapterSchema).default([]),
   pages: z.record(z.string(), PageMetaEntrySchema).default({}),
+  format: VolumeFormatSchema.default("page"),
 });
 export type PageMetaDocument = z.infer<typeof PageMetaDocumentSchema>;
 
-export const EMPTY_PAGE_META_DOCUMENT: PageMetaDocument = { chapters: [], pages: {} };
+export const EMPTY_PAGE_META_DOCUMENT: PageMetaDocument = { chapters: [], pages: {}, format: "page" };
+
+/** True for a long-strip/webtoon volume — see VolumeFormatSchema's doc comment. A helper
+ * (not raw `meta.format === "webtoon"` comparisons) so every consumer reads the flag the
+ * same way, and so a future third format doesn't need updating at every call site. */
+export function isWebtoonVolume(meta: Pick<PageMetaDocument, "format">): boolean {
+  return meta.format === "webtoon";
+}
 
 export interface ResolvedChapter {
   chapter: Chapter;

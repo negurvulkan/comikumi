@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
 
+// Batch W — Webtoon support: a soft ceiling, not a hard one — decoding still succeeds,
+// this just surfaces a console signal if a genuinely pathological upload (well beyond a
+// realistic webtoon strip) ever shows up, before it's discovered the hard way in some
+// downstream canvas-size guard instead.
+const LARGE_IMAGE_MEGAPIXEL_WARNING = 100_000_000;
+
 export function useHtmlImage(src: string | undefined): HTMLImageElement | undefined {
   const [image, setImage] = useState<HTMLImageElement | undefined>(undefined);
 
@@ -20,7 +26,15 @@ export function useHtmlImage(src: string | undefined): HTMLImageElement | undefi
     // Electron packaging, which sets no cookies at all.
     img.crossOrigin = "use-credentials";
     img.src = src;
-    const handleLoad = () => setImage(img);
+    const handleLoad = () => {
+      const megapixels = img.naturalWidth * img.naturalHeight;
+      if (megapixels > LARGE_IMAGE_MEGAPIXEL_WARNING) {
+        console.warn(
+          `useHtmlImage: loaded a very large image (${img.naturalWidth}×${img.naturalHeight}, ${(megapixels / 1_000_000).toFixed(0)}MP) from ${src} — some export paths (PNG canvas size, PSD per-element canvases) have hard limits well below this.`
+        );
+      }
+      setImage(img);
+    };
     img.addEventListener("load", handleLoad);
     return () => img.removeEventListener("load", handleLoad);
   }, [src]);

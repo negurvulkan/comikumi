@@ -148,6 +148,9 @@
     "print_export_failed": "Could not create the print file: {{reason}}",
     "vector_pdf_export_failed": "Could not create the vector PDF: {{reason}}",
     "psd_export_failed": "Could not create the layered PSD: {{reason}}",
+    "pdf_page_too_large": "This page is too large for a vector PDF export (max. {{maxPx}}px per side at 300dpi).",
+    "psd_page_too_large": "This page is too large for a PSD export (max. {{maxPx}}px per side).",
+    "psd_page_too_complex": "This page is too complex for a PSD export (too many layers at this page size) — the PSD export would need too much memory.",
     "invalid_character": "Invalid character data.",
     "character_not_found": "Character not found.",
     "invalid_glossary_entry": "Invalid glossary entry.",
@@ -330,6 +333,8 @@
     "noLanguages": "none",
     "statVolumes": "Volumes",
     "statVolumesTooltip": "Number of volumes in this project",
+    "webtoonBadge": "Webtoon",
+    "webtoonBadgeTooltip": "This volume is set to Webtoon (long strip) format",
     "statPages": "Pages",
     "statPagesTooltip": "Total scanned pages across all volumes",
     "statPanels": "Panels",
@@ -339,6 +344,9 @@
     "statBubblesByLanguageTooltip": "Bubbles with text in {{language}}"
   },
   "pageGrid": {
+    "volumeFormatLabel": "Volume type:",
+    "volumeFormatPage": "Comic pages",
+    "volumeFormatWebtoon": "Webtoon (long strip)",
     "menuPageLabel": "Page",
     "menuImportLabel": "Import",
     "menuImportZip": "JSONs (ZIP)",
@@ -1000,6 +1008,11 @@
     "formatVectorPdfHint": "Bubble text becomes real, selectable/copyable PDF vector text (not a pixel raster) — rect/oval/curved text exact, quad bubbles as an affine approximation (true perspective is technically impossible in the PDF format itself). Vertical (tategaki) text is a later phase. Without a configured ICC profile, the file isn't a certified PDF/X (see the report after export).",
     "pdfxVersionLabel": "PDF/X variant",
     "formatPsd": "PSD (layers)",
+    "webtoonFormatsHidden": "Hidden for webtoon volumes: these formats are built for normally-proportioned comic pages (uniform, final format, print, vector PDF, PSD) — either meaningless or technically risky for a long strip (see the docs).",
+    "sliceEnabled": "Split into segments (for webtoon platforms)",
+    "slicePresetLabel": "Platform preset",
+    "sliceMaxHeightLabel": "Max. height per segment (px)",
+    "sliceMinHeightLabel": "Min. height per segment (px)",
     "formatPsdHint": "Exports a layered Photoshop file: background / retouches-cut-panels-images / one layer per bubble and curved-text element. Every layer is a raster image you can hide/move/mask.",
     "psdEditableTextLayersLabel": "Editable text layers (experimental)",
     "psdEditableTextLayersHint": "Also attaches a real, Type-tool-editable text object to bubbles that support it (plain rectangle/oval, horizontal, solid color, not merged) — everything else stays a raster image, as always. Such a bubble becomes two layers (\"… (Background)\" / \"… (Text)\") since a Photoshop text layer can't also carry the bubble's outline/fill. Photoshop shows an \"Update\" prompt the first time you open the file; click Update to make the text editable.",
@@ -1013,7 +1026,12 @@
     "progress": "{{count}} exported…",
     "noneFound": "No matching pages found.",
     "done": "{{count}} page-language exports completed.",
-    "pdfxNotStamped": "Note: at least one file is not a certified PDF/X (no ICC profile configured on the server) — real vector text, but not formally PDF/X compliant."
+    "pdfxNotStamped": "Note: at least one file is not a certified PDF/X (no ICC profile configured on the server) — real vector text, but not formally PDF/X compliant.",
+    "sliceWarnings_one": "Note: {{count}} cut had to go through an element (no clean cut point found).",
+    "sliceWarnings_other": "Note: {{count}} cuts had to go through an element (no clean cut point found).",
+    "errors": {
+      "resolutionTooLarge": "Page {{page}}: the chosen resolution is too large for the browser at this page size. Maximum factor for this page: {{maxScale}}x."
+    }
   },
   "normalizePreview": {
     "title": "Pages needing a decision",
@@ -1171,6 +1189,8 @@
     "viewModeSingle": "Single page",
     "viewModeSingleShort": "1",
     "viewModeSpread": "Double-page spread",
+    "viewModeStrip": "Continuous scroll (webtoon)",
+    "viewModeStripShort": "S",
     "viewModeCompare": "Compare pages…",
     "comparePickerTitle": "Compare pages",
     "comparePickerHint": "Pick up to {{max}} pages to view side by side.",

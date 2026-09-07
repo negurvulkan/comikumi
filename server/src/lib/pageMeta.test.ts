@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveChapters, EMPTY_PAGE_META_DOCUMENT, type PageMetaDocument } from "../../../shared/src/pageMeta.js";
 
 function metaWith(chapters: PageMetaDocument["chapters"], pages: PageMetaDocument["pages"]): PageMetaDocument {
-  return { chapters, pages };
+  return { chapters, pages, format: "page" };
 }
 
 describe("resolveChapters", () => {

@@ -148,6 +148,9 @@
     "print_export_failed": "Druckdatei konnte nicht erstellt werden: {{reason}}",
     "vector_pdf_export_failed": "Vektor-PDF konnte nicht erstellt werden: {{reason}}",
     "psd_export_failed": "Ebenen-PSD konnte nicht erstellt werden: {{reason}}",
+    "pdf_page_too_large": "Diese Seite ist für einen Vektor-PDF-Export zu groß (max. {{maxPx}}px pro Kante bei 300dpi).",
+    "psd_page_too_large": "Diese Seite ist für einen PSD-Export zu groß (max. {{maxPx}}px pro Kante).",
+    "psd_page_too_complex": "Diese Seite ist für einen PSD-Export zu komplex (zu viele Ebenen bei dieser Seitengröße) — der PSD-Export würde zu viel Arbeitsspeicher benötigen.",
     "invalid_character": "Ungültige Charakterdaten.",
     "character_not_found": "Charakter nicht gefunden.",
     "invalid_glossary_entry": "Ungültiger Glossareintrag.",
@@ -330,6 +333,8 @@
     "noLanguages": "keine",
     "statVolumes": "Bände",
     "statVolumesTooltip": "Anzahl der Bände in diesem Projekt",
+    "webtoonBadge": "Webtoon",
+    "webtoonBadgeTooltip": "Dieser Band ist auf Webtoon-Format (Langstreifen) eingestellt",
     "statPages": "Seiten",
     "statPagesTooltip": "Gescannte Seiten insgesamt über alle Bände",
     "statPanels": "Panels",
@@ -339,6 +344,9 @@
     "statBubblesByLanguageTooltip": "Blasen mit Text in {{language}}"
   },
   "pageGrid": {
+    "volumeFormatLabel": "Bandtyp:",
+    "volumeFormatPage": "Comic-Seiten",
+    "volumeFormatWebtoon": "Webtoon (Langstreifen)",
     "menuPageLabel": "Seite",
     "menuImportLabel": "Import",
     "menuImportZip": "JSONs (ZIP)",
@@ -1000,6 +1008,11 @@
     "formatVectorPdfHint": "Blasentext wird echter, markier-/kopierbarer PDF-Vektortext (kein Pixelraster) — Rechteck-/Oval-/Kurventext exakt, Viereck-Blasen als affine Näherung (echte Perspektive ist im PDF-Format technisch unmöglich). Vertikaler Text (Tategaki) folgt später. Ohne hinterlegtes ICC-Profil ist die Datei kein zertifiziertes PDF/X (siehe Bericht nach dem Export).",
     "pdfxVersionLabel": "PDF/X-Variante",
     "formatPsd": "PSD (Ebenen)",
+    "webtoonFormatsHidden": "Für Webtoon-Bände ausgeblendet: Diese Formate sind für Comic-Seiten mit normalem Seitenverhältnis gedacht (Uniform, Papierformat, Druck, Vektor-PDF, PSD) — für lange Streifen entweder bedeutungslos oder technisch riskant (siehe Doku).",
+    "sliceEnabled": "In Segmente aufteilen (für Webtoon-Plattformen)",
+    "slicePresetLabel": "Plattform-Vorlage",
+    "sliceMaxHeightLabel": "Max. Höhe pro Segment (px)",
+    "sliceMinHeightLabel": "Min. Höhe pro Segment (px)",
     "formatPsdHint": "Exportiert eine Ebenen-PSD-Datei: Hintergrund / Retuschen-Cut-Panels-Bilder / eine Ebene je Sprechblase und Kurventext. Jede Ebene ist ein Rasterbild, das sich aus-/einblenden, verschieben und maskieren lässt.",
     "psdEditableTextLayersLabel": "Editierbare Text-Ebenen (experimentell)",
     "psdEditableTextLayersHint": "Versucht zusätzlich, dafür geeigneten Sprechblasen ein echtes, mit dem Photoshop-Textwerkzeug editierbares Textobjekt mitzugeben (einfaches Rechteck/Oval, horizontal, Volltonfarbe, nicht verschmolzen) — alles andere bleibt wie bisher ein Rasterbild. Eine solche Blase wird dabei zu zwei Ebenen (\"… (Hintergrund)\" / \"… (Text)\"), da eine Photoshop-Text-Ebene nicht gleichzeitig Umriss/Füllung der Blase tragen kann. Photoshop zeigt beim ersten Öffnen der Datei einen \"Update\"-Dialog auf der Ebene — mit Klick auf \"Update\" wird der Text editierbar.",
@@ -1013,7 +1026,12 @@
     "progress": "{{count}} exportiert…",
     "noneFound": "Keine passenden Seiten gefunden.",
     "done": "{{count}} Seiten-Sprach-Exporte abgeschlossen.",
-    "pdfxNotStamped": "Hinweis: Mindestens eine Datei ist kein zertifiziertes PDF/X (kein ICC-Profil auf dem Server hinterlegt) — echter Vektortext, aber nicht formal PDF/X-konform."
+    "pdfxNotStamped": "Hinweis: Mindestens eine Datei ist kein zertifiziertes PDF/X (kein ICC-Profil auf dem Server hinterlegt) — echter Vektortext, aber nicht formal PDF/X-konform.",
+    "sliceWarnings_one": "Hinweis: {{count}} Schnitt musste durch ein Element gehen (kein sauberer Schnittpunkt gefunden).",
+    "sliceWarnings_other": "Hinweis: {{count}} Schnitte mussten durch ein Element gehen (kein sauberer Schnittpunkt gefunden).",
+    "errors": {
+      "resolutionTooLarge": "Seite {{page}}: Die gewählte Auflösung ist für diese Seitengröße zu groß für den Browser. Maximal möglicher Faktor für diese Seite: {{maxScale}}x."
+    }
   },
   "normalizePreview": {
     "title": "Seiten mit Entscheidungsbedarf",
@@ -1171,6 +1189,8 @@
     "viewModeSingle": "Einzelseite",
     "viewModeSingleShort": "1",
     "viewModeSpread": "Doppelseite",
+    "viewModeStrip": "Durchgehend scrollen (Webtoon)",
+    "viewModeStripShort": "S",
     "viewModeCompare": "Seiten vergleichen…",
     "comparePickerTitle": "Seiten vergleichen",
     "comparePickerHint": "Bis zu {{max}} Seiten auswählen, um sie nebeneinander anzuzeigen.",

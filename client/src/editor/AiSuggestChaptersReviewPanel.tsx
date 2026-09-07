@@ -52,7 +52,7 @@ export function AiSuggestChaptersReviewPanel({ action, volumeId, pageNames, page
         for (let idx = from; idx <= to; idx++) {
           pages[pageNames[idx]] = { ...pages[pageNames[idx]], chapterId };
         }
-        nextMeta = { chapters: [...nextMeta.chapters, { id: chapterId, name }], pages };
+        nextMeta = { ...nextMeta, chapters: [...nextMeta.chapters, { id: chapterId, name }], pages };
       }
       const result = await api.savePageMeta(volumeId, nextMeta, metaEtag ?? undefined);
       if (result.conflict) {

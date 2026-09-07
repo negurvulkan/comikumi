@@ -8,7 +8,7 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { EMPTY_PAGE_META_DOCUMENT, PAGE_TYPES, resolveChapters, type PageMetaDocument, type PageType } from "../../../shared/src/pageMeta";
+import { EMPTY_PAGE_META_DOCUMENT, PAGE_TYPES, resolveChapters, type PageMetaDocument, type PageType, type VolumeFormat } from "../../../shared/src/pageMeta";
 import { api, downloadBlob, type PageSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useExportRun } from "../export/useExportRun";
@@ -356,6 +356,23 @@ export function PageGrid() {
   async function updatePageMeta(page: string, patch: { type?: PageType; chapterId?: string | undefined }) {
     const nextEntry = { ...pageMeta.pages[page], ...patch };
     const nextMeta: PageMetaDocument = { ...pageMeta, pages: { ...pageMeta.pages, [page]: nextEntry } };
+    setPageMeta(nextMeta);
+    const result = await api.savePageMeta(volumeId, nextMeta, metaEtag ?? undefined);
+    if (result.conflict) {
+      setPageMeta(result.current);
+      setMetaEtag(null);
+      setMessage(t("pageGrid.metaConflict"));
+    } else {
+      setMetaEtag(result.etag);
+    }
+  }
+
+  /** Same optimistic-write/409-adopt shape as updatePageMeta() above, for the volume-level
+   * "Bandtyp" toggle (Batch W — Webtoon support) — see VolumeFormatSchema's doc comment in
+   * shared/src/pageMeta.ts for why this lives on the same document as chapters/page-tagging
+   * rather than a new one. */
+  async function updateVolumeFormat(format: VolumeFormat) {
+    const nextMeta: PageMetaDocument = { ...pageMeta, format };
     setPageMeta(nextMeta);
     const result = await api.savePageMeta(volumeId, nextMeta, metaEtag ?? undefined);
     if (result.conflict) {
@@ -715,6 +732,21 @@ export function PageGrid() {
         <span className="canvas-titlebar-name">{t("pageGrid.titlebarPages")}</span>
         <span className="canvas-titlebar-path">/{project ? `${project.name}/${volumeId}` : volumeId}</span>
       </Link>
+      {/* Batch W — Webtoon support: volume-level format toggle (shared/src/pageMeta.ts's
+          VolumeFormatSchema). Deliberately a plain, always-visible control rather than
+          buried in a menu — it changes editor/reader/export behavior broadly enough that
+          it should be as discoverable as the page grid itself. */}
+      <label className="volume-format-toggle" style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 12px 0", fontSize: 13 }}>
+        {t("pageGrid.volumeFormatLabel")}
+        <select
+          value={pageMeta.format}
+          disabled={!hasAtLeast("letterer")}
+          onChange={(e) => updateVolumeFormat(e.target.value as VolumeFormat)}
+        >
+          <option value="page">{t("pageGrid.volumeFormatPage")}</option>
+          <option value="webtoon">{t("pageGrid.volumeFormatWebtoon")}</option>
+        </select>
+      </label>
       {(busy || message || exportMsg || normalizeMsg) && (
         <div
           className="error-banner"
@@ -730,8 +762,9 @@ export function PageGrid() {
             volumeId={volumeId}
             languages={languages}
             chapters={resolvedChapters}
+            volumeFormat={pageMeta.format}
             exporting={exporting || normalizing}
-            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions, psdEditableTextLayers) =>
+            onExport={(selection, onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, finalFormatOptions, psdEditableTextLayers, sliceOptions) =>
               runExport(
                 selection,
                 onlyTranslated,
@@ -741,7 +774,8 @@ export function PageGrid() {
                 pdfxVersion,
                 imageOptions,
                 finalFormatOptions,
-                psdEditableTextLayers
+                psdEditableTextLayers,
+                sliceOptions
               )
             }
             onAnalyzeUniform={handleAnalyzeUniform}

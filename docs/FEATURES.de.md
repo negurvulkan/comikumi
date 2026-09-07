@@ -12,6 +12,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Mehrbenutzerbetrieb](#mehrbenutzerbetrieb)
 - [UI-Sprache](#ui-sprache)
 - [Bände & Seiten](#bände--seiten)
+- [Webtoon-Unterstützung](#webtoon-unterstützung)
 - [Kapitel](#kapitel)
 - [Sprachverwaltung](#sprachverwaltung)
 - [Charakterverwaltung](#charakterverwaltung)
@@ -270,6 +271,65 @@ dort nur der Schreib-Mutex, kein ETag-Dialog) bleibt ebenfalls offen; siehe
   verwalten, Einstellungen öffnen) sowie eine Menüleiste mit Import-/Export-Aktionen
   (siehe [Export & Import](#export--import)), einen Eintrag "Bericht für den Band" und
   eine Status-/Meldungsleiste für Hintergrundvorgänge.
+
+## Webtoon-Unterstützung
+
+- **Bandtyp-Schalter**: Jeder Band kann als „Comic-Seiten" (Standard) oder
+  „Webtoon (Langstreifen)" markiert werden — über ein Dropdown am Kopf der
+  Seitenübersicht (ab Rolle Letterer). Das ist eine Band-, keine
+  Projekteinstellung — ein Projekt kann einen gedruckten Manga und einen
+  Webtoon nebeneinander enthalten. Die Bandliste zeigt bei entsprechend
+  markierten Bänden ein kleines Badge.
+- **Editor — Fit-Width-Canvas**: Eine Webtoon-Seite (typischerweise ein einziges,
+  sehr hohes Bild pro Episode, z. B. 800×20.000px) öffnet sich passend zur
+  Breite des Viewports statt der gesamten Seite geschrumpft auf beide Achsen —
+  der normale „Contain"-Fit würde einen realistischen Langstreifen sonst auf
+  eine unbrauchbare Skalierung von ca. 0,03× zusammenschrumpfen. Die Seite lädt
+  nach oben gescrollt, das Mausrad scrollt den Streifen (Strg/Cmd+Mausrad zoomt
+  weiterhin), und Bild-auf/Bild-ab/Pos1/Ende springen jeweils um eine
+  Viewport-Höhe. Das Ziehen ist so begrenzt, dass die Seite nie komplett aus
+  dem Bild geschoben werden kann.
+- **Reader — durchgehender Streifen-Modus**: Die Read/Review-Ansicht bietet
+  neben Einzelseite/Vergleich einen „Streifen"-Modus (Standard für
+  Webtoon-Bände) — Doppelseite wird ausgeblendet, da zwei Langstreifen
+  nebeneinander keinen Sinn ergeben. Scrollt man über das obere oder untere
+  Ende der aktuellen Episode hinaus, springt die Ansicht automatisch zur
+  vorherigen/nächsten Seite — ein mehrteiliger Webtoon liest sich so als ein
+  durchgehender Scroll statt an jeder Seitengrenze zu stoppen.
+- **Export-Absicherungen**: Browser begrenzen, wie groß eine einzelne Canvas
+  sein darf — das Rendern einer hohen Seite mit hohem Auflösungsfaktor kann
+  dieses Limit unbemerkt überschreiten. Das Export-Panel fängt das jetzt vorab
+  ab, mit einer klaren, übersetzten Fehlermeldung, die die betroffene Seite und
+  den maximal sicheren Auflösungsfaktor nennt, statt dass der Export mitten im
+  Vorgang mit einer nichtssagenden Meldung scheitert. Im Webtoon-Modus werden
+  Formate ausgeblendet, die auf normal proportionierte Seiten ausgelegt sind
+  (Einheitsformat, Endformat, Druck, Vektor-PDF, PSD) — jedes davon ist für
+  einen Langstreifen entweder bedeutungslos oder ein echtes Speicher-/
+  Formatlimit-Risiko (siehe die Größen-Guards unten) —, PNG/JPEG/WebP-Export
+  bleibt verfügbar. Der Server lehnt einen Vektor-PDF- oder PSD-Export, dessen
+  Seite die eigene sichere Formatgrenze überschreitet (bei PSD zusätzlich den
+  Render-Aufwand pro Element), unabhängig von der aktuellen UI-Anzeige mit
+  einer übersetzten Fehlermeldung ab.
+- **Export-Segmentierung**: Im Webtoon-Modus bietet das PNG-Export-Panel
+  „In Segmente aufteilen" — schneidet einen Langstreifen in mehrere
+  hochladefertige Bilder, passend zu einer Ziel-Plattform (Webtoon Canvas,
+  Tapas, Lezhin, oder eine eigene Max-/Min-Höhe), benannt `<Seite>_s01`,
+  `<Seite>_s02`, … Jeder Schnitt umgeht nach Möglichkeit Bubbles, Kurventexte
+  und platzierte Bilder (bevorzugt eine bestehende Panel-Lücke) und schlägt
+  lieber nicht fehl — ein unvermeidbarer Schnitt durch ein Element wird trotzdem
+  ausgeführt, mit einem Hinweis nach dem Export statt einem Fehler. Die Segmente
+  einer gesliceten Seite landen als separate, korrekt sortierte Archivseiten im
+  CBZ-Export, für Kapitel-Lesezeichen weiterhin unter ihrer ursprünglichen Seite
+  gruppiert.
+- **Gekachelte Auto-Bubbles-Erkennung**: Die Erkennung teilt eine sehr hohe
+  oder sehr breite Seite automatisch in überlappende horizontale Bänder auf,
+  jedes einzeln in voller Detailtiefe analysiert und anschließend
+  zusammengeführt — die normale Ein-Durchgang-Erkennung einer gewöhnlichen
+  Seite würde einen Langstreifen sonst so weit zusammenstauchen, dass Text für
+  den Detektor unlesbar wird. Das greift anhand des Seitenverhältnisses der
+  Seite selbst (nicht des Webtoon-Schalters des Bands) — hilft also auch bei
+  einer einzelnen ungewöhnlich hohen Seite oder einem Panel außerhalb des
+  Webtoon-Modus.
 
 ## Kapitel
 

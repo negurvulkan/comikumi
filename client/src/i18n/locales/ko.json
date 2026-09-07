@@ -107,6 +107,9 @@
     "print_export_failed": "인쇄용 파일을 만들 수 없습니다: {{reason}}",
     "vector_pdf_export_failed": "벡터 PDF를 만들 수 없습니다: {{reason}}",
     "psd_export_failed": "레이어 PSD를 만들 수 없습니다: {{reason}}",
+    "pdf_page_too_large": "이 페이지는 벡터 PDF 내보내기에 너무 큽니다(300dpi 기준 변당 최대 {{maxPx}}px).",
+    "psd_page_too_large": "이 페이지는 PSD 내보내기에 너무 큽니다(변당 최대 {{maxPx}}px).",
+    "psd_page_too_complex": "이 페이지는 PSD 내보내기에 너무 복잡합니다(이 페이지 크기에 비해 레이어가 너무 많음) — PSD 내보내기에 너무 많은 메모리가 필요합니다.",
     "invalid_character": "캐릭터 데이터가 올바르지 않습니다.",
     "character_not_found": "캐릭터를 찾을 수 없습니다.",
     "invalid_glossary_entry": "용어집 항목이 올바르지 않습니다.",
@@ -328,6 +331,8 @@
     "noLanguages": "없음",
     "statVolumes": "볼륨 수",
     "statVolumesTooltip": "이 프로젝트의 볼륨 수",
+    "webtoonBadge": "웹툰",
+    "webtoonBadgeTooltip": "이 권은 웹툰(긴 스트립) 형식으로 설정되어 있습니다",
     "statPages": "페이지",
     "statPagesTooltip": "모든 볼륨의 스캔된 페이지 총합",
     "statPanels": "패널",
@@ -337,6 +342,9 @@
     "statBubblesByLanguageTooltip": "{{language}} 텍스트가 있는 말풍선"
   },
   "pageGrid": {
+    "volumeFormatLabel": "권 유형:",
+    "volumeFormatPage": "만화 페이지",
+    "volumeFormatWebtoon": "웹툰(긴 스트립)",
     "menuPageLabel": "페이지",
     "menuImportLabel": "가져오기",
     "menuImportZip": "JSON (ZIP)",
@@ -971,6 +979,11 @@
     "formatVectorPdfHint": "말풍선 텍스트가 실제 선택/복사 가능한 PDF 벡터 텍스트가 됩니다(픽셀 이미지가 아님) — 사각형/타원/곡선 텍스트는 정확하게, 사각형(quad) 말풍선은 아핀 근사로 처리됩니다(진짜 원근법은 PDF 형식 자체에서 기술적으로 불가능합니다). 세로쓰기(다테가키)는 이후 단계에서 지원됩니다. ICC 프로필이 설정되지 않은 경우 이 파일은 인증된 PDF/X가 아닙니다(내보내기 후 안내 참고).",
     "pdfxVersionLabel": "PDF/X 버전",
     "formatPsd": "PSD (레이어)",
+    "webtoonFormatsHidden": "웹툰 형식 볼륨에서는 숨겨짐: 이 형식들은 일반적인 비율의 만화 페이지용입니다(균일화, 최종 판형, 인쇄, 벡터 PDF, PSD) — 세로 스트립에는 의미가 없거나 기술적으로 위험합니다(문서 참고).",
+    "sliceEnabled": "세그먼트로 분할 (웹툰 플랫폼용)",
+    "slicePresetLabel": "플랫폼 프리셋",
+    "sliceMaxHeightLabel": "세그먼트당 최대 높이 (px)",
+    "sliceMinHeightLabel": "세그먼트당 최소 높이 (px)",
     "formatPsdHint": "레이어로 나뉜 포토샵 파일을 내보냅니다: 배경 / 리터치-컷 패널-이미지 / 말풍선과 곡선 텍스트마다 하나의 레이어. 각 레이어는 표시/이동/마스크할 수 있는 래스터 이미지입니다.",
     "psdEditableTextLayersLabel": "편집 가능한 텍스트 레이어 (실험적)",
     "psdEditableTextLayersHint": "지원되는 말풍선(단순한 사각형/타원, 가로쓰기, 단색, 병합되지 않음)에는 포토샵 문자 도구로 편집 가능한 실제 텍스트 개체도 함께 추가를 시도합니다 — 나머지는 이전처럼 래스터 이미지로 남습니다. 이때 해당 말풍선은 두 개의 레이어(\"… (배경)\" / \"… (텍스트)\")로 나뉩니다 — 포토샵 텍스트 레이어는 말풍선의 윤곽/채우기를 동시에 담을 수 없기 때문입니다. 파일을 처음 열 때 포토샵이 레이어에 대해 \"업데이트\" 대화상자를 표시합니다. 업데이트를 클릭하면 텍스트가 편집 가능해집니다.",
@@ -984,7 +997,11 @@
     "progress": "{{count}}개 내보냄…",
     "noneFound": "일치하는 페이지를 찾을 수 없습니다.",
     "done": "{{count}}개의 페이지-언어 내보내기가 완료되었습니다.",
-    "pdfxNotStamped": "참고: 하나 이상의 파일이 인증된 PDF/X가 아닙니다(서버에 ICC 프로필이 설정되지 않음) — 실제 벡터 텍스트이지만 공식적으로 PDF/X를 준수하지는 않습니다."
+    "pdfxNotStamped": "참고: 하나 이상의 파일이 인증된 PDF/X가 아닙니다(서버에 ICC 프로필이 설정되지 않음) — 실제 벡터 텍스트이지만 공식적으로 PDF/X를 준수하지는 않습니다.",
+    "sliceWarnings": "참고: {{count}}개의 절단선이 요소를 가로질렀습니다(깔끔한 절단 지점을 찾지 못함).",
+    "errors": {
+      "resolutionTooLarge": "{{page}} 페이지: 선택한 해상도가 이 페이지 크기에 비해 브라우저 한계를 초과합니다. 이 페이지의 최대 배율: {{maxScale}}x."
+    }
   },
   "normalizePreview": {
     "title": "결정이 필요한 페이지",
@@ -1141,6 +1158,8 @@
     "viewModeSingle": "단일 페이지",
     "viewModeSingleShort": "1",
     "viewModeSpread": "두 페이지 보기",
+    "viewModeStrip": "연속 스크롤(웹툰)",
+    "viewModeStripShort": "S",
     "viewModeCompare": "페이지 비교…",
     "comparePickerTitle": "페이지 비교",
     "comparePickerHint": "나란히 볼 페이지를 최대 {{max}}개까지 선택하세요.",

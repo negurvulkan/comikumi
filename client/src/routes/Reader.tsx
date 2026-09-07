@@ -8,6 +8,7 @@ import type { ScriptDocument } from "../../../shared/src/script";
 import type { Comment, CommentTarget } from "../../../shared/src/comments";
 import type { ProjectRole } from "../../../shared/src/users";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import { EMPTY_PAGE_META_DOCUMENT, isWebtoonVolume, type PageMetaDocument } from "../../../shared/src/pageMeta";
 import { api, type PageSummary } from "../api/client";
 import { ReaderPageCell } from "../editor/ReaderPageCell";
 import { ReaderToolStrip, type ReaderDrawTool, type ReaderViewMode } from "../editor/ReaderToolStrip";
@@ -60,6 +61,9 @@ export function Reader() {
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [script, setScript] = useState<ScriptDocument | null>(null);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
+  // Batch W — Webtoon support: drives the "strip" ReaderViewMode and PageCanvas's
+  // fitMode below. Same safe default while fetching as Editor.tsx/PageGrid.tsx.
+  const [pageMeta, setPageMeta] = useState<PageMetaDocument>(EMPTY_PAGE_META_DOCUMENT);
   const [activeLanguage, setActiveLanguage] = useState("");
   const [drawTool, setDrawTool] = useState<ReaderDrawTool | null>(null);
   const [showCommentsPanel, setShowCommentsPanel] = useState(false);
@@ -170,6 +174,18 @@ export function Reader() {
   useEffect(() => {
     api.listPresets().then(setPresets);
   }, []);
+
+  useEffect(() => {
+    api.getPageMeta(volumeId).then((res) => {
+      setPageMeta(res.meta);
+      // Batch W — Webtoon support: default a freshly-opened webtoon volume straight into
+      // "strip" mode instead of "single" — a webtoon page in contain-fit is barely more
+      // than a thumbnail (see PageCanvas.tsx's fitMode doc comment). Only applies the
+      // moment pageMeta first arrives (viewMode still at its initial "single" default) —
+      // never overrides a choice the user already made after that.
+      if (isWebtoonVolume(res.meta)) setViewMode((v) => (v === "single" ? "strip" : v));
+    });
+  }, [volumeId]);
 
   function refetchComments() {
     api.getComments(volumeId).then((doc) => setComments(doc.comments));
@@ -306,6 +322,7 @@ export function Reader() {
           viewMode={viewMode}
           onSetViewMode={setViewMode}
           onOpenComparePicker={() => setShowComparePicker(true)}
+          isWebtoonVolume={isWebtoonVolume(pageMeta)}
         />
         <CommentsPanel
           open={showCommentsPanel}
@@ -345,6 +362,9 @@ export function Reader() {
               selectedCommentId={commentThreadState?.mode === "view" ? commentThreadState.commentId : null}
               onRequestCreateComment={handleRequestCreateComment}
               onSelectComment={handleSelectComment}
+              fitMode={viewMode === "strip" ? "width" : "contain"}
+              onReachedBottomEdge={viewMode === "strip" ? () => stepPage(1) : undefined}
+              onReachedTopEdge={viewMode === "strip" ? () => stepPage(-1) : undefined}
             />
           ))}
         </div>

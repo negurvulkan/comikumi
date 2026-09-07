@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { LanguageDef } from "../../../shared/src/languages";
-import type { ResolvedChapter } from "../../../shared/src/pageMeta";
+import type { ResolvedChapter, VolumeFormat } from "../../../shared/src/pageMeta";
 import { api } from "../api/client";
 import type { PageSelection, PageSelectionMode } from "../export/pageSelection";
 import { parseCustomSelection, PageSelectionError } from "../export/pageSelection";
 import type { RasterExportOptions, RasterImageFormat } from "../export/renderPageToPng";
 import { suggestUniformTarget } from "../export/uniformFormat";
 import { COMIC_PAGE_PRESETS, toPx, type LengthUnit } from "../export/finalFormat";
-import type { FinalFormatOptions } from "../export/useExportRun";
+import type { FinalFormatOptions, SliceOptions } from "../export/useExportRun";
+import { DEFAULT_SLICE_HEIGHT, SLICE_PRESETS } from "../../../shared/src/webtoonSlicing";
 
 export type ExportFormat = "png" | "uniform" | "final-format" | "print" | "vector-pdf" | "psd";
 export type PdfXVersion = "x1a" | "x4";
@@ -28,6 +29,15 @@ interface Props {
    * single-page invocation doesn't. Only chapters with at least one assigned page (see
    * shared/src/pageMeta.ts's resolveChapters) are meaningful here. */
   chapters?: ResolvedChapter[];
+  /** Batch W — Webtoon support. Omitted (or "page") shows every format exactly as before.
+   * "webtoon" hides uniform/final-format/print/vector-pdf/psd — each is either meaningless
+   * for a long-strip volume (uniform, final-format — see suggestUniformTarget/
+   * COMIC_PAGE_PRESETS, both built around normally-proportioned pages) or a real crash/OOM
+   * risk this batch deliberately didn't re-architect around (print/vector-pdf's canvas-size
+   * ceiling, psd's per-element full-page canvas — see MAX_PDF_PAGE_PX/MAX_PSD_*_PX server-
+   * side guards in export.ts, which stay in effect regardless of what's shown here; this is
+   * only about not leading the user into a format that was never going to work). */
+  volumeFormat?: VolumeFormat;
   exporting: boolean;
   /** `pdfxVersion` is only meaningful when `format === "vector-pdf"`; `imageOptions` only when
    * `format === "png"`/`"final-format"`; `finalFormatOptions` only when `format === "final-format"`
@@ -41,7 +51,10 @@ interface Props {
     imageOptions: RasterExportOptions,
     finalFormatOptions?: FinalFormatOptions,
     /** Only meaningful when `format === "psd"` — see the checkbox in the psd format block. */
-    psdEditableTextLayers?: boolean
+    psdEditableTextLayers?: boolean,
+    /** Batch W — Webtoon support: only meaningful when `format === "png"` — see the
+     * "Segmentierung" section, only shown in webtoon mode. */
+    sliceOptions?: SliceOptions
   ) => void;
   /** Only called for `format === "uniform"` — the caller runs a distortion analysis
    * first (see useNormalizeRun.ts's analyze()) before any page is actually rendered,
@@ -72,8 +85,9 @@ function translateSelectionError(err: unknown, t: (key: string, params?: Record<
   return err instanceof Error ? err.message : String(err);
 }
 
-export function ExportPanel({ volumeId, languages, currentPage, chapters, exporting, onExport, onAnalyzeUniform, onClose }: Props) {
+export function ExportPanel({ volumeId, languages, currentPage, chapters, volumeFormat = "page", exporting, onExport, onAnalyzeUniform, onClose }: Props) {
   const { t } = useTranslation();
+  const isWebtoon = volumeFormat === "webtoon";
   const [mode, setMode] = useState<PageSelectionMode>(currentPage ? "current" : "all");
   const [rangeFrom, setRangeFrom] = useState(1);
   const [rangeTo, setRangeTo] = useState(1);
@@ -95,6 +109,14 @@ export function ExportPanel({ volumeId, languages, currentPage, chapters, export
   const [finalHeight, setFinalHeight] = useState(COMIC_PAGE_PRESETS[0].heightMm);
   const [margin, setMargin] = useState(10);
   const [dpi, setDpi] = useState(DEFAULT_FINAL_FORMAT_DPI);
+  // Batch W — Webtoon support: only ever consulted when isWebtoon && format === "png" —
+  // see the "Segmentierung" section below. Defaults to the first non-"custom" preset
+  // (Webtoon Canvas) rather than "custom" itself, so opening the panel fresh already
+  // shows a sensible ready-to-export max height instead of an empty/arbitrary one.
+  const [sliceEnabled, setSliceEnabled] = useState(false);
+  const [slicePresetId, setSlicePresetId] = useState(SLICE_PRESETS[0].id);
+  const [sliceMaxHeight, setSliceMaxHeight] = useState(SLICE_PRESETS[0].maxHeightPx);
+  const [sliceMinHeight, setSliceMinHeight] = useState(Math.round(DEFAULT_SLICE_HEIGHT * 0.2));
 
   // The target size is only meaningful once — computed lazily on first switch to
   // "uniform" so opening the panel for any other format never pays for a listPages()
@@ -176,7 +198,9 @@ export function ExportPanel({ volumeId, languages, currentPage, chapters, export
       });
       return;
     }
-    onExport(buildSelection(), onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, undefined, psdEditableTextLayers);
+    const sliceOptions: SliceOptions | undefined =
+      isWebtoon && format === "png" && sliceEnabled ? { maxHeightPx: sliceMaxHeight, minHeightPx: sliceMinHeight } : undefined;
+    onExport(buildSelection(), onlyTranslated, languageFilter, format, pdfxVersion, imageOptions, undefined, psdEditableTextLayers, sliceOptions);
   }
 
   return (
@@ -259,22 +283,27 @@ export function ExportPanel({ volumeId, languages, currentPage, chapters, export
         <button className={format === "png" ? "active" : ""} onClick={() => setFormat("png")}>
           {t("exportPanel.formatPng")}
         </button>
-        <button className={format === "uniform" ? "active" : ""} onClick={() => setFormat("uniform")}>
-          {t("exportPanel.formatUniform")}
-        </button>
-        <button className={format === "final-format" ? "active" : ""} onClick={() => setFormat("final-format")}>
-          {t("exportPanel.formatFinalFormat")}
-        </button>
-        <button className={format === "print" ? "active" : ""} onClick={() => setFormat("print")}>
-          {t("exportPanel.formatPrint")}
-        </button>
-        <button className={format === "vector-pdf" ? "active" : ""} onClick={() => setFormat("vector-pdf")}>
-          {t("exportPanel.formatVectorPdf")}
-        </button>
-        <button className={format === "psd" ? "active" : ""} onClick={() => setFormat("psd")}>
-          {t("exportPanel.formatPsd")}
-        </button>
+        {!isWebtoon && (
+          <>
+            <button className={format === "uniform" ? "active" : ""} onClick={() => setFormat("uniform")}>
+              {t("exportPanel.formatUniform")}
+            </button>
+            <button className={format === "final-format" ? "active" : ""} onClick={() => setFormat("final-format")}>
+              {t("exportPanel.formatFinalFormat")}
+            </button>
+            <button className={format === "print" ? "active" : ""} onClick={() => setFormat("print")}>
+              {t("exportPanel.formatPrint")}
+            </button>
+            <button className={format === "vector-pdf" ? "active" : ""} onClick={() => setFormat("vector-pdf")}>
+              {t("exportPanel.formatVectorPdf")}
+            </button>
+            <button className={format === "psd" ? "active" : ""} onClick={() => setFormat("psd")}>
+              {t("exportPanel.formatPsd")}
+            </button>
+          </>
+        )}
       </div>
+      {isWebtoon && <p className="hint">{t("exportPanel.webtoonFormatsHidden")}</p>}
       {(format === "png" || format === "uniform" || format === "final-format") && (
         <>
           <label>{t("exportPanel.imageFormatLabel")}</label>
@@ -301,6 +330,57 @@ export function ExportPanel({ volumeId, languages, currentPage, chapters, export
                 ))}
               </select>
             </label>
+          )}
+
+          {format === "png" && isWebtoon && (
+            <>
+              <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" checked={sliceEnabled} onChange={(e) => setSliceEnabled(e.target.checked)} />
+                {t("exportPanel.sliceEnabled")}
+              </label>
+              {sliceEnabled && (
+                <>
+                  <label>
+                    {t("exportPanel.slicePresetLabel")}
+                    <select
+                      value={slicePresetId}
+                      onChange={(e) => {
+                        const preset = SLICE_PRESETS.find((p) => p.id === e.target.value) ?? SLICE_PRESETS[0];
+                        setSlicePresetId(preset.id);
+                        setSliceMaxHeight(preset.maxHeightPx);
+                      }}
+                    >
+                      {SLICE_PRESETS.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <p style={{ color: "var(--text-muted)", margin: "-4px 0 0", fontSize: 12 }}>
+                    {SLICE_PRESETS.find((p) => p.id === slicePresetId)?.note}
+                  </p>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <label style={{ flex: 1 }}>
+                      {t("exportPanel.sliceMaxHeightLabel")}
+                      <input
+                        type="number"
+                        min={100}
+                        value={sliceMaxHeight}
+                        onChange={(e) => {
+                          setSlicePresetId("custom");
+                          setSliceMaxHeight(Number(e.target.value));
+                        }}
+                      />
+                    </label>
+                    <label style={{ flex: 1 }}>
+                      {t("exportPanel.sliceMinHeightLabel")}
+                      <input type="number" min={0} value={sliceMinHeight} onChange={(e) => setSliceMinHeight(Number(e.target.value))} />
+                    </label>
+                  </div>
+                </>
+              )}
+            </>
           )}
 
           {format === "uniform" && (

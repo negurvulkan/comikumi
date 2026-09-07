@@ -34,8 +34,17 @@ const FREEHAND_COMMENT_WIDTH_PX = 4;
 (Konva as typeof Konva & { pointerEventsEnabled: boolean }).pointerEventsEnabled = false;
 
 const MIN_ZOOM = 0.2;
+// Batch W — Webtoon support: fit-width mode's base scale alone can be ~0.03-0.05 for a
+// realistic long strip (see fitMode's own doc comment below) — MIN_ZOOM must be able to go
+// lower than that or "zoom out to see the whole strip" would be unreachable.
+const MIN_ZOOM_WIDTH_MODE = 0.02;
 const MAX_ZOOM = 6;
 const ZOOM_STEP = 1.15;
+/** How much of the viewport must always stay covered by page content on each axis in
+ * fit-width mode's pan clamp (see clampPanOffset) — low enough that a very tall strip can
+ * still be dragged/scrolled its full length, high enough that it's never possible to lose
+ * the page completely off-screen with no visual anchor to find it again. */
+const MIN_VISIBLE_FRACTION = 0.15;
 
 interface Props {
   /** Purely cosmetic — shown as the leading path segment in the titlebar, e.g.
@@ -63,6 +72,16 @@ interface Props {
    * selection) — see BubbleShape.tsx's Props doc comment for the "translator" role
    * this exists for. */
   readOnly?: boolean;
+  /** Batch W — Webtoon support. "contain" (default) is the original, unchanged behavior:
+   * fit the whole page into the viewport on both axes, capped at 1x, always fully visible,
+   * no scrolling. "width" fits ONLY the width (`scale = min(1, viewportW/imageW)`, same
+   * idea as CleanPageMaskEditor.tsx's existing width-only fit) and switches to top-aligned
+   * loading, wheel-scrolls-instead-of-zooms, a much lower zoom-out floor, PageUp/PageDown/
+   * Home/End scrolling, and a pan clamp that keeps the page reachable — everything a long
+   * vertical strip needs to actually be lettered at a workable zoom level (see
+   * PageCanvas.tsx's own git history / TODO.md Batch W for why "contain" alone makes that
+   * physically impossible for a realistic webtoon page). */
+  fitMode?: "contain" | "width";
   onSelect: (id: string | null, additive?: boolean) => void;
   onChange: (id: string, patch: Partial<Bubble>) => void;
   onCreate: (shape: BubbleShapeKind, box: { x: number; y: number; width: number; height: number }, opts?: { isEffect?: boolean }) => void;
@@ -111,6 +130,15 @@ interface Props {
    * enough) for a repeat click on the SAME panel to reliably re-trigger the effect —
    * object identity alone doesn't help if a caller happens to reuse the same object. */
   focusRequest?: { panelId: string; requestId: number } | null;
+  /** Batch W — Webtoon support: fired at most once per "reaching the edge" (not once per
+   * wheel tick while stuck there — see the edgeFiredRef guard below) when the user keeps
+   * scrolling past the very bottom/top of the page in fit-width mode. Reader.tsx (in its
+   * "strip" ReaderViewMode) uses this to auto-advance to the next/previous page, so a long
+   * webtoon episode reads as one continuous scroll across episode boundaries instead of
+   * stopping dead at each page edge. No-op prop in "contain" mode and in the Editor (which
+   * doesn't pass it) — scrolling past the edge there just does nothing, same as today. */
+  onReachedBottomEdge?: () => void;
+  onReachedTopEdge?: () => void;
 }
 
 export function PageCanvas({
@@ -134,6 +162,7 @@ export function PageCanvas({
   fontsVersion,
   drawTool,
   readOnly,
+  fitMode = "contain",
   onSelect,
   onChange,
   onCreate,
@@ -156,6 +185,8 @@ export function PageCanvas({
   onRequestCreateComment,
   onSelectComment,
   focusRequest,
+  onReachedBottomEdge,
+  onReachedTopEdge,
 }: Props) {
   const { t } = useTranslation();
   const { projectId = "" } = useParams();
@@ -185,10 +216,13 @@ export function PageCanvas({
 
   const scale =
     imageWidth > 0 && imageHeight > 0
-      ? Math.min(1, viewportSize.width / imageWidth, viewportSize.height / imageHeight)
+      ? fitMode === "width"
+        ? Math.min(1, viewportSize.width / imageWidth)
+        : Math.min(1, viewportSize.width / imageWidth, viewportSize.height / imageHeight)
       : 1;
   const displayWidth = imageWidth * scale;
   const displayHeight = imageHeight * scale;
+  const minZoom = fitMode === "width" ? MIN_ZOOM_WIDTH_MODE : MIN_ZOOM;
 
   const layerRef = useRef<Konva.Layer>(null);
   const [zoom, setZoom] = useState(1);
@@ -199,10 +233,43 @@ export function PageCanvas({
   // zoom level changes, until the user explicitly drags it elsewhere.
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
+  /** In "contain" mode this is unchanged (always centers on both axes, even once zoomed
+   * past what fits — that's an existing, deliberate zoom-around-center behavior). In
+   * "width" mode, vertical centering only applies while the content still fits the
+   * viewport height; once it overflows (the normal case for a webtoon strip), the top of
+   * the page aligns with the top of the viewport instead of starting scrolled to the
+   * strip's vertical middle. */
   function centerFor(z: number) {
-    return { x: (viewportSize.width - displayWidth * z) / 2, y: (viewportSize.height - displayHeight * z) / 2 };
+    const x = (viewportSize.width - displayWidth * z) / 2;
+    const y = viewportSize.height - displayHeight * z;
+    return { x, y: fitMode === "width" ? Math.max(0, y / 2) : y / 2 };
   }
   const center = centerFor(zoom);
+  /** Batch W — Webtoon support: keeps at least MIN_VISIBLE_FRACTION of the viewport
+   * covered by page content on whichever axis currently overflows it — a no-op in
+   * "contain" mode (nothing there can overflow far enough to lose the page) and a no-op
+   * on an axis that isn't overflowing (so a narrow strip's horizontal centering is
+   * untouched even while its height is being clamped). Without this, it's trivial to drag
+   * a 20,000px strip completely off-screen with no visual anchor to find it again. */
+  function clampPanOffset(offset: { x: number; y: number }, z: number): { x: number; y: number } {
+    if (fitMode !== "width") return offset;
+    const c = centerFor(z);
+    const dispW = displayWidth * z;
+    const dispH = displayHeight * z;
+    let stageXClamped = c.x + offset.x;
+    let stageYClamped = c.y + offset.y;
+    if (dispW > viewportSize.width) {
+      const min = viewportSize.width * MIN_VISIBLE_FRACTION - dispW;
+      const max = viewportSize.width * (1 - MIN_VISIBLE_FRACTION);
+      stageXClamped = Math.min(max, Math.max(min, stageXClamped));
+    }
+    if (dispH > viewportSize.height) {
+      const min = viewportSize.height * MIN_VISIBLE_FRACTION - dispH;
+      const max = viewportSize.height * (1 - MIN_VISIBLE_FRACTION);
+      stageYClamped = Math.min(max, Math.max(min, stageYClamped));
+    }
+    return { x: stageXClamped - c.x, y: stageYClamped - c.y };
+  }
   const stageX = center.x + panOffset.x;
   const stageY = center.y + panOffset.y;
 
@@ -324,7 +391,7 @@ export function PageCanvas({
   }
 
   function zoomAt(pointer: { x: number; y: number }, newZoom: number) {
-    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom));
+    const clamped = Math.min(MAX_ZOOM, Math.max(minZoom, newZoom));
     // Keep the point under the pointer/anchor fixed on screen while the
     // zoom level changes, same math as before — just expressed via the
     // center-relative stage position instead of an absolute one.
@@ -333,7 +400,7 @@ export function PageCanvas({
     const newStageY = pointer.y - mousePointTo.y * clamped;
     const newCenter = centerFor(clamped);
     setZoom(clamped);
-    setPanOffset({ x: newStageX - newCenter.x, y: newStageY - newCenter.y });
+    setPanOffset(clampPanOffset({ x: newStageX - newCenter.x, y: newStageY - newCenter.y }, clamped));
   }
 
   // Same padding/fit idea as PanelCropPreview.tsx's baseScale, generalized from a fixed
@@ -348,7 +415,7 @@ export function PageCanvas({
     const boxWidth = Math.max(1, bounds.maxX - bounds.minX) * scale;
     const boxHeight = Math.max(1, bounds.maxY - bounds.minY) * scale;
     const fitZoom = FOCUS_PANEL_PADDING * Math.min(viewportSize.width / boxWidth, viewportSize.height / boxHeight);
-    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fitZoom));
+    const clamped = Math.min(MAX_ZOOM, Math.max(minZoom, fitZoom));
 
     const centerX = ((bounds.minX + bounds.maxX) / 2) * scale;
     const centerY = ((bounds.minY + bounds.maxY) / 2) * scale;
@@ -356,7 +423,7 @@ export function PageCanvas({
     const targetStageY = viewportSize.height / 2 - centerY * clamped;
     const newCenter = centerFor(clamped);
     setZoom(clamped);
-    setPanOffset({ x: targetStageX - newCenter.x, y: targetStageY - newCenter.y });
+    setPanOffset(clampPanOffset({ x: targetStageX - newCenter.x, y: targetStageY - newCenter.y }, clamped));
   }
 
   /** Recenters the viewport on an image-px point WITHOUT changing zoom — the minimap's
@@ -369,7 +436,7 @@ export function PageCanvas({
     const targetStageX = viewportSize.width / 2 - centerX * zoom;
     const targetStageY = viewportSize.height / 2 - centerY * zoom;
     const newCenter = centerFor(zoom);
-    setPanOffset({ x: targetStageX - newCenter.x, y: targetStageY - newCenter.y });
+    setPanOffset(clampPanOffset({ x: targetStageX - newCenter.x, y: targetStageY - newCenter.y }, zoom));
   }
 
   // The currently visible portion of the page, in the same unscaled image-px space as
@@ -384,6 +451,26 @@ export function PageCanvas({
     height: viewportSize.height / zoom / scale,
   };
 
+  // Batch W — Webtoon support: viewport culling. A page with hundreds of bubbles spread
+  // across a 20,000px strip would otherwise all render into the Layer on every frame —
+  // visibleRect above already computes exactly the currently-visible image-px window (it
+  // used to feed only the minimap), so filtering bubbles against it (with a generous
+  // margin so nothing pops in visibly during a fast scroll/drag) is the cheapest possible
+  // win. Deliberately Y-only and bubbles-only for now: X-culling adds little in fit-width
+  // mode (the full width is already on screen), and panels/images/curved texts/comments
+  // are typically far fewer per page than bubbles — extend this the same way if profiling
+  // on a real page ever shows it's needed. A no-op in "contain" mode (visibleRect already
+  // covers the whole page there, so the margin-widened range always includes everything).
+  const CULL_MARGIN_VIEWPORTS = 1.5;
+  const cullMarginPx = (visibleRect.height * CULL_MARGIN_VIEWPORTS) / 2;
+  const visibleYRange = { min: visibleRect.y - cullMarginPx, max: visibleRect.y + visibleRect.height + cullMarginPx };
+  function bubbleOverlapsVisibleY(b: Bubble, originY: number): boolean {
+    const bounds = b.shape === "quad" && b.corners ? b.corners.map((c) => c.y) : [b.y, b.y + b.height];
+    const minY = originY + Math.min(...bounds);
+    const maxY = originY + Math.max(...bounds);
+    return maxY >= visibleYRange.min && minY <= visibleYRange.max;
+  }
+
   useEffect(() => {
     if (!focusRequest) return;
     const panel = panels.find((p) => p.id === focusRequest.panelId);
@@ -395,8 +482,50 @@ export function PageCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusRequest]);
 
+  // Batch W — Webtoon support: tracks whether onReachedBottomEdge/onReachedTopEdge have
+  // already fired for the CURRENT edge-visit, so a continuous scroll gesture stuck at the
+  // bottom (many wheel events, all still clamped to the same offset) fires the callback
+  // exactly once instead of once per event — Reader.tsx's auto-advance would otherwise
+  // try to navigate dozens of times per scroll gesture. Reset the moment the page scrolls
+  // back away from that edge, so the NEXT time it's reached, it fires again.
+  const edgeFiredRef = useRef({ top: false, bottom: false });
+  function reportVerticalEdge(offset: { x: number; y: number }, deltaY: number) {
+    if (fitMode !== "width") return;
+    const stageY = centerFor(zoom).y + offset.y;
+    const bottomStageY = viewportSize.height - displayHeight * zoom;
+    const EDGE_EPSILON = 0.5;
+    const atBottom = stageY <= bottomStageY + EDGE_EPSILON;
+    const atTop = stageY >= -EDGE_EPSILON;
+    if (atBottom && deltaY > 0) {
+      if (!edgeFiredRef.current.bottom) {
+        edgeFiredRef.current.bottom = true;
+        onReachedBottomEdge?.();
+      }
+    } else {
+      edgeFiredRef.current.bottom = false;
+    }
+    if (atTop && deltaY < 0) {
+      if (!edgeFiredRef.current.top) {
+        edgeFiredRef.current.top = true;
+        onReachedTopEdge?.();
+      }
+    } else {
+      edgeFiredRef.current.top = false;
+    }
+  }
+
   function handleWheel(e: Konva.KonvaEventObject<WheelEvent>) {
     e.evt.preventDefault();
+    // Batch W — Webtoon support: in fit-width mode, plain wheel scrolls the strip (every
+    // long-strip viewer works this way) — Ctrl/Cmd+wheel is the escape hatch for zoom,
+    // moved behind a modifier instead of being the default. "contain" mode is completely
+    // unaffected (a normal page already fits, wheel-to-zoom is the only thing you'd want).
+    if (fitMode === "width" && !(e.evt.ctrlKey || e.evt.metaKey)) {
+      const nextOffset = clampPanOffset({ x: panOffset.x - e.evt.deltaX, y: panOffset.y - e.evt.deltaY }, zoom);
+      setPanOffset(nextOffset);
+      reportVerticalEdge(nextOffset, e.evt.deltaY);
+      return;
+    }
     const stage = e.target.getStage();
     const pointer = stage?.getPointerPosition();
     if (!pointer) return;
@@ -406,8 +535,42 @@ export function PageCanvas({
 
   function handleStageDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
     if (e.target !== e.target.getStage()) return;
-    setPanOffset({ x: e.target.x() - center.x, y: e.target.y() - center.y });
+    setPanOffset(clampPanOffset({ x: e.target.x() - center.x, y: e.target.y() - center.y }, zoom));
   }
+
+  // Batch W — Webtoon support: PageUp/PageDown/Home/End scroll the strip in fit-width
+  // mode — a 20,000px page is unusable with drag-to-pan alone. Ignored while typing in a
+  // text field (same guard every other page-level keyboard shortcut in this app uses).
+  // Re-registers on every panOffset/zoom/viewportSize change so the handler always closes
+  // over current values — a plain keydown listener, not perf-sensitive enough to be worth
+  // a ref-based indirection.
+  useEffect(() => {
+    if (fitMode !== "width") return;
+    function isTypingTarget(target: EventTarget | null): boolean {
+      const el = target as HTMLElement | null;
+      return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (isTypingTarget(e.target)) return;
+      const step = viewportSize.height * 0.85;
+      if (e.key === "PageDown") {
+        e.preventDefault();
+        setPanOffset(clampPanOffset({ x: panOffset.x, y: panOffset.y - step }, zoom));
+      } else if (e.key === "PageUp") {
+        e.preventDefault();
+        setPanOffset(clampPanOffset({ x: panOffset.x, y: panOffset.y + step }, zoom));
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setPanOffset(clampPanOffset({ x: panOffset.x, y: 0 - centerFor(zoom).y }, zoom));
+      } else if (e.key === "End") {
+        e.preventDefault();
+        const bottomStageY = viewportSize.height - displayHeight * zoom;
+        setPanOffset(clampPanOffset({ x: panOffset.x, y: bottomStageY - centerFor(zoom).y }, zoom));
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [fitMode, panOffset, zoom, viewportSize, displayHeight]);
 
   function zoomButton(factor: number) {
     zoomAt({ x: viewportSize.width / 2, y: viewportSize.height / 2 }, zoom * factor);
@@ -609,7 +772,31 @@ export function PageCanvas({
           style={{ cursor: drawTool ? "crosshair" : "default" }}
         >
         <Layer ref={layerRef}>
-          {image && <KonvaImage image={image} width={displayWidth} height={displayHeight} />}
+          {image &&
+            (fitMode === "width" ? (
+              (() => {
+                // Batch W — Webtoon support: hand Konva only the currently-visible band of
+                // the source image instead of the whole (possibly 16M-px) strip every
+                // frame. `crop` is in the image's OWN native pixel space (same space
+                // visibleYRange is already in), so no second decode is needed — this is
+                // purely a "draw less of what's already loaded" optimization.
+                const cropY = Math.max(0, Math.min(imageHeight, visibleYRange.min));
+                const cropBottom = Math.max(0, Math.min(imageHeight, visibleYRange.max));
+                const cropHeight = Math.max(1, cropBottom - cropY);
+                return (
+                  <KonvaImage
+                    image={image}
+                    x={0}
+                    y={cropY * scale}
+                    width={displayWidth}
+                    height={cropHeight * scale}
+                    crop={{ x: 0, y: cropY, width: imageWidth, height: cropHeight }}
+                  />
+                );
+              })()
+            ) : (
+              <KonvaImage image={image} width={displayWidth} height={displayHeight} />
+            ))}
           {image &&
             cutPanels.map((panel) => (
               <CutPanelContentShape
@@ -703,6 +890,10 @@ export function PageCanvas({
               const b = bubbles.find((x) => x.id === item.id);
               if (!b) return null;
               const panel = b.panelId ? panels.find((p) => p.id === b.panelId) : undefined;
+              // Culled bubbles skip rendering entirely, but never a selected one — losing a
+              // selected bubble's handles the moment it scrolls out of the culling margin
+              // would be a confusing way to find out selection state was silently dropped.
+              if (!selectedIds.includes(b.id) && !bubbleOverlapsVisibleY(b, panel ? panel.origin.y : 0)) return null;
               const siblings = panel ? bubbles.filter((x) => x.panelId === panel.id) : unassignedBubbles;
               const bubbleShape = (
                 <BubbleShape

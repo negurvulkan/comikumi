@@ -5,15 +5,26 @@ import type { PageLayout } from "../../../shared/src/layoutSchema";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ensureFontsLoaded } from "../editor/fontLoader";
-import { canvasToBlob, renderPageToPng, type RasterExportOptions } from "./renderPageToPng";
+import { canvasToBlob, maxSafeRasterScale, renderPageToPng, type RasterExportOptions } from "./renderPageToPng";
 import { placeInFinalFormat } from "./finalFormat";
 import { selectPages, type PageSelection } from "./pageSelection";
 import type { ExportFormat, PdfXVersion } from "../editor/ExportPanel";
+import { collectPreferredCuts, collectSliceObstacles, computeSliceCuts, sliceFileName } from "../../../shared/src/webtoonSlicing";
 
 export interface FinalFormatOptions {
   targetWidthPx: number;
   targetHeightPx: number;
   marginPx: number;
+}
+
+/** Batch W — Webtoon support: cuts a long strip into multiple, upload-ready segment
+ * images instead of one giant file — see shared/src/webtoonSlicing.ts. Only consulted
+ * for `format === "png"` — print/final-format/vector-pdf/psd all target a single
+ * physical/vector page and slicing them wouldn't mean anything (see ExportPanel.tsx,
+ * which also only ever offers this alongside "png"). */
+export interface SliceOptions {
+  maxHeightPx: number;
+  minHeightPx: number;
 }
 
 const EXTENSION_BY_IMAGE_FORMAT: Record<NonNullable<RasterExportOptions["format"]>, string> = {
@@ -79,7 +90,9 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
     finalFormatOptions?: FinalFormatOptions,
     /** Only consulted when `format === "psd"` — see ExportPanel.tsx's checkbox and
      * server/src/lib/psdExport.ts's own doc comment for what this actually does. */
-    psdEditableTextLayers = false
+    psdEditableTextLayers = false,
+    /** Only consulted when `format === "png"` — see SliceOptions's own doc comment. */
+    sliceOptions?: SliceOptions
   ) {
     if (languages.length === 0) return;
     setExporting(true);
@@ -92,6 +105,8 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
       const targetLanguages = languageFilter === "all" ? languages : languages.filter((l) => l.code === languageFilter);
       let exportCount = 0;
       let anyNotPdfxStamped = false;
+      let sliceWarningCount = 0;
+      const slicing = format === "png" && !!sliceOptions;
       for (const p of selected) {
         const pageLayout =
           preloadedLayout && p.page === preloadedLayout.page ? preloadedLayout.layout : await api.getLayout(volumeId, p.page);
@@ -122,8 +137,62 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
           continue;
         }
 
+        // Batch W — Webtoon support: every remaining format below rasterizes this page onto
+        // an in-memory canvas at SOME resolution multiplier — "png" at whatever the user
+        // picked, everything else at native (1x). Checking once here, before the (possibly
+        // slow) image load + render even starts, turns a page that's simply too big for the
+        // browser's canvas limits into one clear, translated, per-page error instead of the
+        // opaque "Bild-Export fehlgeschlagen" canvasToBlob() throws after the fact — see
+        // maxSafeRasterScale's own doc comment for why this can happen even outside webtoon
+        // support (any sufficiently tall/high-res page), just much more easily with one.
+        // Slicing renders each segment at its OWN (much smaller) height — see
+        // renderPageToPng's cropHeight doc comment — so the guard below would reject a
+        // page it doesn't need to; skip it here and check each segment's own height
+        // inside the slicing branch instead.
+        const requestedScale = format === "png" ? (imageOptions.scale ?? 1) : 1;
+        if (!slicing) {
+          const safeScale = maxSafeRasterScale(pageLayout.imageWidth, pageLayout.imageHeight);
+          if (requestedScale > safeScale + 1e-9) {
+            throw new Error(
+              t("useExportRun.errors.resolutionTooLarge", { page: p.page, maxScale: safeScale.toFixed(2) })
+            );
+          }
+        }
+
         const img = await loadHtmlImage(api.pageImageUrl(volumeId, p.page));
         for (const lang of langsForPage) {
+          if (slicing && sliceOptions) {
+            // Obstacles/preferred cuts are language-dependent (bubble text, panel
+            // language overrides) — computed once per language, not once per page.
+            const obstacles = collectSliceObstacles(pageLayout, lang.code, presets);
+            const preferredCuts = collectPreferredCuts(pageLayout, lang.code);
+            const plan = computeSliceCuts({
+              imageHeight: pageLayout.imageHeight,
+              maxHeight: sliceOptions.maxHeightPx,
+              minHeight: sliceOptions.minHeightPx,
+              obstacles,
+              preferredCuts,
+            });
+            sliceWarningCount += plan.warnings.length;
+            for (const slice of plan.slices) {
+              const safeScale = maxSafeRasterScale(pageLayout.imageWidth, slice.height);
+              if (requestedScale > safeScale + 1e-9) {
+                throw new Error(
+                  t("useExportRun.errors.resolutionTooLarge", { page: sliceFileName(p.page, slice.index), maxScale: safeScale.toFixed(2) })
+                );
+              }
+              const blob = await renderPageToPng(img, pageLayout, lang.code, loadPlacedImage, presets, {
+                ...imageOptions,
+                cropY: slice.y,
+                cropHeight: slice.height,
+              });
+              const extension = EXTENSION_BY_IMAGE_FORMAT[imageOptions.format ?? "png"];
+              await api.exportPage(volumeId, sliceFileName(p.page, slice.index), lang.folderSuffix, blob, extension);
+            }
+            exportCount++;
+            setExportMsg(t("useExportRun.progress", { count: exportCount }));
+            continue;
+          }
           if (format === "print") {
             // Print export always needs a lossless full-resolution source to convert to CMYK TIFF —
             // the image format/quality/resolution controls are for the "png" web-image path only.
@@ -161,7 +230,8 @@ export function useExportRun(volumeId: string, languages: LanguageDef[]) {
         }
       }
       const doneMsg = exportCount === 0 ? t("useExportRun.noneFound") : t("useExportRun.done", { count: exportCount });
-      setExportMsg(anyNotPdfxStamped ? `${doneMsg} ${t("useExportRun.pdfxNotStamped")}` : doneMsg);
+      const withPdfx = anyNotPdfxStamped ? `${doneMsg} ${t("useExportRun.pdfxNotStamped")}` : doneMsg;
+      setExportMsg(sliceWarningCount > 0 ? `${withPdfx} ${t("useExportRun.sliceWarnings", { count: sliceWarningCount })}` : withPdfx);
     } catch (e) {
       setExportMsg(t("pageGrid.importErrorPrefix", { message: translateApiError(e, t) }));
     } finally {

@@ -107,6 +107,9 @@
     "print_export_failed": "印刷用ファイルを作成できませんでした: {{reason}}",
     "vector_pdf_export_failed": "ベクターPDFを作成できませんでした: {{reason}}",
     "psd_export_failed": "レイヤーPSDを作成できませんでした: {{reason}}",
+    "pdf_page_too_large": "このページはベクターPDFエクスポートには大きすぎます（300dpiで各辺最大{{maxPx}}px）。",
+    "psd_page_too_large": "このページはPSDエクスポートには大きすぎます（各辺最大{{maxPx}}px）。",
+    "psd_page_too_complex": "このページはPSDエクスポートには複雑すぎます（このページサイズに対してレイヤー数が多すぎます）— PSDエクスポートに必要なメモリが多すぎます。",
     "invalid_character": "無効なキャラクターデータです。",
     "character_not_found": "キャラクターが見つかりません。",
     "invalid_glossary_entry": "無効な用語集項目です。",
@@ -328,6 +331,8 @@
     "noLanguages": "なし",
     "statVolumes": "巻数",
     "statVolumesTooltip": "このプロジェクトの巻数",
+    "webtoonBadge": "ウェブトゥーン",
+    "webtoonBadgeTooltip": "この巻はウェブトゥーン（縦スクロール）形式に設定されています",
     "statPages": "ページ",
     "statPagesTooltip": "全ての巻のスキャン済みページ数",
     "statPanels": "パネル",
@@ -337,6 +342,9 @@
     "statBubblesByLanguageTooltip": "{{language}}のテキストがある吹き出し"
   },
   "pageGrid": {
+    "volumeFormatLabel": "巻の種類:",
+    "volumeFormatPage": "コミックページ",
+    "volumeFormatWebtoon": "ウェブトゥーン（縦スクロール）",
     "menuPageLabel": "ページ",
     "menuImportLabel": "インポート",
     "menuImportZip": "JSON (ZIP)",
@@ -971,6 +979,11 @@
     "formatVectorPdfHint": "セリフのテキストは実際に選択・コピー可能なPDFベクターテキストになります（ピクセル画像ではありません）— 長方形・楕円・カーブテキストは正確に、四角形（クアッド）ふきだしはアフィン近似で処理されます（真の遠近法はPDF形式そのものでは技術的に不可能です）。縦書きは今後のフェーズで対応予定です。ICCプロファイルが設定されていない場合、このファイルは認証済みPDF/Xにはなりません（書き出し後の案内を参照）。",
     "pdfxVersionLabel": "PDF/Xバージョン",
     "formatPsd": "PSD（レイヤー）",
+    "webtoonFormatsHidden": "ウェブトゥーン形式の巻では非表示: これらの形式は通常の縦横比のコミックページ向けです（均一化、仕上げ判型、印刷、ベクターPDF、PSD）— 縦長ストリップには意味がないか、技術的にリスクがあります（ドキュメント参照）。",
+    "sliceEnabled": "セグメントに分割する（ウェブトゥーンプラットフォーム向け）",
+    "slicePresetLabel": "プラットフォーム・プリセット",
+    "sliceMaxHeightLabel": "セグメントごとの最大高さ (px)",
+    "sliceMinHeightLabel": "セグメントごとの最小高さ (px)",
     "formatPsdHint": "レイヤー分けされたPhotoshopファイルを書き出します：背景／レタッチ・カットパネル・画像／吹き出しとカーブテキストごとに1レイヤー。各レイヤーは表示/非表示・移動・マスクが可能なラスター画像です。",
     "psdEditableTextLayersLabel": "編集可能なテキストレイヤー（実験的機能）",
     "psdEditableTextLayersHint": "対応する吹き出し（単純な矩形/楕円、横書き、単色、未結合）には、Photoshopの文字ツールで編集できる実際のテキストオブジェクトも追加を試みます——それ以外は従来どおりラスター画像のままです。その場合、その吹き出しは2つのレイヤー（「…（背景）」/「…（テキスト）」）に分かれます——Photoshopのテキストレイヤーは吹き出しの輪郭/塗りを同時に持てないためです。ファイルを初めて開く際、Photoshopがレイヤーの「更新」を促すダイアログを表示します。「更新」をクリックするとテキストが編集可能になります。",
@@ -984,7 +997,11 @@
     "progress": "{{count}} 件エクスポート済み…",
     "noneFound": "該当するページが見つかりません。",
     "done": "{{count}} 件のページ・言語エクスポートが完了しました。",
-    "pdfxNotStamped": "注意: 少なくとも1件のファイルは認証済みPDF/Xではありません（サーバーにICCプロファイルが設定されていません）— 実際のベクターテキストですが、正式にはPDF/X準拠ではありません。"
+    "pdfxNotStamped": "注意: 少なくとも1件のファイルは認証済みPDF/Xではありません（サーバーにICCプロファイルが設定されていません）— 実際のベクターテキストですが、正式にはPDF/X準拠ではありません。",
+    "sliceWarnings": "注意: {{count}}件の分割線が要素を貫通しました(きれいな分割位置が見つかりませんでした)。",
+    "errors": {
+      "resolutionTooLarge": "ページ {{page}}: このページサイズに対して選択した解像度はブラウザの上限を超えています。このページで可能な最大倍率: {{maxScale}}x。"
+    }
   },
   "normalizePreview": {
     "title": "確認が必要なページ",
@@ -1141,6 +1158,8 @@
     "viewModeSingle": "単ページ",
     "viewModeSingleShort": "1",
     "viewModeSpread": "見開き",
+    "viewModeStrip": "縦スクロール(ウェブトゥーン)",
+    "viewModeStripShort": "S",
     "viewModeCompare": "ページを比較…",
     "comparePickerTitle": "ページを比較",
     "comparePickerHint": "並べて表示するページを最大{{max}}ページまで選んでください。",

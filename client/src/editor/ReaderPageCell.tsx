@@ -29,6 +29,11 @@ interface Props {
   selectedCommentId: string | null;
   onRequestCreateComment: (page: string, target: CommentTarget, clientX: number, clientY: number) => void;
   onSelectComment: (commentId: string, clientX: number, clientY: number) => void;
+  /** Batch W — Webtoon support: "width" in Reader.tsx's "strip" ReaderViewMode, "contain"
+   * (the default) everywhere else — see PageCanvas.tsx's own Props doc comment. */
+  fitMode?: "contain" | "width";
+  onReachedBottomEdge?: () => void;
+  onReachedTopEdge?: () => void;
 }
 
 /** One page's worth of the Reader — a PageCanvas plus its panel-jump strip, with its
@@ -50,6 +55,9 @@ export function ReaderPageCell({
   selectedCommentId,
   onRequestCreateComment,
   onSelectComment,
+  fitMode,
+  onReachedBottomEdge,
+  onReachedTopEdge,
 }: Props) {
   const { t } = useTranslation();
   const [focusRequest, setFocusRequest] = useState<{ panelId: string; requestId: number } | null>(null);
@@ -92,6 +100,9 @@ export function ReaderPageCell({
         fontsVersion={fontsVersion}
         drawTool={drawTool}
         readOnly
+        fitMode={fitMode}
+        onReachedBottomEdge={onReachedBottomEdge}
+        onReachedTopEdge={onReachedTopEdge}
         onSelect={setSelectedBubbleId}
         onChange={() => {}}
         onCreate={() => {}}
