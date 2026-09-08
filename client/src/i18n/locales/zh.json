@@ -493,7 +493,10 @@
       "deleteFolderConfirm": "删除文件夹“{{folder}}”？仅当其为空时才可删除。",
       "moveAction": "移动到文件夹",
       "moveTitle": "将“{{fileName}}”移动到：",
-      "moveHere": "移动到此处"
+      "moveHere": "移动到此处",
+      "deleteFileAction": "删除文件",
+      "deleteFileConfirm": "确定要删除文件“{{fileName}}”吗？",
+      "renameAction": "重命名"
     },
     "textEffects": {
       "presetOverrideHint": "由预设指定。",
@@ -1140,6 +1143,20 @@
     "relationLabelPlaceholder": "例如：是……的姐姐",
     "addRelation": "添加",
     "deleteRelation": "移除关系"
+  },
+  "assetManager": {
+    "menuEntry": "素材管理器",
+    "title": "素材管理器",
+    "projectScopeHint": "管理此项目的字体、图片和 SVG 气泡轮廓——上传、重命名、删除、整理到文件夹。",
+    "instanceScopeHint": "管理服务器范围内共享的素材库——与当前打开的项目无关。",
+    "manageSharedLibraryLink": "管理共享素材库 →",
+    "uploadFont": "上传字体",
+    "fontsEmpty": "尚未上传任何字体。",
+    "kind": {
+      "images": "图片",
+      "bubble-svgs": "SVG 轮廓",
+      "fonts": "字体"
+    }
   },
   "reader": {
     "menuEntry": "阅读 / 审阅",

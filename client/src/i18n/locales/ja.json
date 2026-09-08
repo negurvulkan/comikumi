@@ -493,7 +493,10 @@
       "deleteFolderConfirm": "フォルダ「{{folder}}」を削除しますか？空の場合のみ削除できます。",
       "moveAction": "フォルダへ移動",
       "moveTitle": "「{{fileName}}」の移動先:",
-      "moveHere": "ここに移動"
+      "moveHere": "ここに移動",
+      "deleteFileAction": "ファイルを削除",
+      "deleteFileConfirm": "ファイル「{{fileName}}」を本当に削除しますか？",
+      "renameAction": "名前を変更"
     },
     "textEffects": {
       "presetOverrideHint": "プリセットで指定されています。",
@@ -1140,6 +1143,20 @@
     "relationLabelPlaceholder": "例: 〜の姉",
     "addRelation": "追加",
     "deleteRelation": "関係を削除"
+  },
+  "assetManager": {
+    "menuEntry": "アセットマネージャー",
+    "title": "アセットマネージャー",
+    "projectScopeHint": "このプロジェクトのフォント・画像・SVGバブル輪郭を管理します — アップロード、名前変更、削除、フォルダ整理。",
+    "instanceScopeHint": "サーバー全体で共有されるライブラリを管理します — 現在開いているプロジェクトとは独立しています。",
+    "manageSharedLibraryLink": "共有ライブラリを管理 →",
+    "uploadFont": "フォントをアップロード",
+    "fontsEmpty": "まだフォントがアップロードされていません。",
+    "kind": {
+      "images": "画像",
+      "bubble-svgs": "SVG輪郭",
+      "fonts": "フォント"
+    }
   },
   "reader": {
     "menuEntry": "読む / レビュー",

@@ -7,6 +7,7 @@ import { useSession } from "../state/SessionContext";
 import type { ProjectRole, PublicUser } from "../../../shared/src/users";
 import { useConfirmDialog } from "../editor/ConfirmDialog";
 import { useProject } from "../state/ProjectContext";
+import { AssetManagerPanel } from "../editor/AssetManagerPanel";
 
 interface AdminProject {
   filePath: string;
@@ -322,6 +323,16 @@ export function AdminDashboard() {
               {t("users.title")}
             </button>
           )}
+          {me?.isSystemAdmin && (
+            <button
+              type="button"
+              className={activeTab === "assets" ? "primary" : ""}
+              style={{ textAlign: "left", padding: "10px 12px" }}
+              onClick={() => switchTab("assets")}
+            >
+              {t("assetManager.title")}
+            </button>
+          )}
           <button
             type="button"
             className={activeTab === "projects" ? "primary" : ""}
@@ -353,6 +364,14 @@ export function AdminDashboard() {
         {/* Banner Messages */}
         {error && <div className="error-banner" style={{ margin: 16 }}>{error}</div>}
         {successMsg && <div style={{ background: "#2e7d32", color: "#fff", padding: "10px 16px", margin: 16, borderRadius: 4, fontSize: 13 }}>{successMsg}</div>}
+
+        {/* Tab: Instance-scope Asset Library */}
+        {activeTab === "assets" && me?.isSystemAdmin && (
+          <div className="page-scroll" style={{ flex: 1, padding: 16 }}>
+            <p className="hint" style={{ marginTop: 0 }}>{t("assetManager.instanceScopeHint")}</p>
+            <AssetManagerPanel scope="instance" />
+          </div>
+        )}
 
         {/* Tab 1: Global Accounts */}
         {activeTab === "accounts" && me?.isSystemAdmin && (

@@ -736,6 +736,15 @@ Schriftlizenzen o. Ä. pflegst). Bild- und SVG-Bibliothek lassen sich dabei
 in Unterordner gliedern, um bei wachsender Sammlung den Überblick zu
 behalten.
 
+Um die Bibliothek tatsächlich zu pflegen — eine nicht mehr benötigte Datei
+löschen, eine umbenennen, oder einfach nur sehen, was schon vorhanden ist,
+ohne dafür erst eine Seite zu öffnen — nutze **Projekt → Asset-Manager**
+statt eines Auswahl-Dialogs. Das ist derselbe Ordner-Browser wie in den
+Pickern, nur mit Löschen und Umbenennen, für jeden ab der Rolle Letterer.
+Ein System-Admin hat zusätzlich einen eigenen, separaten **Asset-Manager**
+unter Konto/Admin → Administration, der die gemeinsame Bibliothek direkt
+verwaltet, statt über den Umweg eines gerade geöffneten Projekts.
+
 ### 16.3 UI-Sprache
 
 Umschalter oben rechts in der App-Kopfzeile — betrifft nur die Oberfläche

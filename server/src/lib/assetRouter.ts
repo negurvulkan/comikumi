@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
 import multer from "multer";
@@ -30,6 +30,15 @@ interface AssetRouterOptions {
    * so fonts.ts keeps its exact current behavior (flat array, no folder routes) —
    * fonts are picked by family, not browsed, so there's no organizational need. */
   foldersEnabled?: boolean;
+  /** When true, this router NEVER touches the active project's asset dir — list/serve/
+   * upload/delete/move/rename all resolve straight to `globalDir`, regardless of which
+   * project (if any) happens to be active on the server right now. Used for the true
+   * instance-wide library mounted at /api/instance/<kind> (see instanceFonts.ts etc.) —
+   * the existing unscoped mount (/api/fonts with no instanceOnly) only reaches the global
+   * dir by the COINCIDENCE of no project currently being active; a deliberate
+   * instance-scope surface can't rely on that. Every entry's `scope` is always "global"
+   * in this mode, since there's never a project dir to compare against. */
+  instanceOnly?: boolean;
 }
 
 async function listDir(dir: string, allowedExt: Set<string>): Promise<string[]> {
@@ -57,10 +66,30 @@ function folderFromQuery(value: unknown): string | null {
  * projects that never set assetsDir behave exactly as before this feature existed.
  */
 export function createAssetRouter(opts: AssetRouterOptions): Router {
-  const { kind, globalDir, urlPrefix, allowedExt, uploadFieldName, maxFileSizeBytes, mimeByExt, defaultMimeOnServe, enrichEntry, foldersEnabled } =
-    opts;
+  const {
+    kind,
+    globalDir,
+    urlPrefix,
+    allowedExt,
+    uploadFieldName,
+    maxFileSizeBytes,
+    mimeByExt,
+    defaultMimeOnServe,
+    enrichEntry,
+    foldersEnabled,
+    instanceOnly,
+  } = opts;
   const router = Router();
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: maxFileSizeBytes } });
+
+  /** The one seam every "which dir do we act on" call site below goes through — a pure
+   * pass-through to getActiveProjectAssetDir() unless instanceOnly, in which case it's
+   * always null (never a project dir), so every route below degrades to "act on
+   * globalDir only" without needing its own instanceOnly branch. */
+  async function resolveProjectDir(req: Request): Promise<string | null> {
+    if (instanceOnly) return null;
+    return getActiveProjectAssetDir(kind, req.activeProject);
+  }
 
   router.get(
     "/",
@@ -84,7 +113,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
       }
       if (foldersEnabled) for (const name of await listSubfolders(globalFolderDir)) subfolders.add(name);
 
-      const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
+      const projectDir = await resolveProjectDir(req);
       if (projectDir) {
         const projectFolderDir = path.join(projectDir, folder);
         for (const fileName of await listDir(projectFolderDir, allowedExt)) {
@@ -130,7 +159,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
 
       // Project folder wins on a same-named collision, matching GET / above — try it
       // first (if configured) and only fall back to the global dir on ENOENT.
-      const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
+      const projectDir = await resolveProjectDir(req);
       if (projectDir) {
         try {
           await fs.access(path.join(projectDir, folder, fileName));
@@ -160,7 +189,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
       }
       // Same lookup order as GET /file/:fileName above — project dir first, then the
       // global dir — so deleting removes whichever copy would actually have been served.
-      const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
+      const projectDir = await resolveProjectDir(req);
       const bases = [...(projectDir ? [projectDir] : []), globalDir];
       for (const base of bases) {
         const target = path.join(base, folder, fileName);
@@ -196,7 +225,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
         res.status(400).json({ error: "unsupported_file_type", params: { kind } });
         return;
       }
-      const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
+      const projectDir = await resolveProjectDir(req);
       const targetDir = path.join(projectDir ?? globalDir, folder);
       await fs.mkdir(targetDir, { recursive: true });
       const safeName = req.file.originalname.replace(/[^\w.\- ]/g, "_");
@@ -205,6 +234,63 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
 
       const extra = enrichEntry ? await enrichEntry(safeName, absPath) : {};
       res.json({ ok: true, fileName: safeName, folder, scope: projectDir ? "project" : "global", ...extra });
+    })
+  );
+
+  // Unconditional — registered even when !foldersEnabled (fonts included). Renaming a
+  // file has nothing to do with folder browsing; a font's own `family` (derived from its
+  // filename in enrichEntry, never stored) just naturally picks up the new name on the
+  // next listing, no extra bookkeeping needed.
+  router.post(
+    "/rename",
+    requireProjectRole("letterer"),
+    asyncHandler(async (req, res) => {
+      const fileName = typeof req.body?.fileName === "string" ? req.body.fileName : "";
+      const newFileName = typeof req.body?.newFileName === "string" ? req.body.newFileName : "";
+      if (!isSafeFileName(fileName) || !isSafeFileName(newFileName)) {
+        res.status(400).json({ error: "invalid_file_name" });
+        return;
+      }
+      const folder = foldersEnabled ? folderFromQuery(req.body?.folder) : "";
+      if (folder === null) {
+        res.status(400).json({ error: "invalid_folder" });
+        return;
+      }
+      // Same extension required — renaming across extensions would let a client sidestep
+      // the allowedExt check performed at upload time in spirit, with no legitimate use
+      // case for this feature.
+      const ext = path.extname(fileName).toLowerCase();
+      const newExt = path.extname(newFileName).toLowerCase();
+      if (ext !== newExt || !allowedExt.has(newExt)) {
+        res.status(400).json({ error: "unsupported_file_type", params: { kind } });
+        return;
+      }
+      // Same project-then-global lookup/priority order as DELETE and POST /move — renames
+      // whichever copy would actually have been served.
+      const projectDir = await resolveProjectDir(req);
+      const bases = [...(projectDir ? [projectDir] : []), globalDir];
+      for (const base of bases) {
+        const src = path.join(base, folder, fileName);
+        const exists = await fs
+          .access(src)
+          .then(() => true)
+          .catch(() => false);
+        if (!exists) continue;
+        const dest = path.join(base, folder, newFileName);
+        const destExists = await fs
+          .access(dest)
+          .then(() => true)
+          .catch(() => false);
+        if (destExists) {
+          res.status(409).json({ error: "asset_rename_conflict" });
+          return;
+        }
+        await fs.rename(src, dest);
+        const extra = enrichEntry ? await enrichEntry(newFileName, dest) : {};
+        res.json({ ok: true, fileName: newFileName, ...extra });
+        return;
+      }
+      res.status(404).json({ error: "file_not_found" });
     })
   );
 
@@ -218,7 +304,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
           res.status(400).json({ error: "invalid_folder" });
           return;
         }
-        const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
+        const projectDir = await resolveProjectDir(req);
         await fs.mkdir(path.join(projectDir ?? globalDir, folder), { recursive: true });
         res.json({ ok: true, folder });
       })
@@ -233,7 +319,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
           res.status(400).json({ error: "invalid_folder" });
           return;
         }
-        const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
+        const projectDir = await resolveProjectDir(req);
         const bases = [globalDir, ...(projectDir ? [projectDir] : [])];
         const dirs = bases.map((base) => path.join(base, folder));
 
@@ -271,7 +357,7 @@ export function createAssetRouter(opts: AssetRouterOptions): Router {
           res.status(400).json({ error: "invalid_folder" });
           return;
         }
-        const projectDir = await getActiveProjectAssetDir(kind, req.activeProject);
+        const projectDir = await resolveProjectDir(req);
         const bases = [...(projectDir ? [projectDir] : []), globalDir]; // project takes priority, matching GET /file lookup order
         for (const base of bases) {
           const src = path.join(base, fromFolder, fileName);

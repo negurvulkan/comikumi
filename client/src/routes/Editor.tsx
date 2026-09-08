@@ -37,6 +37,7 @@ import type { MenuGroup } from "../editor/MenuBar";
 import { ToolStrip, type DrawTool } from "../editor/ToolStrip";
 import { LanguageStrip } from "../editor/LanguageStrip";
 import { Modal } from "../editor/Modal";
+import { AssetManagerContent } from "../editor/AssetManagerContent";
 import { LayoutConflictModal } from "../editor/LayoutConflictModal";
 import { SettingsForm } from "../editor/SettingsForm";
 import { CharacterManager } from "../editor/CharacterManager";
@@ -101,6 +102,7 @@ export function Editor() {
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showAssetManager, setShowAssetManager] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -630,6 +632,7 @@ export function Editor() {
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("storyBible.menuEntry"), onClick: () => navigate(`${pBase}/story-bible`) },
+        { type: "action", label: t("assetManager.menuEntry"), onClick: () => setShowAssetManager(true) },
         {
           type: "action",
           label: t("script.menuEntry"),
@@ -827,6 +830,13 @@ export function Editor() {
       {showCharacters && (
         <Modal onClose={() => setShowCharacters(false)}>
           <CharacterManager characters={characters} onChange={setCharacters} onClose={() => setShowCharacters(false)} />
+        </Modal>
+      )}
+      {showAssetManager && (
+        <Modal onClose={() => setShowAssetManager(false)}>
+          <div style={{ width: "80vw", height: "80vh", display: "flex" }}>
+            <AssetManagerContent canEdit={hasAtLeast("letterer")} isSystemAdmin={!!user?.isSystemAdmin} onClose={() => setShowAssetManager(false)} />
+          </div>
         </Modal>
       )}
       {showGlossary && (

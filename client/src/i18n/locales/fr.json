@@ -496,7 +496,10 @@
       "deleteFolderConfirm": "Supprimer le dossier « {{folder}} » ? Uniquement possible s'il est vide.",
       "moveAction": "Déplacer vers un dossier",
       "moveTitle": "Déplacer « {{fileName}} » vers :",
-      "moveHere": "Déplacer ici"
+      "moveHere": "Déplacer ici",
+      "deleteFileAction": "Supprimer le fichier",
+      "deleteFileConfirm": "Supprimer vraiment le fichier « {{fileName}} » ?",
+      "renameAction": "Renommer"
     },
     "textEffects": {
       "presetOverrideHint": "Défini par le préréglage.",
@@ -1151,6 +1154,20 @@
     "relationLabelPlaceholder": "ex. est la sœur de",
     "addRelation": "Ajouter",
     "deleteRelation": "Retirer la relation"
+  },
+  "assetManager": {
+    "menuEntry": "Gestionnaire d'assets",
+    "title": "Gestionnaire d'assets",
+    "projectScopeHint": "Gérez les polices, images et contours SVG de bulles de ce projet — téléverser, renommer, supprimer, organiser en dossiers.",
+    "instanceScopeHint": "Gérez la bibliothèque partagée à l'échelle du serveur — indépendamment du projet actuellement ouvert.",
+    "manageSharedLibraryLink": "Gérer la bibliothèque partagée →",
+    "uploadFont": "Téléverser une police",
+    "fontsEmpty": "Aucune police téléversée pour l'instant.",
+    "kind": {
+      "images": "Images",
+      "bubble-svgs": "Contours SVG",
+      "fonts": "Polices"
+    }
   },
   "reader": {
     "menuEntry": "Lecture / Relecture",

@@ -328,3 +328,24 @@ export function AIAssistantIcon() {
     </svg>
   );
 }
+
+export function PencilIcon() {
+  return (
+    <svg {...common}>
+      <path d="M13.5 3.5 L16.5 6.5 L7 16 L3.5 16.5 L4 13 Z" />
+      <path d="M11.7 5.3 L14.7 8.3" />
+    </svg>
+  );
+}
+
+export function TrashIcon() {
+  return (
+    <svg {...common}>
+      <path d="M4 6 H16" />
+      <path d="M7.5 6 V4.3 A1 1 0 0 1 8.5 3.3 H11.5 A1 1 0 0 1 12.5 4.3 V6" />
+      <path d="M5.3 6 L6 16.2 A1 1 0 0 0 7 17.1 H13 A1 1 0 0 0 14 16.2 L14.7 6" />
+      <path d="M8.5 9 V14" />
+      <path d="M11.5 9 V14" />
+    </svg>
+  );
+}

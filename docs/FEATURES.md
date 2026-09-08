@@ -19,6 +19,7 @@ snapshot — please keep it in sync with larger changes.
 - [Story Bible](#story-bible)
 - [Lettering Presets](#lettering-presets)
 - [Project Asset Folder](#project-asset-folder)
+- [Asset Manager](#asset-manager)
 - [Editor — Canvas Basics](#editor--canvas-basics)
 - [Element Types](#element-types)
 - [Auto-Bubbles (Detection & OCR)](#auto-bubbles-detection--ocr)
@@ -1476,6 +1477,39 @@ automatically uses a `thumbnails/` folder right next to the project file,
 instead of falling back to a shared global library (like fonts/images/SVGs) —
 every project thus gets its own cache folder without further configuration,
 regardless of whether an asset folder is set at all.
+
+## Asset Manager
+
+Fonts, images, and SVG bubble contours (see [Project Asset Folder](#project-asset-folder)
+above for how the underlying shared/project-specific library storage works) used to be
+manageable only from inside the page editor's inline picker popovers — pick-and-upload
+only, no way to delete, rename, or just get an overview of what's already there without
+opening a page first. Two dedicated screens now cover that, at two different scopes:
+
+- **Project Asset Manager** — "Project → Asset Manager" from the volume overview, page
+  overview, editor, or project switcher menu. Opens as a large panel/modal (in the
+  volume overview specifically, it's not an overlay at all — it fills exactly the space
+  between the menu bar, the sidebar, and the bottom of the screen, so both stay visible
+  around it) with a tab per asset kind (Fonts / Images / SVG Outlines). Any project
+  member can browse; uploading, renaming, deleting, and moving between folders requires
+  the letterer role or higher, matching the same permission the inline pickers already
+  required. A shared-library entry is shown for context but is read-only here — deleting
+  or renaming it would risk silently touching a file every other project can also see;
+  use the instance-scope manager below for that instead. A system admin sees a link
+  straight to it.
+- **Instance Asset Manager** — a new "Asset Manager" tab in Account/Admin → Administration
+  (system-admin only). Manages the true, project-independent shared library directly —
+  regardless of which project (if any) happens to be open on the server at the time, so
+  it's a reliable place to curate the library every project draws from, not something
+  that depends on remembering to close whatever project you were just working in.
+
+Both screens share the same folder-browsing UI as the editor's inline pickers (breadcrumb
+navigation, subfolder chips, "+ New folder", move-to-folder) plus two capabilities that
+were previously only possible by deleting the file on the server's filesystem directly:
+a delete button per file, and inline rename (keeps the file's extension; a name that
+already exists in that folder is rejected instead of silently overwriting it). Fonts
+stay a flat list without folders in both managers, same as the inline font picker — fonts
+are found by typing their family name, not by browsing, so folders wouldn't help there.
 
 ## Undo/Redo
 

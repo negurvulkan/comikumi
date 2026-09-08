@@ -493,7 +493,10 @@
       "deleteFolderConfirm": "폴더 \"{{folder}}\"를 삭제하시겠습니까? 비어 있는 경우에만 가능합니다.",
       "moveAction": "폴더로 이동",
       "moveTitle": "\"{{fileName}}\"을(를) 다음으로 이동:",
-      "moveHere": "여기로 이동"
+      "moveHere": "여기로 이동",
+      "deleteFileAction": "파일 삭제",
+      "deleteFileConfirm": "파일 \"{{fileName}}\"을(를) 정말 삭제하시겠습니까?",
+      "renameAction": "이름 바꾸기"
     },
     "textEffects": {
       "presetOverrideHint": "프리셋에 의해 지정됨.",
@@ -1140,6 +1143,20 @@
     "relationLabelPlaceholder": "예: ~의 언니",
     "addRelation": "추가",
     "deleteRelation": "관계 삭제"
+  },
+  "assetManager": {
+    "menuEntry": "에셋 관리자",
+    "title": "에셋 관리자",
+    "projectScopeHint": "이 프로젝트의 글꼴, 이미지, SVG 말풍선 윤곽을 관리합니다 — 업로드, 이름 변경, 삭제, 폴더 정리.",
+    "instanceScopeHint": "서버 전체에서 공유되는 라이브러리를 관리합니다 — 현재 열려 있는 프로젝트와 무관합니다.",
+    "manageSharedLibraryLink": "공유 라이브러리 관리 →",
+    "uploadFont": "글꼴 업로드",
+    "fontsEmpty": "아직 업로드된 글꼴이 없습니다.",
+    "kind": {
+      "images": "이미지",
+      "bubble-svgs": "SVG 윤곽",
+      "fonts": "글꼴"
+    }
   },
   "reader": {
     "menuEntry": "읽기 / 리뷰",

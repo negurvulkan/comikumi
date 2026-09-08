@@ -510,7 +510,10 @@
       "deleteFolderConfirm": "Ordner „{{folder}}“ löschen? Nur möglich, wenn er leer ist.",
       "moveAction": "In Ordner verschieben",
       "moveTitle": "„{{fileName}}“ verschieben nach:",
-      "moveHere": "Hierher verschieben"
+      "moveHere": "Hierher verschieben",
+      "deleteFileAction": "Datei löschen",
+      "deleteFileConfirm": "Datei „{{fileName}}“ wirklich löschen?",
+      "renameAction": "Umbenennen"
     },
     "textEffects": {
       "presetOverrideHint": "Von Preset vorgegeben.",
@@ -1171,6 +1174,20 @@
     "relationLabelPlaceholder": "z. B. ist Schwester von",
     "addRelation": "Hinzufügen",
     "deleteRelation": "Beziehung entfernen"
+  },
+  "assetManager": {
+    "menuEntry": "Asset-Manager",
+    "title": "Asset-Manager",
+    "projectScopeHint": "Fonts, Bilder und SVG-Sprechblasen-Umrisse dieses Projekts verwalten — hochladen, umbenennen, löschen, in Ordner organisieren.",
+    "instanceScopeHint": "Die serverweite, gemeinsame Bibliothek verwalten — unabhängig davon, welches Projekt gerade geöffnet ist.",
+    "manageSharedLibraryLink": "Gemeinsame Bibliothek verwalten →",
+    "uploadFont": "Font hochladen",
+    "fontsEmpty": "Noch keine Fonts hochgeladen.",
+    "kind": {
+      "images": "Bilder",
+      "bubble-svgs": "SVG-Umrisse",
+      "fonts": "Fonts"
+    }
   },
   "reader": {
     "menuEntry": "Lesen / Review",

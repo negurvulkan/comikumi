@@ -1204,6 +1204,104 @@ export const api = {
     ).then((r) => json<{ ok: true }>(r)),
 };
 
+/** Builds the `/api/instance/<kind>...` base for a call, bypassing projectApiUrl()
+ * entirely — instance-scope routes are deliberately NEVER project-relative (see
+ * server/src/lib/assetRouter.ts's `instanceOnly` doc comment: the whole point is to
+ * reach the true global library regardless of which project, if any, is active). */
+function instanceApiUrl(path: string): string {
+  return apiUrl(`/api/instance${path}`);
+}
+
+/** One asset-kind's full CRUD surface (list/upload/delete/rename, plus folder ops when
+ * `foldersEnabled`) against either a project-scoped or instance-scoped base — the
+ * shared backbone behind AssetBrowser.tsx (Asset Manager screens) and, after their
+ * Phase-2 refactor, ImagePicker.tsx/SvgBubblePicker.tsx too. `urlBuilder` is
+ * `projectApiUrl` for the project-scope objects below, `instanceApiUrl` for the
+ * instance-scope ones — everything else about the two is identical.
+ *
+ * Deliberately recomputes each entry's `url` itself (via the same `/file/:fileName`
+ * shape `imagesFileUrl()`/`bubbleSvgFileUrl()` already use) rather than trying to
+ * rescope the server-emitted `url` field the way withApiUrls() does for the older
+ * listImages()/listBubbleSvgs() — that field is already an absolute, scope-correct
+ * "/api/..." path for whichever router emitted it, but rewriting it generically for
+ * BOTH project- and instance-scope callers from one shared function would need to know
+ * which prefix convention produced it; recomputing from `urlBuilder` + `basePath`
+ * directly sidesteps that entirely. */
+function createAssetApi<TEntry extends { fileName: string; url: string; scope: AssetScope }>(
+  urlBuilder: (path: string) => string,
+  basePath: string,
+  uploadFieldName: string,
+  foldersEnabled: boolean
+) {
+  function attachUrls(files: TEntry[], folder: string): TEntry[] {
+    return files.map((e) => ({ ...e, url: authUrl(urlBuilder(`${basePath}/file/${encodeURIComponent(e.fileName)}${folderQuery(folder)}`)) }));
+  }
+
+  return {
+    foldersEnabled,
+    list: (folder = ""): Promise<AssetListing<TEntry>> =>
+      authFetch(urlBuilder(`${basePath}${folderQuery(folder)}`)).then((r) => {
+        if (foldersEnabled) {
+          return json<AssetListing<TEntry>>(r).then((listing) => ({ ...listing, files: attachUrls(listing.files, listing.folder) }));
+        }
+        return json<TEntry[]>(r).then((files) => ({ folder: "", subfolders: [], files: attachUrls(files, "") }));
+      }),
+    upload: (file: File, folder = ""): Promise<{ fileName: string; folder: string; scope: AssetScope } & Record<string, unknown>> => {
+      const form = new FormData();
+      form.append(uploadFieldName, file);
+      if (folder) form.append("folder", folder);
+      return authFetch(urlBuilder(basePath), { method: "POST", body: form }).then((r) =>
+        json<{ ok: true; fileName: string; folder: string; scope: AssetScope } & Record<string, unknown>>(r)
+      );
+    },
+    remove: (fileName: string, folder = ""): Promise<void> =>
+      authFetch(urlBuilder(`${basePath}/file/${encodeURIComponent(fileName)}${folderQuery(folder)}`), { method: "DELETE" })
+        .then((r) => json<{ ok: true }>(r))
+        .then(() => undefined),
+    rename: (fileName: string, newFileName: string, folder = ""): Promise<{ fileName: string } & Record<string, unknown>> =>
+      authFetch(urlBuilder(`${basePath}/rename`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName, newFileName, folder }),
+      }).then((r) => json<{ ok: true; fileName: string } & Record<string, unknown>>(r)),
+    // Always present for a simple, uniform return type — only ever actually CALLED when
+    // `foldersEnabled` is true (fonts' AssetBrowser instance never renders folder UI, so
+    // these three are simply unused there, not hit against a route that doesn't exist).
+    move: (fileName: string, fromFolder: string, toFolder: string): Promise<void> =>
+      authFetch(urlBuilder(`${basePath}/move`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName, fromFolder, toFolder }),
+      })
+        .then((r) => json<{ ok: true }>(r))
+        .then(() => undefined),
+    createFolder: (folder: string): Promise<void> =>
+      authFetch(urlBuilder(`${basePath}/folders`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder }),
+      })
+        .then((r) => json<{ ok: true }>(r))
+        .then(() => undefined),
+    deleteFolder: (folder: string): Promise<void> =>
+      authFetch(urlBuilder(`${basePath}/folders${folderQuery(folder)}`), { method: "DELETE" })
+        .then((r) => json<{ ok: true }>(r))
+        .then(() => undefined),
+  };
+}
+
+/** One CRUD object per (asset kind, scope) pair — see createAssetApi's doc comment.
+ * `instance*` variants require system-admin server-side (server/src/app.ts); calling
+ * them as anyone else 403s, same as every other requireSystemAdmin route. */
+export const assetLibraries = {
+  images: createAssetApi<ImageEntry>(projectApiUrl, "/images", "image", true),
+  instanceImages: createAssetApi<ImageEntry>(instanceApiUrl, "/images", "image", true),
+  bubbleSvgs: createAssetApi<BubbleSvgEntry>(projectApiUrl, "/bubble-svgs", "svg", true),
+  instanceBubbleSvgs: createAssetApi<BubbleSvgEntry>(instanceApiUrl, "/bubble-svgs", "svg", true),
+  fonts: createAssetApi<FontEntry>(projectApiUrl, "/fonts", "font", false),
+  instanceFonts: createAssetApi<FontEntry>(instanceApiUrl, "/fonts", "font", false),
+};
+
 /** Triggers a browser download for arbitrary text/blob content — used for single-page JSON export. */
 export function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);

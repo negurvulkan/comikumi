@@ -707,6 +707,15 @@ assets folder** (handy if you maintain several independent projects with
 different font licenses, for instance). The image and SVG libraries can
 be organized into subfolders to stay manageable as your collection grows.
 
+To actually curate that library — delete a file you no longer need, rename
+one, or just see everything that's there without opening a page first — use
+**Project → Asset Manager** instead of a picker dialog. It's the same
+folder browser as the pickers, plus delete and rename, for anyone with the
+letterer role or higher. A system admin has a second, separate **Asset
+Manager** available from Account/Admin → Administration, which manages the
+shared library directly rather than through whatever project happens to be
+open.
+
 ### 16.3 UI Language
 
 Switcher in the top right of the app header — affects only the interface

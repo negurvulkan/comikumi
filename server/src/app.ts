@@ -9,6 +9,9 @@ import { exportJobsRouter } from "./routes/exportJobs.js";
 import { fontsRouter } from "./routes/fonts.js";
 import { imagesRouter } from "./routes/images.js";
 import { bubbleSvgsRouter } from "./routes/bubbleSvgs.js";
+import { instanceFontsRouter } from "./routes/instanceFonts.js";
+import { instanceImagesRouter } from "./routes/instanceImages.js";
+import { instanceBubbleSvgsRouter } from "./routes/instanceBubbleSvgs.js";
 import { languagesRouter } from "./routes/languages.js";
 import { charactersRouter } from "./routes/characters.js";
 import { entitiesRouter } from "./routes/entities.js";
@@ -84,6 +87,14 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/fonts", requireAuth, requireViewer, fontsRouter);
   app.use("/api/images", requireAuth, requireViewer, imagesRouter);
   app.use("/api/bubble-svgs", requireAuth, requireViewer, bubbleSvgsRouter);
+  // Instance-scope asset library — always the true, project-independent global dir (see
+  // assetRouter.ts's `instanceOnly` doc comment), for the Asset Manager's instance tab
+  // (AdminDashboard.tsx). requireSystemAdmin is applied HERE, at the mount level, exactly
+  // like /api/browse below — never rely on a route-internal check for this, a missed gate
+  // here would expose the entire server's shared asset library to any authenticated user.
+  app.use("/api/instance/fonts", requireAuth, requireSystemAdmin, instanceFontsRouter);
+  app.use("/api/instance/images", requireAuth, requireSystemAdmin, instanceImagesRouter);
+  app.use("/api/instance/bubble-svgs", requireAuth, requireSystemAdmin, instanceBubbleSvgsRouter);
   app.use("/api/languages", requireAuth, requireViewer, languagesRouter);
   app.use("/api/characters", requireAuth, requireViewer, charactersRouter);
   app.use("/api/entities", requireAuth, requireViewer, entitiesRouter);

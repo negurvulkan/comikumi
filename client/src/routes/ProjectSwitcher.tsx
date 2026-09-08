@@ -8,7 +8,10 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import { api, type RecentProject } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { useProject } from "../state/ProjectContext";
+import { useSession } from "../state/SessionContext";
+import { useProjectRole } from "../state/useProjectRole";
 import { FileBrowserModal } from "../editor/FileBrowserModal";
+import { AssetManagerContent } from "../editor/AssetManagerContent";
 import { invalidateFontsCache } from "../editor/fontLoader";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuEntry, MenuGroup } from "../editor/MenuBar";
@@ -32,6 +35,8 @@ export function ProjectSwitcher() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { project } = useProject();
+  const { user } = useSession();
+  const { hasAtLeast } = useProjectRole();
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [recent, setRecent] = useState<RecentProject[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +46,7 @@ export function ProjectSwitcher() {
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showAssetManager, setShowAssetManager] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
@@ -94,6 +100,7 @@ export function ProjectSwitcher() {
               { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true) },
               { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true) },
               { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true) },
+              { type: "action", label: t("assetManager.menuEntry"), onClick: () => setShowAssetManager(true) },
               { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true) },
             ] satisfies MenuEntry[])
           : []),
@@ -292,6 +299,13 @@ export function ProjectSwitcher() {
       {showCharacters && (
         <Modal onClose={() => setShowCharacters(false)}>
           <CharacterManager characters={characters} onChange={setCharacters} onClose={() => setShowCharacters(false)} />
+        </Modal>
+      )}
+      {showAssetManager && project && (
+        <Modal onClose={() => setShowAssetManager(false)}>
+          <div style={{ width: "80vw", height: "80vh", display: "flex" }}>
+            <AssetManagerContent canEdit={hasAtLeast("letterer")} isSystemAdmin={!!user?.isSystemAdmin} onClose={() => setShowAssetManager(false)} />
+          </div>
         </Modal>
       )}
       {showGlossary && (

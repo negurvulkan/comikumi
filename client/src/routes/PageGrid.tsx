@@ -18,6 +18,7 @@ import type { UniformFitMode } from "../export/uniformFormat";
 import { ExportPanel } from "../editor/ExportPanel";
 import { NormalizePreviewDialog } from "../editor/NormalizePreviewDialog";
 import { Modal } from "../editor/Modal";
+import { AssetManagerContent } from "../editor/AssetManagerContent";
 import { MenuBar } from "../editor/MenuBar";
 import type { MenuGroup } from "../editor/MenuBar";
 import { SettingsForm } from "../editor/SettingsForm";
@@ -35,6 +36,7 @@ import { ChapterManager } from "../editor/ChapterManager";
 import { ReadIcon, DragHandleIcon } from "../editor/Icons";
 import { useProject } from "../state/ProjectContext";
 import { useProjectRole } from "../state/useProjectRole";
+import { useSession } from "../state/SessionContext";
 import { nextPageName } from "./pageNaming";
 import { movePage, insertPageAt } from "./pageOrdering";
 import { computePageNumbers } from "./pageNumbering";
@@ -254,6 +256,7 @@ export function PageGrid() {
   const pBase = `/p/${encodeURIComponent(projectId)}`;
   const { project } = useProject();
   const { hasAtLeast } = useProjectRole();
+  const { user } = useSession();
   const canManagePages = hasAtLeast("letterer");
   const [pages, setPages] = useState<PageSummary[] | null>(null);
   const [orderEtag, setOrderEtag] = useState<string | null>(null);
@@ -273,6 +276,7 @@ export function PageGrid() {
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showAssetManager, setShowAssetManager] = useState(false);
   const [showVolumeReport, setShowVolumeReport] = useState(false);
   const [showQaCheck, setShowQaCheck] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
@@ -693,6 +697,7 @@ export function PageGrid() {
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("storyBible.menuEntry"), onClick: () => navigate(`${pBase}/story-bible`) },
+        { type: "action", label: t("assetManager.menuEntry"), onClick: () => setShowAssetManager(true) },
         {
           type: "action",
           label: t("script.menuEntry"),
@@ -736,17 +741,19 @@ export function PageGrid() {
           VolumeFormatSchema). Deliberately a plain, always-visible control rather than
           buried in a menu — it changes editor/reader/export behavior broadly enough that
           it should be as discoverable as the page grid itself. */}
-      <label className="volume-format-toggle" style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 12px 0", fontSize: 13 }}>
-        {t("pageGrid.volumeFormatLabel")}
-        <select
-          value={pageMeta.format}
-          disabled={!hasAtLeast("letterer")}
-          onChange={(e) => updateVolumeFormat(e.target.value as VolumeFormat)}
-        >
-          <option value="page">{t("pageGrid.volumeFormatPage")}</option>
-          <option value="webtoon">{t("pageGrid.volumeFormatWebtoon")}</option>
-        </select>
-      </label>
+      {!showAssetManager && (
+        <label className="volume-format-toggle" style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 12px 0", fontSize: 13 }}>
+          {t("pageGrid.volumeFormatLabel")}
+          <select
+            value={pageMeta.format}
+            disabled={!hasAtLeast("letterer")}
+            onChange={(e) => updateVolumeFormat(e.target.value as VolumeFormat)}
+          >
+            <option value="page">{t("pageGrid.volumeFormatPage")}</option>
+            <option value="webtoon">{t("pageGrid.volumeFormatWebtoon")}</option>
+          </select>
+        </label>
+      )}
       {(busy || message || exportMsg || normalizeMsg) && (
         <div
           className="error-banner"
@@ -905,6 +912,18 @@ export function PageGrid() {
         </div>
       ) : (
         <>
+      {showAssetManager ? (
+        // Fills exactly the same flex:1 1 auto slot .page-scroll normally occupies below —
+        // between the breadcrumb/Bandtyp-toggle header above and .canvas-statusbar below
+        // (both stay rendered as siblings, untouched) — same "plain flex child, no fixed-
+        // position overlay" reasoning as VolumeList.tsx's identical panel.
+        <div
+          className="asset-manager-panel-fullscreen"
+          style={{ flex: "1 1 auto", minHeight: 0, display: "flex", padding: 16, overflow: "hidden" }}
+        >
+          <AssetManagerContent canEdit={hasAtLeast("letterer")} isSystemAdmin={!!user?.isSystemAdmin} onClose={() => setShowAssetManager(false)} />
+        </div>
+      ) : (
       <div className="page-scroll fade-in" style={{ padding: 16 }}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={pages.map((p) => p.page)} strategy={rectSortingStrategy}>
@@ -968,6 +987,7 @@ export function PageGrid() {
           </SortableContext>
         </DndContext>
       </div>
+      )}
       <div className="canvas-statusbar">
         <span>{t("pageGrid.pagesCount", { count: pages.length })}</span>
       </div>

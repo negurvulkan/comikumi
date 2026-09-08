@@ -19,6 +19,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Story Bible](#story-bible)
 - [Lettering-Presets](#lettering-presets)
 - [Projekt-Assets-Ordner](#projekt-assets-ordner)
+- [Asset-Manager](#asset-manager)
 - [Editor — Canvas-Grundlagen](#editor--canvas-grundlagen)
 - [Elementtypen](#elementtypen)
 - [Auto-Bubbles (Erkennung & OCR)](#auto-bubbles-erkennung--ocr)
@@ -1525,6 +1526,42 @@ kuratiertes Asset. Bleibt er leer, verwendet das Tool automatisch einen `thumbna
 Ordner direkt neben der Projektdatei, statt (wie Fonts/Bilder/SVGs) auf eine gemeinsame
 globale Bibliothek zurückzufallen — jedes Projekt bekommt so ohne weitere Konfiguration
 seinen eigenen Cache-Ordner, unabhängig davon, ob überhaupt ein Assets-Ordner gesetzt ist.
+
+## Asset-Manager
+
+Fonts, Bilder und SVG-Sprechblasen-Umrisse (siehe [Projekt-Assets-Ordner](#projekt-assets-ordner)
+oben für die Funktionsweise der zugrundeliegenden geteilten/projekteigenen Speicherung)
+ließen sich bisher nur aus den Inline-Picker-Popovers des Seiteneditors heraus pflegen —
+reines Auswählen und Hochladen, keine Möglichkeit zum Löschen, Umbenennen, oder einfach
+nur zur Übersicht, ohne dafür erst eine Seite zu öffnen. Zwei dedizierte Screens decken
+das jetzt ab, auf zwei verschiedenen Ebenen:
+
+- **Projekt-Asset-Manager** — „Projekt → Asset-Manager" aus dem Menü der Bandübersicht,
+  Seitenübersicht, des Editors oder des Projektwechslers. Öffnet als großes Panel/Modal
+  (in der Bandübersicht konkret gar kein Overlay, sondern füllt exakt den Platz zwischen
+  Menüleiste, Seitenleiste und dem unteren Bildschirmrand — beide bleiben also sichtbar)
+  mit je einem Tab pro Asset-Art (Fonts / Bilder / SVG-Umrisse). Jedes Projektmitglied
+  kann browsen; Hochladen, Umbenennen, Löschen und Verschieben zwischen Ordnern erfordert
+  die Rolle Letterer oder höher — dieselbe Berechtigung, die die Inline-Picker schon immer
+  verlangt haben. Ein Eintrag aus der gemeinsamen Bibliothek wird zur Übersicht angezeigt,
+  ist hier aber nur lesbar — ihn zu löschen oder umzubenennen würde riskieren, versehentlich
+  eine Datei zu verändern, die jedes andere Projekt ebenfalls sieht; dafür den
+  Instanz-Asset-Manager unten nutzen. Ein System-Admin sieht einen Link direkt dorthin.
+- **Instanz-Asset-Manager** — ein neuer „Asset-Manager"-Tab unter Konto/Admin →
+  Administration (nur System-Admins). Verwaltet die echte, projektunabhängige gemeinsame
+  Bibliothek direkt — unabhängig davon, welches Projekt (falls überhaupt eins) gerade auf
+  dem Server geöffnet ist. Damit ist es ein verlässlicher Ort, um die Bibliothek zu
+  kuratieren, aus der jedes Projekt schöpft, statt von der zufälligen Konstellation
+  abzuhängen, welches Projekt man zuletzt offen hatte.
+
+Beide Screens teilen sich dieselbe Ordner-Browsing-UI wie die Inline-Picker des Editors
+(Breadcrumb-Navigation, Unterordner-Chips, „+ Neuer Ordner", In-Ordner-verschieben) plus
+zwei Fähigkeiten, die bisher nur durch direktes Löschen der Datei auf dem Server-
+Dateisystem möglich waren: einen Lösch-Button pro Datei, und Inline-Umbenennen (behält
+die Dateiendung bei; ein bereits vergebener Name im selben Ordner wird abgelehnt statt
+stillschweigend überschrieben). Fonts bleiben in beiden Managern eine flache Liste ohne
+Ordner, genau wie im Inline-Font-Picker — Fonts werden über den getippten Familiennamen
+gefunden, nicht durch Browsen, Ordner würden dort nicht helfen.
 
 ## Undo/Redo
 

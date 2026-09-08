@@ -510,7 +510,10 @@
       "deleteFolderConfirm": "Delete folder \"{{folder}}\"? Only possible if it's empty.",
       "moveAction": "Move to folder",
       "moveTitle": "Move \"{{fileName}}\" to:",
-      "moveHere": "Move here"
+      "moveHere": "Move here",
+      "deleteFileAction": "Delete file",
+      "deleteFileConfirm": "Really delete file \"{{fileName}}\"?",
+      "renameAction": "Rename"
     },
     "textEffects": {
       "presetOverrideHint": "Set by preset.",
@@ -1171,6 +1174,20 @@
     "relationLabelPlaceholder": "e.g. is sister of",
     "addRelation": "Add",
     "deleteRelation": "Remove relation"
+  },
+  "assetManager": {
+    "menuEntry": "Asset Manager",
+    "title": "Asset Manager",
+    "projectScopeHint": "Manage this project's fonts, images, and SVG bubble outlines — upload, rename, delete, organize into folders.",
+    "instanceScopeHint": "Manage the server-wide, shared library — independent of whichever project is currently open.",
+    "manageSharedLibraryLink": "Manage shared library →",
+    "uploadFont": "Upload font",
+    "fontsEmpty": "No fonts uploaded yet.",
+    "kind": {
+      "images": "Images",
+      "bubble-svgs": "SVG outlines",
+      "fonts": "Fonts"
+    }
   },
   "reader": {
     "menuEntry": "Read / Review",

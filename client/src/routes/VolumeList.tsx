@@ -18,6 +18,7 @@ import { SettingsForm } from "../editor/SettingsForm";
 import { CharacterManager } from "../editor/CharacterManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
+import { AssetManagerContent } from "../editor/AssetManagerContent";
 import { ProjectInfoSidebar } from "../editor/ProjectInfoSidebar";
 import { BatchFindReplaceModal } from "../editor/BatchFindReplaceModal";
 import { BatchExportQueueModal } from "../editor/BatchExportQueueModal";
@@ -61,7 +62,7 @@ function VolumeCardThumbnail({ volumeId, page }: { volumeId: string; page: strin
 export function VolumeList() {
   const { t } = useTranslation();
   const { project } = useProject();
-  const { demoMode } = useSession();
+  const { demoMode, user } = useSession();
   const { hasAtLeast, myRole } = useProjectRole();
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
@@ -75,6 +76,7 @@ export function VolumeList() {
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showAssetManager, setShowAssetManager] = useState(false);
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showBatchExport, setShowBatchExport] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -131,6 +133,7 @@ export function VolumeList() {
           disabled: !hasAtLeast("letterer") || !volumes || volumes.length === 0,
         },
         { type: "action", label: t("storyBible.menuEntry"), onClick: () => navigate(`/p/${encodeURIComponent(projectId!)}/story-bible`) },
+        { type: "action", label: t("assetManager.menuEntry"), onClick: () => setShowAssetManager(true) },
         { type: "action", label: t("menu.members"), onClick: () => navigate("/admin?tab=projects"), disabled: !hasAtLeast("admin") },
         { type: "action", label: t("appShell.settings"), onClick: () => setShowSettings(true), disabled: !hasAtLeast("admin") },
         ...(myRole === "system-admin"
@@ -179,7 +182,21 @@ export function VolumeList() {
         </Modal>
       )}
       <div style={{ display: "flex", flex: "1 1 auto", minHeight: 0 }}>
-        {error ? (
+        {showAssetManager ? (
+          // Fullscreen-feeling panel, but NOT a fixed-position overlay — it's a normal
+          // child of this same flex row, so it's naturally bounded by exactly what it
+          // should be bounded by: the MenuBar above (an unconditional sibling before
+          // this whole row), the viewport's bottom edge (this row is flex:1 1 auto,
+          // already filling all remaining height), and ProjectInfoSidebar beside it
+          // (still rendered as the row's second child, completely untouched below) —
+          // no inset/z-index arithmetic needed to keep those three elements visible.
+          <div
+            className="asset-manager-panel-fullscreen"
+            style={{ flex: "1 1 auto", minHeight: 0, display: "flex", padding: 16, overflow: "hidden" }}
+          >
+            <AssetManagerContent canEdit={hasAtLeast("letterer")} isSystemAdmin={!!user?.isSystemAdmin} onClose={() => setShowAssetManager(false)} />
+          </div>
+        ) : error ? (
           <div className="error-banner" style={{ margin: 12 }}>
             {error}
           </div>

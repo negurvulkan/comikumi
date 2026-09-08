@@ -496,7 +496,10 @@
       "deleteFolderConfirm": "¿Eliminar la carpeta «{{folder}}»? Solo es posible si está vacía.",
       "moveAction": "Mover a carpeta",
       "moveTitle": "Mover «{{fileName}}» a:",
-      "moveHere": "Mover aquí"
+      "moveHere": "Mover aquí",
+      "deleteFileAction": "Eliminar archivo",
+      "deleteFileConfirm": "¿Eliminar realmente el archivo «{{fileName}}»?",
+      "renameAction": "Cambiar nombre"
     },
     "textEffects": {
       "presetOverrideHint": "Definido por el preajuste.",
@@ -1151,6 +1154,20 @@
     "relationLabelPlaceholder": "p. ej. es hermana de",
     "addRelation": "Añadir",
     "deleteRelation": "Quitar relación"
+  },
+  "assetManager": {
+    "menuEntry": "Gestor de recursos",
+    "title": "Gestor de recursos",
+    "projectScopeHint": "Gestiona las fuentes, imágenes y contornos SVG de bocadillos de este proyecto — sube, renombra, elimina, organiza en carpetas.",
+    "instanceScopeHint": "Gestiona la biblioteca compartida de todo el servidor — independiente del proyecto que esté abierto.",
+    "manageSharedLibraryLink": "Gestionar biblioteca compartida →",
+    "uploadFont": "Subir fuente",
+    "fontsEmpty": "Aún no se han subido fuentes.",
+    "kind": {
+      "images": "Imágenes",
+      "bubble-svgs": "Contornos SVG",
+      "fonts": "Fuentes"
+    }
   },
   "reader": {
     "menuEntry": "Lectura / Revisión",

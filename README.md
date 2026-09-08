@@ -70,6 +70,11 @@ below) — that account lives on your own server, not a central ComiKumi service
   across episode boundaries, and the export panel hides formats that don't apply to long
   strips while guarding against the canvas-size limits a very tall page can hit. See
   [`docs/FEATURES.md`](docs/FEATURES.md#webtoon-support).
+- **Asset Manager** — a dedicated screen (not just the editor's inline picker popovers)
+  for browsing, uploading, renaming, deleting, and folder-organizing a project's fonts,
+  images, and SVG bubble outlines, plus a separate instance-scope manager for the shared
+  library every project draws from — see
+  [`docs/FEATURES.md`](docs/FEATURES.md#asset-manager).
 - **Auto-Bubbles (detection + OCR)** — a toolbar tool finds speech-bubble regions on the
   page and reads the text inside them automatically, entirely client-side (WebGPU with
   a WASM fallback, no server round-trip). Every result goes through a review panel
