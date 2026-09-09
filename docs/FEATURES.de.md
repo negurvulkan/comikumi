@@ -1497,12 +1497,16 @@ selbst noch "Partner Preview" ist.
   entfernt die gespeicherte Verbindung sofort.
 - **Veröffentlichen aus der Seitenübersicht eines Bandes**: ein Menüeintrag
   "Bei AI MANGA veröffentlichen…" (nur sichtbar, wenn der Connector
-  konfiguriert ist) öffnet ein kleines Panel — Kapitel, Sprache, Serien-/
-  Kapitel-Metadaten wählen, sofort veröffentlichen oder als Entwurf, und ob
-  die erste Seite als Cover verwendet werden soll. Das Veröffentlichen
-  rendert jede Seite dieses Kapitels client-seitig (derselbe Renderer wie
-  beim normalen PNG-Export) und zeigt den Fortschritt während Rendering,
-  Upload und AI MANGAs eigenem Validierungsschritt live an.
+  konfiguriert ist, und nur für Sprachen, die AI MANGA tatsächlich
+  unterstützt) öffnet ein kleines Panel — Kapitel, Sprache, Serien-/
+  Kapitel-Metadaten wählen, und sofort veröffentlichen (AI MANGA erlaubt das
+  nur bei einem kostenlosen Kapitel — das Panel erzwingt das) oder als Entwurf
+  speichern (dabei auch als "Nur für Unterstützer" möglich). Das
+  Veröffentlichen rendert jede Seite dieses Kapitels client-seitig (derselbe
+  Renderer wie beim normalen PNG-Export) und zeigt den Fortschritt während
+  Rendering, Upload und AI MANGAs eigenem Validierungsschritt live an — es
+  wird kein eigenes Cover erzeugt, AI MANGA verwendet ohnehin automatisch die
+  erste Seite, wenn keines mitgeliefert wird.
 - **Stabile externe IDs**: die erste Veröffentlichung eines Projekts erzeugt
   und speichert eine stabile Serien-/Kapitel-ID in der Projektdatei, sodass
   jede spätere Veröffentlichung desselben Kapitels dasselbe AI-MANGA-Werk

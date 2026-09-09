@@ -126,7 +126,7 @@ export async function updateUser(
      * as the `*ApiKey` fields above. `null` disconnects (see routes/connectors.ts's
      * disconnect route). Set as one atomic object, not per-field, since a partial
      * access-token-without-refresh-token state would never be usable. */
-    aiMangaConnection?: { accessToken: string; refreshToken: string; expiresAt: number; accountLabel: string } | null;
+    aiMangaConnection?: { accessToken: string; refreshToken: string; expiresAt: number; accountLabel: string; accountId: string } | null;
   }
 ): Promise<UserAccount> {
   const users = await readUsersRaw();
@@ -181,12 +181,13 @@ export async function updateUser(
     if (updates.aiMangaConnection === null) {
       delete user.aiMangaConnection;
     } else {
-      const { accessToken, refreshToken, expiresAt, accountLabel } = updates.aiMangaConnection;
+      const { accessToken, refreshToken, expiresAt, accountLabel, accountId } = updates.aiMangaConnection;
       user.aiMangaConnection = {
         accessTokenEncrypted: await encryptSecret(accessToken),
         refreshTokenEncrypted: await encryptSecret(refreshToken),
         expiresAt,
         accountLabel,
+        accountId,
       };
     }
   }
@@ -254,6 +255,14 @@ export async function getDecryptedAiMangaTokens(
     refreshToken: await decryptSecret(refreshTokenEncrypted),
     expiresAt,
   };
+}
+
+/** Not a secret — no decryption needed, unlike getDecryptedAiMangaTokens above. Used by
+ * routes/connectorPublish.ts to compare against a project's stored AiMangaProjectState
+ * .creatorId (shared/src/connectors.ts) before letting a publish proceed. */
+export async function getAiMangaAccountId(id: string): Promise<string | null> {
+  const user = await findUserById(id);
+  return user?.aiMangaConnection?.accountId ?? null;
 }
 
 export interface AIProviderStatus {

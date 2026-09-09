@@ -1,10 +1,14 @@
 import type { PublishingConnector } from "./types.js";
 import { getDecryptedAiMangaTokens, updateUser, findUserById } from "../authStore.js";
+import { PUBLISH_JOB_POLL_TIMEOUT_MS } from "../publishJobs.js";
 
-/** AI MANGA access tokens are short-lived (1h, per the docs) — refresh a little early
- * rather than exactly at expiry, so a publish job that takes a few minutes doesn't race
- * the token going stale mid-upload. */
-const REFRESH_SKEW_MS = 60 * 1000;
+/** AI MANGA access tokens are short-lived (1h, per the docs) — refresh well before
+ * expiry, not just-in-time, because a publish job (publishJobs.ts) can keep polling for
+ * up to PUBLISH_JOB_POLL_TIMEOUT_MS after this token was minted for the initial publish
+ * call. A token that had, say, 2 minutes left when getValidAccessToken() was called for
+ * publish() would previously NOT have been refreshed (skew was only 60s) and could then
+ * expire mid-poll. The skew must exceed the poll timeout with real margin. */
+const REFRESH_SKEW_MS = PUBLISH_JOB_POLL_TIMEOUT_MS + 5 * 60 * 1000;
 
 /** Returns a currently-valid access token for the given connector + user, refreshing
  * and re-persisting it first if the stored one is expired (or about to be) — the only
@@ -24,6 +28,7 @@ export async function getValidAccessToken(connector: PublishingConnector, userId
       refreshToken: refreshed.refreshToken,
       expiresAt: refreshed.expiresAt,
       accountLabel: user?.aiMangaConnection?.accountLabel ?? "",
+      accountId: user?.aiMangaConnection?.accountId ?? "",
     },
   });
   return refreshed.accessToken;

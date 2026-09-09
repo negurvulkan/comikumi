@@ -42,6 +42,25 @@ describe("isConfigured", () => {
   });
 });
 
+describe("fetchAccountInfo", () => {
+  it("returns both the immutable account id and a display label from /me", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ id: "creator-42", display_name: "Jane Doe" }), { status: 200 }))
+    );
+    const info = await aiMangaConnector.fetchAccountInfo("token");
+    expect(info).toEqual({ id: "creator-42", label: "Jane Doe" });
+  });
+
+  it("falls back to username, then id, for the label when display_name is absent", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ id: "creator-42", username: "janedoe" }), { status: 200 })));
+    expect((await aiMangaConnector.fetchAccountInfo("token")).label).toBe("janedoe");
+
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ id: "creator-42" }), { status: 200 })));
+    expect((await aiMangaConnector.fetchAccountInfo("token")).label).toBe("creator-42");
+  });
+});
+
 describe("buildAuthorizeUrl", () => {
   it("includes PKCE S256 params, state, and the configured client id", () => {
     const url = new URL(

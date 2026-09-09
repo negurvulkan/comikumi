@@ -25,14 +25,15 @@ export interface PublishChapterInput {
   pages: string[]; // page ids, in reading order
   languageCode: string;
   seriesTitle: string;
-  sourceLanguage: string;
   synopsis?: string;
   genres?: string[];
+  /** The specific ResolvedChapter (shared/src/pageMeta.ts) being published within
+   * `volumeId` — see shared/src/connectors.ts's aiMangaChapterKey() doc comment. */
+  chapterId: string;
   chapterNumber: number;
   chapterTitle: string;
   published: boolean;
   accessMode: "free" | "supporter_only";
-  includeCover: boolean;
 }
 
 /** Drives the Publish panel's render+upload flow — same client-renders/server-assembles
@@ -40,7 +41,11 @@ export interface PublishChapterInput {
  * collecting every page's blob first and sending them together to
  * api.publishToAiManga() instead of one POST per page, since the server needs the
  * whole chapter at once to build a single ZIP (see server/src/lib/connectors/
- * aiMangaConnector.ts's package contract). */
+ * aiMangaConnector.ts's package contract). No cover is ever synthesized from a page —
+ * AI MANGA already falls back to the chapter's first page when none is supplied (see
+ * the developer guide's package contract), so sending one derived from the same first
+ * page again would be redundant, not more correct.
+ */
 export function usePublishRun(volumeId: string) {
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState(false);
@@ -68,23 +73,31 @@ export function usePublishRun(volumeId: string) {
         volumeId,
         {
           seriesTitle: input.seriesTitle,
-          sourceLanguage: input.sourceLanguage,
+          languageCode: input.languageCode,
           synopsis: input.synopsis,
           genres: input.genres,
+          chapterId: input.chapterId,
           chapterNumber: input.chapterNumber,
           chapterTitle: input.chapterTitle,
           published: input.published,
           accessMode: input.accessMode,
         },
-        blobs,
-        input.includeCover ? blobs[0] : null
+        blobs
       );
       const finished = await pollPublishJob(volumeId, jobId, (progress) => {
         setJob(progress);
         setPublishMsg(t(`publishPanel.status.${progress.status}`));
       });
       setJob(finished);
-      setPublishMsg(finished.status === "published" ? t("publishPanel.published", { url: finished.publicUrl }) : t("publishPanel.failed", { error: finished.error }));
+      if (finished.status === "published") {
+        // "published" also covers a successfully validated DRAFT — AI MANGA's exact
+        // status string for that case isn't documented (see PublishStatusState's own
+        // doc comment server-side), so a missing publicUrl is the signal to show the
+        // more neutral "completed" message instead of implying a public page exists.
+        setPublishMsg(finished.publicUrl ? t("publishPanel.published", { url: finished.publicUrl }) : t("publishPanel.completed"));
+      } else {
+        setPublishMsg(t("publishPanel.failed", { error: finished.error }));
+      }
     } catch (e) {
       setPublishMsg(translateApiError(e, t));
     } finally {

@@ -1192,9 +1192,16 @@ export const api = {
     volumeId: string,
     metadata: {
       seriesTitle: string;
-      sourceLanguage: string;
+      /** A ComiKumi LanguageDef.code (e.g. "jp") — the server maps it to AI MANGA's own
+       * source_language (e.g. "ja") and 400s if there's no mapping, see shared/src/
+       * connectors.ts's mapToAiMangaLanguage(). */
+      languageCode: string;
       synopsis?: string;
       genres?: string[];
+      /** The specific ResolvedChapter (shared/src/pageMeta.ts) being published — see
+       * aiMangaChapterKey()'s own doc comment for why this can't be inferred from
+       * volumeId alone (a volume normally has several chapters). */
+      chapterId: string;
       chapterNumber: number;
       chapterTitle: string;
       published: boolean;

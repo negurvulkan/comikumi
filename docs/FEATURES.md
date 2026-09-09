@@ -1442,12 +1442,15 @@ talks to a partner API that is itself still a "Partner Preview".
   second embedded window) and reports back once the account is linked.
   Disconnecting clears the stored connection immediately.
 - **Publish from a volume's page grid**: a "Publish to AI MANGA…" menu entry
-  (only shown once the connector is configured) opens a small panel — pick a
-  chapter, a language, series/chapter metadata, whether to publish immediately
-  or as a draft, and whether to use the first page as the cover. Publishing
-  renders every page of that chapter client-side (same renderer as the normal
-  PNG export) and shows live progress through rendering, upload, and AI
-  MANGA's own validation step.
+  (only shown once the connector is configured, and only for languages AI MANGA
+  actually supports) opens a small panel — pick a chapter, a language,
+  series/chapter metadata, and whether to publish immediately (AI MANGA only
+  allows this for a free chapter — the panel enforces that) or save as a draft
+  (which can be a supporter-only chapter). Publishing renders every page of
+  that chapter client-side (same renderer as the normal PNG export) and shows
+  live progress through rendering, upload, and AI MANGA's own validation step;
+  no cover image is generated — AI MANGA already falls back to a chapter's
+  first page when none is supplied.
 - **Stable external ids**: the first publish of a project generates and stores
   a stable series/chapter id inside the project file, so every later publish
   of the same chapter updates the same AI MANGA work instead of creating a

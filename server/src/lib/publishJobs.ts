@@ -25,7 +25,9 @@ const jobs = new Map<string, PublishJobState>();
 
 const JOB_RETENTION_MS = 30 * 60 * 1000;
 const POLL_INTERVAL_MS = 3000;
-const POLL_TIMEOUT_MS = 5 * 60 * 1000;
+/** Exported so tokenManager.ts's refresh-skew calculation can guarantee an access token
+ * handed to a fresh publish job outlives the longest this job will ever keep polling. */
+export const PUBLISH_JOB_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
 function sweepOldJobs(): void {
   const cutoff = Date.now() - JOB_RETENTION_MS;
@@ -74,7 +76,7 @@ async function runPublishJob(job: PublishJobState, params: StartPublishJobParams
   const { importId } = await connector.publish(accessToken, input);
   job.status = "validating";
 
-  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  const deadline = Date.now() + PUBLISH_JOB_POLL_TIMEOUT_MS;
   for (;;) {
     const status = await connector.pollStatus(accessToken, importId);
     if (status.state === "published") {

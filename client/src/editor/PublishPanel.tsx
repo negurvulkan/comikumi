@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { ResolvedChapter } from "../../../shared/src/pageMeta";
+import { mapToAiMangaLanguage } from "../../../shared/src/connectors";
+import type { PublishChapterInput } from "../export/usePublishRun";
 import { LoadingIndicator } from "./LoadingIndicator";
 
 interface Props {
@@ -9,18 +11,7 @@ interface Props {
   chapters: ResolvedChapter[];
   publishing: boolean;
   publishMsg: string | null;
-  onPublish: (input: {
-    pages: string[];
-    languageCode: string;
-    seriesTitle: string;
-    sourceLanguage: string;
-    synopsis?: string;
-    chapterNumber: number;
-    chapterTitle: string;
-    published: boolean;
-    accessMode: "free" | "supporter_only";
-    includeCover: boolean;
-  }) => void;
+  onPublish: (input: PublishChapterInput) => void;
   onClose: () => void;
 }
 
@@ -34,17 +25,35 @@ interface Props {
 export function PublishPanel({ languages, chapters, publishing, publishMsg, onPublish, onClose }: Props) {
   const { t } = useTranslation();
   const [chapterId, setChapterId] = useState(chapters[0]?.chapter.id ?? "");
-  const [languageCode, setLanguageCode] = useState(languages[0]?.code ?? "");
+  // Only languages AI MANGA actually accepts as a source_language (see shared/src/
+  // connectors.ts's mapToAiMangaLanguage()) — a project's own custom/unmapped language
+  // codes would otherwise let the user pick a combination the server is guaranteed to
+  // 400 on submit.
+  const publishableLanguages = languages.filter((l) => mapToAiMangaLanguage(l.code) !== null);
+  const [languageCode, setLanguageCode] = useState(publishableLanguages[0]?.code ?? "");
   const [seriesTitle, setSeriesTitle] = useState("");
   const [chapterNumber, setChapterNumber] = useState(1);
   const [chapterTitle, setChapterTitle] = useState("");
   const [synopsis, setSynopsis] = useState("");
   const [published, setPublished] = useState(false);
   const [accessMode, setAccessMode] = useState<"free" | "supporter_only">("free");
-  const [includeCover, setIncludeCover] = useState(true);
+
+  // AI MANGA only allows immediate publication for a free chapter (developer guide's Q4
+  // FAQ answer) — switching to "Publish immediately" forces free rather than letting the
+  // user carry over a "supporter_only" choice made while still in draft mode, which the
+  // server would otherwise reject on submit.
+  useEffect(() => {
+    if (published) setAccessMode("free");
+  }, [published]);
 
   const selectedChapter = chapters.find((c) => c.chapter.id === chapterId);
-  const canSubmit = !publishing && !!selectedChapter && selectedChapter.pageIds.length > 0 && !!languageCode && seriesTitle.trim().length > 0 && chapterTitle.trim().length > 0;
+  const canSubmit =
+    !publishing &&
+    !!selectedChapter &&
+    selectedChapter.pageIds.length > 0 &&
+    !!languageCode &&
+    seriesTitle.trim().length > 0 &&
+    chapterTitle.trim().length > 0;
 
   function handleSubmit() {
     if (!canSubmit || !selectedChapter) return;
@@ -52,13 +61,12 @@ export function PublishPanel({ languages, chapters, publishing, publishMsg, onPu
       pages: selectedChapter.pageIds,
       languageCode,
       seriesTitle: seriesTitle.trim(),
-      sourceLanguage: languageCode,
       synopsis: synopsis.trim() || undefined,
+      chapterId,
       chapterNumber,
       chapterTitle: chapterTitle.trim(),
       published,
       accessMode,
-      includeCover,
     });
   }
 
@@ -83,16 +91,20 @@ export function PublishPanel({ languages, chapters, publishing, publishMsg, onPu
         </label>
       )}
 
-      <label>
-        {t("exportPanel.languageLabel")}
-        <select value={languageCode} onChange={(e) => setLanguageCode(e.target.value)}>
-          {languages.map((l) => (
-            <option key={l.code} value={l.code}>
-              {l.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      {publishableLanguages.length === 0 ? (
+        <p className="hint">{t("publishPanel.noPublishableLanguages")}</p>
+      ) : (
+        <label>
+          {t("exportPanel.languageLabel")}
+          <select value={languageCode} onChange={(e) => setLanguageCode(e.target.value)}>
+            {publishableLanguages.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label>
         {t("publishPanel.seriesTitleLabel")}
@@ -115,11 +127,6 @@ export function PublishPanel({ languages, chapters, publishing, publishMsg, onPu
         </label>
       </div>
 
-      <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <input type="checkbox" checked={includeCover} onChange={(e) => setIncludeCover(e.target.checked)} />
-        {t("publishPanel.includeCover")}
-      </label>
-
       <label>{t("publishPanel.visibilityLabel")}</label>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         <button className={!published ? "active" : ""} onClick={() => setPublished(false)}>
@@ -129,7 +136,11 @@ export function PublishPanel({ languages, chapters, publishing, publishMsg, onPu
           {t("publishPanel.publishImmediately")}
         </button>
       </div>
-      {published && (
+      {published ? (
+        <p className="hint" style={{ margin: "-4px 0 0" }}>
+          {t("publishPanel.accessModeForcedFree")}
+        </p>
+      ) : (
         <label>
           {t("publishPanel.accessModeLabel")}
           <select value={accessMode} onChange={(e) => setAccessMode(e.target.value as "free" | "supporter_only")}>

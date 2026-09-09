@@ -73,13 +73,14 @@ connectorsRouter.get(
     try {
       const redirectUri = process.env.AI_MANGA_REDIRECT_URI!;
       const tokens = await connector.exchangeCodeForTokens({ code, redirectUri, codeVerifier: pending.codeVerifier });
-      const accountLabel = await connector.fetchAccountLabel(tokens.accessToken);
+      const { id: accountId, label: accountLabel } = await connector.fetchAccountInfo(tokens.accessToken);
       await updateUser(pending.userId, {
         aiMangaConnection: {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           expiresAt: tokens.expiresAt,
           accountLabel,
+          accountId,
         },
       });
       res.send(callbackHtml(`Verbunden als ${accountLabel}. Dieses Fenster kann geschlossen werden.`, true));

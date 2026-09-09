@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import path from "node:path";
 import cors from "cors";
+import multer from "multer";
 import { volumesRouter } from "./routes/volumes.js";
 import { pagesRouter } from "./routes/pages.js";
 import { layoutRouter } from "./routes/layout.js";
@@ -228,6 +229,14 @@ export function createApp(options: CreateAppOptions = {}): Express {
     // directly, this only matters if some other code path ever throws it uncaught.
     if (err instanceof ProjectNotFoundError) {
       res.status(404).json({ error: "project_not_found" });
+      return;
+    }
+    // multer calls next(err) directly for a file-size/count violation, bypassing
+    // asyncHandler entirely — without this it would fall through to the generic 500
+    // below instead of a translatable, actionable 400 (see routes/connectorPublish.ts's
+    // MAX_PAGE_BYTES, the first route to actually rely on multer's own limits erroring).
+    if (err instanceof multer.MulterError) {
+      res.status(400).json({ error: "upload_limit_exceeded", params: { code: err.code } });
       return;
     }
     console.error(err);

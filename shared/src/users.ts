@@ -95,6 +95,12 @@ export const UserAccountSchema = z.object({
       refreshTokenEncrypted: EncryptedSecretSchema,
       expiresAt: z.number(),
       accountLabel: z.string(),
+      /** AI MANGA's own immutable account id (GET /api/v1/connect/me's `id` field) —
+       * not a secret, stored plain like accountLabel. Used to detect when a project's
+       * stored AI-MANGA `creatorId` (shared/src/connectors.ts) no longer matches the
+       * currently connected account, e.g. after a different ComiKumi user (with their
+       * own AI MANGA account) tries to publish the same project. */
+      accountId: z.string(),
     })
     .optional(),
 });

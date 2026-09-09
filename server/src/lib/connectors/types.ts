@@ -33,10 +33,13 @@ export interface OAuthConnector extends Connector {
   buildAuthorizeUrl(params: { redirectUri: string; state: string; codeChallenge: string }): string;
   exchangeCodeForTokens(params: { code: string; redirectUri: string; codeVerifier: string }): Promise<OAuthTokenSet>;
   refreshTokens(refreshToken: string): Promise<OAuthTokenSet>;
-  /** A short, human-readable identifier for the connected account (never an email —
-   * see AI MANGA's own "cannot read a creator's email address" permission boundary),
-   * shown in the Connectors settings card instead of a bare "Connected". */
-  fetchAccountLabel(accessToken: string): Promise<string>;
+  /** `id` is the provider's own immutable account id (used to detect a project being
+   * published under a DIFFERENT connected account than it was first published under,
+   * see shared/src/connectors.ts's AiMangaProjectState.creatorId doc comment) — never an
+   * email (AI MANGA's own "cannot read a creator's email address" permission boundary).
+   * `label` is a short, human-readable identifier shown in the Connectors settings card
+   * instead of a bare "Connected". */
+  fetchAccountInfo(accessToken: string): Promise<{ id: string; label: string }>;
 }
 
 export interface PublishManifestChapter {
@@ -70,11 +73,19 @@ export interface PublishResult {
   importId: string;
 }
 
+/**
+ * "published" here means "AI MANGA's asynchronous processing finished without failure"
+ * — for an immediate-publish request that genuinely means published; for a draft
+ * request (published: false in the manifest) it means the draft finished validating,
+ * whatever exact status string AI MANGA uses for that (the spec doesn't document one —
+ * see aiMangaConnector.ts's pollStatus()). `publicUrl` is only meaningful in the
+ * immediate-publish case and may be absent for a successfully validated draft. */
 export type PublishStatusState = "pending" | "validating" | "published" | "failed";
 
 export interface PublishStatus {
   state: PublishStatusState;
-  /** Set once `state` is "published". */
+  /** Set when `state` is "published" AND AI MANGA returned one — absent for a
+   * successfully validated draft, which has no public URL yet. */
   publicUrl?: string;
   /** Set once `state` is "failed". */
   error?: string;

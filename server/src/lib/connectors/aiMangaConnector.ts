@@ -31,6 +31,11 @@ import type {
 
 const DEFAULT_API_BASE = "https://a-i-manga.com";
 
+/** AI MANGA's documented ZIP ceiling (developer guide's "Current limits" section) — the
+ * per-image (1 KiB-10 MiB) and per-work (1-100 pages) limits are enforced earlier, on
+ * the uploaded page bytes themselves, in server/src/routes/connectorPublish.ts. */
+const MAX_ZIP_BYTES = 250 * 1024 * 1024;
+
 /** Shared, official ComiKumi client id — public (PKCE), safe to embed in this
  * open-source repo. Empty until AI MANGA's partner review actually issues one; until
  * then every deployment must set AI_MANGA_CLIENT_ID itself (or the connector stays
@@ -60,6 +65,11 @@ function redirectUri(): string | undefined {
  * works:draft:create + works:publish to create an import either as a draft or with
  * immediate publication, works:read to poll its status afterward. */
 const SCOPES = ["series:read", "series:write", "works:draft:create", "works:publish", "works:read"];
+
+/** See pollStatus()'s own doc comment on why "anything else" is treated as success
+ * rather than only an explicit "published" match. */
+const FAILURE_STATUSES = new Set(["failed", "rejected", "error"]);
+const IN_PROGRESS_STATUSES = new Set(["pending", "queued", "processing", "validating"]);
 
 function base64url(input: Buffer): string {
   return input.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -249,17 +259,23 @@ export const aiMangaConnector: PublishingConnector = {
     return requestToken({ grant_type: "refresh_token", refresh_token: refreshToken, client_id: id });
   },
 
-  async fetchAccountLabel(accessToken: string): Promise<string> {
+  async fetchAccountInfo(accessToken: string): Promise<{ id: string; label: string }> {
     const res = await authorizedFetch(accessToken, "/api/v1/connect/me");
     if (!res.ok) throw new Error(`ai_manga_me_failed: ${res.status}`);
     const me = (await res.json()) as { display_name?: string; username?: string; id: string };
-    return me.display_name ?? me.username ?? me.id;
+    return { id: me.id, label: me.display_name ?? me.username ?? me.id };
   },
 
   async publish(accessToken: string, input: PublishManifestInput) {
     const chapterFolder = `chapter-${String(input.chapter.number).padStart(3, "0")}`;
     const manifest = buildManifest(input, chapterFolder);
     const zip = await buildZip(manifest, input, chapterFolder);
+    if (zip.byteLength > MAX_ZIP_BYTES) {
+      // Defense in depth — connectorPublish.ts already rejects an over-limit request
+      // before ever getting here based on the uploaded page bytes; this only catches
+      // the (unlikely) case where the assembled ZIP's own overhead pushes it over.
+      throw new Error(`ai_manga_zip_too_large: ${zip.byteLength} bytes (max ${MAX_ZIP_BYTES})`);
+    }
     const sha256 = createHash("sha256").update(zip).digest("hex");
 
     await ensureSeries(accessToken, manifest);
@@ -310,9 +326,15 @@ export const aiMangaConnector: PublishingConnector = {
     const res = await authorizedFetch(accessToken, `/api/v1/connect/imports/${encodeURIComponent(importId)}`);
     if (!res.ok) throw new Error(`ai_manga_status_failed: ${res.status}`);
     const json = (await res.json()) as { status: string; public_url?: string; error?: string };
-    if (json.status === "published") return { state: "published", publicUrl: json.public_url };
-    if (json.status === "failed" || json.status === "rejected") return { state: "failed", error: json.error };
-    if (json.status === "validating") return { state: "validating" };
-    return { state: "pending" };
+    if (FAILURE_STATUSES.has(json.status)) return { state: "failed", error: json.error };
+    if (IN_PROGRESS_STATUSES.has(json.status)) return { state: json.status === "validating" ? "validating" : "pending" };
+    // Any other status is treated as a successful terminal state — deliberately lenient
+    // rather than matching only the literal string "published", because the spec never
+    // documents what status a successfully-validated DRAFT (published: false in the
+    // manifest) comes back as; it could be "ready", "draft", "validated", or something
+    // else entirely. See PublishStatusState's own doc comment. Re-check this against a
+    // real partner account once one exists, and tighten back to an explicit allow-list
+    // if the actual status strings turn out to need different handling per state.
+    return { state: "published", publicUrl: json.public_url };
   },
 };
