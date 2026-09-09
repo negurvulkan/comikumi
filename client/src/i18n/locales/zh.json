@@ -1018,7 +1018,7 @@
     "publishImmediately": "立即发布",
     "accessModeLabel": "访问权限",
     "accessModeFree": "免费",
-    "accessModePaid": "付费",
+    "accessModeSupporterOnly": "仅限支持者",
     "publishing": "发布中…",
     "publishButton": "发布",
     "renderingProgress": "正在渲染第 {{count}} / {{total}} 页…",

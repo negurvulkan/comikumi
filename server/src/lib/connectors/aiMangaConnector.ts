@@ -10,36 +10,56 @@ import type {
 /**
  * AI MANGA Connect (https://a-i-manga.com/en/developers/connect) — a "Partner Preview"
  * publishing API as of 2026-09: OAuth 2.0 Authorization Code, manifest+ZIP upload via a
- * short-lived signed URL, async validation/publish status. Verified directly against
- * the live developer page (endpoints/manifest shape/limits below); the authoritative
- * source for exact field types is the linked OpenAPI spec — re-check against it once a
- * real partner client id is issued, before going live (see the connector-subsystem
- * plan's own note on this).
+ * short-lived signed URL, async validation/publish status. Endpoint paths, the manifest
+ * schema, scopes, and the imports request/response shape below are taken from the
+ * authoritative machine-readable spec at GET /api/v1/connect/openapi (fetched directly,
+ * not just the marketing page's prose — that page's "paid" access-mode wording, for
+ * instance, doesn't match the spec's actual "supporter_only" enum value). Still worth a
+ * final re-check against a live partner sandbox once real credentials exist — the spec
+ * itself is versioned "2.0.0-draft" and the response body schemas for a few endpoints
+ * (imports creation, series creation) aren't fully specified there either.
  *
- * Deliberately PKCE-only (no client-secret support at all), even though AI MANGA's own
- * docs allow confidential clients: a client secret can never live in this open-source
- * repository, so every ComiKumi deployment — desktop or self-hosted server — registers
- * its own PUBLIC client id with AI MANGA and authenticates via PKCE S256. See
+ * Deliberately PKCE-only (no client-secret support at all), even though the spec allows
+ * confidential clients: a client secret can never live in this open-source repository.
+ * A PKCE public client's id is not a secret, so ComiKumi bakes in one shared, official
+ * client id (DEFAULT_AI_MANGA_CLIENT_ID below — a placeholder until AI MANGA issues a
+ * real one) used by every desktop install; a self-hosted server operator can override it
+ * with their own via AI_MANGA_CLIENT_ID/AI_MANGA_REDIRECT_URI if AI MANGA can't register
+ * multiple redirect URIs under the shared id for arbitrary server domains. See
  * shared/src/connectors.ts and the connector-subsystem plan for the full reasoning.
  */
 
 const DEFAULT_API_BASE = "https://a-i-manga.com";
+
+/** Shared, official ComiKumi client id — public (PKCE), safe to embed in this
+ * open-source repo. Empty until AI MANGA's partner review actually issues one; until
+ * then every deployment must set AI_MANGA_CLIENT_ID itself (or the connector stays
+ * "not configured", see isConfigured()). */
+const DEFAULT_AI_MANGA_CLIENT_ID = "";
 
 function apiBase(): string {
   return process.env.AI_MANGA_API_BASE ?? DEFAULT_API_BASE;
 }
 
 function clientId(): string | undefined {
-  return process.env.AI_MANGA_CLIENT_ID;
+  return process.env.AI_MANGA_CLIENT_ID || DEFAULT_AI_MANGA_CLIENT_ID || undefined;
 }
 
 /** The redirect URI AI MANGA was configured (at partner-registration time) to send the
  * user back to — must exactly match what's registered there. Not derived from the
- * incoming request's own Host header: AI MANGA fixes this per-client at review time,
- * so it has to be an explicit, stable value the operator sets once. */
+ * incoming request's own Host header: AI MANGA fixes this per-client at review time.
+ * The desktop build sets this automatically (see electron/main.ts's startEmbeddedServer,
+ * which computes it from the chosen local port) — only a self-hosted server deployment
+ * needs to set it by hand. */
 function redirectUri(): string | undefined {
   return process.env.AI_MANGA_REDIRECT_URI;
 }
+
+/** Every scope this connector actually uses (see the OpenAPI spec's securitySchemes.oauth2
+ * .flows.authorizationCode.scopes): series:read/write to find-or-create the target series,
+ * works:draft:create + works:publish to create an import either as a draft or with
+ * immediate publication, works:read to poll its status afterward. */
+const SCOPES = ["series:read", "series:write", "works:draft:create", "works:publish", "works:read"];
 
 function base64url(input: Buffer): string {
   return input.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -52,6 +72,22 @@ export function createPkcePair(): { codeVerifier: string; codeChallenge: string 
   const codeVerifier = base64url(randomBytes(32));
   const codeChallenge = base64url(createHash("sha256").update(codeVerifier).digest());
   return { codeVerifier, codeChallenge };
+}
+
+/** ASCII slug from a series title — required by ConnectManifestV1.series.slug (the spec
+ * marks it required, unlike external_id/cover/synopsis which are all optional). Not
+ * meant to be unique/stable itself (AI MANGA presumably de-duplicates on its side); it
+ * only needs to be a reasonable URL-safe rendering of the title. */
+const COMBINING_DIACRITICS = new RegExp("[̀-ͯ]", "g");
+
+function slugify(title: string): string {
+  const slug = title
+    .normalize("NFKD")
+    .replace(COMBINING_DIACRITICS, "") // strip combining diacritics left behind by NFKD (e.g. "é" -> "e" + accent)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "series";
 }
 
 interface TokenResponse {
@@ -84,21 +120,22 @@ async function authorizedFetch(accessToken: string, path: string, init: RequestI
   });
 }
 
-/** ZIP contract from AI MANGA's "Package contract" section: manifest.json at the root,
- * an optional cover image at the root, and one folder per chapter (here always exactly
- * one, `scope: "chapter"`) holding zero-padded, lexically-ordered page files. */
-function buildZip(input: PublishManifestInput): Promise<Buffer> {
-  const chapterFolder = `chapter-${String(input.chapter.number).padStart(3, "0")}`;
-  const manifest = {
+/** The exact shape of components.schemas.ConnectManifestV1 in the OpenAPI spec — built
+ * once and reused both as the ZIP's own manifest.json entry AND as the `manifest` field
+ * of the POST /imports request body, since the spec requires those to match ("Critical
+ * fields in the API request must match the ZIP manifest"). */
+function buildManifest(input: PublishManifestInput, chapterFolder: string) {
+  return {
     generator: "ComiKumi",
-    manifest_version: 1,
+    manifest_version: 1 as const,
     scope: "chapter" as const,
     series: {
       external_id: input.seriesExternalId,
       title: input.seriesTitle,
+      slug: slugify(input.seriesTitle),
       source_language: input.sourceLanguage,
-      synopsis: input.synopsis,
-      cover: input.cover ? "cover.png" : undefined,
+      synopsis: input.synopsis || null,
+      cover: input.cover ? "cover.png" : null,
       genres: input.genres,
     },
     chapters: [
@@ -108,6 +145,7 @@ function buildZip(input: PublishManifestInput): Promise<Buffer> {
         title: input.chapter.title,
         folder: chapterFolder,
         page_count: input.chapter.pages.length,
+        pages_missing: 0,
         published: input.chapter.published,
         access_mode: input.chapter.accessMode,
       },
@@ -116,7 +154,13 @@ function buildZip(input: PublishManifestInput): Promise<Buffer> {
     page_count: input.chapter.pages.length,
     pages_missing: 0,
   };
+}
 
+/** ZIP contract from the manifest's own doc comment above and the developer guide's
+ * "Package contract" section: manifest.json at the root, an optional cover image at the
+ * root, and one folder per chapter (here always exactly one, `scope: "chapter"`) holding
+ * zero-padded, lexically-ordered page files. */
+function buildZip(manifest: ReturnType<typeof buildManifest>, input: PublishManifestInput, chapterFolder: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const archive = new ZipArchive({ zlib: { level: 9 } });
     const chunks: Buffer[] = [];
@@ -134,7 +178,35 @@ function buildZip(input: PublishManifestInput): Promise<Buffer> {
 
 interface CreateImportResponse {
   id: string;
+  /** Field name is our best inference — the spec documents the 201 response only as
+   * "Import accepted and a 15-minute signed package PUT URL returned" without a schema
+   * ref. Re-verify this exact key once a real partner account can call the endpoint. */
   upload_url: string;
+}
+
+/**
+ * Finds-or-creates the AI MANGA series for `seriesExternalId`, best-effort: the spec
+ * documents POST .../series (series:write) but not what happens on a second call for an
+ * id that already exists (no 409 in the spec, only 201/400) — could mean it upserts, or
+ * could mean a second call 400s. Either way this must never block a publish attempt:
+ * the import's own manifest already carries the full series payload (title/slug/
+ * external_id/...), so AI MANGA can resolve the series from that even if this
+ * pre-registration step is skipped or fails.
+ */
+async function ensureSeries(accessToken: string, manifest: ReturnType<typeof buildManifest>): Promise<void> {
+  try {
+    await authorizedFetch(accessToken, "/api/v1/connect/series", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        title: manifest.series.title,
+        description: manifest.series.synopsis,
+        externalSeriesId: manifest.series.external_id,
+      }),
+    });
+  } catch {
+    // Best-effort — see this function's own doc comment.
+  }
 }
 
 export const aiMangaConnector: PublishingConnector = {
@@ -154,11 +226,7 @@ export const aiMangaConnector: PublishingConnector = {
       state,
       code_challenge: codeChallenge,
       code_challenge_method: "S256",
-      // Minimal scope for the publish flow this connector implements today — extend
-      // once ComiKumi supports more than "create a series, deliver a chapter, read own
-      // imports". Immediate publish additionally needs an approved works:publish scope
-      // on the AI MANGA side (see the connector-subsystem plan's manifest doc comment).
-      scope: "connect:read series:write imports:write",
+      scope: SCOPES.join(" "),
     });
     return `${apiBase()}/connect/authorize?${params.toString()}`;
   },
@@ -189,20 +257,30 @@ export const aiMangaConnector: PublishingConnector = {
   },
 
   async publish(accessToken: string, input: PublishManifestInput) {
-    const zip = await buildZip(input);
+    const chapterFolder = `chapter-${String(input.chapter.number).padStart(3, "0")}`;
+    const manifest = buildManifest(input, chapterFolder);
+    const zip = await buildZip(manifest, input, chapterFolder);
+    const sha256 = createHash("sha256").update(zip).digest("hex");
 
-    // Rate-limit guard from the docs: a 429 here carries used/requested/limit/remaining
-    // and a reset time. Surfaced to the caller as-is (route layer translates it into a
-    // user-facing message) rather than retried automatically — retrying a 500-page
-    // rolling window on a timer isn't something this connector should decide silently.
+    await ensureSeries(accessToken, manifest);
+
+    // Rate-limit guard from the spec's UploadQuotaExceeded schema: a 429 here carries
+    // used/requested/limit/remaining/resetAt. Surfaced to the caller as-is (route layer
+    // translates it into a user-facing message) rather than retried automatically —
+    // retrying a 500-page rolling window on a timer isn't something this connector
+    // should decide silently.
     const createRes = await authorizedFetch(accessToken, "/api/v1/connect/imports", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        series_external_id: input.seriesExternalId,
-        chapter_external_id: input.chapter.externalId,
         source_language: input.sourceLanguage,
-        zip_size: zip.byteLength,
+        manifest,
+        package: {
+          name: `${chapterFolder}.zip`,
+          size_bytes: zip.byteLength,
+          content_type: "application/zip",
+          sha256,
+        },
       }),
     });
     if (createRes.status === 429) {

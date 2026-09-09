@@ -54,6 +54,12 @@ describe("buildAuthorizeUrl", () => {
     expect(url.origin).toBe("https://ai-manga.example");
     expect(url.pathname).toBe("/connect/authorize");
     expect(url.searchParams.get("client_id")).toBe("test-client-id");
+    // Exactly the scopes documented under securitySchemes.oauth2 in the OpenAPI spec
+    // (GET /api/v1/connect/openapi) — not the placeholder scopes an earlier version of
+    // this connector guessed from the marketing page's prose alone.
+    expect(url.searchParams.get("scope")?.split(" ").sort()).toEqual(
+      ["series:read", "series:write", "works:draft:create", "works:publish", "works:read"].sort()
+    );
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("code_challenge")).toBe("challenge-value");
     expect(url.searchParams.get("state")).toBe("abc123");
@@ -82,6 +88,9 @@ describe("publish", () => {
     let uploadedBody: Uint8Array | undefined;
     const fetchMock = vi.fn(async (input: string | URL, init?: RequestInit) => {
       const url = input.toString();
+      if (url.endsWith("/api/v1/connect/series")) {
+        return new Response(JSON.stringify({ id: "series-1" }), { status: 201 });
+      }
       if (url.endsWith("/api/v1/connect/imports")) {
         return new Response(JSON.stringify({ id: "import-1", upload_url: "https://r2.example/upload" }), { status: 201 });
       }
@@ -96,15 +105,28 @@ describe("publish", () => {
     const result = await aiMangaConnector.publish("access-token-123", SAMPLE_INPUT);
     expect(result.importId).toBe("import-1");
 
-    // The import-create call must be authorized and describe the same chapter.
+    // The find-or-create series call must run before the import, per the spec's
+    // series:write step, and carry the same external id as the manifest.
+    const seriesCall = fetchMock.mock.calls.find(([url]) => url.toString().endsWith("/series"));
+    const seriesBody = JSON.parse(seriesCall![1]!.body as string);
+    expect(seriesBody.externalSeriesId).toBe("series-42");
+
+    // The import-create call must be authorized and match the OpenAPI spec's
+    // CreatePackageImport shape: { source_language, manifest, package }, with the
+    // package's sha256 matching the actual uploaded ZIP bytes.
     const createCall = fetchMock.mock.calls.find(([url]) => url.toString().endsWith("/imports"));
     expect(createCall?.[1]?.headers).toMatchObject({ authorization: "Bearer access-token-123" });
     const createBody = JSON.parse(createCall![1]!.body as string);
-    expect(createBody.series_external_id).toBe("series-42");
-    expect(createBody.chapter_external_id).toBe("chapter-001");
+    expect(createBody.source_language).toBe("en");
+    expect(createBody.manifest.series.external_id).toBe("series-42");
+    expect(createBody.manifest.chapters[0].external_id).toBe("chapter-001");
+    expect(createBody.package.content_type).toBe("application/zip");
+    expect(createBody.package.sha256).toMatch(/^[a-f0-9]{64}$/);
 
     // The uploaded ZIP itself must contain manifest.json + cover + both pages, per the
-    // package contract (manifest.json at root, pages inside <chapter folder>/).
+    // package contract (manifest.json at root, pages inside <chapter folder>/), and its
+    // manifest.json must be byte-identical in content to what was sent in the request
+    // body above ("critical fields in the API request must match the ZIP manifest").
     expect(uploadedBody).toBeDefined();
     const zip = new AdmZip(Buffer.from(uploadedBody!));
     const entryNames = zip.getEntries().map((e) => e.entryName);
@@ -112,7 +134,8 @@ describe("publish", () => {
       expect.arrayContaining(["manifest.json", "cover.png", "chapter-001/page-001.png", "chapter-001/page-002.png"])
     );
     const manifest = JSON.parse(zip.getEntry("manifest.json")!.getData().toString("utf-8"));
-    expect(manifest.series.external_id).toBe("series-42");
+    expect(manifest).toEqual(createBody.manifest);
+    expect(manifest.series.slug).toBe("city-after-sunset");
     expect(manifest.chapters[0]).toMatchObject({ external_id: "chapter-001", page_count: 2, published: true, access_mode: "free" });
     expect(manifest.page_count).toBe(2);
   });

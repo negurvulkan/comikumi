@@ -1198,7 +1198,7 @@ export const api = {
       chapterNumber: number;
       chapterTitle: string;
       published: boolean;
-      accessMode: "free" | "paid";
+      accessMode: "free" | "supporter_only";
     },
     pages: Blob[],
     cover?: Blob | null

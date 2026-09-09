@@ -47,7 +47,10 @@ export interface PublishManifestChapter {
    * folder is derived from the array index (see aiMangaConnector.ts's buildZip()). */
   pages: Buffer[];
   published: boolean;
-  accessMode: "free" | "paid";
+  /** Matches the OpenAPI spec's ConnectManifestV1.chapters[].access_mode enum exactly
+   * (GET /api/v1/connect/openapi) — NOT "paid", which the marketing page's prose
+   * loosely implied but the actual schema never uses. */
+  accessMode: "free" | "supporter_only";
 }
 
 export interface PublishManifestInput {

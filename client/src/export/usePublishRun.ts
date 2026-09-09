@@ -31,7 +31,7 @@ export interface PublishChapterInput {
   chapterNumber: number;
   chapterTitle: string;
   published: boolean;
-  accessMode: "free" | "paid";
+  accessMode: "free" | "supporter_only";
   includeCover: boolean;
 }
 

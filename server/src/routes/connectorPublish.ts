@@ -33,7 +33,7 @@ const PublishMetadataSchema = z.object({
   chapterNumber: z.number().int().positive(),
   chapterTitle: z.string().min(1),
   published: z.boolean().default(false),
-  accessMode: z.enum(["free", "paid"]).default("free"),
+  accessMode: z.enum(["free", "supporter_only"]).default("free"),
 });
 
 /** Deterministic, stable external ids for a given ComiKumi project+volume — created

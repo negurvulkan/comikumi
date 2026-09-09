@@ -1047,7 +1047,7 @@
     "publishImmediately": "Publish immediately",
     "accessModeLabel": "Access",
     "accessModeFree": "Free",
-    "accessModePaid": "Paid",
+    "accessModeSupporterOnly": "Supporters only",
     "publishing": "Publishing…",
     "publishButton": "Publish",
     "renderingProgress": "Rendering page {{count}} of {{total}}…",

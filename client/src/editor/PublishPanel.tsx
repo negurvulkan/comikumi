@@ -18,7 +18,7 @@ interface Props {
     chapterNumber: number;
     chapterTitle: string;
     published: boolean;
-    accessMode: "free" | "paid";
+    accessMode: "free" | "supporter_only";
     includeCover: boolean;
   }) => void;
   onClose: () => void;
@@ -40,7 +40,7 @@ export function PublishPanel({ languages, chapters, publishing, publishMsg, onPu
   const [chapterTitle, setChapterTitle] = useState("");
   const [synopsis, setSynopsis] = useState("");
   const [published, setPublished] = useState(false);
-  const [accessMode, setAccessMode] = useState<"free" | "paid">("free");
+  const [accessMode, setAccessMode] = useState<"free" | "supporter_only">("free");
   const [includeCover, setIncludeCover] = useState(true);
 
   const selectedChapter = chapters.find((c) => c.chapter.id === chapterId);
@@ -132,9 +132,9 @@ export function PublishPanel({ languages, chapters, publishing, publishMsg, onPu
       {published && (
         <label>
           {t("publishPanel.accessModeLabel")}
-          <select value={accessMode} onChange={(e) => setAccessMode(e.target.value as "free" | "paid")}>
+          <select value={accessMode} onChange={(e) => setAccessMode(e.target.value as "free" | "supporter_only")}>
             <option value="free">{t("publishPanel.accessModeFree")}</option>
-            <option value="paid">{t("publishPanel.accessModePaid")}</option>
+            <option value="supporter_only">{t("publishPanel.accessModeSupporterOnly")}</option>
           </select>
         </label>
       )}

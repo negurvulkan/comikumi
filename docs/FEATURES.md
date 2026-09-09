@@ -1455,11 +1455,15 @@ talks to a partner API that is itself still a "Partner Preview".
 - **Deployment-neutral by design**: works identically whether ComiKumi runs as
   a local single-user install or a shared team server — the OAuth exchange
   always happens on whichever ComiKumi server is active, never inside the
-  Electron shell directly, and every deployment authenticates as its own
-  PKCE-only public client (a server operator who wants this needs to request
-  their own client id from AI MANGA and set it via the `AI_MANGA_CLIENT_ID`/
-  `AI_MANGA_REDIRECT_URI` environment variables on their server). Without that
-  configuration, the whole feature stays invisible in the UI.
+  Electron shell directly. The desktop build uses one shared, official
+  ComiKumi client id (a PKCE public client, so nothing secret is embedded) with
+  a fixed loopback redirect the packaged app sets automatically — no setup
+  needed to connect. A self-hosted server operator can override both via the
+  `AI_MANGA_CLIENT_ID`/`AI_MANGA_REDIRECT_URI` environment variables — either
+  with their own separately-registered client, or (if AI MANGA's partner
+  program allows registering more than one redirect URI per client) their
+  instance's own callback URL under the same shared client. Without any of
+  this configured, the whole feature stays invisible in the UI.
 
 ## Fonts
 

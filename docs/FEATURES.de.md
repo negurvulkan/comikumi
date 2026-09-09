@@ -1510,12 +1510,17 @@ selbst noch "Partner Preview" ist.
 - **Deployment-neutral by Design**: funktioniert identisch, ob ComiKumi als
   lokale Einzelplatz-Installation oder als gemeinsamer Team-Server läuft — der
   OAuth-Austausch läuft immer über den jeweils aktiven ComiKumi-Server,
-  niemals direkt über die Electron-Hülle, und jede Installation authentifiziert
-  sich als eigener, reiner PKCE-Client ohne Secret (ein Server-Betreiber, der
-  das nutzen möchte, muss bei AI MANGA eine eigene Client-ID beantragen und
-  über die Umgebungsvariablen `AI_MANGA_CLIENT_ID`/`AI_MANGA_REDIRECT_URI`
-  setzen). Ohne diese Konfiguration bleibt die gesamte Funktion in der
-  Oberfläche unsichtbar.
+  niemals direkt über die Electron-Hülle. Die Desktop-Version nutzt eine
+  gemeinsame, offizielle ComiKumi-Client-ID (ein reiner PKCE-Client, also ohne
+  eingebettetes Secret) mit einem festen Loopback-Redirect, den die gepackte
+  App selbst automatisch setzt — keine Einrichtung nötig, um sich zu
+  verbinden. Ein Server-Betreiber kann beides über die Umgebungsvariablen
+  `AI_MANGA_CLIENT_ID`/`AI_MANGA_REDIRECT_URI` überschreiben — entweder mit
+  einer eigenen, separat registrierten Client-ID, oder (falls AI MANGAs
+  Partnerprogramm mehrere Redirect-URIs pro Client erlaubt) mit der eigenen
+  Callback-URL der Installation unter derselben gemeinsamen Client-ID. Ohne
+  eine dieser Konfigurationen bleibt die gesamte Funktion in der Oberfläche
+  unsichtbar.
 
 ## Schriftarten
 

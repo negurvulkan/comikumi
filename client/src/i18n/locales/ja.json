@@ -1018,7 +1018,7 @@
     "publishImmediately": "すぐに公開",
     "accessModeLabel": "アクセス",
     "accessModeFree": "無料",
-    "accessModePaid": "有料",
+    "accessModeSupporterOnly": "サポーター限定",
     "publishing": "公開中…",
     "publishButton": "公開",
     "renderingProgress": "ページ {{count}} / {{total}} をレンダリング中…",

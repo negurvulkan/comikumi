@@ -111,7 +111,7 @@ describe("POST /api/volumes/:id/connectors/ai-manga/publish", () => {
         const url = input.toString();
         if (url.endsWith("/api/v1/connect/imports")) {
           const body = JSON.parse(init!.body as string);
-          expect(body.chapter_external_id).toMatch(new RegExp(`^comikumi-.*-${VOLUME_ID}$`));
+          expect(body.manifest.chapters[0].external_id).toMatch(new RegExp(`^comikumi-.*-${VOLUME_ID}$`));
           return new Response(JSON.stringify({ id: "import-2", upload_url: "https://r2.example/upload" }), { status: 201 });
         }
         if (url === "https://r2.example/upload") return new Response(null, { status: 200 });

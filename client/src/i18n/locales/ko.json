@@ -1018,7 +1018,7 @@
     "publishImmediately": "즉시 게시",
     "accessModeLabel": "접근 방식",
     "accessModeFree": "무료",
-    "accessModePaid": "유료",
+    "accessModeSupporterOnly": "서포터 전용",
     "publishing": "게시 중…",
     "publishButton": "게시",
     "renderingProgress": "{{count}}/{{total}} 페이지 렌더링 중…",
