@@ -16,6 +16,7 @@ export function toPublicUser(user: UserAccount): PublicUser {
     anthropicApiKeyEncrypted: _anthropicApiKeyEncrypted,
     googleApiKeyEncrypted: _googleApiKeyEncrypted,
     openrouterApiKeyEncrypted: _openrouterApiKeyEncrypted,
+    aiMangaConnection: _aiMangaConnection,
     ...rest
   } = user;
   return rest;
@@ -121,6 +122,11 @@ export async function updateUser(
     openrouterApiKey?: string | null;
     ollamaBaseUrl?: string | null;
     ollamaModel?: string | null;
+    /** Plaintext tokens in, encrypted here at the storage boundary — same convention
+     * as the `*ApiKey` fields above. `null` disconnects (see routes/connectors.ts's
+     * disconnect route). Set as one atomic object, not per-field, since a partial
+     * access-token-without-refresh-token state would never be usable. */
+    aiMangaConnection?: { accessToken: string; refreshToken: string; expiresAt: number; accountLabel: string } | null;
   }
 ): Promise<UserAccount> {
   const users = await readUsersRaw();
@@ -171,6 +177,19 @@ export async function updateUser(
     if (updates.ollamaModel === null) delete user.ollamaModel;
     else user.ollamaModel = updates.ollamaModel;
   }
+  if (updates.aiMangaConnection !== undefined) {
+    if (updates.aiMangaConnection === null) {
+      delete user.aiMangaConnection;
+    } else {
+      const { accessToken, refreshToken, expiresAt, accountLabel } = updates.aiMangaConnection;
+      user.aiMangaConnection = {
+        accessTokenEncrypted: await encryptSecret(accessToken),
+        refreshTokenEncrypted: await encryptSecret(refreshToken),
+        expiresAt,
+        accountLabel,
+      };
+    }
+  }
 
   await writeUsersRaw(users);
   return user;
@@ -219,6 +238,24 @@ export async function getOllamaConfig(id: string): Promise<{ baseUrl: string; mo
   return { baseUrl: user.ollamaBaseUrl, model: user.ollamaModel };
 }
 
+/** Decrypts the caller's own stored AI MANGA access+refresh tokens for the one moment
+ * they're actually needed (an outgoing request to AI MANGA, see lib/connectors/
+ * aiMangaConnector.ts) — same "never cached, never returned to a route handler that
+ * could leak it back to a client" contract as getDecryptedOpenAIKey. Returns null if
+ * the user hasn't connected an AI MANGA account. */
+export async function getDecryptedAiMangaTokens(
+  id: string
+): Promise<{ accessToken: string; refreshToken: string; expiresAt: number } | null> {
+  const user = await findUserById(id);
+  if (!user?.aiMangaConnection) return null;
+  const { accessTokenEncrypted, refreshTokenEncrypted, expiresAt } = user.aiMangaConnection;
+  return {
+    accessToken: await decryptSecret(accessTokenEncrypted),
+    refreshToken: await decryptSecret(refreshTokenEncrypted),
+    expiresAt,
+  };
+}
+
 export interface AIProviderStatus {
   openai: { configured: boolean };
   anthropic: { configured: boolean };
@@ -246,6 +283,16 @@ export function toAIProviderStatus(user: UserAccount): AIProviderStatus {
       baseUrl: user.ollamaBaseUrl,
       model: user.ollamaModel,
     },
+  };
+}
+
+/** Secret-free connection status for the AI MANGA connector — see
+ * shared/src/connectors.ts's ConnectorStatusSchema, which this feeds into alongside
+ * the connector's own isConfigured() (deployment-wide, not per-user). */
+export function toAiMangaConnectionStatus(user: UserAccount): { connected: boolean; accountLabel?: string } {
+  return {
+    connected: user.aiMangaConnection !== undefined,
+    accountLabel: user.aiMangaConnection?.accountLabel,
   };
 }
 

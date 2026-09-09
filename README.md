@@ -109,6 +109,12 @@ below) — that account lives on your own server, not a central ComiKumi service
   grouped by panel, with per-element lock toggles; "lock all panels", "lock panel +
   its bubbles", and "lock selection" bulk actions stop overlapping panels from getting
   in the way of clicking or accidentally dragging what's underneath.
+- **Connectors / Publishing (Experimental)** — publish a finished chapter straight to
+  an external platform instead of exporting files by hand. AI MANGA Connect is the
+  first connector: connect an account under Account Settings, then publish a chapter
+  from the page grid — pages render the same way as a normal PNG export, get packaged
+  into AI MANGA's manifest+ZIP format, and upload with live progress through AI
+  MANGA's own validation. See [`docs/FEATURES.md`](docs/FEATURES.md#connectors--publishing-experimental).
 - **Layer order (z-order)** — bring any bubble/image/curved text in front of or behind
   the others (Layers navigator buttons or the bubble context menu), e.g. to let an image
   patch sit in front of a bubble instead of always behind it. Respected in the editor,

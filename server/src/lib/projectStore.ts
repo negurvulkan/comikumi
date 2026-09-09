@@ -10,6 +10,7 @@ import type { Entity, EntityRelation } from "../../../shared/src/entities.js";
 import type { GlossaryEntry } from "../../../shared/src/glossary.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
 import type { ProjectMember } from "../../../shared/src/users.js";
+import type { ConnectorProjectState } from "../../../shared/src/connectors.js";
 import { APP_STATE_FILE, LEGACY_SETTINGS_FILE, LEGACY_LANGUAGES_FILE, LEGACY_PROJECT_FILE } from "./paths.js";
 import { withFileLock } from "./fileLock.js";
 
@@ -589,6 +590,19 @@ export async function writePresets(presets: LetteringPreset[], ctx?: ActiveProje
   const project = ctx ?? (await getActiveProject());
   await withFileLock(project.filePath, async () => {
     project.data = { ...project.data, presets };
+    await writeProjectFile(project.filePath, project.data);
+  });
+}
+
+export async function readConnectorState(ctx?: ActiveProject): Promise<ConnectorProjectState> {
+  const { data } = ctx ?? (await getActiveProject());
+  return data.connectors;
+}
+
+export async function writeConnectorState(connectors: ConnectorProjectState, ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, connectors };
     await writeProjectFile(project.filePath, project.data);
   });
 }

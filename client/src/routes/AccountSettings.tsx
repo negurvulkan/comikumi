@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
+import type { ConnectorStatus } from "../../../shared/src/connectors";
 
 interface AIProviderStatus {
   openai: { configured: boolean };
@@ -102,7 +103,12 @@ export function AccountSettings() {
   const [ollamaBaseUrlInput, setOllamaBaseUrlInput] = useState("");
   const [ollamaModelInput, setOllamaModelInput] = useState("");
   const [codexLogin, setCodexLogin] = useState<CodexLoginState | null>(null);
+  const [connectors, setConnectors] = useState<ConnectorStatus[]>([]);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function refreshConnectors() {
+    api.listConnectors().then(setConnectors).catch((err) => setError(translateApiError(err, t)));
+  }
 
   function refreshStatus() {
     api
@@ -117,6 +123,7 @@ export function AccountSettings() {
 
   useEffect(() => {
     refreshStatus();
+    refreshConnectors();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -230,6 +237,45 @@ export function AccountSettings() {
     try {
       await api.logoutCodex();
       refreshStatus();
+    } catch (err) {
+      setError(translateApiError(err, t));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Opens the connector's consent screen and polls for the connection to appear —
+   * there's no callback into this tab's own JS (the OAuth redirect lands on a plain
+   * server route, see server/src/routes/connectors.ts's callback HTML page), so this
+   * just polls listConnectors() the same way handleStartCodexLogin polls Codex's login
+   * status, stopping once `connected` flips true or after a reasonable timeout. */
+  async function handleConnect(connectorId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      const { url } = await api.getConnectorAuthorizeUrl(connectorId);
+      openExternal(url);
+      let attempts = 0;
+      const timer = setInterval(async () => {
+        attempts++;
+        const list = await api.listConnectors().catch(() => null);
+        if (list) setConnectors(list);
+        const connected = list?.find((c) => c.id === connectorId)?.connected;
+        if (connected || attempts > 60) clearInterval(timer);
+      }, 3000);
+    } catch (err) {
+      setError(translateApiError(err, t));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDisconnect(connectorId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.disconnectConnector(connectorId);
+      refreshConnectors();
     } catch (err) {
       setError(translateApiError(err, t));
     } finally {
@@ -365,6 +411,29 @@ export function AccountSettings() {
           )}
         </div>
       </div>
+
+      <h2 style={{ margin: "24px 0 12px" }}>{t("account.connectors.title")}</h2>
+      {connectors
+        .filter((c) => c.configured)
+        .map((connector) => (
+          <div key={connector.id} className="inspector" style={{ maxWidth: 480, marginBottom: 16 }}>
+            <p style={{ margin: 0, fontWeight: 600 }}>
+              {t(`account.connectors.${connector.id}.label`)} <span className="hint">{t("account.connectors.experimental")}</span>
+            </p>
+            {connector.connected ? (
+              <>
+                <p className="hint" style={{ margin: 0 }}>{t("account.connectors.connectedAs", { name: connector.accountLabel })}</p>
+                <button type="button" onClick={() => handleDisconnect(connector.id)} disabled={busy}>
+                  {t("account.connectors.disconnect")}
+                </button>
+              </>
+            ) : (
+              <button type="button" className="primary" onClick={() => handleConnect(connector.id)} disabled={busy}>
+                {t("account.connectors.connect")}
+              </button>
+            )}
+          </div>
+        ))}
     </div>
   );
 }

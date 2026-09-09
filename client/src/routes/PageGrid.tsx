@@ -16,6 +16,8 @@ import { useNormalizeRun, type FlaggedPage } from "../export/useNormalizeRun";
 import type { RasterExportOptions } from "../export/renderPageToPng";
 import type { UniformFitMode } from "../export/uniformFormat";
 import { ExportPanel } from "../editor/ExportPanel";
+import { PublishPanel } from "../editor/PublishPanel";
+import { usePublishRun } from "../export/usePublishRun";
 import { NormalizePreviewDialog } from "../editor/NormalizePreviewDialog";
 import { Modal } from "../editor/Modal";
 import { AssetManagerContent } from "../editor/AssetManagerContent";
@@ -272,6 +274,8 @@ export function PageGrid() {
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
   const [showExportPanel, setShowExportPanel] = useState(false);
+  const [showPublishPanel, setShowPublishPanel] = useState(false);
+  const [aiMangaAvailable, setAiMangaAvailable] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
@@ -289,6 +293,7 @@ export function PageGrid() {
   const uploadPagesInputRef = useRef<HTMLInputElement>(null);
   const importClipInputRef = useRef<HTMLInputElement>(null);
   const { exporting, exportMsg, runExport } = useExportRun(volumeId, languages);
+  const { publishing, publishMsg, runPublish } = usePublishRun(volumeId);
   const { exporting: normalizing, exportMsg: normalizeMsg, analyze: analyzeNormalize, run: runNormalize } = useNormalizeRun(volumeId, languages);
   const [pendingNormalize, setPendingNormalize] = useState<{
     autoPages: PageSummary[];
@@ -390,6 +395,17 @@ export function PageGrid() {
 
   useEffect(() => {
     api.listLanguages().then(setLanguages);
+  }, []);
+
+  // Experimental connector feature — the menu entry only appears at all when this
+  // deployment has AI_MANGA_CLIENT_ID/AI_MANGA_REDIRECT_URI configured (see
+  // server/src/lib/connectors/aiMangaConnector.ts's isConfigured()); whether the
+  // CALLING user has connected their own account yet is checked again on submit.
+  useEffect(() => {
+    api
+      .listConnectors()
+      .then((list) => setAiMangaAvailable(!!list.find((c) => c.id === "ai-manga")?.configured))
+      .catch(() => setAiMangaAvailable(false));
   }, []);
 
   useEffect(() => {
@@ -667,6 +683,16 @@ export function PageGrid() {
           label: t("pageGrid.menuExportViewer") || "Export-Viewer",
           onClick: () => navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/exports`),
         },
+        ...(aiMangaAvailable
+          ? [
+              {
+                type: "action" as const,
+                label: t("pageGrid.menuPublishAiManga"),
+                onClick: () => setShowPublishPanel(true),
+                disabled: languages.length === 0 || !hasAtLeast("letterer"),
+              },
+            ]
+          : []),
         { type: "separator" },
         { type: "action", label: t("pageGrid.menuManageChapters"), onClick: () => setShowChapterManager(true), disabled: !hasAtLeast("letterer") },
         {
@@ -754,13 +780,13 @@ export function PageGrid() {
           </select>
         </label>
       )}
-      {(busy || message || exportMsg || normalizeMsg) && (
+      {(busy || message || exportMsg || normalizeMsg || publishMsg) && (
         <div
           className="error-banner"
           style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", margin: "10px 12px 0", display: "flex", alignItems: "center", gap: 8 }}
         >
           {busy && <LoadingIndicator size="sm" />}
-          {message ?? exportMsg ?? normalizeMsg ?? (busy ? t("common.loading") : null)}
+          {message ?? exportMsg ?? normalizeMsg ?? publishMsg ?? (busy ? t("common.loading") : null)}
         </div>
       )}
       {showExportPanel && (
@@ -787,6 +813,18 @@ export function PageGrid() {
             }
             onAnalyzeUniform={handleAnalyzeUniform}
             onClose={() => setShowExportPanel(false)}
+          />
+        </Modal>
+      )}
+      {showPublishPanel && (
+        <Modal onClose={() => setShowPublishPanel(false)}>
+          <PublishPanel
+            languages={languages}
+            chapters={resolvedChapters}
+            publishing={publishing}
+            publishMsg={publishMsg}
+            onPublish={(input) => runPublish(input)}
+            onClose={() => setShowPublishPanel(false)}
           />
         </Modal>
       )}
