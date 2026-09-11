@@ -490,6 +490,9 @@
       "uploading": "Subiendo…",
       "uploadNew": "Subir nueva imagen"
     },
+    "pasteImage": {
+      "uploading": "Pegando imagen…"
+    },
     "svgPicker": {
       "chooseSvg": "Elegir contorno SVG",
       "chooseSvgShort": "Elegir SVG…",

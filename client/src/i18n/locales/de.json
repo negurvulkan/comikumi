@@ -504,6 +504,9 @@
       "uploading": "Lädt hoch…",
       "uploadNew": "Neues Bild hochladen"
     },
+    "pasteImage": {
+      "uploading": "Bild wird eingefügt…"
+    },
     "svgPicker": {
       "chooseSvg": "SVG-Kontur wählen",
       "chooseSvgShort": "SVG wählen…",

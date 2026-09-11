@@ -134,7 +134,7 @@ async function authorizedFetch(accessToken: string, path: string, init: RequestI
  * once and reused both as the ZIP's own manifest.json entry AND as the `manifest` field
  * of the POST /imports request body, since the spec requires those to match ("Critical
  * fields in the API request must match the ZIP manifest"). */
-function buildManifest(input: PublishManifestInput, chapterFolder: string) {
+export function buildManifest(input: PublishManifestInput, chapterFolder: string) {
   return {
     generator: "ComiKumi",
     manifest_version: 1 as const,
@@ -170,7 +170,7 @@ function buildManifest(input: PublishManifestInput, chapterFolder: string) {
  * "Package contract" section: manifest.json at the root, an optional cover image at the
  * root, and one folder per chapter (here always exactly one, `scope: "chapter"`) holding
  * zero-padded, lexically-ordered page files. */
-function buildZip(manifest: ReturnType<typeof buildManifest>, input: PublishManifestInput, chapterFolder: string): Promise<Buffer> {
+export function buildZip(manifest: ReturnType<typeof buildManifest>, input: PublishManifestInput, chapterFolder: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const archive = new ZipArchive({ zlib: { level: 9 } });
     const chunks: Buffer[] = [];
