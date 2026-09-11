@@ -53,7 +53,15 @@
     "codexSignOut": "Sign out",
     "codexEnterCode": "Enter this code on the following page:",
     "codexWaiting": "Waiting for confirmation…",
-    "codexLoginFailed": "Sign-in failed."
+    "codexLoginFailed": "Sign-in failed.",
+    "connectors": {
+      "title": "Connectors",
+      "experimental": "(Experimental)",
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "connectedAs": "Connected as {{name}}",
+      "ai-manga": { "label": "AI MANGA" }
+    }
   },
   "roles": {
     "viewer": "Viewer",
@@ -386,6 +394,7 @@
     "orderConflictMessage": "Someone else changed the page order while you were editing it. Keep your version (overwrites theirs) or load their version (discards your unsaved reordering)?",
     "orderConflictKeepMine": "Keep my version",
     "orderConflictReload": "Load their version",
+    "menuPublishAiManga": "Publish to AI MANGA…",
     "menuManageChapters": "Manage chapters…",
     "noChapterSection": "No chapter",
     "pageType_cover": "Cover",
@@ -1024,6 +1033,35 @@
       "invalid_range": "Invalid range \"{{part}}\" — the first number must be less than or equal to the second.",
       "invalid_expression": "Invalid expression \"{{part}}\" — expected a number (e.g. \"5\") or a range (e.g. \"10-14\")."
     }
+  },
+  "publishPanel": {
+    "title": "Publish to AI MANGA",
+    "noChapters": "This volume has no chapters yet — create one under \"Manage chapters\" first.",
+    "seriesTitleLabel": "Series title",
+    "synopsisLabel": "Synopsis",
+    "chapterNumberLabel": "Chapter number",
+    "chapterTitleLabel": "Chapter title",
+    "noPublishableLanguages": "None of this project's languages are supported by AI MANGA yet — add one of its supported languages to publish (see the project's language settings).",
+    "accessModeForcedFree": "Immediate publication requires \"Free\" access — AI MANGA only allows this combination.",
+    "completed": "Completed.",
+    "visibilityLabel": "Visibility",
+    "draft": "Draft",
+    "publishImmediately": "Publish immediately",
+    "accessModeLabel": "Access",
+    "accessModeFree": "Free",
+    "accessModeSupporterOnly": "Supporters only",
+    "publishing": "Publishing…",
+    "publishButton": "Publish",
+    "renderingProgress": "Rendering page {{count}} of {{total}}…",
+    "uploading": "Uploading…",
+    "status": {
+      "uploading": "Uploading…",
+      "validating": "Validating on AI MANGA…",
+      "published": "Published.",
+      "failed": "Failed."
+    },
+    "published": "Published: {{url}}",
+    "failed": "Failed: {{error}}"
   },
   "useExportRun": {
     "progress": "{{count}} exported…",

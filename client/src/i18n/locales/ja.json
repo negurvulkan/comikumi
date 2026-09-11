@@ -47,7 +47,15 @@
     "codexSignOut": "サインアウト",
     "codexEnterCode": "次のページでこのコードを入力してください:",
     "codexWaiting": "確認を待っています…",
-    "codexLoginFailed": "サインインに失敗しました。"
+    "codexLoginFailed": "サインインに失敗しました。",
+    "connectors": {
+      "title": "コネクター",
+      "experimental": "(実験的機能)",
+      "connect": "接続",
+      "disconnect": "切断",
+      "connectedAs": "{{name}} として接続済み",
+      "ai-manga": { "label": "AI MANGA" }
+    }
   },
   "settings": {
     "headingWithProject": "設定 — {{name}}",
@@ -382,6 +390,7 @@
     "orderConflictMessage": "編集中に他の人がページの順序を変更しました。自分のバージョンを保持しますか（相手を上書き）、それとも相手のバージョンを読み込みますか（未保存の並べ替えを破棄）？",
     "orderConflictKeepMine": "自分のバージョンを保持",
     "orderConflictReload": "相手のバージョンを読み込む",
+    "menuPublishAiManga": "AI MANGA に公開…",
     "menuManageChapters": "章を管理…",
     "noChapterSection": "章なし",
     "pageType_cover": "表紙",
@@ -995,6 +1004,35 @@
       "invalid_range": "無効な範囲「{{part}}」 — 最初の数字は2番目以下である必要があります。",
       "invalid_expression": "無効な式「{{part}}」 — 数字（例:「5」）または範囲（例:「10-14」）を指定してください。"
     }
+  },
+  "publishPanel": {
+    "title": "AI MANGA に公開",
+    "noChapters": "この巻にはまだ章がありません — 先に「章を管理」から作成してください。",
+    "seriesTitleLabel": "シリーズタイトル",
+    "synopsisLabel": "あらすじ",
+    "chapterNumberLabel": "章番号",
+    "chapterTitleLabel": "章タイトル",
+    "noPublishableLanguages": "このプロジェクトの言語はまだ AI MANGA でサポートされていません — 公開するにはサポートされている言語を追加してください。",
+    "accessModeForcedFree": "即時公開には「無料」アクセスが必要です — AI MANGA はこの組み合わせのみを許可しています。",
+    "completed": "完了しました。",
+    "visibilityLabel": "公開状態",
+    "draft": "下書き",
+    "publishImmediately": "すぐに公開",
+    "accessModeLabel": "アクセス",
+    "accessModeFree": "無料",
+    "accessModeSupporterOnly": "サポーター限定",
+    "publishing": "公開中…",
+    "publishButton": "公開",
+    "renderingProgress": "ページ {{count}} / {{total}} をレンダリング中…",
+    "uploading": "アップロード中…",
+    "status": {
+      "uploading": "アップロード中…",
+      "validating": "AI MANGA 側で検証中…",
+      "published": "公開されました。",
+      "failed": "失敗しました。"
+    },
+    "published": "公開されました: {{url}}",
+    "failed": "失敗しました: {{error}}"
   },
   "useExportRun": {
     "progress": "{{count}} 件エクスポート済み…",

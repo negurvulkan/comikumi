@@ -47,7 +47,15 @@
     "codexSignOut": "로그아웃",
     "codexEnterCode": "다음 페이지에서 이 코드를 입력하세요:",
     "codexWaiting": "확인 대기 중…",
-    "codexLoginFailed": "로그인에 실패했습니다."
+    "codexLoginFailed": "로그인에 실패했습니다.",
+    "connectors": {
+      "title": "커넥터",
+      "experimental": "(실험적 기능)",
+      "connect": "연결",
+      "disconnect": "연결 해제",
+      "connectedAs": "{{name}}(으)로 연결됨",
+      "ai-manga": { "label": "AI MANGA" }
+    }
   },
   "settings": {
     "headingWithProject": "설정 — {{name}}",
@@ -382,6 +390,7 @@
     "orderConflictMessage": "편집하는 동안 다른 사람이 페이지 순서를 변경했습니다. 내 버전을 유지할까요(상대방 것을 덮어씀), 아니면 상대방 버전을 불러올까요(저장하지 않은 순서 변경을 버림)?",
     "orderConflictKeepMine": "내 버전 유지",
     "orderConflictReload": "상대방 버전 불러오기",
+    "menuPublishAiManga": "AI MANGA에 게시…",
     "menuManageChapters": "챕터 관리…",
     "noChapterSection": "챕터 없음",
     "pageType_cover": "표지",
@@ -995,6 +1004,35 @@
       "invalid_range": "잘못된 범위 \"{{part}}\" — 첫 번째 숫자는 두 번째 숫자보다 작거나 같아야 합니다.",
       "invalid_expression": "잘못된 표현식 \"{{part}}\" — 숫자(예: \"5\") 또는 범위(예: \"10-14\")가 필요합니다."
     }
+  },
+  "publishPanel": {
+    "title": "AI MANGA에 게시",
+    "noChapters": "이 볼륨에는 아직 챕터가 없습니다 — 먼저 \"챕터 관리\"에서 만드세요.",
+    "seriesTitleLabel": "시리즈 제목",
+    "synopsisLabel": "줄거리",
+    "chapterNumberLabel": "챕터 번호",
+    "chapterTitleLabel": "챕터 제목",
+    "noPublishableLanguages": "이 프로젝트의 언어 중 AI MANGA가 지원하는 언어가 없습니다 — 게시하려면 지원되는 언어를 추가하세요.",
+    "accessModeForcedFree": "즉시 게시하려면 \"무료\" 접근 방식이 필요합니다 — AI MANGA는 이 조합만 허용합니다.",
+    "completed": "완료되었습니다.",
+    "visibilityLabel": "공개 상태",
+    "draft": "초안",
+    "publishImmediately": "즉시 게시",
+    "accessModeLabel": "접근 방식",
+    "accessModeFree": "무료",
+    "accessModeSupporterOnly": "서포터 전용",
+    "publishing": "게시 중…",
+    "publishButton": "게시",
+    "renderingProgress": "{{count}}/{{total}} 페이지 렌더링 중…",
+    "uploading": "업로드 중…",
+    "status": {
+      "uploading": "업로드 중…",
+      "validating": "AI MANGA에서 검증 중…",
+      "published": "게시됨.",
+      "failed": "실패함."
+    },
+    "published": "게시됨: {{url}}",
+    "failed": "실패함: {{error}}"
   },
   "useExportRun": {
     "progress": "{{count}}개 내보냄…",

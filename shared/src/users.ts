@@ -82,6 +82,27 @@ export const UserAccountSchema = z.object({
    * docs/FEATURES.md's AI Assistant section. */
   ollamaBaseUrl: z.string().trim().min(1).optional(),
   ollamaModel: z.string().trim().min(1).optional(),
+  /** AI MANGA Connect OAuth tokens (PKCE, see server/src/lib/connectors/aiMangaConnector.ts)
+   * — same encrypted-at-rest convention as the `*ApiKeyEncrypted` fields above, just two
+   * secrets (access + refresh) plus the plain-text bits needed to show connection status
+   * without decrypting anything (`expiresAt`: epoch ms; `accountLabel`: whatever AI MANGA's
+   * `/api/v1/connect/me` returns as a human-readable identifier — no email, see that
+   * endpoint's own privacy boundary). One connector-account per ComiKumi account, not per
+   * project — see shared/src/connectors.ts for the per-project series/chapter mapping. */
+  aiMangaConnection: z
+    .object({
+      accessTokenEncrypted: EncryptedSecretSchema,
+      refreshTokenEncrypted: EncryptedSecretSchema,
+      expiresAt: z.number(),
+      accountLabel: z.string(),
+      /** AI MANGA's own immutable account id (GET /api/v1/connect/me's `id` field) —
+       * not a secret, stored plain like accountLabel. Used to detect when a project's
+       * stored AI-MANGA `creatorId` (shared/src/connectors.ts) no longer matches the
+       * currently connected account, e.g. after a different ComiKumi user (with their
+       * own AI MANGA account) tries to publish the same project. */
+      accountId: z.string(),
+    })
+    .optional(),
 });
 export type UserAccount = z.infer<typeof UserAccountSchema>;
 export const UserAccountListSchema = z.array(UserAccountSchema);
@@ -90,8 +111,17 @@ export const UserAccountListSchema = z.array(UserAccountSchema);
  * Provider-Key dürfen nie über die API nach außen gehen (siehe routes/auth.ts's
  * toPublicUser()). Provider-Status (nur ein Boolean, kein Secret) läuft stattdessen
  * über toAIProviderStatus() und einen eigenen Endpunkt. Ollamas Felder sind bewusst
- * NICHT ausgeschlossen — kein Secret, siehe ollamaBaseUrl/ollamaModel oben. */
+ * NICHT ausgeschlossen — kein Secret, siehe ollamaBaseUrl/ollamaModel oben.
+ * `aiMangaConnection` enthält zwei Secrets (Access-/Refresh-Token) und muss deshalb
+ * genauso ausgeschlossen werden — der Verbindungsstatus läuft über eine eigene,
+ * secret-freie Sicht (siehe server/src/lib/connectors/aiMangaConnector.ts's
+ * toAiMangaConnectionStatus()). */
 export type PublicUser = Omit<
   UserAccount,
-  "passwordHash" | "openaiApiKeyEncrypted" | "anthropicApiKeyEncrypted" | "googleApiKeyEncrypted" | "openrouterApiKeyEncrypted"
+  | "passwordHash"
+  | "openaiApiKeyEncrypted"
+  | "anthropicApiKeyEncrypted"
+  | "googleApiKeyEncrypted"
+  | "openrouterApiKeyEncrypted"
+  | "aiMangaConnection"
 >;

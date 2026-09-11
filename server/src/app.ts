@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import path from "node:path";
 import cors from "cors";
+import multer from "multer";
 import { volumesRouter } from "./routes/volumes.js";
 import { pagesRouter } from "./routes/pages.js";
 import { layoutRouter } from "./routes/layout.js";
@@ -28,6 +29,8 @@ import { projectRouter } from "./routes/project.js";
 import { browseRouter } from "./routes/browse.js";
 import { authRouter } from "./routes/auth.js";
 import { aiRouter } from "./routes/ai.js";
+import { connectorsRouter } from "./routes/connectors.js";
+import { connectorPublishRouter } from "./routes/connectorPublish.js";
 import { ocrModelsRouter } from "./routes/ocrModels.js";
 import { demoRouter, demoRateLimiter } from "./routes/demo.js";
 import { requireAuth, requireProjectRole, requireSystemAdmin } from "./lib/auth.js";
@@ -64,6 +67,10 @@ export function createApp(options: CreateAppOptions = {}): Express {
   // exist as an attack surface outside a demo container. Rate-limited since both of
   // its routes are, by design, reachable with no auth at all.
   if (DEMO_MODE) app.use("/api/demo", demoRateLimiter, demoRouter);
+  // Public mount, same as /api/auth above — /:id/callback is the external OAuth
+  // redirect target and carries no Authorization header at all; every other route in
+  // this router gates itself with requireAuth internally (see routes/connectors.ts).
+  app.use("/api/connectors", connectorsRouter);
 
   // Baseline for every project-scoped router: must be authenticated AND at least a
   // "viewer" member of the currently active project (system admins bypass, see
@@ -76,6 +83,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/volumes", requireAuth, requireViewer, layoutRouter);
   app.use("/api/volumes", requireAuth, requireViewer, exportRouter);
   app.use("/api/volumes", requireAuth, requireViewer, exportJobsRouter);
+  app.use("/api/volumes", requireAuth, requireViewer, connectorPublishRouter);
   app.use("/api/volumes", requireAuth, requireViewer, scriptRouter);
   app.use("/api/volumes", requireAuth, requireViewer, pageOrderRouter);
   app.use("/api/volumes", requireAuth, requireViewer, pageMetaRouter);
@@ -120,6 +128,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, layoutRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, exportRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, exportJobsRouter);
+  app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, connectorPublishRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, scriptRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pageOrderRouter);
   app.use("/api/p/:projectId/volumes", requireAuth, resolveProjectParam, requireViewerScoped, pageMetaRouter);
@@ -220,6 +229,14 @@ export function createApp(options: CreateAppOptions = {}): Express {
     // directly, this only matters if some other code path ever throws it uncaught.
     if (err instanceof ProjectNotFoundError) {
       res.status(404).json({ error: "project_not_found" });
+      return;
+    }
+    // multer calls next(err) directly for a file-size/count violation, bypassing
+    // asyncHandler entirely — without this it would fall through to the generic 500
+    // below instead of a translatable, actionable 400 (see routes/connectorPublish.ts's
+    // MAX_PAGE_BYTES, the first route to actually rely on multer's own limits erroring).
+    if (err instanceof multer.MulterError) {
+      res.status(400).json({ error: "upload_limit_exceeded", params: { code: err.code } });
       return;
     }
     console.error(err);

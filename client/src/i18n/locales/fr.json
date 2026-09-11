@@ -47,7 +47,15 @@
     "codexSignOut": "Se déconnecter",
     "codexEnterCode": "Saisissez ce code sur la page suivante :",
     "codexWaiting": "En attente de confirmation…",
-    "codexLoginFailed": "Échec de la connexion."
+    "codexLoginFailed": "Échec de la connexion.",
+    "connectors": {
+      "title": "Connecteurs",
+      "experimental": "(Expérimental)",
+      "connect": "Connecter",
+      "disconnect": "Déconnecter",
+      "connectedAs": "Connecté en tant que {{name}}",
+      "ai-manga": { "label": "AI MANGA" }
+    }
   },
   "settings": {
     "headingWithProject": "Paramètres — {{name}}",
@@ -383,6 +391,7 @@
     "orderConflictMessage": "Quelqu'un d'autre a modifié l'ordre des pages pendant que vous le modifiiez. Conserver votre version (écrase l'autre) ou charger l'autre version (annule votre réorganisation non enregistrée) ?",
     "orderConflictKeepMine": "Conserver ma version",
     "orderConflictReload": "Charger l'autre version",
+    "menuPublishAiManga": "Publier sur AI MANGA…",
     "menuManageChapters": "Gérer les chapitres…",
     "noChapterSection": "Sans chapitre",
     "pageType_cover": "Couverture",
@@ -1004,6 +1013,35 @@
       "invalid_range": "Plage invalide « {{part}} » — le premier nombre doit être inférieur ou égal au second.",
       "invalid_expression": "Expression invalide « {{part}} » — un nombre (p. ex. « 5 ») ou une plage (p. ex. « 10-14 ») est attendu."
     }
+  },
+  "publishPanel": {
+    "title": "Publier sur AI MANGA",
+    "noChapters": "Ce volume n'a pas encore de chapitre — créez-en un d'abord dans « Gérer les chapitres ».",
+    "seriesTitleLabel": "Titre de la série",
+    "synopsisLabel": "Synopsis",
+    "chapterNumberLabel": "Numéro de chapitre",
+    "chapterTitleLabel": "Titre du chapitre",
+    "noPublishableLanguages": "Aucune des langues de ce projet n'est encore prise en charge par AI MANGA — ajoutez une de ses langues prises en charge pour pouvoir publier.",
+    "accessModeForcedFree": "La publication immédiate exige un accès \"Gratuit\" — AI MANGA n'autorise que cette combinaison.",
+    "completed": "Terminé.",
+    "visibilityLabel": "Visibilité",
+    "draft": "Brouillon",
+    "publishImmediately": "Publier immédiatement",
+    "accessModeLabel": "Accès",
+    "accessModeFree": "Gratuit",
+    "accessModeSupporterOnly": "Réservé aux soutiens",
+    "publishing": "Publication…",
+    "publishButton": "Publier",
+    "renderingProgress": "Rendu de la page {{count}} sur {{total}}…",
+    "uploading": "Envoi en cours…",
+    "status": {
+      "uploading": "Envoi en cours…",
+      "validating": "Validation sur AI MANGA…",
+      "published": "Publié.",
+      "failed": "Échoué."
+    },
+    "published": "Publié : {{url}}",
+    "failed": "Échoué : {{error}}"
   },
   "useExportRun": {
     "progress": "{{count}} exporté(s)…",

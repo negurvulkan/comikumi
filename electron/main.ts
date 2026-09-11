@@ -108,6 +108,18 @@ async function startEmbeddedServer(local: { dataDir: string; port: number }): Pr
   process.env.LETTERING_DATA_DIR = local.dataDir;
   process.env.PORT = String(local.port);
   if (clientDistDir) process.env.CLIENT_DIST_DIR = clientDistDir;
+  // The AI MANGA connector (server/src/lib/connectors/aiMangaConnector.ts) needs a
+  // stable, exactly-registered redirect URI for its OAuth flow — for the packaged
+  // desktop build that's always this embedded server's own loopback origin, computed
+  // from whichever port the user's setup actually chose (see runSetupWizard()). Only
+  // set if not already present so a developer/tester can still override it (e.g.
+  // pointing at a mock AI MANGA server during development) by setting the env var
+  // before launching Electron. AI_MANGA_CLIENT_ID itself needs no such injection — it's
+  // a shared constant baked into the server bundle (see aiMangaConnector.ts's
+  // DEFAULT_AI_MANGA_CLIENT_ID), not something that varies by port.
+  if (!process.env.AI_MANGA_REDIRECT_URI) {
+    process.env.AI_MANGA_REDIRECT_URI = `http://localhost:${local.port}/api/connectors/ai-manga/callback`;
+  }
   // A real dynamic import() — not require(), which fails with ERR_REQUIRE_ASYNC_MODULE
   // against an ESM module that has top-level await, exactly what server/src/index.ts
   // has (see electron/tsconfig.json's "module": "NodeNext", required for `tsc` to

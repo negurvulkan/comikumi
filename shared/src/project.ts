@@ -6,6 +6,7 @@ import { GlossaryListSchema } from "./glossary.js";
 import { LetteringPresetListSchema } from "./presets.js";
 import { ProjectMemberListSchema } from "./users.js";
 import { EntityListSchema, EntityRelationListSchema } from "./entities.js";
+import { ConnectorProjectStateSchema } from "./connectors.js";
 
 /**
  * The full contents of a project file — everything a project needs to work
@@ -45,5 +46,9 @@ export const ProjectFileSchema = ProjectSettingsSchema.extend({
    * Portable: travels with the project file. A UserAccount with isSystemAdmin needs
    * no entry here (bypass, see server/src/lib/auth.ts's requireProjectRole()). */
   members: ProjectMemberListSchema.default([]),
+  /** Per-connector publishing state (currently just AI MANGA) — external series/chapter
+   * ids so repeated publishes update the same AI MANGA work instead of creating
+   * duplicates. See shared/src/connectors.ts. */
+  connectors: ConnectorProjectStateSchema.default({ aiManga: { chapters: {} } }),
 });
 export type ProjectFile = z.infer<typeof ProjectFileSchema>;

@@ -47,7 +47,15 @@
     "codexSignOut": "Cerrar sesión",
     "codexEnterCode": "Introduce este código en la siguiente página:",
     "codexWaiting": "Esperando confirmación…",
-    "codexLoginFailed": "Error al iniciar sesión."
+    "codexLoginFailed": "Error al iniciar sesión.",
+    "connectors": {
+      "title": "Conectores",
+      "experimental": "(Experimental)",
+      "connect": "Conectar",
+      "disconnect": "Desconectar",
+      "connectedAs": "Conectado como {{name}}",
+      "ai-manga": { "label": "AI MANGA" }
+    }
   },
   "settings": {
     "headingWithProject": "Ajustes — {{name}}",
@@ -383,6 +391,7 @@
     "orderConflictMessage": "Otra persona cambió el orden de las páginas mientras lo editabas. ¿Conservar tu versión (sobrescribe la otra) o cargar la otra versión (descarta tu reordenación sin guardar)?",
     "orderConflictKeepMine": "Conservar mi versión",
     "orderConflictReload": "Cargar la otra versión",
+    "menuPublishAiManga": "Publicar en AI MANGA…",
     "menuManageChapters": "Gestionar capítulos…",
     "noChapterSection": "Sin capítulo",
     "pageType_cover": "Portada",
@@ -480,6 +489,9 @@
       "empty": "Aún no se han subido imágenes.",
       "uploading": "Subiendo…",
       "uploadNew": "Subir nueva imagen"
+    },
+    "pasteImage": {
+      "uploading": "Pegando imagen…"
     },
     "svgPicker": {
       "chooseSvg": "Elegir contorno SVG",
@@ -1004,6 +1016,35 @@
       "invalid_range": "Rango no válido «{{part}}» — el primer número debe ser menor o igual que el segundo.",
       "invalid_expression": "Expresión no válida «{{part}}» — se espera un número (p. ej. «5») o un rango (p. ej. «10-14»)."
     }
+  },
+  "publishPanel": {
+    "title": "Publicar en AI MANGA",
+    "noChapters": "Este volumen aún no tiene capítulos — cree uno primero en «Gestionar capítulos».",
+    "seriesTitleLabel": "Título de la serie",
+    "synopsisLabel": "Sinopsis",
+    "chapterNumberLabel": "Número de capítulo",
+    "chapterTitleLabel": "Título del capítulo",
+    "noPublishableLanguages": "Ninguno de los idiomas de este proyecto es compatible con AI MANGA todavía — añade uno de sus idiomas compatibles para poder publicar.",
+    "accessModeForcedFree": "La publicación inmediata requiere acceso \"Gratis\" — AI MANGA solo permite esta combinación.",
+    "completed": "Completado.",
+    "visibilityLabel": "Visibilidad",
+    "draft": "Borrador",
+    "publishImmediately": "Publicar inmediatamente",
+    "accessModeLabel": "Acceso",
+    "accessModeFree": "Gratis",
+    "accessModeSupporterOnly": "Solo para seguidores",
+    "publishing": "Publicando…",
+    "publishButton": "Publicar",
+    "renderingProgress": "Renderizando página {{count}} de {{total}}…",
+    "uploading": "Subiendo…",
+    "status": {
+      "uploading": "Subiendo…",
+      "validating": "Validando en AI MANGA…",
+      "published": "Publicado.",
+      "failed": "Fallido."
+    },
+    "published": "Publicado: {{url}}",
+    "failed": "Fallido: {{error}}"
   },
   "useExportRun": {
     "progress": "{{count}} exportado(s)…",

@@ -37,6 +37,7 @@ snapshot — please keep it in sync with larger changes.
 - [Read/Review Interface](#readreview-interface)
 - [Reports](#reports)
 - [Export & Import](#export--import)
+- [Connectors / Publishing (Experimental)](#connectors--publishing-experimental)
 - [Fonts](#fonts)
 - [Undo/Redo](#undoredo)
 - [Server API](#server-api)
@@ -1420,6 +1421,52 @@ of via the editor store, since layout data is never written here.
   be downloaded as one ZIP; conversely, a ZIP with layout JSONs can be
   imported (invalid/corrupted entries in the ZIP are individually skipped and
   reported, instead of aborting the whole import).
+
+## Connectors / Publishing (Experimental)
+
+A generic connector layer for pushing a finished chapter straight from ComiKumi
+to an external publishing platform, instead of exporting files and uploading
+them by hand. Marked experimental: only one connector exists today, and it
+talks to a partner API that is itself still a "Partner Preview".
+
+- **AI MANGA Connect** is the first (and currently only) connector — see
+  [AI MANGA's developer page](https://a-i-manga.com/en/developers/connect).
+  Authenticates via OAuth 2.0 with PKCE (never a client secret shipped in this
+  open-source repo — see below), then sends one already-rendered chapter as a
+  manifest + ZIP package the same way the existing PNG export already renders
+  pages, and polls AI MANGA's own asynchronous validation until the chapter is
+  published or fails.
+- **Connect from Account Settings**: a "Connectors" section lists every
+  connector this ComiKumi deployment has configured; connecting opens the
+  provider's consent screen (in the desktop app: the system browser, not a
+  second embedded window) and reports back once the account is linked.
+  Disconnecting clears the stored connection immediately.
+- **Publish from a volume's page grid**: a "Publish to AI MANGA…" menu entry
+  (only shown once the connector is configured, and only for languages AI MANGA
+  actually supports) opens a small panel — pick a chapter, a language,
+  series/chapter metadata, and whether to publish immediately (AI MANGA only
+  allows this for a free chapter — the panel enforces that) or save as a draft
+  (which can be a supporter-only chapter). Publishing renders every page of
+  that chapter client-side (same renderer as the normal PNG export) and shows
+  live progress through rendering, upload, and AI MANGA's own validation step;
+  no cover image is generated — AI MANGA already falls back to a chapter's
+  first page when none is supplied.
+- **Stable external ids**: the first publish of a project generates and stores
+  a stable series/chapter id inside the project file, so every later publish
+  of the same chapter updates the same AI MANGA work instead of creating a
+  duplicate.
+- **Deployment-neutral by design**: works identically whether ComiKumi runs as
+  a local single-user install or a shared team server — the OAuth exchange
+  always happens on whichever ComiKumi server is active, never inside the
+  Electron shell directly. The desktop build uses one shared, official
+  ComiKumi client id (a PKCE public client, so nothing secret is embedded) with
+  a fixed loopback redirect the packaged app sets automatically — no setup
+  needed to connect. A self-hosted server operator can override both via the
+  `AI_MANGA_CLIENT_ID`/`AI_MANGA_REDIRECT_URI` environment variables — either
+  with their own separately-registered client, or (if AI MANGA's partner
+  program allows registering more than one redirect URI per client) their
+  instance's own callback URL under the same shared client. Without any of
+  this configured, the whole feature stays invisible in the UI.
 
 ## Fonts
 

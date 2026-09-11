@@ -47,7 +47,15 @@
     "codexSignOut": "退出登录",
     "codexEnterCode": "请在以下页面输入此代码：",
     "codexWaiting": "等待确认…",
-    "codexLoginFailed": "登录失败。"
+    "codexLoginFailed": "登录失败。",
+    "connectors": {
+      "title": "连接器",
+      "experimental": "(实验性功能)",
+      "connect": "连接",
+      "disconnect": "断开连接",
+      "connectedAs": "已连接为 {{name}}",
+      "ai-manga": { "label": "AI MANGA" }
+    }
   },
   "settings": {
     "headingWithProject": "设置 — {{name}}",
@@ -382,6 +390,7 @@
     "orderConflictMessage": "在你编辑页面顺序时，其他人也更改了它。保留你的版本（覆盖对方的）还是加载对方的版本（放弃你未保存的排序）？",
     "orderConflictKeepMine": "保留我的版本",
     "orderConflictReload": "加载对方的版本",
+    "menuPublishAiManga": "发布到 AI MANGA…",
     "menuManageChapters": "管理章节…",
     "noChapterSection": "无章节",
     "pageType_cover": "封面",
@@ -995,6 +1004,35 @@
       "invalid_range": "无效范围“{{part}}” — 第一个数字必须小于或等于第二个。",
       "invalid_expression": "无效表达式“{{part}}” — 应为数字（例如“5”）或范围（例如“10-14”）。"
     }
+  },
+  "publishPanel": {
+    "title": "发布到 AI MANGA",
+    "noChapters": "此卷还没有章节 — 请先在“管理章节”中创建一个。",
+    "seriesTitleLabel": "系列标题",
+    "synopsisLabel": "简介",
+    "chapterNumberLabel": "章节编号",
+    "chapterTitleLabel": "章节标题",
+    "noPublishableLanguages": "此项目的语言目前均不受 AI MANGA 支持 — 请添加一种受支持的语言后再发布。",
+    "accessModeForcedFree": "立即发布需要“免费”访问权限 — AI MANGA 仅允许此组合。",
+    "completed": "已完成。",
+    "visibilityLabel": "可见性",
+    "draft": "草稿",
+    "publishImmediately": "立即发布",
+    "accessModeLabel": "访问权限",
+    "accessModeFree": "免费",
+    "accessModeSupporterOnly": "仅限支持者",
+    "publishing": "发布中…",
+    "publishButton": "发布",
+    "renderingProgress": "正在渲染第 {{count}} / {{total}} 页…",
+    "uploading": "正在上传…",
+    "status": {
+      "uploading": "正在上传…",
+      "validating": "正在 AI MANGA 验证…",
+      "published": "已发布。",
+      "failed": "失败。"
+    },
+    "published": "已发布：{{url}}",
+    "failed": "失败：{{error}}"
   },
   "useExportRun": {
     "progress": "已导出 {{count}} 个…",

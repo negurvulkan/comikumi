@@ -12,6 +12,7 @@ import type { ProjectRole, PublicUser } from "../../../shared/src/users";
 import type { CbzMetadata } from "../../../shared/src/cbz";
 import type { PageMetaDocument, VolumeFormat } from "../../../shared/src/pageMeta";
 import type { WorkflowDocument } from "../../../shared/src/workflow";
+import type { ConnectorStatus } from "../../../shared/src/connectors";
 import { apiUrl } from "./apiBase";
 import { authFetch, authUrl } from "./authFetch";
 import { getCurrentProjectId } from "./projectScope";
@@ -61,6 +62,15 @@ export interface RecentProject {
   /** Absolute path to an optional cover image/logo — pass to api.projectCoverUrl() to
    * render it. Missing/empty when the project has none configured. */
   coverImagePath?: string;
+}
+
+export interface AiMangaPublishJob {
+  id: string;
+  volumeId: string;
+  connectorId: string;
+  status: "uploading" | "validating" | "published" | "failed";
+  publicUrl?: string;
+  error?: string;
 }
 
 export interface BrowseEntry {
@@ -1159,6 +1169,61 @@ export const api = {
   cancelCodexLogin: () => authFetch(apiUrl("/api/auth/me/codex-login"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
 
   logoutCodex: () => authFetch(apiUrl("/api/auth/me/codex-session"), { method: "DELETE" }).then((r) => json<{ ok: true }>(r)),
+
+  // --- Connectors (publishing integrations, self-service per account) ---
+
+  listConnectors: () => authFetch(apiUrl("/api/connectors")).then((r) => json<ConnectorStatus[]>(r)),
+
+  /** Returns the provider's consent-screen URL to open — the caller decides HOW to open
+   * it (window.open on the web, the Electron `open-external` IPC channel in the desktop
+   * app, see AccountSettings.tsx), this call only ever prepares the URL. */
+  getConnectorAuthorizeUrl: (connectorId: string) =>
+    authFetch(apiUrl(`/api/connectors/${encodeURIComponent(connectorId)}/authorize`)).then((r) => json<{ url: string }>(r)),
+
+  disconnectConnector: (connectorId: string) =>
+    authFetch(apiUrl(`/api/connectors/${encodeURIComponent(connectorId)}/disconnect`), { method: "POST" }).then((r) =>
+      json<{ ok: true }>(r)
+    ),
+
+  /** Starts a publish job for AI MANGA (server/src/lib/publishJobs.ts) — `pages` must
+   * already be rendered PNG blobs, same "client renders, server just assembles/uploads"
+   * contract as exportPage() above. */
+  publishToAiManga: (
+    volumeId: string,
+    metadata: {
+      seriesTitle: string;
+      /** A ComiKumi LanguageDef.code (e.g. "jp") — the server maps it to AI MANGA's own
+       * source_language (e.g. "ja") and 400s if there's no mapping, see shared/src/
+       * connectors.ts's mapToAiMangaLanguage(). */
+      languageCode: string;
+      synopsis?: string;
+      genres?: string[];
+      /** The specific ResolvedChapter (shared/src/pageMeta.ts) being published — see
+       * aiMangaChapterKey()'s own doc comment for why this can't be inferred from
+       * volumeId alone (a volume normally has several chapters). */
+      chapterId: string;
+      chapterNumber: number;
+      chapterTitle: string;
+      published: boolean;
+      accessMode: "free" | "supporter_only";
+    },
+    pages: Blob[],
+    cover?: Blob | null
+  ) => {
+    const form = new FormData();
+    form.append("metadata", JSON.stringify(metadata));
+    pages.forEach((page, index) => form.append("pages", page, `page-${String(index + 1).padStart(3, "0")}.png`));
+    if (cover) form.append("cover", cover, "cover.png");
+    return authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/connectors/ai-manga/publish`), {
+      method: "POST",
+      body: form,
+    }).then((r) => json<{ jobId: string }>(r));
+  },
+
+  getAiMangaPublishJob: (volumeId: string, jobId: string) =>
+    authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/connectors/ai-manga/publish/${encodeURIComponent(jobId)}`)).then(
+      (r) => json<AiMangaPublishJob>(r)
+    ),
 
   /** Returns the raw fetch Response for the caller (client/src/editor/AIPanel.tsx) to
    * read as a stream — the only streaming endpoint in the app, see server/src/routes/
