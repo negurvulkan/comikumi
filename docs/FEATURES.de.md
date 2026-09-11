@@ -729,6 +729,13 @@ Bilddatei kann pro Sprache unterschiedlich sein (aus einer gemeinsamen Bild-Bibl
 hochgeladen), mit Deckkraft-Regler; eine Sprache ohne eigene Datei fällt automatisch
 auf eine andere zugewiesene zurück, damit das Element nie leer bleibt.
 
+Ein Bild lässt sich auch direkt aus der Zwischenablage des Betriebssystems einfügen,
+statt über den Upload-Dialog: in einer anderen App (z. B. ein KI-generiertes Bild in
+der Web-Oberfläche von ChatGPT oder Gemini) per Rechtsklick **„Bild kopieren"**
+wählen, dann irgendwo auf der Seite **Strg+V**/**Cmd+V** drücken. Ist kein Panel
+ausgewählt (oder mehr als ein Element), wird das eingefügte Bild hochgeladen und als
+neues platziertes Bild eingesetzt — genau so, als käme es aus dem Bild-Auswahl-Dialog.
+
 ### Kurventext
 
 Ein freistehender Titel-/Effekttext (z. B. ein logoartiger Kapiteltitel oder eine
@@ -995,6 +1002,15 @@ müssen. Im Panel-Inspector unter „Inhalt" → „Ersetzt durch eigenes Bild" 
 hochladen oder aus der Bibliothek wählen — pro Sprache einzeln (wie bei platzierten
 Bildern: fehlt für die aktive Sprache ein eigenes Bild, wird ersatzweise irgendeine andere
 zugewiesene Sprache gezeigt, statt leer zu bleiben).
+
+Das Ersatzbild lässt sich auch direkt aus der Zwischenablage des Betriebssystems
+einfügen: ist genau ein Panel ausgewählt, lädt **Strg+V**/**Cmd+V** das kopierte
+Bild hoch und weist es als Ersatzbild dieses Panels für die aktive Sprache zu —
+dabei wird Cut-Panel für diese Sprache automatisch aktiviert, falls es das noch
+nicht ist. Das ist der schnellste Weg, ein KI-generiertes Panelbild — z. B. per
+„Bild kopieren" direkt aus der Web-Oberfläche von ChatGPT oder Gemini — in ein
+Panel einzufügen, ohne es vorher auf der Festplatte zu speichern und über den
+Auswahl-Dialog hochzuladen.
 
 Das Ersatzbild wird auf die Bounding-Box des aktuellen Panel-Polygons projiziert und auf
 dessen tatsächliche Form geclippt (keine echte 4-Punkt-Perspektivverzerrung wie bei

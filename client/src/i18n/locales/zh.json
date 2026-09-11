@@ -478,6 +478,9 @@
       "uploading": "正在上传…",
       "uploadNew": "上传新图片"
     },
+    "pasteImage": {
+      "uploading": "正在粘贴图片…"
+    },
     "svgPicker": {
       "chooseSvg": "选择SVG轮廓",
       "chooseSvgShort": "选择SVG…",

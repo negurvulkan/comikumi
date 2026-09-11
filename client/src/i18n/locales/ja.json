@@ -478,6 +478,9 @@
       "uploading": "アップロード中…",
       "uploadNew": "新しい画像をアップロード"
     },
+    "pasteImage": {
+      "uploading": "画像を貼り付け中…"
+    },
     "svgPicker": {
       "chooseSvg": "SVG輪郭を選択",
       "chooseSvgShort": "SVGを選択…",

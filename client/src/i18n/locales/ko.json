@@ -478,6 +478,9 @@
       "uploading": "업로드 중…",
       "uploadNew": "새 이미지 업로드"
     },
+    "pasteImage": {
+      "uploading": "이미지 붙여넣는 중…"
+    },
     "svgPicker": {
       "chooseSvg": "SVG 윤곽선 선택",
       "chooseSvgShort": "SVG 선택…",

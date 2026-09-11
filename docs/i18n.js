@@ -47,6 +47,10 @@
       "feature.context.desc": "A reading-order-aware sidebar with speaker, voice notes, and panel crop, plus a project glossary with live highlighting and optional furigana readings.",
       "feature.ai.title": "AI assistant",
       "feature.ai.desc": "Chat backed by your own key for OpenAI, Anthropic, Google, or OpenRouter, a ChatGPT sign-in, or a self-hosted Ollama server, plus ten review-gated actions — translate missing bubbles, fix overflow, assign characters, suggest chapters, and more. Nothing touches your page until you click Apply.",
+      "feature.autoBubbles.title": "Auto-Bubbles (detection + OCR)",
+      "feature.autoBubbles.desc": "Find every speech-bubble region on a page and read the text inside automatically, entirely client-side — no server round-trip, no data leaves the browser. Every result goes through a review panel before it becomes a real bubble.",
+      "feature.cleaning.title": "Cleaning (Inpainting)",
+      "feature.cleaning.desc": "Remove the original printed text and reconstruct the artwork underneath, with rectangle, freehand, polygon, and brush tools to shape exactly which area gets cleaned. Shown as a before/after comparison — the original scan is never touched.",
       "feature.script.title": "Script planning",
       "feature.script.desc": "A volume-wide script editor for plot, panel layout, and per-language dialogue — link it to a real page and insert dialogue with one click.",
       "feature.assets.title": "Project asset folders",
@@ -67,6 +71,13 @@
       "feature.webtoon.desc": "Mark a volume as a webtoon and letter it at a usable zoom with a fit-width, scrollable canvas, read it back with a continuous strip mode that flows across episode boundaries, and export it safely with automatic guards against the size limits a very tall page can hit.",
       "feature.assetManager.title": "Asset Manager",
       "feature.assetManager.desc": "Browse, upload, rename, delete, and folder-organize a project's fonts, images, and SVG bubble outlines from a dedicated screen instead of only the editor's inline pickers — plus a separate instance-scope manager for the shared library every project draws from.",
+<<<<<<< Updated upstream
+=======
+      "feature.pasteImage.title": "Paste images from the clipboard",
+      "feature.pasteImage.desc": "Copy an image in another app — e.g. \"Copy image\" on an AI-generated picture in ChatGPT's or Gemini's web UI — and press Ctrl+V/Cmd+V right on the page. It drops into the selected panel as a Cut-Panel replacement, or as a new placed image, no save-to-disk-then-upload detour.",
+      "feature.connectors.title": "Connectors / Publishing (Experimental)",
+      "feature.connectors.desc": "Publish a finished chapter straight to an external platform instead of exporting files by hand. AI MANGA Connect is the first connector: connect an account once, then publish a chapter with live progress through rendering, upload, and validation.",
+>>>>>>> Stashed changes
       "screenshots.kicker": "Screenshots",
       "screenshots.title": "A real editor, not a mockup",
       "screenshots.subtitle": "Every screenshot below is the actual app, running on a real project.",
@@ -155,6 +166,10 @@
       "feature.context.desc": "Eine leserichtungsbewusste Seitenleiste mit Sprecher, Voice Notes und Panel-Ausschnitt, plus ein Projektglossar mit Live-Hervorhebung und optionalen Furigana-Lesungen.",
       "feature.ai.title": "KI-Assistent",
       "feature.ai.desc": "Chat mit eigenem Key für OpenAI, Anthropic, Google oder OpenRouter, einer ChatGPT-Anmeldung, oder einem selbstgehosteten Ollama-Server, plus zehn review-gestützte Aktionen — fehlende Übersetzungen ergänzen, Textüberlauf beheben, Charaktere zuweisen, Kapitel vorschlagen und mehr. Nichts wird auf deiner Seite geändert, bevor du auf Übernehmen klickst.",
+      "feature.autoBubbles.title": "Auto-Bubbles (Erkennung + OCR)",
+      "feature.autoBubbles.desc": "Findet jede Sprechblasen-Region auf einer Seite und liest den Text darin automatisch aus — vollständig clientseitig, kein Server-Roundtrip, keine Daten verlassen den Browser. Jedes Ergebnis durchläuft ein Review-Panel, bevor daraus eine echte Sprechblase wird.",
+      "feature.cleaning.title": "Bereinigung (Inpainting)",
+      "feature.cleaning.desc": "Entfernt den originalen gedruckten Text und rekonstruiert die darunterliegende Artwork — mit Rechteck-, Freihand-, Polygon- und Pinsel-Werkzeugen, um genau den zu bereinigenden Bereich festzulegen. Als Vorher/Nachher-Vergleich angezeigt — der Originalscan wird nie verändert.",
       "feature.script.title": "Skript-Planung",
       "feature.script.desc": "Ein bandweiter Skript-Editor für Plot, Panel-Aufteilung und mehrsprachigen Dialog — mit einer echten Seite verknüpfbar, Dialog per Klick in eine Blase einfügbar.",
       "feature.assets.title": "Projekt-Assets-Ordner",
@@ -175,6 +190,13 @@
       "feature.webtoon.desc": "Einen Band als Webtoon markieren und mit einer breitenangepassten, scrollbaren Canvas in einem tatsächlich brauchbaren Zoom lettern, mit einem durchgehenden Streifen-Modus lesen, der über Episodengrenzen hinweg fließt, und sicher exportieren dank automatischer Schutzmaßnahmen gegen die Größenlimits, an die eine sehr hohe Seite stoßen kann.",
       "feature.assetManager.title": "Asset-Manager",
       "feature.assetManager.desc": "Fonts, Bilder und SVG-Sprechblasen-Umrisse eines Projekts über einen dedizierten Screen durchsuchen, hochladen, umbenennen, löschen und in Ordnern organisieren — statt nur über die Inline-Picker des Editors —, plus ein separater Instanz-Manager für die gemeinsame Bibliothek, aus der jedes Projekt schöpft.",
+<<<<<<< Updated upstream
+=======
+      "feature.pasteImage.title": "Bilder aus der Zwischenablage einfügen",
+      "feature.pasteImage.desc": "Ein Bild in einer anderen App kopieren — z. B. per „Bild kopieren\" bei einem KI-generierten Bild in der Web-Oberfläche von ChatGPT oder Gemini — und direkt auf der Seite Strg+V/Cmd+V drücken. Es landet im ausgewählten Panel als Cut-Panel-Ersatzbild oder als neues platziertes Bild, ganz ohne den Umweg über Speichern und Hochladen.",
+      "feature.connectors.title": "Connectors / Publishing (Experimentell)",
+      "feature.connectors.desc": "Ein fertiges Kapitel direkt auf einer externen Plattform veröffentlichen, statt Dateien von Hand zu exportieren. AI MANGA Connect ist der erste Connector: einmal einen Account verbinden, dann ein Kapitel mit Live-Fortschritt durch Rendering, Upload und Validierung veröffentlichen.",
+>>>>>>> Stashed changes
       "screenshots.kicker": "Screenshots",
       "screenshots.title": "Ein echter Editor, kein Mockup",
       "screenshots.subtitle": "Jeder Screenshot unten zeigt die tatsächliche App an einem echten Projekt.",
@@ -263,6 +285,10 @@
       "feature.context.desc": "Un panneau latéral qui suit l'ordre de lecture, avec locuteur, notes de voix et recadrage de case, plus un glossaire de projet avec surbrillance en direct et lectures furigana optionnelles.",
       "feature.ai.title": "Assistant IA",
       "feature.ai.desc": "Chat avec votre propre clé pour OpenAI, Anthropic, Google ou OpenRouter, une connexion ChatGPT, ou un serveur Ollama auto-hébergé, plus dix actions validées par révision — traduire les bulles manquantes, corriger les débordements, attribuer des personnages, suggérer des chapitres, et plus encore. Rien ne touche votre page avant que vous cliquiez sur Appliquer.",
+      "feature.autoBubbles.title": "Auto-Bubbles (détection + OCR)",
+      "feature.autoBubbles.desc": "Repère chaque zone de bulle de dialogue sur une page et lit automatiquement le texte à l'intérieur, entièrement côté client — aucun aller-retour serveur, aucune donnée ne quitte le navigateur. Chaque résultat passe par un panneau de révision avant de devenir une vraie bulle.",
+      "feature.cleaning.title": "Nettoyage (Inpainting)",
+      "feature.cleaning.desc": "Supprime le texte imprimé d'origine et reconstruit le dessin sous-jacent, avec des outils rectangle, main levée, polygone et pinceau pour délimiter précisément la zone à nettoyer. Affiché en comparaison avant/après — le scan original n'est jamais modifié.",
       "feature.script.title": "Planification de script",
       "feature.script.desc": "Un éditeur de script pour tout le volume — intrigue, découpage des cases et dialogue par langue — à lier à une vraie page, avec insertion du dialogue en un clic.",
       "feature.assets.title": "Dossiers de ressources par projet",
@@ -283,6 +309,13 @@
       "feature.webtoon.desc": "Marquez un volume comme webtoon pour le lettrer à un zoom exploitable grâce à un canevas défilant ajusté à la largeur, le lire avec un mode de défilement continu qui franchit les limites d'épisodes, et l'exporter en toute sécurité grâce à des protections automatiques contre les limites de taille qu'une page très haute peut atteindre.",
       "feature.assetManager.title": "Gestionnaire d'assets",
       "feature.assetManager.desc": "Parcourez, téléversez, renommez, supprimez et organisez en dossiers les polices, images et contours SVG de bulles d'un projet depuis un écran dédié, plutôt que via les seuls sélecteurs intégrés de l'éditeur — plus un gestionnaire séparé à l'échelle du serveur pour la bibliothèque partagée dont chaque projet dépend.",
+<<<<<<< Updated upstream
+=======
+      "feature.pasteImage.title": "Coller des images depuis le presse-papiers",
+      "feature.pasteImage.desc": "Copiez une image dans une autre application — par ex. « Copier l'image » sur une image générée par IA dans l'interface web de ChatGPT ou Gemini — puis appuyez sur Ctrl+V/Cmd+V directement sur la page. Elle s'insère dans la case sélectionnée comme image de remplacement Cut-Panel, ou comme nouvelle image placée, sans détour par l'enregistrement puis le téléversement.",
+      "feature.connectors.title": "Connecteurs / Publication (Expérimental)",
+      "feature.connectors.desc": "Publiez un chapitre terminé directement sur une plateforme externe au lieu d'exporter des fichiers à la main. AI MANGA Connect est le premier connecteur : connectez un compte une fois, puis publiez un chapitre avec une progression en direct pendant le rendu, l'envoi et la validation.",
+>>>>>>> Stashed changes
       "screenshots.kicker": "Captures d'écran",
       "screenshots.title": "Un vrai éditeur, pas une maquette",
       "screenshots.subtitle": "Chaque capture ci-dessous montre l'application réelle, sur un vrai projet.",
@@ -371,6 +404,10 @@
       "feature.context.desc": "Una barra laterale che segue l'ordine di lettura, con personaggio, note sulla voce e ritaglio della vignetta, più un glossario di progetto con evidenziazione in tempo reale e letture furigana opzionali.",
       "feature.ai.title": "Assistente IA",
       "feature.ai.desc": "Chat con la tua chiave per OpenAI, Anthropic, Google o OpenRouter, un accesso ChatGPT, o un server Ollama autogestito, più dieci azioni soggette a revisione — tradurre i fumetti mancanti, correggere i debordamenti, assegnare personaggi, suggerire capitoli e altro ancora. Nulla viene modificato sulla tua pagina finché non fai clic su Applica.",
+      "feature.autoBubbles.title": "Auto-Bubbles (rilevamento + OCR)",
+      "feature.autoBubbles.desc": "Individua ogni area di fumetto su una pagina e legge automaticamente il testo al suo interno, interamente lato client — nessun round-trip al server, nessun dato lascia il browser. Ogni risultato passa da un pannello di revisione prima di diventare un fumetto reale.",
+      "feature.cleaning.title": "Pulizia (Inpainting)",
+      "feature.cleaning.desc": "Rimuove il testo stampato originale e ricostruisce il disegno sottostante, con strumenti rettangolo, a mano libera, poligono e pennello per definire con precisione l'area da pulire. Mostrato come confronto prima/dopo — la scansione originale non viene mai modificata.",
       "feature.script.title": "Pianificazione dello script",
       "feature.script.desc": "Un editor di script per l'intero volume — trama, impaginazione delle vignette e dialoghi per lingua — collegabile a una pagina reale, con inserimento del dialogo in un clic.",
       "feature.assets.title": "Cartelle risorse per progetto",
@@ -389,6 +426,13 @@
       "feature.webtoon.desc": "Contrassegna un volume come webtoon per letterarlo a uno zoom utilizzabile con una canvas scorrevole adattata alla larghezza, leggerlo con una modalità a striscia continua che scorre oltre i confini degli episodi ed esportarlo in sicurezza con protezioni automatiche contro i limiti di dimensione che una pagina molto alta può raggiungere.",
       "feature.assetManager.title": "Gestione risorse",
       "feature.assetManager.desc": "Sfoglia, carica, rinomina, elimina e organizza in cartelle i font, le immagini e i contorni SVG delle bolle di un progetto da una schermata dedicata, invece dei soli selettori integrati nell'editor — più una gestione separata a livello di server per la libreria condivisa da cui attinge ogni progetto.",
+<<<<<<< Updated upstream
+=======
+      "feature.pasteImage.title": "Incolla immagini dagli appunti",
+      "feature.pasteImage.desc": "Copia un'immagine in un'altra app — ad es. \"Copia immagine\" su un'immagine generata dall'IA nell'interfaccia web di ChatGPT o Gemini — e premi Ctrl+V/Cmd+V direttamente sulla pagina. Viene inserita nel pannello selezionato come immagine sostitutiva Cut-Panel, oppure come nuova immagine posizionata, senza dover prima salvare su disco e caricare.",
+      "feature.connectors.title": "Connettori / Pubblicazione (Sperimentale)",
+      "feature.connectors.desc": "Pubblica un capitolo finito direttamente su una piattaforma esterna invece di esportare file a mano. AI MANGA Connect è il primo connettore: collega un account una volta, poi pubblica un capitolo con avanzamento in tempo reale durante rendering, caricamento e validazione.",
+>>>>>>> Stashed changes
       "screenshots.kicker": "Screenshot",
       "screenshots.title": "Un editor vero, non un mockup",
       "screenshots.subtitle": "Ogni screenshot qui sotto mostra l'app reale, su un progetto reale.",
@@ -477,6 +521,10 @@
       "feature.context.desc": "Un panel lateral consciente del orden de lectura, con personaje, notas de voz y recorte de viñeta, más un glosario de proyecto con resaltado en vivo y lecturas furigana opcionales.",
       "feature.ai.title": "Asistente de IA",
       "feature.ai.desc": "Chat con tu propia clave de OpenAI, Anthropic, Google u OpenRouter, un inicio de sesión de ChatGPT, o un servidor Ollama autoalojado, más diez acciones sujetas a revisión — traducir globos faltantes, corregir desbordamientos, asignar personajes, sugerir capítulos y más. Nada se modifica en tu página hasta que hagas clic en Aplicar.",
+      "feature.autoBubbles.title": "Auto-Bubbles (detección + OCR)",
+      "feature.autoBubbles.desc": "Encuentra cada región de bocadillo en una página y lee el texto dentro automáticamente, totalmente en el cliente — sin ida y vuelta al servidor, ningún dato sale del navegador. Cada resultado pasa por un panel de revisión antes de convertirse en un bocadillo real.",
+      "feature.cleaning.title": "Limpieza (Inpainting)",
+      "feature.cleaning.desc": "Elimina el texto impreso original y reconstruye el dibujo subyacente, con herramientas de rectángulo, mano alzada, polígono y pincel para definir con precisión el área a limpiar. Se muestra como comparación antes/después — el escaneo original nunca se modifica.",
       "feature.script.title": "Planificación de guion",
       "feature.script.desc": "Un editor de guion para todo el volumen — trama, distribución de viñetas y diálogo por idioma — vinculable a una página real, con inserción del diálogo en un clic.",
       "feature.assets.title": "Carpetas de recursos por proyecto",
@@ -495,6 +543,13 @@
       "feature.webtoon.desc": "Marca un volumen como webtoon y letréalo a un zoom utilizable con un lienzo ajustado al ancho y con desplazamiento, léelo con un modo de tira continua que fluye entre los límites de los episodios, y expórtalo de forma segura con protecciones automáticas frente a los límites de tamaño que puede alcanzar una página muy alta.",
       "feature.assetManager.title": "Gestor de recursos",
       "feature.assetManager.desc": "Explora, sube, renombra, elimina y organiza en carpetas las fuentes, imágenes y contornos SVG de bocadillos de un proyecto desde una pantalla dedicada, en lugar de solo los selectores integrados del editor — más un gestor independiente a nivel de servidor para la biblioteca compartida de la que depende cada proyecto.",
+<<<<<<< Updated upstream
+=======
+      "feature.pasteImage.title": "Pegar imágenes desde el portapapeles",
+      "feature.pasteImage.desc": "Copia una imagen en otra aplicación — p. ej. «Copiar imagen» sobre una imagen generada por IA en la interfaz web de ChatGPT o Gemini — y pulsa Ctrl+V/Cmd+V directamente en la página. Se coloca en el panel seleccionado como imagen de reemplazo de Cut-Panel, o como una nueva imagen colocada, sin el rodeo de guardar en disco y subir.",
+      "feature.connectors.title": "Conectores / Publicación (Experimental)",
+      "feature.connectors.desc": "Publica un capítulo terminado directamente en una plataforma externa en lugar de exportar archivos a mano. AI MANGA Connect es el primer conector: conecta una cuenta una vez y luego publica un capítulo con progreso en vivo durante el renderizado, la subida y la validación.",
+>>>>>>> Stashed changes
       "screenshots.kicker": "Capturas",
       "screenshots.title": "Un editor real, no una maqueta",
       "screenshots.subtitle": "Cada captura de abajo muestra la aplicación real, funcionando en un proyecto real.",
@@ -583,6 +638,10 @@
       "feature.context.desc": "読み順を意識したサイドバーで、話者・ボイスノート・コマの切り出しを表示。プロジェクト用語集はリアルタイムでハイライトされ、任意でふりがなの読みも登録できます。",
       "feature.ai.title": "AIアシスタント",
       "feature.ai.desc": "OpenAI・Anthropic・Google・OpenRouterの自分のAPIキー、ChatGPTログイン、またはセルフホストのOllamaサーバーを使ったチャットに加え、レビュー付きの10種類のアクション — 不足翻訳の補完、文字あふれの修正、キャラクター割り当て、章分けの提案など。「適用」を押すまでページには何も反映されません。",
+      "feature.autoBubbles.title": "オートバブル（検出＋OCR）",
+      "feature.autoBubbles.desc": "ページ上のすべての吹き出し領域を検出し、中のテキストを自動で読み取ります。処理はすべてクライアント側で完結し、サーバーへの通信もデータの送信もありません。各結果はレビューパネルを通過してから実際の吹き出しになります。",
+      "feature.cleaning.title": "クリーニング（インペインティング）",
+      "feature.cleaning.desc": "印刷された元のテキストを除去し、下の絵を再構築します。矩形・フリーハンド・多角形・ブラシツールでクリーニングする範囲を正確に指定できます。ビフォー/アフター比較で表示され、元のスキャンが書き換えられることはありません。",
       "feature.script.title": "台本プランニング",
       "feature.script.desc": "巻全体のプロット・コマ割り・言語別セリフを管理する台本エディタ。実際のページとリンクでき、セリフはワンクリックで吹き出しに挿入できます。",
       "feature.assets.title": "プロジェクトごとのアセットフォルダ",
@@ -601,6 +660,13 @@
       "feature.webtoon.desc": "巻をウェブトゥーンとして指定すると、幅に合わせたスクロール可能なキャンバスで実用的な倍率でのレタリングができ、話数の境界をまたいで流れる連続スクロールモードで読むことができ、非常に縦長のページが直面しうるサイズ上限に対する自動的な保護付きで安全に書き出せます。",
       "feature.assetManager.title": "アセットマネージャー",
       "feature.assetManager.desc": "エディタのインラインピッカーだけでなく、専用画面からプロジェクトのフォント・画像・SVGバブル輪郭を閲覧・アップロード・名前変更・削除・フォルダ整理できます。さらに、各プロジェクトが利用する共有ライブラリを直接管理するインスタンス単位のマネージャーも用意されています。",
+<<<<<<< Updated upstream
+=======
+      "feature.pasteImage.title": "クリップボードから画像を貼り付け",
+      "feature.pasteImage.desc": "他のアプリ(例:ChatGPTやGeminiのウェブUIでAI生成した画像に「画像をコピー」)で画像をコピーし、ページ上でCtrl+V/Cmd+Vを押すだけ。選択中のパネルにはCut-Panelの置き換え画像として、それ以外の場合は新しい配置画像として挿入されます。いったんディスクに保存してからアップロードする手間は不要です。",
+      "feature.connectors.title": "コネクター / 公開機能（実験的機能）",
+      "feature.connectors.desc": "ファイルを手動でエクスポートする代わりに、完成した章を外部プラットフォームへ直接公開できます。AI MANGA Connect が最初のコネクターです。アカウントを一度接続すれば、レンダリング・アップロード・検証の進行状況をリアルタイムで確認しながら章を公開できます。",
+>>>>>>> Stashed changes
       "screenshots.kicker": "スクリーンショット",
       "screenshots.title": "モックアップではなく、実際のエディタ",
       "screenshots.subtitle": "以下のスクリーンショットはすべて、実際のプロジェクトで動作しているアプリそのものです。",
@@ -689,6 +755,10 @@
       "feature.context.desc": "읽기 순서를 인식하는 사이드바에서 화자, 보이스 노트, 컷 크롭을 확인하고, 실시간 강조 표시와 선택적 후리가나 읽기를 지원하는 프로젝트 용어집을 함께 제공합니다.",
       "feature.ai.title": "AI 어시스턴트",
       "feature.ai.desc": "본인의 OpenAI, Anthropic, Google, OpenRouter 키, ChatGPT 로그인, 또는 자체 호스팅 Ollama 서버를 사용하는 채팅에 더해, 검토 후 적용하는 10가지 액션 — 누락된 번역 채우기, 텍스트 넘침 수정, 캐릭터 할당, 챕터 제안 등. '적용'을 클릭하기 전까지는 페이지가 변경되지 않습니다.",
+      "feature.autoBubbles.title": "오토버블(감지 + OCR)",
+      "feature.autoBubbles.desc": "페이지의 모든 말풍선 영역을 찾아 안의 텍스트를 자동으로 읽어냅니다 — 완전히 클라이언트 측에서 처리되어 서버 왕복이나 데이터 유출이 없습니다. 모든 결과는 실제 말풍선이 되기 전에 검토 패널을 거칩니다.",
+      "feature.cleaning.title": "클리닝(인페인팅)",
+      "feature.cleaning.desc": "원본 인쇄 텍스트를 제거하고 그 아래의 그림을 복원합니다 — 사각형, 프리핸드, 다각형, 브러시 도구로 정리할 영역을 정확히 지정할 수 있습니다. 전후 비교로 표시되며 원본 스캔은 절대 변경되지 않습니다.",
       "feature.script.title": "대본 기획",
       "feature.script.desc": "볼륨 전체의 줄거리, 컷 구성, 언어별 대사를 관리하는 대본 에디터 — 실제 페이지와 연결하고, 클릭 한 번으로 대사를 말풍선에 삽입할 수 있습니다.",
       "feature.assets.title": "프로젝트별 에셋 폴더",
@@ -707,6 +777,13 @@
       "feature.webtoon.desc": "볼륨을 웹툰으로 표시하면 폭에 맞춘 스크롤 가능한 캔버스로 실제 작업 가능한 확대 배율에서 레터링할 수 있고, 회차 경계를 넘나드는 연속 스크롤 모드로 읽을 수 있으며, 매우 긴 페이지가 부딪힐 수 있는 크기 제한에 대한 자동 보호 장치와 함께 안전하게 내보낼 수 있습니다.",
       "feature.assetManager.title": "에셋 관리자",
       "feature.assetManager.desc": "에디터의 인라인 피커뿐 아니라 전용 화면에서 프로젝트의 글꼴, 이미지, SVG 말풍선 윤곽을 찾아보고 업로드·이름 변경·삭제·폴더 정리할 수 있습니다 — 또한 모든 프로젝트가 사용하는 공유 라이브러리를 직접 관리하는 별도의 인스턴스 단위 관리자도 제공됩니다.",
+<<<<<<< Updated upstream
+=======
+      "feature.pasteImage.title": "클립보드에서 이미지 붙여넣기",
+      "feature.pasteImage.desc": "다른 앱에서 이미지를 복사한 뒤(예: ChatGPT나 Gemini 웹 UI에서 AI로 생성한 이미지에 \"이미지 복사\" 사용) 페이지 위에서 바로 Ctrl+V/Cmd+V를 누르세요. 선택한 패널에는 컷 패널 교체 이미지로, 그렇지 않으면 새 배치 이미지로 삽입됩니다 — 디스크에 저장한 뒤 업로드하는 과정이 필요 없습니다.",
+      "feature.connectors.title": "커넥터 / 게시 (실험적 기능)",
+      "feature.connectors.desc": "파일을 수동으로 내보내는 대신 완성된 챕터를 외부 플랫폼에 바로 게시할 수 있습니다. AI MANGA Connect가 첫 번째 커넥터입니다. 계정을 한 번 연결한 뒤 렌더링, 업로드, 검증 진행 상황을 실시간으로 확인하며 챕터를 게시하세요.",
+>>>>>>> Stashed changes
       "screenshots.kicker": "스크린샷",
       "screenshots.title": "목업이 아닌 실제 에디터",
       "screenshots.subtitle": "아래 스크린샷은 모두 실제 프로젝트에서 동작 중인 앱 화면입니다.",

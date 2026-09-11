@@ -688,6 +688,13 @@ shared image library), with an opacity slider; a language without its own file
 automatically falls back to another assigned language, so the element is never
 left empty.
 
+An image can also be inserted straight from the OS clipboard instead of the
+upload dialog: right-click **"Copy image"** on a picture in another app (e.g.
+an AI-generated image in ChatGPT's or Gemini's web UI), then press **Ctrl+V**/
+**Cmd+V** anywhere on the page. With no panel selected (or more than one
+element selected), the pasted image is uploaded and placed as a new placed
+image, exactly as if it had gone through the image picker.
+
 ### Curved Text
 
 A free-standing title/effect text (e.g. a logo-style chapter title or an
@@ -945,6 +952,14 @@ choose one from the library via the same image-picker dialog used when inserting
 a placed image — per language individually (like placed images: if the active
 language has no own image, some other assigned language is shown instead of
 staying empty).
+
+The replacement image can also be pasted directly from the OS clipboard: with
+exactly one panel selected, pressing **Ctrl+V**/**Cmd+V** uploads the copied
+image and assigns it as that panel's replacement for the active language,
+activating Cut-Panel mode first if it isn't already active for that language.
+This is the fastest way to drop an AI-generated panel image — e.g. copied via
+"Copy image" straight out of ChatGPT's or Gemini's web UI — into a panel
+without saving it to disk and uploading it through the picker first.
 
 The replacement image is projected onto the bounding box of the current panel
 polygon and clipped to its actual shape (no true 4-point perspective warp like

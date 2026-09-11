@@ -481,6 +481,9 @@
       "uploading": "Téléversement…",
       "uploadNew": "Téléverser une nouvelle image"
     },
+    "pasteImage": {
+      "uploading": "Collage de l'image…"
+    },
     "svgPicker": {
       "chooseSvg": "Choisir un contour SVG",
       "chooseSvgShort": "Choisir un SVG…",

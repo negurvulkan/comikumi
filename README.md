@@ -74,7 +74,10 @@ below) — that account lives on your own server, not a central ComiKumi service
   for browsing, uploading, renaming, deleting, and folder-organizing a project's fonts,
   images, and SVG bubble outlines, plus a separate instance-scope manager for the shared
   library every project draws from — see
-  [`docs/FEATURES.md`](docs/FEATURES.md#asset-manager).
+  [`docs/FEATURES.md`](docs/FEATURES.md#asset-manager). Images can also be pasted
+  directly from the OS clipboard (e.g. "Copy image" on an AI-generated picture in
+  ChatGPT's or Gemini's web UI) with Ctrl+V/Cmd+V — into the selected panel's Cut-Panel
+  replacement, or as a new placed image, no upload dialog required.
 - **Auto-Bubbles (detection + OCR)** — a toolbar tool finds speech-bubble regions on the
   page and reads the text inside them automatically, entirely client-side (WebGPU with
   a WASM fallback, no server round-trip). Every result goes through a review panel

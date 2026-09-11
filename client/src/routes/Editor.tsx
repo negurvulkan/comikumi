@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { PageLayoutSchema, originFromPoints } from "../../../shared/src/layoutSchema";
+import { PageLayoutSchema, originFromPoints, resolvePanelForLanguage } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
@@ -52,7 +52,8 @@ import { CleanPageReviewPanel } from "../editor/CleanPageReviewPanel";
 import { CleanPageMaskEditor } from "../editor/CleanPageMaskEditor";
 import { useCleanPageRun } from "../ocr/useCleanPageRun";
 import { characterName, getPageReadingOrder, groupBubblesByPanel, moveBubbleInReadingOrder } from "../editor/reportUtils";
-import { api, downloadBlob, type PageSummary } from "../api/client";
+import { api, assetLibraries, downloadBlob, type PageSummary } from "../api/client";
+import { translateApiError } from "../i18n/translateApiError";
 import { useExportRun } from "../export/useExportRun";
 import { ensureFontsLoaded } from "../editor/fontLoader";
 import { ensureSvgBubbleBoundaryLoaded, isSvgBubbleBoundaryCached } from "../export/svgBubbleGeometry";
@@ -126,6 +127,15 @@ export function Editor() {
   // with the correct glyphs — otherwise the canvas just keeps the stale look.
   const [fontsVersion, setFontsVersion] = useState(0);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
+  // Read by the paste-image handler below, which (like the keydown effect) is
+  // registered once with an empty dep array — a ref keeps its closure seeing the
+  // current language list instead of whatever it was on first mount.
+  const languagesRef = useRef(languages);
+  useEffect(() => {
+    languagesRef.current = languages;
+  }, [languages]);
+  const [pasteImageUploading, setPasteImageUploading] = useState(false);
+  const [pasteImageError, setPasteImageError] = useState<string | null>(null);
   const [autosave, setAutosave] = useState<{ enabled: boolean; intervalSeconds: number } | null>(null);
   const [showCommentsPanel, setShowCommentsPanel] = useState(false);
   // Whole volume's comments (not just this page) — CommentsPanel needs the full list for
@@ -319,6 +329,106 @@ export function Editor() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Global paste-image handler — lets a user copy an image in another app (e.g.
+  // right-click "Copy image" on an AI-generated picture in ChatGPT/Gemini's web UI)
+  // and hit Ctrl+V directly on the page instead of saving to disk first and going
+  // through the asset-library upload picker. Reuses the exact same upload endpoint
+  // as ImagePicker/AssetBrowser (assetLibraries.images.upload) — a pasted image is
+  // just an upload whose File came from the clipboard instead of a <input type=file>.
+  // Same "read fresh state via a ref/getState(), register once" convention as the
+  // keydown effect above, for the same reason (see isTranslatorOnlyRef's comment).
+  useEffect(() => {
+    function isTypingTarget(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
+    }
+
+    const EXT_BY_MIME: Record<string, string> = {
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/webp": "webp",
+      "image/gif": "gif",
+    };
+
+    async function handlePaste(e: ClipboardEvent) {
+      // Pasting text into a bubble/label field, or geometry-restricted roles (see
+      // isTranslatorOnlyRef's comment — a translator's changes are limited to
+      // existing bubble/curved-text .text and get rejected by the server otherwise),
+      // both fall through to the browser's normal paste behavior untouched.
+      if (isTypingTarget(e.target) || isTranslatorOnlyRef.current) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const imageItem = Array.from(items).find((item) => item.type.startsWith("image/"));
+      if (!imageItem) return;
+      const ext = EXT_BY_MIME[imageItem.type];
+      const blob = ext ? imageItem.getAsFile() : null;
+      if (!blob) return;
+      e.preventDefault();
+
+      const initial = useEditorStore.getState();
+      if (!initial.layout) return;
+
+      setPasteImageError(null);
+      setPasteImageUploading(true);
+      try {
+        const file = new File([blob], `pasted-${Date.now()}.${ext}`, { type: imageItem.type });
+        const result = await assetLibraries.images.upload(file);
+        const width = Number(result.width) || 0;
+        const height = Number(result.height) || 0;
+
+        const s = useEditorStore.getState();
+        if (!s.layout) return;
+        const singlePanelSelected =
+          s.selectedPanelIds.length === 1 &&
+          s.selectedBubbleIds.length === 0 &&
+          s.selectedImageIds.length === 0 &&
+          s.selectedCurvedTextIds.length === 0;
+        const panel = singlePanelSelected ? s.layout.panels.find((p) => p.id === s.selectedPanelIds[0]) : undefined;
+
+        if (panel) {
+          // Fill the selected panel's Cut-Panel replacement image — same target as
+          // PanelInspector's own ImagePicker (see its commitPanel/commitCutForActive-
+          // Language split, mirrored here): patch the active language's override if
+          // one already exists, otherwise the base cut if a base cut is already
+          // active, otherwise activate Cut-Panel for just the active language (an
+          // override), matching PanelInspector's "activateCut" button default.
+          const resolved = resolvePanelForLanguage(panel, s.activeLanguage);
+          const baseCut = resolved.cut ?? { cutOrigin: resolved.origin, holeFill: { mode: "manual" as const, color: panel.color } };
+          const nextCut = {
+            ...baseCut,
+            removed: undefined,
+            replacement: {
+              ...baseCut.replacement,
+              files: { ...baseCut.replacement?.files, [s.activeLanguage]: result.fileName },
+              fit: baseCut.replacement?.fit ?? ("stretch" as const),
+            },
+          };
+          const hasLanguageOverride = !!panel.languageOverride?.[s.activeLanguage];
+          if (hasLanguageOverride || !resolved.cut) {
+            s.updatePanel(panel.id, {
+              languageOverride: { ...panel.languageOverride, [s.activeLanguage]: { points: resolved.points, origin: resolved.origin, cut: nextCut } },
+            });
+          } else {
+            s.updatePanel(panel.id, { cut: nextCut });
+          }
+        } else {
+          // No single panel selected — drop it as a free-floating image, same as the
+          // toolbar's "+ Image" picker.
+          s.addImage(result.fileName, width, height, languagesRef.current.map((l) => l.code));
+        }
+      } catch (err) {
+        setPasteImageError(translateApiError(err, t));
+      } finally {
+        setPasteImageUploading(false);
+      }
+    }
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]);
 
   // SVG bubble contours are parsed asynchronously and cached (see
   // svgBubbleGeometry.ts) — a Konva sceneFunc can't await, so this preloads
@@ -727,6 +837,20 @@ export function Editor() {
         <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", display: "flex", alignItems: "center", gap: 8 }}>
           <LoadingIndicator size="sm" />
           {exportMsg ?? normalizeMsg}
+        </div>
+      )}
+      {pasteImageUploading && (
+        <div className="error-banner" style={{ background: "#1f3a2a", borderColor: "#2f7a48", color: "#b3ffc0", display: "flex", alignItems: "center", gap: 8 }}>
+          <LoadingIndicator size="sm" />
+          {t("editor.pasteImage.uploading")}
+        </div>
+      )}
+      {pasteImageError && (
+        <div className="error-banner" style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
+          {pasteImageError}
+          <button type="button" onClick={() => setPasteImageError(null)} style={{ padding: "2px 8px" }}>
+            {t("common.close")}
+          </button>
         </div>
       )}
       {autoBubbles.progressMsg && (
