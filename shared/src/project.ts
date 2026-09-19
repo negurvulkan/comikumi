@@ -4,6 +4,7 @@ import { LanguageListSchema, DEFAULT_LANGUAGES } from "./languages.js";
 import { CharacterListSchema } from "./characters.js";
 import { GlossaryListSchema } from "./glossary.js";
 import { LetteringPresetListSchema } from "./presets.js";
+import { TagListSchema } from "./tags.js";
 import { ProjectMemberListSchema } from "./users.js";
 import { EntityListSchema, EntityRelationListSchema } from "./entities.js";
 
@@ -41,6 +42,9 @@ export const ProjectFileSchema = ProjectSettingsSchema.extend({
   glossary: GlossaryListSchema.default([]),
   /** Projectwide live-linked style presets — see presets.ts. */
   presets: LetteringPresetListSchema.default([]),
+  /** Projectwide semantic classification tags, referenced by Bubble/CurvedTextElement
+   * `tagIds` — see tags.ts. Default [] so older project files migrate on load. */
+  tags: TagListSchema.default([]),
   /** Who may see/edit this project, and with which role — see shared/src/users.ts.
    * Portable: travels with the project file. A UserAccount with isSystemAdmin needs
    * no entry here (bypass, see server/src/lib/auth.ts's requireProjectRole()). */

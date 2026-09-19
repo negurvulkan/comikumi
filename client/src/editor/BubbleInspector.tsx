@@ -21,6 +21,8 @@ import type {
   TextDirection,
   TextGradient,
   TextOutline,
+  TextStroke,
+  TextBlur,
 } from "../../../shared/src/layoutSchema";
 import {
   boxCorners,
@@ -33,9 +35,12 @@ import {
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import type { Tag } from "../../../shared/src/tags";
 import { paddingRatioFor } from "../../../shared/src/rendering/textLayout";
+import { hyphenationSupported } from "../../../shared/src/rendering/hyphenation";
 import { FontPicker } from "./FontPicker";
 import { TextEffectsFields } from "./TextEffectsFields";
+import { TagPicker } from "./TagPicker";
 import { SvgBubblePicker } from "./SvgBubblePicker";
 import { ScopeSwitch } from "./ScopeSwitch";
 import { OptionalToggleField } from "./OptionalToggleField";
@@ -56,6 +61,7 @@ interface Props {
   characters: Character[];
   glossary: GlossaryEntry[];
   presets: LetteringPreset[];
+  tags: Tag[];
   onChange: (patch: Partial<Bubble>) => void;
   /** Panel (re)assignment/detachment — goes through editorStore's reassignBubblePanel so
    * the bubble's coordinates convert between absolute and panel-relative correctly
@@ -84,6 +90,7 @@ export function BubbleInspector({
   characters,
   glossary,
   presets,
+  tags,
   onChange,
   onReassignPanel,
   onDelete,
@@ -199,12 +206,15 @@ export function BubbleInspector({
     if (preset.text.align !== undefined) textPatch.align = style.align;
     if (preset.text.direction !== undefined) textPatch.direction = style.direction;
     if (preset.text.balloonAwareWrap !== undefined) textPatch.balloonAwareWrap = style.balloonAwareWrap;
+    if (preset.text.hyphenate !== undefined) textPatch.hyphenate = style.hyphenate;
     if (preset.text.color !== undefined) textPatch.color = style.color;
     if (preset.text.textOutline !== undefined) textPatch.textOutline = style.textOutline;
+    if (preset.text.textStrokes !== undefined) textPatch.textStrokes = style.textStrokes;
     if (preset.text.textGradient !== undefined) textPatch.textGradient = style.textGradient;
     if (preset.text.textScreentone !== undefined) textPatch.textScreentone = style.textScreentone;
     if (preset.text.textGlow !== undefined) textPatch.textGlow = style.textGlow;
     if (preset.text.textDropShadow !== undefined) textPatch.textDropShadow = style.textDropShadow;
+    if (preset.text.textBlur !== undefined) textPatch.textBlur = style.textBlur;
     if (!hasFormOverride) {
       if (preset.background.bubbleStyle !== undefined) textPatch.bubbleStyle = form.bubbleStyle;
       if (preset.background.fillColor !== undefined) textPatch.fillColor = form.fillColor;
@@ -233,17 +243,22 @@ export function BubbleInspector({
   const alignOverride = bubble.alignOverride?.[activeLanguage];
   const directionOverride = bubble.directionOverride?.[activeLanguage];
   const balloonAwareWrapOverride = bubble.balloonAwareWrapOverride?.[activeLanguage];
+  const hyphenateOverride = bubble.hyphenateOverride?.[activeLanguage];
   const hasEffectsOverride =
     bubble.textOutlineOverride?.[activeLanguage] !== undefined ||
+    bubble.textStrokesOverride?.[activeLanguage] !== undefined ||
     bubble.textGradientOverride?.[activeLanguage] !== undefined ||
     bubble.textScreentoneOverride?.[activeLanguage] !== undefined ||
     bubble.textGlowOverride?.[activeLanguage] !== undefined ||
-    bubble.textDropShadowOverride?.[activeLanguage] !== undefined;
+    bubble.textDropShadowOverride?.[activeLanguage] !== undefined ||
+    bubble.textBlurOverride?.[activeLanguage] !== undefined;
   const effectiveOutline = style.textOutline;
+  const effectiveStrokes = style.textStrokes;
   const effectiveGradient = style.textGradient;
   const effectiveScreentone = style.textScreentone;
   const effectiveGlow = style.textGlow;
   const effectiveDropShadow = style.textDropShadow;
+  const effectiveBlur = style.textBlur;
 
   function setText(value: string) {
     onChange({ text: { ...bubble.text, [activeLanguage]: value } });
@@ -357,6 +372,17 @@ export function BubbleInspector({
     onChange({ balloonAwareWrapOverride: { ...(bubble.balloonAwareWrapOverride ?? {}), [activeLanguage]: value } });
   }
 
+  function toggleHyphenateOverride(checked: boolean) {
+    const next = { ...(bubble.hyphenateOverride ?? {}) };
+    if (checked) next[activeLanguage] = !!bubble.hyphenate;
+    else delete next[activeLanguage];
+    onChange({ hyphenateOverride: next });
+  }
+
+  function setHyphenateOverride(value: boolean) {
+    onChange({ hyphenateOverride: { ...(bubble.hyphenateOverride ?? {}), [activeLanguage]: value } });
+  }
+
   function toggleFormOverride(checked: boolean) {
     const next = { ...(bubble.formOverride ?? {}) };
     if (checked) next[activeLanguage] = resolveBubbleForm(bubble, activeLanguage);
@@ -380,14 +406,18 @@ export function BubbleInspector({
     if (checked) {
       onChange({
         textOutlineOverride: { ...(bubble.textOutlineOverride ?? {}), [activeLanguage]: bubble.textOutline },
+        textStrokesOverride: { ...(bubble.textStrokesOverride ?? {}), [activeLanguage]: bubble.textStrokes },
         textGradientOverride: { ...(bubble.textGradientOverride ?? {}), [activeLanguage]: bubble.textGradient },
         textScreentoneOverride: { ...(bubble.textScreentoneOverride ?? {}), [activeLanguage]: bubble.textScreentone },
         textGlowOverride: { ...(bubble.textGlowOverride ?? {}), [activeLanguage]: bubble.textGlow },
         textDropShadowOverride: { ...(bubble.textDropShadowOverride ?? {}), [activeLanguage]: bubble.textDropShadow },
+        textBlurOverride: { ...(bubble.textBlurOverride ?? {}), [activeLanguage]: bubble.textBlur },
       });
     } else {
       const nextOutline = { ...(bubble.textOutlineOverride ?? {}) };
       delete nextOutline[activeLanguage];
+      const nextStrokes = { ...(bubble.textStrokesOverride ?? {}) };
+      delete nextStrokes[activeLanguage];
       const nextGradient = { ...(bubble.textGradientOverride ?? {}) };
       delete nextGradient[activeLanguage];
       const nextScreentone = { ...(bubble.textScreentoneOverride ?? {}) };
@@ -396,12 +426,16 @@ export function BubbleInspector({
       delete nextGlow[activeLanguage];
       const nextDropShadow = { ...(bubble.textDropShadowOverride ?? {}) };
       delete nextDropShadow[activeLanguage];
+      const nextBlur = { ...(bubble.textBlurOverride ?? {}) };
+      delete nextBlur[activeLanguage];
       onChange({
         textOutlineOverride: nextOutline,
+        textStrokesOverride: nextStrokes,
         textGradientOverride: nextGradient,
         textScreentoneOverride: nextScreentone,
         textGlowOverride: nextGlow,
         textDropShadowOverride: nextDropShadow,
+        textBlurOverride: nextBlur,
       });
     }
   }
@@ -411,6 +445,14 @@ export function BubbleInspector({
       onChange({ textOutlineOverride: { ...(bubble.textOutlineOverride ?? {}), [activeLanguage]: { ...effectiveOutline, ...patch } } });
     } else {
       onChange({ textOutline: { ...bubble.textOutline, ...patch } });
+    }
+  }
+
+  function setTextStrokes(next: TextStroke[]) {
+    if (hasEffectsOverride) {
+      onChange({ textStrokesOverride: { ...(bubble.textStrokesOverride ?? {}), [activeLanguage]: next } });
+    } else {
+      onChange({ textStrokes: next });
     }
   }
 
@@ -443,6 +485,14 @@ export function BubbleInspector({
       onChange({ textDropShadowOverride: { ...(bubble.textDropShadowOverride ?? {}), [activeLanguage]: { ...effectiveDropShadow, ...patch } } });
     } else {
       onChange({ textDropShadow: { ...bubble.textDropShadow, ...patch } });
+    }
+  }
+
+  function setTextBlur(patch: Partial<TextBlur>) {
+    if (hasEffectsOverride) {
+      onChange({ textBlurOverride: { ...(bubble.textBlurOverride ?? {}), [activeLanguage]: { ...effectiveBlur, ...patch } } });
+    } else {
+      onChange({ textBlur: { ...bubble.textBlur, ...patch } });
     }
   }
 
@@ -655,6 +705,11 @@ export function BubbleInspector({
               </p>
             );
           })()}
+
+          <div className="field-label-row">
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("managers.tags.title")}</span>
+          </div>
+          <TagPicker tags={tags} selectedIds={bubble.tagIds} onChange={(tagIds) => onChange({ tagIds })} />
 
           <label>
             {t("managers.presets.title")}
@@ -1089,6 +1144,35 @@ export function BubbleInspector({
               </label>
             </GovernedField>
           )}
+
+          {style.direction !== "vertical-rl" && hyphenationSupported(activeLanguage) && (
+            <GovernedField
+              label={t("editor.bubbleInspector.hyphenateLabel")}
+              governed={textPresetGoverns("hyphenate", hyphenateOverride !== undefined)}
+              lockTitle={lockTitle}
+              extra={
+                <ScopeSwitch
+                  activeLanguage={activeLanguage}
+                  scope={hyphenateOverride !== undefined ? "language" : "all"}
+                  onChange={(s) => toggleHyphenateOverride(s === "language")}
+                />
+              }
+            >
+              <label className="field-row" style={{ alignItems: "center", gap: 6 }}>
+                <input
+                  type="checkbox"
+                  checked={!!style.hyphenate}
+                  disabled={textPresetGoverns("hyphenate", hyphenateOverride !== undefined)}
+                  onChange={(e) => {
+                    const v = e.target.checked;
+                    if (hyphenateOverride !== undefined) setHyphenateOverride(v);
+                    else onChange({ hyphenate: v });
+                  }}
+                />
+                <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{t("editor.bubbleInspector.hyphenateHint")}</span>
+              </label>
+            </GovernedField>
+          )}
         </>
       )}
 
@@ -1099,6 +1183,8 @@ export function BubbleInspector({
             onColorChange={(color) => onChange({ color })}
             outline={effectiveOutline}
             onOutlineChange={setTextOutline}
+            strokes={effectiveStrokes}
+            onStrokesChange={setTextStrokes}
             gradient={effectiveGradient}
             onGradientChange={setTextGradient}
             screentone={effectiveScreentone}
@@ -1107,6 +1193,8 @@ export function BubbleInspector({
             onGlowChange={setTextGlow}
             dropShadow={effectiveDropShadow}
             onDropShadowChange={setTextDropShadow}
+            blur={effectiveBlur}
+            onBlurChange={setTextBlur}
             activeLanguage={activeLanguage}
             hasLanguageOverride={hasEffectsOverride}
             onToggleLanguageOverride={toggleEffectsOverride}
@@ -1114,10 +1202,12 @@ export function BubbleInspector({
               preset?.text.color !== undefined ||
               (!hasEffectsOverride &&
                 (preset?.text.textOutline !== undefined ||
+                  preset?.text.textStrokes !== undefined ||
                   preset?.text.textGradient !== undefined ||
                   preset?.text.textScreentone !== undefined ||
                   preset?.text.textGlow !== undefined ||
-                  preset?.text.textDropShadow !== undefined))
+                  preset?.text.textDropShadow !== undefined ||
+                  preset?.text.textBlur !== undefined))
             }
           />
 

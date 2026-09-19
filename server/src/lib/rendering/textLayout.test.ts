@@ -177,3 +177,27 @@ describe("fitHorizontalText", () => {
     expect(rectResult).toEqual(flatResult);
   });
 });
+
+describe("wrapHorizontal — hyphenation", () => {
+  // Fake hyphenator: splits exactly the one long word into fixed syllables, everything
+  // else stays whole — keeps the assertion independent of any real pattern data.
+  const fakeHyphenate = (word: string): string[] =>
+    word === "Silbentrennung" ? ["Sil", "ben", "tren", "nung"] : [word];
+
+  it("breaks a too-long word at syllable points with a trailing hyphen", () => {
+    // widthPerChar 1, maxWidth 10: the whole 14-char word doesn't fit, "Silben-" (7) does.
+    const lines = wrapHorizontal(fakeCtx(1), "Silbentrennung", 10, fakeHyphenate);
+    expect(lines.map((l) => l.text)).toEqual(["Silben-", "trennung"]);
+    expect(lines.every((l) => l.width <= 10)).toBe(true);
+  });
+
+  it("without a hyphenator, the same long word overflows on one line (unchanged behavior)", () => {
+    const lines = wrapHorizontal(fakeCtx(1), "Silbentrennung", 10);
+    expect(lines.map((l) => l.text)).toEqual(["Silbentrennung"]);
+  });
+
+  it("leaves a word that already fits untouched", () => {
+    const lines = wrapHorizontal(fakeCtx(1), "kurz", 10, fakeHyphenate);
+    expect(lines.map((l) => l.text)).toEqual(["kurz"]);
+  });
+});

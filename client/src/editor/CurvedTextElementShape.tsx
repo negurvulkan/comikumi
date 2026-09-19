@@ -106,6 +106,7 @@ export function CurvedTextElementShape({ element, activeLanguage, scale, zoom, p
               {
                 color: style.color,
                 outline: style.textOutline,
+                strokes: style.textStrokes,
                 gradient: style.textGradient,
                 screentone: style.textScreentone,
                 glow: style.textGlow,

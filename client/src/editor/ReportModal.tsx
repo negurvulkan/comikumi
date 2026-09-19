@@ -1,12 +1,15 @@
 import { useTranslation } from "react-i18next";
 import type { Bubble, Panel } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
+import type { Tag } from "../../../shared/src/tags";
+import { isNonDialogueBubble } from "../../../shared/src/tags";
 import { characterName, groupBubblesByPanel, sortBubblesByPosition, uniqueCharacterNames, type ReadingDirection } from "./reportUtils";
 
 interface Props {
   bubbles: Bubble[];
   panels: Panel[];
   characters: Character[];
+  tags: Tag[];
   activeLanguage: string;
   readingDirection: ReadingDirection;
   onClose: () => void;
@@ -19,11 +22,12 @@ function toSingleLine(text: string): string {
 /** The four page-level reports requested: who says what, who-says-what per panel,
  * which characters appear on the page, and which characters appear per panel — all
  * computed live from the already-loaded layout, no extra request needed. */
-export function ReportModal({ bubbles, panels, characters, activeLanguage, readingDirection, onClose }: Props) {
+export function ReportModal({ bubbles, panels, characters, tags, activeLanguage, readingDirection, onClose }: Props) {
   const { t } = useTranslation();
-  // Effect (SFX) bubbles aren't dialogue — excluded from every report on this page (but
-  // not from the Layers navigator or reading-order navigation, see Bubble.isEffect).
-  const dialogueBubbles = bubbles.filter((b) => !b.isEffect);
+  // Non-dialogue bubbles — the per-bubble `isEffect` flag or an `excludeFromQa`-flagged
+  // tag — are excluded from every report on this page (but not from the Layers navigator
+  // or reading-order navigation, see isNonDialogueBubble).
+  const dialogueBubbles = bubbles.filter((b) => !isNonDialogueBubble(b, tags));
   const ordered = sortBubblesByPosition(dialogueBubbles, activeLanguage, readingDirection);
   const byPanel = groupBubblesByPanel(dialogueBubbles, panels, activeLanguage, readingDirection);
   const pageCharacters = uniqueCharacterNames(dialogueBubbles, characters);

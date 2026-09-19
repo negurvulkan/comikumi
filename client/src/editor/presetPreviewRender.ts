@@ -97,10 +97,12 @@ export function drawCurvedTextPreview(
     {
       color: style.color,
       outline: style.textOutline,
+      strokes: style.textStrokes,
       gradient: style.textGradient,
       screentone: style.textScreentone,
       glow: style.textGlow,
       dropShadow: style.textDropShadow,
+      blur: style.textBlur,
     },
     1
   );

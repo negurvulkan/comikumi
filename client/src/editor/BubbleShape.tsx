@@ -5,6 +5,8 @@ import type { Bubble, BubbleForm } from "../../../shared/src/layoutSchema";
 import { resolveBubbleForm, resolveBubbleStyle, resolveEffectiveTailStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { fitHorizontalText, textBoxFor } from "../../../shared/src/rendering/textLayout";
+import { hyphenatorFor } from "../../../shared/src/rendering/hyphenation";
+import { drawWithTextBlur } from "../../../shared/src/rendering/blurPass";
 import { drawVerticalText, fitVerticalText } from "../../../shared/src/rendering/verticalTypesetting";
 import {
   buildBoundaryForStyle,
@@ -160,8 +162,9 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
   // scale, so the editor preview matches the exported result exactly.
   const fitted = useMemo(() => {
     if (!text || isVertical) return null;
-    return fitHorizontalText(getMeasureCtx(), text, style.fontFamily, style.lineHeight, boxWidth, boxHeight, baseFontSize, balloonGeometry);
-  }, [text, isVertical, style.fontFamily, style.lineHeight, boxWidth, boxHeight, baseFontSize, balloonGeometry]);
+    const hyphenate = style.hyphenate ? hyphenatorFor(activeLanguage) : undefined;
+    return fitHorizontalText(getMeasureCtx(), text, style.fontFamily, style.lineHeight, boxWidth, boxHeight, baseFontSize, balloonGeometry, hyphenate);
+  }, [text, isVertical, style.fontFamily, style.lineHeight, boxWidth, boxHeight, baseFontSize, balloonGeometry, style.hyphenate, activeLanguage]);
 
   const fittedVertical = useMemo(() => {
     if (!text || !isVertical) return null;
@@ -350,10 +353,13 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
               const fillStyle: TextFillStyle = {
                 color: style.color,
                 outline: style.textOutline,
+                strokes: style.textStrokes,
+                scale,
                 gradient: style.textGradient,
                 screentone: style.textScreentone,
                 glow: style.textGlow,
                 dropShadow: style.textDropShadow,
+                blur: style.textBlur,
               };
               applyTextFillStyle(ctx._context, fillStyle, textBox.x, startY - fitted.lineStep / 2, textBox.width, fitted.blockHeight, scale);
               const drawAllLines = () => {
@@ -362,7 +368,7 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
                 });
               };
               drawShadowUnderlayPasses(ctx._context, fillStyle.glow, fillStyle.dropShadow, drawAllLines);
-              drawAllLines();
+              drawWithTextBlur(ctx._context, fillStyle.blur, scale, drawAllLines);
             }}
           />
         )}
@@ -375,10 +381,12 @@ function RectOvalBubbleShape({ bubble, allBubbles, scale, zoom, activeLanguage, 
                 color: style.color,
                 align: style.align,
                 outline: style.textOutline,
+                strokes: style.textStrokes,
                 gradient: style.textGradient,
                 screentone: style.textScreentone,
                 glow: style.textGlow,
                 dropShadow: style.textDropShadow,
+                blur: style.textBlur,
                 scale,
               });
             }}

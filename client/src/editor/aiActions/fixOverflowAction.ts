@@ -4,6 +4,7 @@ import { resolveBubbleForm, resolveBubbleStyle } from "../../../../shared/src/la
 import type { LanguageDef } from "../../../../shared/src/languages";
 import type { LetteringPreset } from "../../../../shared/src/presets";
 import { fitHorizontalText, textBoxFor } from "../../../../shared/src/rendering/textLayout";
+import { hyphenatorFor } from "../../../../shared/src/rendering/hyphenation";
 import { fitVerticalText } from "../../../../shared/src/rendering/verticalTypesetting";
 import { extractJsonFence } from "./actionUtils";
 
@@ -69,7 +70,7 @@ export function findOverflowTargets(bubbles: Bubble[], languages: LanguageDef[],
       const overflows =
         style.direction === "vertical-rl"
           ? fitVerticalText(text, style.lineHeight, boxWidth, boxHeight, style.fontSize).blockWidth > boxWidth
-          : fitHorizontalText(ctx, text, style.fontFamily, style.lineHeight, boxWidth, boxHeight, style.fontSize).blockHeight > boxHeight;
+          : fitHorizontalText(ctx, text, style.fontFamily, style.lineHeight, boxWidth, boxHeight, style.fontSize, undefined, style.hyphenate ? hyphenatorFor(lang.code) : undefined).blockHeight > boxHeight;
       if (!overflows) continue;
       targets.push({ bubbleId: bubble.id, language: lang.code, text, width: form.width, height: form.height, fontSize: style.fontSize, imageWidth, imageHeight });
     }

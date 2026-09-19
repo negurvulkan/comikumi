@@ -4,6 +4,7 @@ import type { Bubble, LayerItem, PageLayout, Panel } from "../../../shared/src/l
 import { imageFileForLanguage, pageLayerOrder, resolveBubbleForm, resolveBubbleStyle, resolveCurvedTextStyle } from "../../../shared/src/layoutSchema.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
 import { textBoxFor, fitHorizontalText } from "../../../shared/src/rendering/textLayout.js";
+import { hyphenatorFor } from "../../../shared/src/rendering/hyphenation.js";
 import {
   drawBaseImage,
   drawBubbleBackgroundOnly,
@@ -146,7 +147,7 @@ async function buildTextDataFor(
     bubble.shape === "oval" && style.balloonAwareWrap && !(form.clipA && form.clipB)
       ? { shape: bubble.shape, balloonAwareWrap: style.balloonAwareWrap, bubbleWidth: form.width, bubbleHeight: form.height }
       : undefined;
-  const fitted = fitHorizontalText(measureCtx, text, style.fontFamily, style.lineHeight, localBox.width, localBox.height, style.fontSize, balloonGeometry);
+  const fitted = fitHorizontalText(measureCtx, text, style.fontFamily, style.lineHeight, localBox.width, localBox.height, style.fontSize, balloonGeometry, style.hyphenate ? hyphenatorFor(languageCode) : undefined);
   const postscriptName = await resolvePsdFontName(style.fontFamily);
 
   return buildPsdTextLayerData({ bubble, style, fitted, box, postscriptName }) ?? undefined;

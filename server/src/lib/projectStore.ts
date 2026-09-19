@@ -9,6 +9,7 @@ import type { Character } from "../../../shared/src/characters.js";
 import type { Entity, EntityRelation } from "../../../shared/src/entities.js";
 import type { GlossaryEntry } from "../../../shared/src/glossary.js";
 import type { LetteringPreset } from "../../../shared/src/presets.js";
+import type { Tag } from "../../../shared/src/tags.js";
 import type { ProjectMember } from "../../../shared/src/users.js";
 import { APP_STATE_FILE, LEGACY_SETTINGS_FILE, LEGACY_LANGUAGES_FILE, LEGACY_PROJECT_FILE } from "./paths.js";
 import { withFileLock } from "./fileLock.js";
@@ -589,6 +590,19 @@ export async function writePresets(presets: LetteringPreset[], ctx?: ActiveProje
   const project = ctx ?? (await getActiveProject());
   await withFileLock(project.filePath, async () => {
     project.data = { ...project.data, presets };
+    await writeProjectFile(project.filePath, project.data);
+  });
+}
+
+export async function readTags(ctx?: ActiveProject): Promise<Tag[]> {
+  const { data } = ctx ?? (await getActiveProject());
+  return data.tags;
+}
+
+export async function writeTags(tags: Tag[], ctx?: ActiveProject): Promise<void> {
+  const project = ctx ?? (await getActiveProject());
+  await withFileLock(project.filePath, async () => {
+    project.data = { ...project.data, tags };
     await writeProjectFile(project.filePath, project.data);
   });
 }

@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
-import type { BubbleScreentone, CurvedTextElement, EffectGlow, EffectShadow, TextAlign, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type { BubbleScreentone, CurvedTextElement, EffectGlow, EffectShadow, TextAlign, TextBlur, TextGradient, TextOutline, TextStroke } from "../../../shared/src/layoutSchema";
 import { resolveCurvedTextStyle } from "../../../shared/src/layoutSchema";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import type { Tag } from "../../../shared/src/tags";
 import { FontPicker } from "./FontPicker";
 import { TextEffectsFields } from "./TextEffectsFields";
+import { TagPicker } from "./TagPicker";
 import { ScopeSwitch } from "./ScopeSwitch";
 import { GovernedField } from "./GovernedField";
 import { GlossaryHighlightedTextarea } from "./GlossaryHighlightedTextarea";
@@ -14,11 +16,12 @@ interface Props {
   activeLanguage: string;
   glossary: GlossaryEntry[];
   presets: LetteringPreset[];
+  tags: Tag[];
   onChange: (patch: Partial<CurvedTextElement>) => void;
   onDelete: () => void;
 }
 
-export function CurvedTextInspector({ element, activeLanguage, glossary, presets, onChange, onDelete }: Props) {
+export function CurvedTextInspector({ element, activeLanguage, glossary, presets, tags, onChange, onDelete }: Props) {
   const { t } = useTranslation();
   // Resolved via the shared resolver (language override > linked preset > own base
   // value) — same single source of truth used by the canvas preview and PNG export,
@@ -31,15 +34,19 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
   const alignOverride = element.alignOverride?.[activeLanguage];
   const hasEffectsOverride =
     element.textOutlineOverride?.[activeLanguage] !== undefined ||
+    element.textStrokesOverride?.[activeLanguage] !== undefined ||
     element.textGradientOverride?.[activeLanguage] !== undefined ||
     element.textScreentoneOverride?.[activeLanguage] !== undefined ||
     element.textGlowOverride?.[activeLanguage] !== undefined ||
-    element.textDropShadowOverride?.[activeLanguage] !== undefined;
+    element.textDropShadowOverride?.[activeLanguage] !== undefined ||
+    element.textBlurOverride?.[activeLanguage] !== undefined;
   const effectiveOutline = style.textOutline;
+  const effectiveStrokes = style.textStrokes;
   const effectiveGradient = style.textGradient;
   const effectiveScreentone = style.textScreentone;
   const effectiveGlow = style.textGlow;
   const effectiveDropShadow = style.textDropShadow;
+  const effectiveBlur = style.textBlur;
 
   /** Same idea as BubbleInspector.tsx's textPresetGoverns. */
   function textPresetGoverns(field: keyof LetteringPreset["text"], overrideActive: boolean): boolean {
@@ -54,10 +61,12 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
     if (preset.text.align !== undefined) patch.align = style.align;
     if (preset.text.color !== undefined) patch.color = style.color;
     if (preset.text.textOutline !== undefined) patch.textOutline = style.textOutline;
+    if (preset.text.textStrokes !== undefined) patch.textStrokes = style.textStrokes;
     if (preset.text.textGradient !== undefined) patch.textGradient = style.textGradient;
     if (preset.text.textScreentone !== undefined) patch.textScreentone = style.textScreentone;
     if (preset.text.textGlow !== undefined) patch.textGlow = style.textGlow;
     if (preset.text.textDropShadow !== undefined) patch.textDropShadow = style.textDropShadow;
+    if (preset.text.textBlur !== undefined) patch.textBlur = style.textBlur;
     onChange({ ...patch, presetId: null });
   }
 
@@ -102,14 +111,18 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
     if (checked) {
       onChange({
         textOutlineOverride: { ...(element.textOutlineOverride ?? {}), [activeLanguage]: element.textOutline },
+        textStrokesOverride: { ...(element.textStrokesOverride ?? {}), [activeLanguage]: element.textStrokes },
         textGradientOverride: { ...(element.textGradientOverride ?? {}), [activeLanguage]: element.textGradient },
         textScreentoneOverride: { ...(element.textScreentoneOverride ?? {}), [activeLanguage]: element.textScreentone },
         textGlowOverride: { ...(element.textGlowOverride ?? {}), [activeLanguage]: element.textGlow },
         textDropShadowOverride: { ...(element.textDropShadowOverride ?? {}), [activeLanguage]: element.textDropShadow },
+        textBlurOverride: { ...(element.textBlurOverride ?? {}), [activeLanguage]: element.textBlur },
       });
     } else {
       const nextOutline = { ...(element.textOutlineOverride ?? {}) };
       delete nextOutline[activeLanguage];
+      const nextStrokes = { ...(element.textStrokesOverride ?? {}) };
+      delete nextStrokes[activeLanguage];
       const nextGradient = { ...(element.textGradientOverride ?? {}) };
       delete nextGradient[activeLanguage];
       const nextScreentone = { ...(element.textScreentoneOverride ?? {}) };
@@ -118,12 +131,16 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       delete nextGlow[activeLanguage];
       const nextDropShadow = { ...(element.textDropShadowOverride ?? {}) };
       delete nextDropShadow[activeLanguage];
+      const nextBlur = { ...(element.textBlurOverride ?? {}) };
+      delete nextBlur[activeLanguage];
       onChange({
         textOutlineOverride: nextOutline,
+        textStrokesOverride: nextStrokes,
         textGradientOverride: nextGradient,
         textScreentoneOverride: nextScreentone,
         textGlowOverride: nextGlow,
         textDropShadowOverride: nextDropShadow,
+        textBlurOverride: nextBlur,
       });
     }
   }
@@ -133,6 +150,14 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
       onChange({ textOutlineOverride: { ...(element.textOutlineOverride ?? {}), [activeLanguage]: { ...effectiveOutline, ...patch } } });
     } else {
       onChange({ textOutline: { ...element.textOutline, ...patch } });
+    }
+  }
+
+  function setTextStrokes(next: TextStroke[]) {
+    if (hasEffectsOverride) {
+      onChange({ textStrokesOverride: { ...(element.textStrokesOverride ?? {}), [activeLanguage]: next } });
+    } else {
+      onChange({ textStrokes: next });
     }
   }
 
@@ -160,6 +185,14 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
     }
   }
 
+  function setTextBlur(patch: Partial<TextBlur>) {
+    if (hasEffectsOverride) {
+      onChange({ textBlurOverride: { ...(element.textBlurOverride ?? {}), [activeLanguage]: { ...effectiveBlur, ...patch } } });
+    } else {
+      onChange({ textBlur: { ...element.textBlur, ...patch } });
+    }
+  }
+
   function setTextDropShadow(patch: Partial<EffectShadow>) {
     if (hasEffectsOverride) {
       onChange({ textDropShadowOverride: { ...(element.textDropShadowOverride ?? {}), [activeLanguage]: { ...effectiveDropShadow, ...patch } } });
@@ -184,6 +217,11 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
           style={{ fontFamily: style.fontFamily }}
         />
       </label>
+
+      <div className="field-label-row">
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("managers.tags.title")}</span>
+      </div>
+      <TagPicker tags={tags} selectedIds={element.tagIds} onChange={(tagIds) => onChange({ tagIds })} />
 
       <label>
         {t("managers.presets.title")}
@@ -285,6 +323,8 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
         onColorChange={(color) => onChange({ color })}
         outline={effectiveOutline}
         onOutlineChange={setTextOutline}
+        strokes={effectiveStrokes}
+        onStrokesChange={setTextStrokes}
         gradient={effectiveGradient}
         onGradientChange={setTextGradient}
         screentone={effectiveScreentone}
@@ -293,6 +333,8 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
         onGlowChange={setTextGlow}
         dropShadow={effectiveDropShadow}
         onDropShadowChange={setTextDropShadow}
+        blur={effectiveBlur}
+        onBlurChange={setTextBlur}
         activeLanguage={activeLanguage}
         hasLanguageOverride={hasEffectsOverride}
         onToggleLanguageOverride={toggleEffectsOverride}
@@ -300,10 +342,12 @@ export function CurvedTextInspector({ element, activeLanguage, glossary, presets
           preset?.text.color !== undefined ||
           (!hasEffectsOverride &&
             (preset?.text.textOutline !== undefined ||
+              preset?.text.textStrokes !== undefined ||
               preset?.text.textGradient !== undefined ||
               preset?.text.textScreentone !== undefined ||
               preset?.text.textGlow !== undefined ||
-              preset?.text.textDropShadow !== undefined))
+              preset?.text.textDropShadow !== undefined ||
+              preset?.text.textBlur !== undefined))
         }
       />
 

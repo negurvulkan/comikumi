@@ -4,6 +4,7 @@ import type { Bubble } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import type { Tag } from "../../../shared/src/tags";
 import { resolveChapters } from "../../../shared/src/pageMeta";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
@@ -14,6 +15,7 @@ interface Props {
   languages: LanguageDef[];
   glossary: GlossaryEntry[];
   presets: LetteringPreset[];
+  tags: Tag[];
   /** Jumps to a specific bubble on a specific page — Editor.tsx passes a navigate +
    * select callback; PageGrid.tsx (no open editor yet) can pass undefined and the
    * "jump" affordance is simply omitted per-row (see the row's own conditional). */
@@ -21,12 +23,12 @@ interface Props {
   onClose: () => void;
 }
 
-const CATEGORY_ORDER: QaCategory[] = ["missingTranslation", "untranslatedGlossaryTerm", "duplicatePreset"];
+const CATEGORY_ORDER: QaCategory[] = ["missingTranslation", "missingCharacter", "untranslatedGlossaryTerm", "duplicatePreset"];
 
 /** Volume-wide QA scan — reuses api.getVolumeReport() (same one VolumeReportModal.tsx
  * fetches) so this needs no new server endpoint, then runs the pure runQaChecks()
  * (qaChecks.ts) client-side and lists every finding grouped by category. */
-export function QaCheckModal({ volumeId, languages, glossary, presets, onJumpToBubble, onClose }: Props) {
+export function QaCheckModal({ volumeId, languages, glossary, presets, tags, onJumpToBubble, onClose }: Props) {
   const { t } = useTranslation();
   const [pages, setPages] = useState<{ page: string; bubbles: Bubble[] }[] | null>(null);
   const [chapterOfPage, setChapterOfPage] = useState<Map<string, string>>(new Map());
@@ -45,7 +47,7 @@ export function QaCheckModal({ volumeId, languages, glossary, presets, onJumpToB
       .catch((e) => setError(translateApiError(e, t)));
   }, [volumeId, t]);
 
-  const issues: QaIssue[] = pages ? runQaChecks(pages, languages, glossary, presets) : [];
+  const issues: QaIssue[] = pages ? runQaChecks(pages, languages, glossary, presets, tags) : [];
   const byCategory = new Map<QaCategory, QaIssue[]>();
   for (const issue of issues) {
     if (!byCategory.has(issue.category)) byCategory.set(issue.category, []);

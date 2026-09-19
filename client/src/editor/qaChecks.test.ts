@@ -3,6 +3,7 @@ import { createBubble } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import type { Tag } from "../../../shared/src/tags";
 import { runQaChecks } from "./qaChecks";
 
 const languages: LanguageDef[] = [
@@ -37,6 +38,28 @@ describe("runQaChecks — missingTranslation", () => {
     const effectBubble = createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 50, text: { ja: "ドン", de: "" }, isEffect: true });
     const pages = [{ page: "page_01", bubbles: [effectBubble] }];
     expect(runQaChecks(pages, languages, [], [])).toHaveLength(0);
+  });
+});
+
+describe("runQaChecks — semantic tags", () => {
+  const sfxTag: Tag = { id: "sfx", name: "sfx", color: "#f00", excludeFromQa: true, requiresCharacter: false };
+  const dialogueTag: Tag = { id: "dlg", name: "dialogue", color: "#00f", excludeFromQa: false, requiresCharacter: true };
+
+  it("skips a bubble carrying an excludeFromQa tag (like isEffect) for missing translations", () => {
+    const b = createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 50, text: { ja: "ドン", de: "" }, tagIds: ["sfx"] });
+    expect(runQaChecks([{ page: "p", bubbles: [b] }], languages, [], [], [sfxTag])).toHaveLength(0);
+  });
+
+  it("flags a requiresCharacter-tagged bubble with text but no character (missingCharacter)", () => {
+    const b = createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 50, text: { ja: "や", de: "Hi" }, tagIds: ["dlg"] });
+    const issues = runQaChecks([{ page: "p", bubbles: [b] }], languages, [], [], [dialogueTag]);
+    expect(issues.some((i) => i.category === "missingCharacter")).toBe(true);
+  });
+
+  it("does not flag missingCharacter once a character is assigned", () => {
+    const b = createBubble({ id: "b1", x: 0, y: 0, width: 100, height: 50, text: { ja: "や", de: "Hi" }, tagIds: ["dlg"], characterId: "c1" });
+    const issues = runQaChecks([{ page: "p", bubbles: [b] }], languages, [], [], [dialogueTag]);
+    expect(issues.some((i) => i.category === "missingCharacter")).toBe(false);
   });
 });
 

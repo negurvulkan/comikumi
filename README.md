@@ -49,8 +49,12 @@ below) — that account lives on your own server, not a central ComiKumi service
 - **Bubble styling effects** — gradient fill, glow, drop shadow, and bevel/emboss
   (inner/outer/emboss, adjustable angle/size/softness/highlight+shadow color) for a
   bubble's background, all independently stackable, plus dashed/dotted/custom border
-  patterns; text can carry its own outline, gradient, glow, and drop shadow too.
-  Configurable per bubble or bundled into a reusable Lettering Preset.
+  patterns; text can carry its own outline, gradient, glow, and drop shadow too — plus
+  **stacked strokes** (extra outline layers behind the main one, each with its own color
+  and width) for the classic SFX "black + white + colored" concentric border, and a
+  **gaussian or motion blur** of the text (a directional smear for speed/impact SFX or
+  out-of-focus background dialogue). Configurable per bubble or bundled into a reusable
+  Lettering Preset.
 - **Procedural screentone (halftone) fills** — dots, lines, or crosshatch, with
   adjustable spacing, tone, angle, and ink/paper color, as a bubble-background fill
   *or* a text fill — including on curved/rotated SFX text and vertical text's rotated
@@ -127,10 +131,18 @@ below) — that account lives on your own server, not a central ComiKumi service
   fixed inset rectangle, so lines near the middle can run wider and lines near the
   top/bottom narrower; works for both horizontal and vertical (tategaki) text,
   identically across the editor, PNG export, vector PDF, and PSD export.
+- **Hyphenation** — an opt-in, per-language toggle breaks a word that doesn't fit at its
+  syllable points (with a hyphen, via Liang's algorithm) instead of wrapping it whole —
+  much better packing in narrow bubbles, especially for long German compounds. Bundled
+  patterns for English, German, French, Spanish, and Italian.
 - **Lettering presets** — define a reusable style ("SFX Style", "Narration", …) that
   live-updates every bubble/curved text linked to it, field by field, without
   overwriting values a preset doesn't define; a small built-in starter library ("Manga
   SFX", "Whisper", "Shout") can be added with one click.
+- **Tags & volume-wide restyle** — classify bubbles/curved texts with project-defined
+  semantic tags (dialogue, SFX, sign, …), independent of preset or character, then
+  **apply a preset to every element carrying a tag across the whole volume in one step**
+  — no hand-selecting page by page.
 - **Context view & glossary** — a reading-order-aware context sidebar (previous/current/
   next bubble, speaker + voice notes, panel crop; see [screenshot](docs/screenshot/05_editor_sidebar_context_view.png)) useful for lettering and writing just
   as much as translation, a project glossary with live highlighting in the text field

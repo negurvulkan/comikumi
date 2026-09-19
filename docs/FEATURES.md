@@ -16,6 +16,7 @@ snapshot — please keep it in sync with larger changes.
 - [Chapters](#chapters)
 - [Language Management](#language-management)
 - [Character Management](#character-management)
+- [Tags](#tags)
 - [Story Bible](#story-bible)
 - [Lettering Presets](#lettering-presets)
 - [Project Asset Folder](#project-asset-folder)
@@ -399,6 +400,55 @@ it), so chapter order and page order can never disagree.
   voice notes are shown there and under the character dropdown in the bubble
   inspector as soon as a bubble is assigned a character with notes.
 
+## Tags
+
+Project-wide **semantic classification labels** for bubbles and curved texts —
+"*what is* this element" (dialogue, narration, thought, whisper, shout, SFX, sign,
+…), deliberately orthogonal to a [lettering preset](#lettering-presets) ("how should
+it *look*") and to a [character](#character-management) ("*who* says it"). A bubble can
+carry any number of tags (`tagIds`, referencing a project-wide `tags` list of id/name/
+color), just like it carries a `presetId` and a `characterId`. The list is free and
+project-defined — no fixed enum — so a studio invents exactly the buckets its workflow
+uses.
+
+- **Tag management** (modal via the "Project" menu, reachable from the editor's and the
+  page overview's Project menu): create/rename/recolor/delete tags (a color chip per
+  tag for quick scanning). Managing the list is a translator-level concern (editorial
+  classification, like the glossary); a stale tag id left on an element after the tag
+  is deleted is simply ignored.
+- **Assignment**: a compact multi-select chip row in the bubble and curved-text
+  inspectors — click a tag chip to add/remove it. Assigning a tag is a layout change,
+  so it follows the normal letterer-gated save (a translator can define tags but not
+  attach them, same boundary as every other non-text bubble field).
+- **Tag-based bulk restyle (volume-wide)** — the concrete payoff: from the Tag
+  manager, pick a tag and a preset and **"Apply to volume"** assigns that preset to
+  every bubble and curved text carrying the tag across **all saved pages of the
+  volume** in one step (or detaches the preset when "Detach from preset" is chosen),
+  instead of hand-selecting elements page by page. A letterer-level action (it changes
+  style); each page file is updated under its own lock and pages with no matching
+  element are left untouched. Reports back how many elements on how many pages changed.
+
+- **Semantic behavior (tags drive the workspace)**: a tag can carry two optional flags,
+  set in the Tag manager:
+  - **"SFX / not dialogue — exclude from reports, script & QA"** (`excludeFromQa`): a
+    bubble carrying such a tag is treated as non-dialogue everywhere the per-bubble
+    `isEffect` flag already is (see [Speech Bubbles](#element-types) → Effect bubbles) —
+    excluded from the missing-translation and untranslated-glossary-term
+    [QA checks](#reports), from the "who says what" [reports](#reports) (page and
+    volume), and from the dialogue lines a [script](#script-editor--script-sidebar) is
+    generated with. So an `sfx` tag excuses a bubble from all of that at once, without
+    individually toggling `isEffect` on each one. (Shared predicate `isNonDialogueBubble`
+    in `shared/src/tags.ts`, so the three consumers can never disagree.)
+  - **"Dialogue — expects a character assigned"** (`requiresCharacter`): a bubble
+    carrying such a tag that has text but no character produces a new QA finding
+    (**Missing character**) — catching un-attributed dialogue across the volume.
+  A `sign`-style tag simply sets neither flag: it stays in the translation check (a
+  sign must be translated) but isn't expected to have a speaker.
+
+Still keyed off the per-bubble `isEffect` flag rather than a tag (a natural later
+extension): the SFX-styling AI action. Auto-suggesting a preset/font from a tag is
+likewise a possible future step, not part of this version.
+
 ## Story Bible
 
 A dedicated area for worldbuilding/story content (character profiles, locations,
@@ -599,7 +649,12 @@ the `{...}` syntax by hand — the furigana button also checks the project
 glossary (see [Glossary](#glossary)) and pre-fills a stored reading when the
 selection matches a translated term. Text can have an outline and/or a linear gradient
 instead of a solid color, plus an independently toggleable glow and/or drop shadow
-(all four can be combined). Text can also be filled with the same procedural
+(all four can be combined). The single outline can additionally be backed by **stacked
+strokes** — extra outline layers drawn behind it, each with its own color and width, for
+the classic SFX "black + white + colored" concentric border; they render widest-first
+(so a wider layer sits furthest back) regardless of the order they're added, in the live
+editor, PNG and PSD export alike (the vector-PDF text layer carries no stroke effects, the
+same pre-existing limitation as the outline/gradient). Text can also be filled with the same procedural
 screentone (halftone) pattern the bubble background supports — dots, lines, or
 crosshatch, with the same spacing/tone/angle/color controls — instead of a
 solid color or gradient; it wins over a gradient when both are enabled. This
@@ -608,7 +663,14 @@ fill, including on curved/rotated [Curved Text](#curved-text) and the rotated
 punctuation glyphs (ー〜~ etc.) inside vertical text — both are per-glyph
 rotated internally, so the pattern is composited through an offscreen mask
 per glyph/run instead of a plain fill, keeping the dot field continuous
-across characters instead of restarting at each one's own rotation. Every one
+across characters instead of restarting at each one's own rotation. Text can
+also be **blurred**: a **gaussian** (uniform soft blur, via the canvas
+`filter`) or a **motion** blur (a directional smear along an adjustable angle,
+composited from several offset low-alpha copies since neither canvas has a
+native motion-blur primitive) — for out-of-focus background dialogue or
+speed/impact SFX. Renders in the editor, PNG, and PSD (raster) export; skipped
+on the vector-PDF text layer (same limitation as the other text effects) and on
+the screentone-masked-glyph path (a known v1 limitation). Every one
 of these style fields (and the entire shape/position/size/rotation/background)
 can be overridden per language. Text glow/drop-shadow render in the editor,
 PNG, and PSD export; the vector-PDF export's text layer stays real vector text
@@ -678,6 +740,21 @@ a language whose translation runs long can turn it on while others keep the
 plain rectangle. Renders identically in the live editor, PNG export, vector
 PDF, and PSD export. Not available for "rect" bubbles (no effect there) or
 "quad" bubbles (their own text-warp pipeline).
+
+**Hyphenation**: a checkbox in the bubble inspector (or a
+[preset](#lettering-presets) field) turns on hyphenated line-breaking for
+horizontal text — a word that doesn't fit is split at its syllable points with
+a trailing "-" instead of being wrapped whole, noticeably improving packing in
+narrow bubbles, especially for long German compounds. Uses Liang's algorithm
+(the `hypher` library) with bundled TeX patterns; only Latin-script languages
+ship patterns (English, German, French, Spanish, Italian) — the toggle only
+appears for a language ComiKumi has patterns for, and never for vertical
+(tategaki) text. Off by default and per-language (like balloon-aware wrapping),
+so existing pages don't silently re-wrap and a language that benefits can enable
+it while others don't. Applies across the live editor, PNG, vector-PDF, and PSD
+export (the hyphen is part of the wrapped line, so it renders everywhere the
+lines do); the AI "fix overflow" check also accounts for it so it doesn't flag a
+bubble that hyphenation already makes fit.
 
 ### Images
 

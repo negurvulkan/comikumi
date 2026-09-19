@@ -2,8 +2,9 @@ import type { Bubble } from "../../../shared/src/layoutSchema";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import { isNonDialogueBubble, tagsRequireCharacter, type Tag } from "../../../shared/src/tags";
 
-export type QaCategory = "missingTranslation" | "duplicatePreset" | "untranslatedGlossaryTerm";
+export type QaCategory = "missingTranslation" | "missingCharacter" | "duplicatePreset" | "untranslatedGlossaryTerm";
 
 export interface QaIssue {
   id: string;
@@ -36,31 +37,49 @@ function containsWholeWord(text: string, term: string): boolean {
  * turns each issue's `category`+`params` into a localized message so this stays testable
  * without a react-i18next context.
  *
- * Deliberately three checks, matching the TODO's original scope:
+ * Checks:
  * - missingTranslation: a bubble has text in at least one project language but is
  *   empty/missing in another configured language — "started but not finished".
+ * - missingCharacter: a bubble carrying a tag flagged `requiresCharacter` (e.g. a
+ *   "dialogue" tag) has text but no character assigned — the tag-driven QA hook.
  * - duplicatePreset: two or more presets share the same name (trimmed,
  *   case-insensitive) — usually an accidental duplicate from "add from library"
  *   or copy-pasting a similar style.
  * - untranslatedGlossaryTerm: a glossary entry's own term appears, whole-word, inside
  *   a bubble's text in a language the entry HAS a (different) approved translation
  *   for — the translator likely forgot to use it.
+ *
+ * `tags` defaults to [] so callers that predate semantic tags (or don't care — the AI
+ * actions reusing this) keep working unchanged.
  */
 export function runQaChecks(
   pages: { page: string; bubbles: Bubble[] }[],
   languages: LanguageDef[],
   glossary: GlossaryEntry[],
-  presets: LetteringPreset[]
+  presets: LetteringPreset[],
+  tags: Tag[] = []
 ): QaIssue[] {
   const issues: QaIssue[] = [];
 
   for (const { page, bubbles } of pages) {
     for (const bubble of bubbles) {
-      // Effect (SFX) bubbles aren't dialogue and aren't meaningfully checked for
-      // translation completeness or glossary usage here — see Bubble.isEffect.
-      if (bubble.isEffect) continue;
+      // Effect (SFX) bubbles — either the per-bubble `isEffect` flag or a tag flagged
+      // `excludeFromQa` — aren't dialogue and aren't meaningfully checked for translation
+      // completeness or glossary usage here.
+      if (isNonDialogueBubble(bubble, tags)) continue;
       const hasAnyText = Object.values(bubble.text).some((t) => t.trim());
       if (!hasAnyText) continue; // an entirely empty bubble isn't "missing a translation", it's just unused
+
+      // A bubble tagged as expecting a speaker (e.g. "dialogue") but left unassigned.
+      if (tagsRequireCharacter(bubble.tagIds, tags) && !bubble.characterId) {
+        issues.push({
+          id: `missing-character-${page}-${bubble.id}`,
+          category: "missingCharacter",
+          page,
+          bubbleId: bubble.id,
+          params: { page },
+        });
+      }
 
       for (const lang of languages) {
         if (!bubble.text[lang.code]?.trim()) {

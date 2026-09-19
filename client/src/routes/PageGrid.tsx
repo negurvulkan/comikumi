@@ -8,6 +8,8 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import type { Tag } from "../../../shared/src/tags";
+import { isNonDialogueBubble } from "../../../shared/src/tags";
 import { EMPTY_PAGE_META_DOCUMENT, PAGE_TYPES, resolveChapters, type PageMetaDocument, type PageType, type VolumeFormat } from "../../../shared/src/pageMeta";
 import { api, downloadBlob, type PageSummary } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
@@ -271,6 +273,7 @@ export function PageGrid() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacters, setShowCharacters] = useState(false);
@@ -402,6 +405,10 @@ export function PageGrid() {
 
   useEffect(() => {
     api.listPresets().then(setPresets);
+  }, []);
+
+  useEffect(() => {
+    api.listTags().then(setTags);
   }, []);
 
   async function handleExportZip() {
@@ -614,7 +621,7 @@ export function PageGrid() {
     const report = await api.getVolumeReport(volumeId);
     const lines = [`Band ${volumeId}: ${report.length} Seiten`];
     for (const { page, layout } of report) {
-      const dialogueBubbles = layout.bubbles.filter((b) => !b.isEffect);
+      const dialogueBubbles = layout.bubbles.filter((b) => !isNonDialogueBubble(b, tags));
       const type = pageMeta.pages[page]?.type ?? "story";
       if (dialogueBubbles.length === 0) {
         lines.push(`${page} (${type}): keine Sprechblasen`);
@@ -852,6 +859,7 @@ export function PageGrid() {
           <VolumeReportModal
             volumeId={volumeId}
             characters={characters}
+            tags={tags}
             readingDirection={project?.readingDirection ?? "rtl"}
             onClose={() => setShowVolumeReport(false)}
           />
@@ -864,6 +872,7 @@ export function PageGrid() {
             languages={languages}
             glossary={glossary}
             presets={presets}
+            tags={tags}
             onJumpToBubble={(page, bubbleId) => {
               setShowQaCheck(false);
               navigate(`${pBase}/volumes/${encodeURIComponent(volumeId)}/pages/${encodeURIComponent(page)}?bubble=${encodeURIComponent(bubbleId)}`);

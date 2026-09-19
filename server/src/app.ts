@@ -18,6 +18,7 @@ import { entitiesRouter } from "./routes/entities.js";
 import { entityImagesRouter } from "./routes/entityImages.js";
 import { glossaryRouter } from "./routes/glossary.js";
 import { presetsRouter } from "./routes/presets.js";
+import { tagsRouter } from "./routes/tags.js";
 import { scriptRouter } from "./routes/script.js";
 import { pageOrderRouter } from "./routes/pageOrder.js";
 import { pageMetaRouter } from "./routes/pageMeta.js";
@@ -101,6 +102,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/entity-images", requireAuth, requireViewer, entityImagesRouter);
   app.use("/api/glossary", requireAuth, requireViewer, glossaryRouter);
   app.use("/api/presets", requireAuth, requireViewer, presetsRouter);
+  app.use("/api/tags", requireAuth, requireViewer, tagsRouter);
   app.use("/api/settings", requireAuth, requireViewer, settingsRouter);
   // Not project-scoped — the Auto-Bubbles/OCR models are fixed, app-versioned static
   // content (see paths.ts's OCR_MODELS_DIR doc comment), not per-project data, so this
@@ -134,6 +136,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use("/api/p/:projectId/entity-images", requireAuth, resolveProjectParam, requireViewerScoped, entityImagesRouter);
   app.use("/api/p/:projectId/glossary", requireAuth, resolveProjectParam, requireViewerScoped, glossaryRouter);
   app.use("/api/p/:projectId/presets", requireAuth, resolveProjectParam, requireViewerScoped, presetsRouter);
+  app.use("/api/p/:projectId/tags", requireAuth, resolveProjectParam, requireViewerScoped, tagsRouter);
   app.use("/api/p/:projectId/settings", requireAuth, resolveProjectParam, requireViewerScoped, settingsRouter);
 
   // Bootstrap info for a project-scoped client session (client/src/state/

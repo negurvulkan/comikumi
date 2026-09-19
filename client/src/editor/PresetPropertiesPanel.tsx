@@ -5,6 +5,7 @@ import type {
   BubbleBevelDirection,
   BubbleBevelStyle,
   BubbleScreentonePattern,
+  TextBlurKind,
   BubbleVisualStyle,
   TailChainSegmentShape,
   TailStyle,
@@ -94,6 +95,15 @@ export function PresetPropertiesPanel({ text, background, onTextChange, onBackgr
             {(v, set) => <input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} />}
           </PresetFieldToggle>
 
+          <PresetFieldToggle
+            label={t("managers.presets.hyphenateLabel")}
+            value={text.hyphenate}
+            defaultValue={DEFAULT_TEXT.hyphenate}
+            onChange={(v) => onTextChange("hyphenate", v)}
+          >
+            {(v, set) => <input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} />}
+          </PresetFieldToggle>
+
           <PresetFieldToggle label={t("managers.presets.colorLabel")} value={text.color} defaultValue={DEFAULT_TEXT.color} onChange={(v) => onTextChange("color", v)}>
             {(v, set) => <input type="color" value={v} onChange={(e) => set(e.target.value)} />}
           </PresetFieldToggle>
@@ -110,6 +120,38 @@ export function PresetPropertiesPanel({ text, background, onTextChange, onBackgr
                   <input type="number" min={1} value={v.widthPx} onChange={(e) => set({ ...v, widthPx: Number(e.target.value) })} />
                 </div>
               </OptionalToggleField>
+            )}
+          </PresetFieldToggle>
+
+          <PresetFieldToggle
+            label={t("editor.textEffects.stackedStrokesLabel")}
+            value={text.textStrokes}
+            defaultValue={DEFAULT_TEXT.textStrokes}
+            onChange={(v) => onTextChange("textStrokes", v)}
+          >
+            {(v, set) => (
+              <>
+                <p className="hint" style={{ margin: "0 0 6px" }}>
+                  {t("editor.textEffects.stackedStrokesHint")}
+                </p>
+                {v.map((s, i) => (
+                  <div className="field-row" key={i}>
+                    <input type="color" value={s.color} onChange={(e) => set(v.map((x, j) => (j === i ? { ...x, color: e.target.value } : x)))} />
+                    <input
+                      type="number"
+                      min={1}
+                      value={s.widthPx}
+                      onChange={(e) => set(v.map((x, j) => (j === i ? { ...x, widthPx: Number(e.target.value) } : x)))}
+                    />
+                    <button type="button" onClick={() => set(v.filter((_, j) => j !== i))}>
+                      {t("editor.textEffects.removeStrokeButton")}
+                    </button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => set([...v, { color: "#ffffff", widthPx: 8 + v.length * 4 }])}>
+                  {t("editor.textEffects.addStrokeButton")}
+                </button>
+              </>
             )}
           </PresetFieldToggle>
 
@@ -187,6 +229,28 @@ export function PresetPropertiesPanel({ text, background, onTextChange, onBackgr
                   <input type="number" min={0} value={v.blurPx} onChange={(e) => set({ ...v, blurPx: Number(e.target.value) })} />
                   <input type="number" value={v.offsetXPx} onChange={(e) => set({ ...v, offsetXPx: Number(e.target.value) })} />
                   <input type="number" value={v.offsetYPx} onChange={(e) => set({ ...v, offsetYPx: Number(e.target.value) })} />
+                </div>
+              </OptionalToggleField>
+            )}
+          </PresetFieldToggle>
+
+          <PresetFieldToggle
+            label={t("editor.textEffects.blurLabel")}
+            value={text.textBlur}
+            defaultValue={DEFAULT_TEXT.textBlur}
+            onChange={(v) => onTextChange("textBlur", v)}
+          >
+            {(v, set) => (
+              <OptionalToggleField label={t("managers.presets.onLabel")} checked={v.enabled} onToggle={(enabled) => set({ ...v, enabled })}>
+                <div className="field-row">
+                  <select value={v.kind} onChange={(e) => set({ ...v, kind: e.target.value as TextBlurKind })}>
+                    <option value="gaussian">{t("editor.textEffects.blurKindGaussian")}</option>
+                    <option value="motion">{t("editor.textEffects.blurKindMotion")}</option>
+                  </select>
+                  <input type="number" min={0} value={v.radiusPx} onChange={(e) => set({ ...v, radiusPx: Number(e.target.value) })} />
+                  {v.kind === "motion" && (
+                    <input type="number" step={5} value={v.angleDeg} onChange={(e) => set({ ...v, angleDeg: Number(e.target.value) })} />
+                  )}
                 </div>
               </OptionalToggleField>
             )}

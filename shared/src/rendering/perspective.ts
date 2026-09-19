@@ -1,7 +1,8 @@
-import type { BubbleScreentone, EffectGlow, EffectShadow, Point, TextAlign, TextDirection, TextGradient, TextOutline } from "../layoutSchema.js";
-import { fitHorizontalText } from "./textLayout.js";
+import type { BubbleScreentone, EffectGlow, EffectShadow, Point, TextAlign, TextBlur, TextDirection, TextGradient, TextOutline, TextStroke } from "../layoutSchema.js";
+import { fitHorizontalText, type Hyphenate } from "./textLayout.js";
 import { drawVerticalText, fitVerticalText } from "./verticalTypesetting.js";
 import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
+import { drawWithTextBlur } from "./blurPass.js";
 import { drawShadowUnderlayPasses } from "./shadowPasses.js";
 import { pointInQuad } from "./geometry.js";
 import { createOffscreenCanvas } from "./canvasFactory.js";
@@ -191,11 +192,18 @@ export interface PerspectiveTextOptions {
   align: CanvasTextAlign;
   color: string;
   outline?: TextOutline;
+  /** Stacked/multi-stroke outline layers (see TextStrokeSchema) — drawn behind `outline`. */
+  strokes?: TextStroke[];
   gradient?: TextGradient;
   screentone?: BubbleScreentone;
   glow?: EffectGlow;
   dropShadow?: EffectShadow;
   direction?: TextDirection;
+  /** Per-language hyphenator for the horizontal branch (see textLayout.ts) — only passed
+   * when the bubble opts into hyphenation for the active language. */
+  hyphenate?: Hyphenate;
+  /** Gaussian/motion blur of the text (see blurPass.ts). */
+  blur?: TextBlur;
 }
 
 /**
@@ -235,10 +243,12 @@ export function renderPerspectiveText(
       color: opts.color,
       align: opts.align as TextAlign,
       outline: opts.outline,
+      strokes: opts.strokes,
       gradient: opts.gradient,
       screentone: opts.screentone,
       glow: opts.glow,
       dropShadow: opts.dropShadow,
+      blur: opts.blur,
       scale: oversample,
     });
   } else {
@@ -249,7 +259,9 @@ export function renderPerspectiveText(
       opts.lineHeight,
       srcW - padX * 2,
       srcH - padY * 2,
-      opts.fontSize * oversample
+      opts.fontSize * oversample,
+      undefined,
+      opts.hyphenate
     );
     sctx.font = `${fitted.fontSize}px "${opts.fontFamily}"`;
     sctx.textBaseline = "middle";
@@ -260,10 +272,13 @@ export function renderPerspectiveText(
     const fillStyle: TextFillStyle = {
       color: opts.color,
       outline: opts.outline,
+      strokes: opts.strokes,
+      scale: oversample,
       gradient: opts.gradient,
       screentone: opts.screentone,
       glow: opts.glow,
       dropShadow: opts.dropShadow,
+      blur: opts.blur,
     };
     applyTextFillStyle(sctx, fillStyle, padX, startY - fitted.lineStep / 2, srcW - padX * 2, fitted.blockHeight, oversample);
     const drawAllLines = () => {
@@ -272,7 +287,7 @@ export function renderPerspectiveText(
       });
     };
     drawShadowUnderlayPasses(sctx, fillStyle.glow, fillStyle.dropShadow, drawAllLines);
-    drawAllLines();
+    drawWithTextBlur(sctx, fillStyle.blur, oversample, drawAllLines);
   }
   return warpCanvasIntoQuad(quad, srcCanvas);
 }

@@ -13,6 +13,8 @@ import type {
   TextDirection,
   TextGradient,
   TextOutline,
+  TextStroke,
+  TextBlur,
 } from "../../../shared/src/layoutSchema";
 import {
   cutPanelReplacementFileForLanguage,
@@ -24,7 +26,9 @@ import {
   resolvePanelForLanguage,
 } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
-import { fitHorizontalText, textBoxFor } from "../../../shared/src/rendering/textLayout";
+import { fitHorizontalText, textBoxFor, type Hyphenate } from "../../../shared/src/rendering/textLayout";
+import { hyphenatorFor } from "../../../shared/src/rendering/hyphenation";
+import { drawWithTextBlur } from "../../../shared/src/rendering/blurPass";
 import { drawVerticalText, fitVerticalText } from "../../../shared/src/rendering/verticalTypesetting";
 import { renderPerspectiveText, warpImageIntoQuad } from "../../../shared/src/rendering/perspective";
 import { drawBubbleBackground } from "../../../shared/src/rendering/bubbleBackground";
@@ -54,10 +58,12 @@ interface ResolvedStyle {
   balloonAwareWrap: boolean | undefined;
   color: string;
   textOutline: TextOutline;
+  textStrokes: TextStroke[];
   textGradient: TextGradient;
   textScreentone: BubbleScreentone;
   textGlow: EffectGlow;
   textDropShadow: EffectShadow;
+  textBlur: TextBlur;
 }
 
 export function drawHorizontalBubble(
@@ -66,7 +72,8 @@ export function drawHorizontalBubble(
   form: BubbleForm,
   text: string,
   style: ResolvedStyle,
-  mergedBounds?: { x: number; y: number; width: number; height: number }
+  mergedBounds?: { x: number; y: number; width: number; height: number },
+  hyphenate?: Hyphenate
 ) {
   const box = textBoxFor(form.bubbleStyle, bubble.shape, form, 1, mergedBounds);
 
@@ -86,7 +93,8 @@ export function drawHorizontalBubble(
     box.width,
     box.height,
     style.fontSize,
-    balloonGeometry
+    balloonGeometry,
+    hyphenate
   );
 
   ctx.font = `${size}px "${style.fontFamily}"`;
@@ -101,10 +109,13 @@ export function drawHorizontalBubble(
   const fillStyle: TextFillStyle = {
     color: style.color,
     outline: style.textOutline,
+    strokes: style.textStrokes,
+    scale: 1,
     gradient: style.textGradient,
     screentone: style.textScreentone,
     glow: style.textGlow,
     dropShadow: style.textDropShadow,
+    blur: style.textBlur,
   };
   applyTextFillStyle(ctx, fillStyle, form.x, startY - lineStep / 2, form.width, blockHeight, 1);
 
@@ -114,7 +125,7 @@ export function drawHorizontalBubble(
     });
   };
   drawShadowUnderlayPasses(ctx, fillStyle.glow, fillStyle.dropShadow, drawAllLines);
-  drawAllLines();
+  drawWithTextBlur(ctx, fillStyle.blur, 1, drawAllLines);
 }
 
 export function drawVerticalBubble(
@@ -138,10 +149,12 @@ export function drawVerticalBubble(
     color: style.color,
     align: style.align,
     outline: style.textOutline,
+    strokes: style.textStrokes,
     gradient: style.textGradient,
     screentone: style.textScreentone,
     glow: style.textGlow,
     dropShadow: style.textDropShadow,
+    blur: style.textBlur,
     scale: 1,
   });
 }
@@ -340,11 +353,14 @@ export async function renderPageToPng(
         align: style.align,
         color: style.color,
         outline: style.textOutline,
+        strokes: style.textStrokes,
         gradient: style.textGradient,
         screentone: style.textScreentone,
         glow: style.textGlow,
         dropShadow: style.textDropShadow,
         direction: style.direction,
+        hyphenate: style.hyphenate ? hyphenatorFor(languageCode) : undefined,
+        blur: style.textBlur,
       });
       if (warped) ctx.drawImage(warped.canvas, warped.x, warped.y);
       return;
@@ -408,7 +424,7 @@ export async function renderPageToPng(
       if (style.direction === "vertical-rl") {
         drawVerticalBubble(ctx, bubble, form, text, style, mergedBounds);
       } else {
-        drawHorizontalBubble(ctx, bubble, form, text, style, mergedBounds);
+        drawHorizontalBubble(ctx, bubble, form, text, style, mergedBounds, style.hyphenate ? hyphenatorFor(languageCode) : undefined);
       }
     }
     ctx.restore();
@@ -422,10 +438,12 @@ export async function renderPageToPng(
     drawCurvedText(ctx, text, el.points, fitted, style.fontFamily, style.align, {
       color: style.color,
       outline: style.textOutline,
+      strokes: style.textStrokes,
       gradient: style.textGradient,
       screentone: style.textScreentone,
       glow: style.textGlow,
       dropShadow: style.textDropShadow,
+      blur: style.textBlur,
     }, 1);
   }
 

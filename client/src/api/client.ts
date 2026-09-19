@@ -4,6 +4,7 @@ import type { Character } from "../../../shared/src/characters";
 import type { Entity, EntityRelation } from "../../../shared/src/entities";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset, PresetTextFields, PresetBackgroundFields } from "../../../shared/src/presets";
+import type { Tag } from "../../../shared/src/tags";
 import type { ProjectSettings } from "../../../shared/src/settings";
 import type { ProjectFile } from "../../../shared/src/project";
 import type { ScriptDocument } from "../../../shared/src/script";
@@ -1009,6 +1010,36 @@ export const api = {
 
   deletePreset: (id: string) =>
     authFetch(projectApiUrl(`/presets/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<LetteringPreset[]>(r)),
+
+  // --- Tags (projectwide semantic classification, see shared/src/tags.ts) ---
+  listTags: () => authFetch(projectApiUrl("/tags")).then((r) => json<Tag[]>(r)),
+
+  addTag: (tag: { name: string; color: string; excludeFromQa: boolean; requiresCharacter: boolean }) =>
+    authFetch(projectApiUrl("/tags"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tag),
+    }).then((r) => json<Tag[]>(r)),
+
+  updateTag: (id: string, tag: { name: string; color: string; excludeFromQa: boolean; requiresCharacter: boolean }) =>
+    authFetch(projectApiUrl(`/tags/${encodeURIComponent(id)}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tag),
+    }).then((r) => json<Tag[]>(r)),
+
+  deleteTag: (id: string) =>
+    authFetch(projectApiUrl(`/tags/${encodeURIComponent(id)}`), { method: "DELETE" }).then((r) => json<Tag[]>(r)),
+
+  /** Volume-wide tag-based bulk restyle — assigns (or detaches, when presetId is null) a
+   * preset on every bubble/curved text carrying `tagId` across the volume's saved pages.
+   * See server/src/routes/layout.ts's /tag-restyle route. */
+  restyleByTag: (volumeId: string, tagId: string, presetId: string | null) =>
+    authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/tag-restyle`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tagId, presetId }),
+    }).then((r) => json<{ pagesChanged: number; elementsChanged: number }>(r)),
 
   getVolumeReport: (volumeId: string) =>
     authFetch(projectApiUrl(`/volumes/${encodeURIComponent(volumeId)}/reports`)).then((r) => json<{ page: string; layout: PageLayout }[]>(r)),

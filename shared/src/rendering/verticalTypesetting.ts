@@ -1,6 +1,7 @@
-import type { BubbleScreentone, EffectGlow, EffectShadow, TextAlign, TextGradient, TextOutline } from "../layoutSchema.js";
+import type { BubbleScreentone, EffectGlow, EffectShadow, TextAlign, TextBlur, TextGradient, TextOutline, TextStroke } from "../layoutSchema.js";
 import { MIN_FONT_SIZE, ovalRowWidth, type BalloonGeometry } from "./textLayout.js";
-import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
+import { applyTextFillStyle, drawStyledText, maxTextStrokeWidthPx, type TextFillStyle } from "./textEffects.js";
+import { drawWithTextBlur } from "./blurPass.js";
 import { drawShadowUnderlayPasses } from "./shadowPasses.js";
 import { createOffscreenCanvas } from "./canvasFactory.js";
 import { drawScreentoneMaskedGlyphs } from "./textScreentone.js";
@@ -504,6 +505,10 @@ export interface DrawVerticalTextOptions {
    *  regardless of this setting. */
   align?: TextAlign;
   outline?: TextOutline;
+  /** Stacked/multi-stroke outline layers (see TextStrokeSchema) — drawn behind `outline`. */
+  strokes?: TextStroke[];
+  /** Gaussian/motion blur of the whole vertical block (see blurPass.ts). */
+  blur?: TextBlur;
   gradient?: TextGradient;
   /** See TextFillStyle.screentone — only the rotated-token case (ー〜~ etc., drawn via
    *  their own ctx.rotate()) needs the offscreen-mask compositing; every other token kind
@@ -559,7 +564,7 @@ function drawCharToken(
       // outline (if any) has no CTM-phase problem, so it's drawn directly, unmasked.
       drawRotatedChar(ctx, token.text, x, y, style, "strokeOnly");
       const scale = opts.scale ?? 1;
-      const pad = fontSize * 0.75 + (style.outline?.enabled ? style.outline.widthPx * scale : 0) + 2;
+      const pad = fontSize * 0.75 + maxTextStrokeWidthPx(style) * scale + 2;
       drawScreentoneMaskedGlyphs(
         ctx,
         { x: x - pad, y: y - pad, width: pad * 2, height: pad * 2 },
@@ -632,6 +637,8 @@ export function drawVerticalText(
   const style: TextFillStyle = {
     color: opts.color,
     outline: opts.outline,
+    strokes: opts.strokes,
+    scale: opts.scale ?? 1,
     gradient: opts.gradient,
     screentone: opts.screentone,
     glow: opts.glow,
@@ -687,7 +694,7 @@ export function drawVerticalText(
   // vertical/ruby characters may show overlapping shadow seams; accepted as a known v1
   // limitation (see plan notes), not fixed here.
   drawShadowUnderlayPasses(ctx, style.glow, style.dropShadow, drawAllColumns);
-  drawAllColumns();
+  drawWithTextBlur(ctx, opts.blur, opts.scale ?? 1, drawAllColumns);
 }
 
 /** Draws one ruby run (stacked base characters, reading spread evenly beside the whole

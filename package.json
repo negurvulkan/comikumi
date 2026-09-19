@@ -24,6 +24,12 @@
     "electron:build:linux": "npm run build && npm run electron:build:main && electron-builder --linux --publish never"
   },
   "dependencies": {
+    "hypher": "^0.2.5",
+    "hyphenation.de": "^0.2.1",
+    "hyphenation.en-us": "^0.2.1",
+    "hyphenation.es": "^0.2.1",
+    "hyphenation.fr": "^0.2.1",
+    "hyphenation.it": "^0.2.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

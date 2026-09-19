@@ -5,6 +5,7 @@ import type { Bubble, Point } from "../../../shared/src/layoutSchema";
 import { resolveBubbleStyle } from "../../../shared/src/layoutSchema";
 import type { LetteringPreset } from "../../../shared/src/presets";
 import { renderPerspectiveText } from "../../../shared/src/rendering/perspective";
+import { hyphenatorFor } from "../../../shared/src/rendering/hyphenation";
 import { LockToggleHandle } from "./LockToggleHandle";
 
 interface Props {
@@ -68,13 +69,16 @@ export function QuadBubbleShape({
       align: style.align,
       color: style.color,
       outline: style.textOutline,
+      strokes: style.textStrokes,
       gradient: style.textGradient,
       screentone: style.textScreentone,
       glow: style.textGlow,
       dropShadow: style.textDropShadow,
       direction: style.direction,
+      hyphenate: style.hyphenate ? hyphenatorFor(activeLanguage) : undefined,
+      blur: style.textBlur,
     });
-  }, [text, displayCorners, style, baseFontSize]);
+  }, [text, displayCorners, style, baseFontSize, activeLanguage]);
 
   if (displayCorners.length !== 4) return null;
   const stroke = selected ? "#6c8cff" : undefined;

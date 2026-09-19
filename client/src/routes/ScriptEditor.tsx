@@ -6,6 +6,7 @@ import { scriptPageDisplayLabel } from "../../../shared/src/script";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
+import type { Tag } from "../../../shared/src/tags";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
 import { ScriptPanelCard } from "../editor/ScriptPanelCard";
@@ -24,6 +25,7 @@ export function ScriptEditor() {
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [language, setLanguage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -51,6 +53,10 @@ export function ScriptEditor() {
 
   useEffect(() => {
     api.listGlossary().then(setGlossary);
+  }, []);
+
+  useEffect(() => {
+    api.listTags().then(setTags);
   }, []);
 
   function update(next: ScriptDocument) {
@@ -98,7 +104,7 @@ export function ScriptEditor() {
       const linkedPages = new Set(doc.pages.map((p) => p.linkedPage).filter((p): p is string => p !== null));
       const newPages = rows
         .filter((r) => !linkedPages.has(r.page))
-        .map((r) => scriptPageFromLayout(r.page, r.layout, project?.readingDirection ?? "rtl"));
+        .map((r) => scriptPageFromLayout(r.page, r.layout, project?.readingDirection ?? "rtl", tags));
       if (newPages.length === 0) {
         setGenerateMsg(t("script.noNewPagesFound"));
       } else {

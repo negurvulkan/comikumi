@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import fs from "node:fs/promises";
 import path from "node:path";
 import multer from "multer";
@@ -137,6 +138,77 @@ layoutRouter.put(
       res.setHeader("ETag", computeEtag(nextRaw));
       res.json({ ok: true });
     });
+  })
+);
+
+/**
+ * Volume-wide tag-based bulk restyle — assigns (or detaches, when `presetId` is null) a
+ * lettering preset on EVERY bubble/curved text tagged `tagId` across every saved layout of
+ * the volume, in one request. This is the concrete workflow payoff of tags (see
+ * shared/src/tags.ts): "style all SFX" without hand-selecting them page by page. A
+ * letterer-level action (it changes style, not text). Each page file is updated under its
+ * own file lock; pages with no matching element are left untouched (and not rewritten).
+ */
+layoutRouter.post(
+  "/:id/tag-restyle",
+  requireLetterer,
+  asyncHandler(async (req, res) => {
+    const body = z
+      .object({ tagId: z.string().min(1), presetId: z.string().nullable() })
+      .safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: "invalid_tag_restyle", details: body.error.flatten() });
+      return;
+    }
+    const { tagId, presetId } = body.data;
+
+    const volume = await findVolume(req.params.id, req.activeProject);
+    if (!volume) {
+      res.status(404).json({ error: "volume_not_found" });
+      return;
+    }
+    const settings = await readSettings(req.activeProject);
+    const dir = path.join(volume.parentDir, letteringFolderName(volume.bookFolderName, settings.letteringSuffix));
+    let files: string[] = [];
+    try {
+      files = (await fs.readdir(dir)).filter((f) => f.endsWith(".json"));
+    } catch {
+      files = [];
+    }
+
+    let pagesChanged = 0;
+    let elementsChanged = 0;
+    for (const fileName of files) {
+      const file = path.join(dir, fileName);
+      await withFileLock(file, async () => {
+        let raw: string;
+        try {
+          raw = await fs.readFile(file, "utf-8");
+        } catch {
+          return;
+        }
+        const parsed = PageLayoutSchema.safeParse(JSON.parse(raw));
+        if (!parsed.success) return; // skip a corrupt/foreign JSON rather than aborting the batch
+        const layout = parsed.data;
+        let changed = 0;
+        const retag = <T extends { tagIds: string[]; presetId: string | null }>(el: T): T => {
+          if (!el.tagIds.includes(tagId) || el.presetId === presetId) return el;
+          changed++;
+          return { ...el, presetId };
+        };
+        const next: PageLayout = {
+          ...layout,
+          bubbles: layout.bubbles.map(retag),
+          curvedTexts: layout.curvedTexts.map(retag),
+        };
+        if (changed === 0) return;
+        await fs.writeFile(file, JSON.stringify(next, null, 2), "utf-8");
+        pagesChanged++;
+        elementsChanged += changed;
+      });
+    }
+
+    res.json({ pagesChanged, elementsChanged });
   })
 );
 

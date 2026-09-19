@@ -16,6 +16,7 @@ Datei ist eine Momentaufnahme — bei größeren Änderungen bitte hier mit nach
 - [Kapitel](#kapitel)
 - [Sprachverwaltung](#sprachverwaltung)
 - [Charakterverwaltung](#charakterverwaltung)
+- [Tags](#tags)
 - [Story Bible](#story-bible)
 - [Lettering-Presets](#lettering-presets)
 - [Projekt-Assets-Ordner](#projekt-assets-ordner)
@@ -414,6 +415,57 @@ auseinanderlaufen.
   ein — die Voice Notes werden dort und unter dem Charakter-Dropdown im Bubble-Inspector
   angezeigt, sobald einer Blase ein Charakter mit Notizen zugeordnet ist.
 
+## Tags
+
+Projektweite **semantische Klassifikations-Labels** für Sprechblasen und Kurventexte —
+"*was ist* dieses Element" (Dialog, Erzähltext, Gedanke, Flüstern, Schrei, SFX, Schild,
+…), bewusst orthogonal zu einem [Lettering-Preset](#lettering-presets) ("wie soll es
+*aussehen*") und zu einem [Charakter](#charakterverwaltung) ("*wer* sagt es"). Eine Blase
+kann beliebig viele Tags tragen (`tagIds`, die auf eine projektweite `tags`-Liste aus
+id/Name/Farbe verweisen), genau wie sie eine `presetId` und eine `characterId` trägt. Die
+Liste ist frei und projektdefiniert — kein festes Enum — sodass ein Studio genau die
+Kategorien anlegt, die sein Workflow braucht.
+
+- **Tag-Verwaltung** (Modal über das "Projekt"-Menü, aus Editor und Seitenübersicht
+  erreichbar): Tags anlegen/umbenennen/umfärben/löschen (Farb-Chip pro Tag zum schnellen
+  Scannen). Das Verwalten der Liste ist eine Übersetzer-Kompetenz (redaktionelle
+  Klassifikation, wie das Glossar); eine veraltete Tag-id, die nach dem Löschen des Tags
+  an einem Element verbleibt, wird einfach ignoriert.
+- **Zuordnung**: eine kompakte Mehrfach-Auswahl aus Chips im Bubble- und
+  Kurventext-Inspektor — Klick auf einen Tag-Chip fügt ihn hinzu/entfernt ihn. Das
+  Zuordnen ist eine Layout-Änderung und folgt daher dem normalen, Letterer-gesicherten
+  Speichern (ein Übersetzer darf Tags definieren, aber nicht zuweisen — dieselbe Grenze
+  wie bei jedem anderen Nicht-Text-Feld einer Blase).
+- **Tag-basiertes Massen-Restyling (bandweit)** — der konkrete Gewinn: im Tag-Manager
+  ein Tag und ein Preset wählen und **"Auf Band anwenden"** weist dieses Preset **allen**
+  Sprechblasen und Kurventexten mit dem Tag über **alle gespeicherten Seiten des Bandes**
+  in einem Schritt zu (oder löst das Preset bei "Vom Preset lösen"), statt Elemente Seite
+  für Seite von Hand auszuwählen. Eine Letterer-Aktion (sie ändert Stil); jede Seitendatei
+  wird unter eigenem Lock aktualisiert, Seiten ohne passendes Element bleiben unangetastet.
+  Meldet zurück, wie viele Elemente auf wie vielen Seiten geändert wurden.
+
+- **Semantisches Verhalten (Tags steuern den Workflow)**: Ein Tag kann zwei optionale
+  Flags tragen, im Tag-Manager gesetzt:
+  - **„SFX / kein Dialog — aus Reports, Skript & QA ausschließen"** (`excludeFromQa`): Eine
+    Blase mit einem solchen Tag gilt überall dort als Nicht-Dialog, wo schon das
+    Blasen-Flag `isEffect` wirkt (siehe [Elementtypen](#elementtypen) → Effekt-Blasen) —
+    ausgeschlossen aus der Fehlende-Übersetzung- und Unübersetzter-Glossar-Begriff-
+    [QA-Prüfung](#reports), aus den „wer sagt was"-[Reports](#reports) (Seite und Band)
+    und aus den Dialogzeilen, mit denen ein [Skript](#skript-editor--skript-sidebar)
+    generiert wird. Ein `sfx`-Tag nimmt eine Blase also auf einmal von all dem aus, ohne
+    `isEffect` einzeln zu setzen. (Gemeinsames Prädikat `isNonDialogueBubble` in
+    `shared/src/tags.ts`, damit die drei Verbraucher nie auseinanderlaufen.)
+  - **„Dialog — erwartet einen zugeordneten Charakter"** (`requiresCharacter`): Eine
+    Blase mit einem solchen Tag, die Text, aber keinen Charakter hat, erzeugt einen neuen
+    QA-Befund (**Fehlender Charakter**) — fängt unzugeordneten Dialog über den ganzen
+    Band ab.
+  Ein `sign`-artiges Tag setzt einfach keines der Flags: Es bleibt in der
+  Übersetzungsprüfung (ein Schild muss übersetzt werden), erwartet aber keinen Sprecher.
+
+Weiterhin über das Blasen-Flag `isEffect` statt über ein Tag gesteuert (natürliche spätere
+Erweiterung): die SFX-Styling-KI-Aktion. Das automatische Vorschlagen eines Presets/Fonts
+aus einem Tag ist ebenfalls ein möglicher nächster Schritt, nicht Teil dieser Version.
+
 ## Story Bible
 
 Eigener Bereich für Worldbuilding/Story-Inhalte (Charakterprofile, Orte, Objekte,
@@ -627,7 +679,13 @@ automatisch ein, wenn die Markierung einem übersetzten Begriff entspricht.
 Text kann eine
 Umrandung und/oder einen linearen Farbverlauf statt Volltonfarbe bekommen, dazu
 unabhängig zu-/abschaltbares Leuchten und/oder Schlagschatten (alle vier
-kombinierbar). Text kann außerdem mit demselben prozeduralen Rastereffekt
+kombinierbar). Die einzelne Umrandung kann zusätzlich durch **gestapelte Umrandungen**
+hinterlegt werden — weitere Umrandungsebenen dahinter, je mit eigener Farbe und Breite,
+für den klassischen SFX-Look "schwarz + weiß + farbig" als konzentrischer Rand; sie
+werden breiteste-zuerst gezeichnet (die breitere Ebene liegt also ganz hinten),
+unabhängig von der Reihenfolge der Eingabe — im Live-Editor, PNG- und PSD-Export
+gleichermaßen (die Vektor-PDF-Textebene trägt keine Strich-Effekte, dieselbe bestehende
+Einschränkung wie Umrandung/Farbverlauf). Text kann außerdem mit demselben prozeduralen Rastereffekt
 (Screentone/Halbton) gefüllt werden, den auch der Blasenhintergrund
 unterstützt — Punkte, Linien oder Kreuzschraffur, mit denselben
 Abstand-/Tonwert-/Winkel-/Farbreglern — statt Volltonfarbe oder Farbverlauf;
@@ -638,7 +696,15 @@ gedrehten Satzzeichen-Glyphen (ー〜~ usw.) innerhalb von vertikalem Text —
 beide sind intern pro Glyph gedreht, weshalb das Muster über eine
 Offscreen-Maske pro Glyph/Lauf statt per einfacher Füllung eingeblendet wird,
 damit das Punktfeld über Zeichen hinweg durchgehend bleibt, statt bei jeder
-eigenen Drehung neu anzusetzen. Jedes dieser Stil-Felder (und die komplette
+eigenen Drehung neu anzusetzen. Text kann außerdem **weichgezeichnet** werden:
+ein **gaußscher** (gleichmäßiger weicher Blur über den Canvas-`filter`) oder ein
+**Bewegungs**-Blur (ein gerichteter Schweif entlang eines einstellbaren Winkels,
+aus mehreren versetzten, transparenten Kopien zusammengesetzt, da kein Canvas
+eine native Motion-Blur-Primitive hat) — für unscharfen Hintergrund-Dialog oder
+Speed-/Impact-SFX. Erscheint im Editor, PNG- und PSD-(Raster-)Export;
+übersprungen in der Vektor-PDF-Textebene (dieselbe Einschränkung wie die übrigen
+Texteffekte) und auf dem Screentone-maskierten Glyphen-Pfad (bekannte
+v1-Einschränkung). Jedes dieser Stil-Felder (und die komplette
 Form/Position/Größe/Rotation/Hintergrund) ist per Sprach-Umschalter überschreibbar.
 Text-Leuchten/-Schlagschatten erscheinen im Editor, PNG- und PSD-Export; die
 Textebene des Vektor-PDF-Exports bleibt echter Vektortext und trägt keinen der
@@ -719,6 +785,22 @@ wie Schriftgröße/Ausrichtung/Leserichtung — eine Sprache mit besonders lange
 Rechteck bleiben. Wirkt identisch im Live-Editor, PNG-Export, Vektor-PDF und
 PSD-Export. Nicht verfügbar für „Rechteck"- und „Quad"-Blasen (bei Rechteck
 ohnehin wirkungslos, Quad hat eine eigene Text-Warp-Pipeline).
+
+**Silbentrennung**: eine Checkbox im Bubble-Inspektor (oder ein
+[Preset](#lettering-presets)-Feld) aktiviert getrennten Zeilenumbruch für
+horizontalen Text — ein nicht passendes Wort wird an seinen Silbengrenzen mit
+angehängtem „-" getrennt, statt komplett umgebrochen zu werden, was die Packung
+in schmalen Blasen spürbar verbessert, besonders bei langen deutschen
+Komposita. Nutzt Liangs Algorithmus (die `hypher`-Bibliothek) mit mitgelieferten
+TeX-Mustern; nur Sprachen mit lateinischer Schrift haben Muster (Englisch,
+Deutsch, Französisch, Spanisch, Italienisch) — die Option erscheint nur für eine
+Sprache, für die ComiKumi Muster hat, und nie für vertikalen (Tategaki-)Text.
+Standardmäßig aus und pro Sprache (wie der formangepasste Umbruch), sodass
+bestehende Seiten nicht still neu umbrechen und eine profitierende Sprache es
+einschalten kann, während andere es lassen. Wirkt im Live-Editor, PNG-,
+Vektor-PDF- und PSD-Export (der Bindestrich ist Teil der umbrochenen Zeile,
+erscheint also überall); auch die KI-Prüfung „Überlauf beheben" berücksichtigt
+es, damit sie keine Blase meldet, die die Silbentrennung ohnehin passend macht.
 
 ### Bilder
 

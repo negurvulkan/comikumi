@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Bubble } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
+import type { Tag } from "../../../shared/src/tags";
+import { isNonDialogueBubble } from "../../../shared/src/tags";
 import { resolveChapters } from "../../../shared/src/pageMeta";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/translateApiError";
@@ -10,6 +12,7 @@ import { characterName, sortBubblesByPosition, type ReadingDirection } from "./r
 interface Props {
   volumeId: string;
   characters: Character[];
+  tags: Tag[];
   readingDirection: ReadingDirection;
   onClose: () => void;
 }
@@ -22,7 +25,7 @@ function toSingleLine(text: string): string {
  * page of the volume (via the new /reports route) instead of just the currently
  * open one — "welche Charaktere kommen im Band vor" only makes sense at this
  * scope, so it's a separate view rather than the page report reused verbatim. */
-export function VolumeReportModal({ volumeId, characters, readingDirection, onClose }: Props) {
+export function VolumeReportModal({ volumeId, characters, tags, readingDirection, onClose }: Props) {
   const { t } = useTranslation();
   const [allPages, setAllPages] = useState<{ page: string; bubbles: Bubble[] }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,15 +37,16 @@ export function VolumeReportModal({ volumeId, characters, readingDirection, onCl
   useEffect(() => {
     Promise.all([api.getVolumeReport(volumeId), api.getPageMeta(volumeId)])
       .then(([rows, pageMeta]) => {
-        // Effect (SFX) bubbles aren't dialogue — excluded here too, same as ReportModal.tsx.
-        setAllPages(rows.map((r) => ({ page: r.page, bubbles: r.layout.bubbles.filter((b) => !b.isEffect) })));
+        // Non-dialogue bubbles (isEffect or an excludeFromQa-tagged bubble) are excluded
+        // here too, same as ReportModal.tsx (see isNonDialogueBubble).
+        setAllPages(rows.map((r) => ({ page: r.page, bubbles: r.layout.bubbles.filter((b) => !isNonDialogueBubble(b, tags)) })));
         // `rows` is already in saved volume page order (same api.getVolumeReport
         // ordering PageGrid.tsx/ExportViewer.tsx rely on) — safe to use directly as
         // resolveChapters()'s pageOrder input.
         setResolvedChapters(resolveChapters(rows.map((r) => r.page), pageMeta.meta));
       })
       .catch((e) => setError(translateApiError(e, t)));
-  }, [volumeId, t]);
+  }, [volumeId, t, tags]);
 
   const chapterPageIds = chapterId ? resolvedChapters.find((c) => c.chapter.id === chapterId)?.pageIds : undefined;
   const pages = chapterPageIds ? (allPages ?? []).filter((p) => chapterPageIds.includes(p.page)) : allPages;

@@ -85,6 +85,14 @@ export interface BalloonGeometry {
  * (see ovalRowWidth) — `boxWidth` is then only used as an upper bound near
  * the vertical center, `boxHeight` still bounds the shrink loop unchanged.
  */
+/** Optional word-splitter for hyphenated wrapping — takes a word, returns its ordered
+ * syllable pieces (e.g. `["Sil","ben","tren","nung"]`); a word with no break points
+ * returns `[word]`. Injected (never imported here) so this layout core stays free of the
+ * hypher dependency and testable with a fake — see shared/src/rendering/hyphenation.ts for
+ * the real, per-language implementation and BubbleShape/renderPageToPng/pageRaster for the
+ * wiring (only passed when a bubble opts into hyphenation for the active language). */
+export type Hyphenate = (word: string) => string[];
+
 export function fitHorizontalText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -93,7 +101,8 @@ export function fitHorizontalText(
   boxWidth: number,
   boxHeight: number,
   baseFontSize: number,
-  geometry?: BalloonGeometry
+  geometry?: BalloonGeometry,
+  hyphenate?: Hyphenate
 ): FitResult {
   const balloonAware = geometry?.shape === "oval" && !!geometry.balloonAwareWrap;
   let size = baseFontSize;
@@ -104,13 +113,13 @@ export function fitHorizontalText(
     if (balloonAware && geometry) {
       // Pass 1: top-aligned row positions (conservative — spans the full box
       // height) just to get a line-count estimate.
-      const firstPass = wrapHorizontal(ctx, text, rowWidthFn(geometry, boxHeight, lineStep));
+      const firstPass = wrapHorizontal(ctx, text, rowWidthFn(geometry, boxHeight, lineStep), hyphenate);
       // Pass 2: re-wrap using that estimate's own (vertically centered)
       // block height — see rowWidthFn's doc comment.
       const blockHeightGuess = firstPass.length * lineStep;
-      lines = wrapHorizontal(ctx, text, rowWidthFn(geometry, blockHeightGuess, lineStep));
+      lines = wrapHorizontal(ctx, text, rowWidthFn(geometry, blockHeightGuess, lineStep), hyphenate);
     } else {
-      lines = wrapHorizontal(ctx, text, boxWidth);
+      lines = wrapHorizontal(ctx, text, boxWidth, hyphenate);
     }
     const blockHeight = lines.length * lineStep;
     if (blockHeight <= boxHeight || size === MIN_FONT_SIZE) break;
@@ -141,9 +150,19 @@ function rowWidthFn(geometry: BalloonGeometry, blockHeight: number, lineStep: nu
 
 /** Greedy word-wrap for horizontal (ltr/rtl) text — `maxWidth` is either a
  * flat width for every row, or a RowWidthFn returning a (possibly different)
- * width per row index for balloon-aware wrapping. */
-export function wrapHorizontal(ctx: CanvasRenderingContext2D, text: string, maxWidth: number | RowWidthFn): Line[] {
+ * width per row index for balloon-aware wrapping. When `hyphenate` is given, a
+ * word that doesn't fit is broken at its syllable points (with a trailing "-")
+ * instead of being pushed whole to the next line — improving packing in narrow
+ * bubbles, especially for long compound words (German). */
+export function wrapHorizontal(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number | RowWidthFn,
+  hyphenate?: Hyphenate
+): Line[] {
   const widthAt = typeof maxWidth === "function" ? maxWidth : () => maxWidth;
+  const measure = (t: string) => ctx.measureText(t).width;
+  const join = (a: string, b: string) => (a ? `${a} ${b}` : b);
   const lines: Line[] = [];
   for (const paragraph of text.split("\n")) {
     const words = paragraph.split(/\s+/).filter(Boolean);
@@ -153,18 +172,84 @@ export function wrapHorizontal(ctx: CanvasRenderingContext2D, text: string, maxW
     }
     let current = "";
     for (const word of words) {
-      const candidate = current ? `${current} ${word}` : word;
-      const rowMaxWidth = widthAt(lines.length);
-      if (ctx.measureText(candidate).width > rowMaxWidth && current) {
-        lines.push({ text: current, width: ctx.measureText(current).width });
+      const candidate = join(current, word);
+      if (measure(candidate) <= widthAt(lines.length)) {
+        current = candidate;
+        continue;
+      }
+      // Candidate too wide for the current row.
+      if (hyphenate) {
+        const parts = hyphenate(word);
+        if (parts.length > 1) {
+          current = placeHyphenatedWord(parts, current, lines, widthAt, measure, join);
+          continue;
+        }
+      }
+      // No hyphenation possible → original greedy behavior: break before the word,
+      // or (empty line) let a single overlong word overflow on its own row.
+      if (current) {
+        lines.push({ text: current, width: measure(current) });
         current = word;
       } else {
         current = candidate;
       }
     }
-    if (current) lines.push({ text: current, width: ctx.measureText(current).width });
+    if (current) lines.push({ text: current, width: measure(current) });
   }
   return lines;
+}
+
+/**
+ * Places one hyphenatable word (given as its ordered syllable `parts`) into `lines`,
+ * starting after any `current` text already on the row, breaking with a trailing "-"
+ * across as many rows as needed. Returns the unbroken tail that stays on the last row
+ * (the new `current` for the outer loop to keep appending to). `widthAt(lines.length)`
+ * is re-queried after every pushed row so balloon-aware per-row widths stay correct.
+ */
+function placeHyphenatedWord(
+  parts: string[],
+  current: string,
+  lines: Line[],
+  widthAt: RowWidthFn,
+  measure: (t: string) => number,
+  join: (a: string, b: string) => string
+): string {
+  let prefix = current; // words already sitting on the current row
+  let idx = 0;
+  // Guard against pathological non-fitting syllables (see the else branch) — the loop
+  // always either advances `idx`, clears a non-empty `prefix`, or returns.
+  while (idx < parts.length) {
+    const rowMaxWidth = widthAt(lines.length);
+    const remainder = parts.slice(idx).join("");
+    // Whole remaining word fits on this row → it becomes the tail (no trailing hyphen).
+    if (measure(join(prefix, remainder)) <= rowMaxWidth) {
+      return join(prefix, remainder);
+    }
+    // Otherwise find the largest leading chunk that fits WITH a trailing hyphen.
+    let j = idx;
+    for (let k = idx + 1; k < parts.length; k++) {
+      const chunk = parts.slice(idx, k).join("");
+      if (measure(join(prefix, chunk) + "-") <= rowMaxWidth) j = k;
+      else break;
+    }
+    if (j > idx) {
+      const chunk = parts.slice(idx, j).join("");
+      lines.push({ text: join(prefix, chunk) + "-", width: measure(join(prefix, chunk) + "-") });
+      idx = j;
+      prefix = "";
+    } else if (prefix) {
+      // Not even the first syllable fits after the existing prefix → flush the prefix
+      // and retry the whole word on a fresh row.
+      lines.push({ text: prefix, width: measure(prefix) });
+      prefix = "";
+    } else {
+      // First syllable + hyphen doesn't fit even on an empty row → give up hyphenating
+      // and let the remainder overflow on its own row (same as a single overlong word).
+      lines.push({ text: remainder, width: measure(remainder) });
+      return "";
+    }
+  }
+  return prefix;
 }
 
 export interface Box {

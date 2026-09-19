@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { BubbleScreentone, BubbleScreentonePattern, EffectGlow, EffectShadow, TextGradient, TextOutline } from "../../../shared/src/layoutSchema";
+import type { BubbleScreentone, BubbleScreentonePattern, EffectGlow, EffectShadow, TextBlur, TextBlurKind, TextGradient, TextOutline, TextStroke } from "../../../shared/src/layoutSchema";
 import { ScopeSwitch } from "./ScopeSwitch";
 
 interface Props {
@@ -7,6 +7,10 @@ interface Props {
   onColorChange: (value: string) => void;
   outline: TextOutline;
   onOutlineChange: (patch: Partial<TextOutline>) => void;
+  /** Extra stacked stroke layers drawn behind `outline` (classic SFX multi-border). The
+   * whole array is replaced on each edit (no per-field patch — layers are positional). */
+  strokes: TextStroke[];
+  onStrokesChange: (next: TextStroke[]) => void;
   gradient: TextGradient;
   onGradientChange: (patch: Partial<TextGradient>) => void;
   screentone: BubbleScreentone;
@@ -15,6 +19,8 @@ interface Props {
   onGlowChange: (patch: Partial<EffectGlow>) => void;
   dropShadow: EffectShadow;
   onDropShadowChange: (patch: Partial<EffectShadow>) => void;
+  blur: TextBlur;
+  onBlurChange: (patch: Partial<TextBlur>) => void;
   activeLanguage: string;
   hasLanguageOverride: boolean;
   onToggleLanguageOverride: (checked: boolean) => void;
@@ -34,6 +40,8 @@ export function TextEffectsFields({
   onColorChange,
   outline,
   onOutlineChange,
+  strokes,
+  onStrokesChange,
   gradient,
   onGradientChange,
   screentone,
@@ -42,6 +50,8 @@ export function TextEffectsFields({
   onGlowChange,
   dropShadow,
   onDropShadowChange,
+  blur,
+  onBlurChange,
   activeLanguage,
   hasLanguageOverride,
   onToggleLanguageOverride,
@@ -101,6 +111,48 @@ export function TextEffectsFields({
           </label>
         </div>
       )}
+
+      <div className="field-label-row" style={{ marginTop: 4 }}>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("editor.textEffects.stackedStrokesLabel")}</span>
+        <button
+          type="button"
+          onClick={() => onStrokesChange([...strokes, { color: "#ffffff", widthPx: (outline.enabled ? outline.widthPx : 4) + 4 + strokes.length * 4 }])}
+          disabled={disabled}
+        >
+          {t("editor.textEffects.addStrokeButton")}
+        </button>
+      </div>
+      {strokes.length > 0 && (
+        <p className="hint" style={{ margin: "-2px 0 6px" }}>
+          {t("editor.textEffects.stackedStrokesHint")}
+        </p>
+      )}
+      {strokes.map((s, i) => (
+        <div className="field-row" key={i} style={{ alignItems: "flex-end" }}>
+          <label>
+            {t("editor.textEffects.strokeColorTextLabel")}
+            <input
+              type="color"
+              value={s.color}
+              onChange={(e) => onStrokesChange(strokes.map((x, j) => (j === i ? { ...x, color: e.target.value } : x)))}
+              disabled={disabled}
+            />
+          </label>
+          <label>
+            {t("editor.textEffects.strokeWidthTextLabel")}
+            <input
+              type="number"
+              min={1}
+              value={s.widthPx}
+              onChange={(e) => onStrokesChange(strokes.map((x, j) => (j === i ? { ...x, widthPx: Number(e.target.value) } : x)))}
+              disabled={disabled}
+            />
+          </label>
+          <button type="button" onClick={() => onStrokesChange(strokes.filter((_, j) => j !== i))} disabled={disabled}>
+            {t("editor.textEffects.removeStrokeButton")}
+          </button>
+        </div>
+      ))}
 
       <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <input type="checkbox" checked={gradient.enabled} onChange={(e) => onGradientChange({ enabled: e.target.checked })} disabled={disabled} />
@@ -287,6 +339,32 @@ export function TextEffectsFields({
               disabled={disabled}
             />
           </label>
+        </div>
+      )}
+
+      <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" checked={blur.enabled} onChange={(e) => onBlurChange({ enabled: e.target.checked })} disabled={disabled} />
+        {t("editor.textEffects.blurLabel")}
+      </label>
+      {blur.enabled && (
+        <div className="field-row">
+          <label>
+            {t("editor.textEffects.blurKindLabel")}
+            <select value={blur.kind} onChange={(e) => onBlurChange({ kind: e.target.value as TextBlurKind })} disabled={disabled}>
+              <option value="gaussian">{t("editor.textEffects.blurKindGaussian")}</option>
+              <option value="motion">{t("editor.textEffects.blurKindMotion")}</option>
+            </select>
+          </label>
+          <label>
+            {blur.kind === "motion" ? t("editor.textEffects.blurDistanceLabel") : t("editor.textEffects.blurRadiusLabel")}
+            <input type="number" min={0} value={blur.radiusPx} onChange={(e) => onBlurChange({ radiusPx: Number(e.target.value) })} disabled={disabled} />
+          </label>
+          {blur.kind === "motion" && (
+            <label>
+              {t("editor.textEffects.angleLabel")}
+              <input type="number" step={5} value={blur.angleDeg} onChange={(e) => onBlurChange({ angleDeg: Number(e.target.value) })} disabled={disabled} />
+            </label>
+          )}
         </div>
       )}
     </>

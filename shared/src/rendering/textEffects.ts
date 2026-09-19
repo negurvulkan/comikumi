@@ -1,4 +1,4 @@
-import type { BubbleScreentone, EffectGlow, EffectShadow, TextGradient, TextOutline } from "../layoutSchema.js";
+import type { BubbleScreentone, EffectGlow, EffectShadow, TextBlur, TextGradient, TextOutline, TextStroke } from "../layoutSchema.js";
 import { buildScreentonePattern } from "./screentone.js";
 
 /**
@@ -15,6 +15,17 @@ import { buildScreentonePattern } from "./screentone.js";
 export interface TextFillStyle {
   color: string;
   outline?: TextOutline;
+  /** Extra stacked stroke layers drawn BEHIND `outline` and the fill — the classic SFX
+   * "black + white + color" concentric border. Empty/undefined = unchanged single-outline
+   * behavior. Widths are in the same unscaled units as `outline.widthPx`; they're scaled
+   * by `scale` (below) at stroke time, so the construction site must set `scale` too when
+   * it populates this. See drawStyledText for the widest-first draw ordering. */
+  strokes?: TextStroke[];
+  /** The same scale factor passed to applyTextFillStyle — needed by drawStyledText to size
+   * the `strokes` passes (applyTextFillStyle only ever sets the single `outline`'s
+   * lineWidth). Defaults to 1 when unset, so a call site that never uses `strokes` is
+   * unaffected. */
+  scale?: number;
   gradient?: TextGradient;
   /** Fills with a procedural screentone/halftone pattern instead of a solid color or
    * gradient — wins over both when enabled (see applyTextFillStyle). For the two
@@ -25,6 +36,9 @@ export interface TextFillStyle {
   screentone?: BubbleScreentone;
   glow?: EffectGlow;
   dropShadow?: EffectShadow;
+  /** Gaussian/motion blur of the whole text block (see blurPass.ts). Applied by the block-
+   * drawing call sites (they wrap their draw with drawWithTextBlur), not by drawStyledText. */
+  blur?: TextBlur;
 }
 
 /**
@@ -68,13 +82,25 @@ export function applyTextFillStyle(
   }
 }
 
+/** The widest stroke width (unscaled px) any text-stroke pass will draw — the enabled
+ * `outline` plus every `strokes` layer. Used by the per-glyph rotated renderers
+ * (curvedText.ts, verticalTypesetting.ts's rotated-token case) to pad their offscreen
+ * buffers / screentone-mask bounds so a wide stacked stroke isn't clipped. Returns 0 when
+ * there's no stroking at all. */
+export function maxTextStrokeWidthPx(style: TextFillStyle): number {
+  let max = style.outline?.enabled ? style.outline.widthPx : 0;
+  for (const s of style.strokes ?? []) max = Math.max(max, s.widthPx);
+  return max;
+}
+
 /** Draws one line/glyph run with the outline (if enabled, stroked first so it forms a
- * border behind the fill) then the fill — call after applyTextFillStyle. `mode` lets a
- * caller split the two into separate passes (see textScreentone.ts's masked-glyph
- * technique, which needs the outline drawn solid, unmasked, directly on the real
- * canvas — a stroke has no CTM-phase problem, only a patterned fill does — and only the
- * fill routed through the offscreen mask); every existing call site keeps its default
- * "both", unaffected. */
+ * border behind the fill) then the fill — call after applyTextFillStyle. Any `style.strokes`
+ * layers are drawn first of all, widest-first, so they sit behind the main `outline` and
+ * the fill (concentric SFX border). `mode` lets a caller split stroke/fill into separate
+ * passes (see textScreentone.ts's masked-glyph technique, which needs every stroke drawn
+ * solid, unmasked, directly on the real canvas — a stroke has no CTM-phase problem, only a
+ * patterned fill does — and only the fill routed through the offscreen mask); every
+ * existing call site keeps its default "both", unaffected. */
 export function drawStyledText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -83,8 +109,31 @@ export function drawStyledText(
   style: TextFillStyle,
   mode: "both" | "strokeOnly" | "fillOnly" = "both"
 ) {
-  if (mode !== "fillOnly" && style.outline?.enabled) {
-    ctx.strokeText(text, x, y);
+  if (mode !== "fillOnly") {
+    // Extra stacked strokes, widest first (so wider layers sit furthest back), drawn
+    // before the main outline. applyTextFillStyle only configured the main outline's
+    // stroke state, so we set (and restore) our own per layer here.
+    if (style.strokes?.length) {
+      const scale = style.scale ?? 1;
+      const prevWidth = ctx.lineWidth;
+      const prevStroke = ctx.strokeStyle;
+      const prevJoin = ctx.lineJoin;
+      const prevMiter = ctx.miterLimit;
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+      for (const s of [...style.strokes].sort((a, b) => b.widthPx - a.widthPx)) {
+        ctx.lineWidth = Math.max(1, s.widthPx * scale);
+        ctx.strokeStyle = s.color;
+        ctx.strokeText(text, x, y);
+      }
+      ctx.lineWidth = prevWidth;
+      ctx.strokeStyle = prevStroke;
+      ctx.lineJoin = prevJoin;
+      ctx.miterLimit = prevMiter;
+    }
+    if (style.outline?.enabled) {
+      ctx.strokeText(text, x, y);
+    }
   }
   if (mode !== "strokeOnly") {
     ctx.fillText(text, x, y);

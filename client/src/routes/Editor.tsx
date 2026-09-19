@@ -6,6 +6,7 @@ import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
 import type { LetteringPreset } from "../../../shared/src/presets";
+import type { Tag } from "../../../shared/src/tags";
 import type { Comment, CommentTarget } from "../../../shared/src/comments";
 import type { ProjectRole } from "../../../shared/src/users";
 import { EMPTY_PAGE_META_DOCUMENT, isWebtoonVolume, type PageMetaDocument } from "../../../shared/src/pageMeta";
@@ -41,6 +42,7 @@ import { AssetManagerContent } from "../editor/AssetManagerContent";
 import { LayoutConflictModal } from "../editor/LayoutConflictModal";
 import { SettingsForm } from "../editor/SettingsForm";
 import { CharacterManager } from "../editor/CharacterManager";
+import { TagManager } from "../editor/TagManager";
 import { GlossaryManager } from "../editor/GlossaryManager";
 import { PresetManager } from "../editor/PresetManager";
 import { ReportModal } from "../editor/ReportModal";
@@ -103,6 +105,7 @@ export function Editor() {
   const [showCharacters, setShowCharacters] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showTags, setShowTags] = useState(false);
   const [showAssetManager, setShowAssetManager] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -116,6 +119,7 @@ export function Editor() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [presets, setPresets] = useState<LetteringPreset[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   // Independent of the page's own activeLanguage tab on purpose — lets the
   // panel show e.g. the Japanese source while the inspector below keeps
   // editing the German translation, see TextListPanel.tsx. Seeded once from
@@ -175,6 +179,10 @@ export function Editor() {
 
   useEffect(() => {
     api.listPresets().then(setPresets);
+  }, []);
+
+  useEffect(() => {
+    api.listTags().then(setTags);
   }, []);
 
   function refetchComments() {
@@ -741,6 +749,7 @@ export function Editor() {
         { type: "action", label: t("managers.characters.title"), onClick: () => setShowCharacters(true), disabled: !hasAtLeast("letterer") },
         { type: "action", label: t("managers.glossary.title"), onClick: () => setShowGlossary(true), disabled: !hasAtLeast("translator") },
         { type: "action", label: t("managers.presets.title"), onClick: () => setShowPresets(true), disabled: !hasAtLeast("letterer") },
+        { type: "action", label: t("managers.tags.title"), onClick: () => setShowTags(true), disabled: !hasAtLeast("translator") },
         { type: "action", label: t("storyBible.menuEntry"), onClick: () => navigate(`${pBase}/story-bible`) },
         { type: "action", label: t("assetManager.menuEntry"), onClick: () => setShowAssetManager(true) },
         {
@@ -973,6 +982,19 @@ export function Editor() {
           <PresetManager presets={presets} onChange={setPresets} onClose={() => setShowPresets(false)} />
         </Modal>
       )}
+      {showTags && (
+        <Modal onClose={() => setShowTags(false)}>
+          <TagManager
+            tags={tags}
+            onChange={setTags}
+            presets={presets}
+            restyleVolumeId={volumeId}
+            canManage={hasAtLeast("translator")}
+            canRestyle={hasAtLeast("letterer")}
+            onClose={() => setShowTags(false)}
+          />
+        </Modal>
+      )}
       {showShortcuts && (
         <Modal onClose={() => setShowShortcuts(false)}>
           <ShortcutsModal onClose={() => setShowShortcuts(false)} />
@@ -985,6 +1007,7 @@ export function Editor() {
             bubbles={layout.bubbles}
             panels={layout.panels}
             characters={characters}
+            tags={tags}
             activeLanguage={activeLanguage}
             readingDirection={readingDirection}
             onClose={() => setShowReport(false)}
@@ -1146,6 +1169,7 @@ export function Editor() {
           page={page}
           layout={layout}
           readingDirection={readingDirection}
+          tags={tags}
           onInsertIntoBubble={
             selectedBubble
               ? (text) => store.updateBubble(selectedBubble.id, { text: { ...selectedBubble.text, [activeLanguage]: text } })
@@ -1270,6 +1294,7 @@ export function Editor() {
               characters={characters}
               glossary={glossary}
               presets={presets}
+              tags={tags}
               onChange={(patch) => store.updateBubble(selectedBubble.id, patch)}
               onReassignPanel={(panelId) => store.reassignBubblePanel(selectedBubble.id, panelId)}
               onDelete={() => store.removeBubble(selectedBubble.id)}
@@ -1290,6 +1315,7 @@ export function Editor() {
               activeLanguage={activeLanguage}
               glossary={glossary}
               presets={presets}
+              tags={tags}
               onChange={(patch) => store.updateCurvedText(selectedCurvedText.id, patch)}
               onDelete={() => store.removeCurvedText(selectedCurvedText.id)}
             />

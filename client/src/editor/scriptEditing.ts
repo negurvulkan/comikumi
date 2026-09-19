@@ -3,6 +3,8 @@ import type { ScriptDialogueLine, ScriptDocument, ScriptPage, ScriptPanel } from
 import { scriptPageDisplayLabel } from "../../../shared/src/script";
 import type { PageLayout } from "../../../shared/src/layoutSchema";
 import type { Character } from "../../../shared/src/characters";
+import type { Tag } from "../../../shared/src/tags";
+import { isNonDialogueBubble } from "../../../shared/src/tags";
 import { characterName, groupBubblesByPanel, type ReadingDirection } from "./reportUtils";
 
 /** Pure, immutable update helpers for a single script page/panel — shared by the
@@ -61,10 +63,12 @@ export function deleteDialogueLine(panel: ScriptPanel, lineId: string): ScriptPa
  * fill in by hand. Groups via groupBubblesByPanel with an empty language code so
  * ordering always uses each bubble's base geometry (resolveBubbleForm finds no
  * formOverride for language ""), independent of any particular project language. */
-export function scriptPageFromLayout(page: string, layout: PageLayout, readingDirection: ReadingDirection = "rtl"): ScriptPage {
-  // Effect (SFX) bubbles aren't dialogue — excluded from the generated dialogue lines
-  // (see Bubble.isEffect).
-  const dialogueBubbles = layout.bubbles.filter((b) => !b.isEffect);
+export function scriptPageFromLayout(page: string, layout: PageLayout, readingDirection: ReadingDirection = "rtl", tags: Tag[] = []): ScriptPage {
+  // Non-dialogue bubbles aren't turned into dialogue lines — the per-bubble `isEffect`
+  // flag or an `excludeFromQa`-flagged tag (see isNonDialogueBubble). `tags` defaults to
+  // [] so a caller that doesn't thread the project tag list still gets the isEffect-only
+  // behavior unchanged.
+  const dialogueBubbles = layout.bubbles.filter((b) => !isNonDialogueBubble(b, tags));
   const groups = groupBubblesByPanel(dialogueBubbles, layout.panels, "", readingDirection);
   return {
     id: uuid(),

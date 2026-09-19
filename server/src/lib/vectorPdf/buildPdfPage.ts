@@ -6,7 +6,8 @@ import { createCanvas } from "@napi-rs/canvas";
 import type { Bubble, BubbleForm, PageLayout, Panel, Point } from "../../../../shared/src/layoutSchema.js";
 import { resolveBubbleForm, resolveBubbleStyle, resolveCurvedTextStyle } from "../../../../shared/src/layoutSchema.js";
 import type { LetteringPreset } from "../../../../shared/src/presets.js";
-import { textBoxFor, fitHorizontalText } from "../../../../shared/src/rendering/textLayout.js";
+import { textBoxFor, fitHorizontalText, type Hyphenate } from "../../../../shared/src/rendering/textLayout.js";
+import { hyphenatorFor } from "../../../../shared/src/rendering/hyphenation.js";
 import { fitCurvedText, pointAtArcLength, totalArcLength } from "../../../../shared/src/rendering/curvedText.js";
 import { ensurePageRasterReady, panelOriginFor, registerFont, renderPageBackground } from "../pageRaster.js";
 import { findFontFileForFamily } from "../fontResolver.js";
@@ -92,7 +93,8 @@ function drawQuadBubbleText(
   text: string,
   panels: Panel[],
   measureCtx: CanvasRenderingContext2D,
-  toPdfXY: (px: number, py: number) => { x: number; y: number }
+  toPdfXY: (px: number, py: number) => { x: number; y: number },
+  hyphenate?: Hyphenate
 ): void {
   const origin = panelOriginFor(bubble, panels);
   const raw = bubble.corners!;
@@ -114,7 +116,9 @@ function drawQuadBubbleText(
     style.lineHeight,
     flatWidth - padX * 2,
     flatHeight - padY * 2,
-    style.fontSize
+    style.fontSize,
+    undefined,
+    hyphenate
   );
 
   // Affine basis: origin at TL, "right" spans TL->TR, "down" spans TL->BL — exact at
@@ -218,8 +222,9 @@ export async function buildVectorPdfPage(opts: BuildPdfPageOptions): Promise<Bui
     // substitute a different font, which would look right but be factually wrong.
     if (!font) continue;
 
+    const hyphenate = style.hyphenate ? hyphenatorFor(languageCode) : undefined;
     if (bubble.shape === "quad" && bubble.corners) {
-      drawQuadBubbleText(page, font, bubble, style, text, layout.panels, measureCtx, toPdfXY);
+      drawQuadBubbleText(page, font, bubble, style, text, layout.panels, measureCtx, toPdfXY, hyphenate);
       continue;
     }
 
@@ -251,7 +256,8 @@ export async function buildVectorPdfPage(opts: BuildPdfPageOptions): Promise<Bui
       box.width,
       box.height,
       style.fontSize,
-      balloonGeometry
+      balloonGeometry,
+      hyphenate
     );
 
     const startY = form.y + box.y + box.height / 2 - blockHeight / 2 + lineStep / 2;

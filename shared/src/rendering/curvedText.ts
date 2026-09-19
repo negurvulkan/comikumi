@@ -1,6 +1,7 @@
 import type { Point, TextAlign } from "../layoutSchema.js";
 import { MIN_FONT_SIZE } from "./textLayout.js";
-import { applyTextFillStyle, drawStyledText, type TextFillStyle } from "./textEffects.js";
+import { applyTextFillStyle, drawStyledText, maxTextStrokeWidthPx, type TextFillStyle } from "./textEffects.js";
+import { drawWithTextBlur } from "./blurPass.js";
 import { drawShadowUnderlayPasses } from "./shadowPasses.js";
 import { drawScreentoneMaskedGlyphs } from "./textScreentone.js";
 
@@ -137,6 +138,9 @@ export function drawCurvedText(
   style: TextFillStyle,
   scale: number
 ) {
+  // Mirror the draw scale into the style so drawStyledText can size its stacked-stroke
+  // passes (applyTextFillStyle below only configures the single main outline's lineWidth).
+  style = { ...style, scale };
   const flat = text.replace(/\n/g, " ");
   if (!flat.trim()) return;
   ctx.font = `${fitted.fontSize}px "${fontFamily}"`;
@@ -180,7 +184,7 @@ export function drawCurvedText(
     // composite instead (see textScreentone.ts). The outline (if any) has no CTM-phase
     // problem, so it's drawn directly, unmasked, on the real ctx.
     drawAllChars(ctx, "strokeOnly");
-    const pad = fitted.fontSize * 0.75 + (style.outline?.enabled ? style.outline.widthPx * scale : 0) + 2;
+    const pad = fitted.fontSize * 0.75 + maxTextStrokeWidthPx(style) * scale + 2;
     drawScreentoneMaskedGlyphs(
       ctx,
       { x: minX - pad, y: minY - pad, width: boxW + pad * 2, height: boxH + pad * 2 },
@@ -194,6 +198,6 @@ export function drawCurvedText(
       (maskCtx) => drawAllChars(maskCtx, "fillOnly")
     );
   } else {
-    drawAllChars(ctx, "both");
+    drawWithTextBlur(ctx, style.blur, scale, () => drawAllChars(ctx, "both"));
   }
 }

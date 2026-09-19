@@ -3,7 +3,9 @@ import {
   TextAlignSchema,
   TextDirectionSchema,
   TextOutlineSchema,
+  TextStrokeSchema,
   TextGradientSchema,
+  TextBlurSchema,
   EffectGlowSchema,
   EffectShadowSchema,
   BubbleGradientFillSchema,
@@ -31,12 +33,20 @@ export const PresetTextFieldsSchema = z
     direction: TextDirectionSchema.optional(),
     /** See BubbleSchema's identically-named field in layoutSchema.ts. */
     balloonAwareWrap: z.boolean().optional(),
+    /** See BubbleSchema's `hyphenate` field — opt-in hyphenated wrapping. */
+    hyphenate: z.boolean().optional(),
     color: z.string().optional(),
     textOutline: TextOutlineSchema.optional(),
+    /** Stacked/multi-stroke outline layers (see TextStrokeSchema) — when defined here,
+     * replaces the linked element's own textStrokes array wholesale (sparse like every
+     * other preset field; undefined = not preset-controlled). */
+    textStrokes: z.array(TextStrokeSchema).optional(),
     textGradient: TextGradientSchema.optional(),
     textGlow: EffectGlowSchema.optional(),
     textDropShadow: EffectShadowSchema.optional(),
     textScreentone: BubbleScreentoneSchema.optional(),
+    /** See BubbleSchema's `textBlur` — gaussian/motion text blur. */
+    textBlur: TextBlurSchema.optional(),
   })
   .default({});
 export type PresetTextFields = z.infer<typeof PresetTextFieldsSchema>;

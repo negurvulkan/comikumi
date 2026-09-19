@@ -66,6 +66,48 @@ export const TextOutlineSchema = z.object({
 });
 export type TextOutline = z.infer<typeof TextOutlineSchema>;
 
+/** One layer of a stacked/multi-stroke text outline (the classic SFX "black + white +
+ * color" concentric border look). Unlike TextOutlineSchema there's no `enabled` flag —
+ * membership in the `textStrokes` array IS the enabled state (an empty array, the
+ * default, renders exactly like before this feature existed). Each layer is drawn as its
+ * own strokeText pass BEHIND the main `textOutline` and the fill; at draw time the passes
+ * are ordered widest-first so a wider layer sits behind a narrower one, giving concentric
+ * bands regardless of the array order the user entered (see drawStyledText in
+ * shared/src/rendering/textEffects.ts). Per-language override available via
+ * textStrokesOverride on Bubble/CurvedTextElement, same pattern as textOutline. */
+export const TextStrokeSchema = z.object({
+  color: z.string().default("#000000"),
+  widthPx: z.number().positive().default(8),
+});
+export type TextStroke = z.infer<typeof TextStrokeSchema>;
+
+export const TextBlurKindSchema = z.enum(["gaussian", "motion"]);
+export type TextBlurKind = z.infer<typeof TextBlurKindSchema>;
+
+/** Optional blur applied to the whole text block — "gaussian" is a uniform soft blur
+ * (`ctx.filter = blur(px)`), "motion" is a directional smear (the text composited as
+ * several offset, low-alpha copies along `angleDeg`), for speed/impact SFX. Applied by
+ * wrapping the block draw (see shared/src/rendering/blurPass.ts's drawWithTextBlur), so —
+ * unlike outline/gradient — it never touches drawStyledText itself. Per-language override
+ * available via textBlurOverride on Bubble/CurvedTextElement. Not carried by the
+ * vector-PDF text layer (same limitation as the other text effects); on the
+ * screentone-masked glyph path it's skipped (a known v1 limitation). */
+export const TextBlurSchema = z.object({
+  enabled: z.boolean().default(false),
+  kind: TextBlurKindSchema.default("gaussian"),
+  /** Blur radius (gaussian) or smear distance (motion), in the same unscaled units as
+   * outline widthPx — scaled by `scale` at draw time. */
+  radiusPx: z.number().min(0).default(4),
+  /** Smear direction for `kind: "motion"` (0 = horizontal). Ignored for gaussian. */
+  angleDeg: z.number().default(0),
+});
+export type TextBlur = z.infer<typeof TextBlurSchema>;
+
+/** Shared "blur off" default — used to backfill a resolved style for legacy data that
+ * predates the `textBlur` field (see resolveBubbleStyle/resolveCurvedTextStyle), so the
+ * inspector/render code never sees `undefined`. */
+export const DEFAULT_TEXT_BLUR: TextBlur = { enabled: false, kind: "gaussian", radiusPx: 4, angleDeg: 0 };
+
 /** Optional linear gradient fill for the text, replacing the solid `color` when enabled. Per-language override available via textGradientOverride on Bubble/CurvedTextElement. */
 export const TextGradientSchema = z.object({
   enabled: z.boolean().default(false),
@@ -380,8 +422,19 @@ export const BubbleSchema = z.object({
    * use balloon-shaped wrapping can (e.g. a language whose translation runs long).
    * `balloonAwareWrapOverride` below is the matching per-language override map. */
   balloonAwareWrap: z.boolean().optional(),
+  /** Opt-in hyphenated line-breaking for horizontal text — a word that doesn't fit is
+   * split at its syllable points (with a trailing "-") instead of wrapped whole, using the
+   * active language's patterns (see shared/src/rendering/hyphenation.ts). Off by default
+   * (undefined) so existing pages don't silently re-wrap; per-language, since it only
+   * helps Latin scripts and long compound words (German). Resolved through
+   * resolveBubbleStyle like balloonAwareWrap; `hyphenateOverride` is its override map. No
+   * effect on vertical (tategaki) text. */
+  hyphenate: z.boolean().optional(),
   color: z.string().default("#000000"),
   textOutline: TextOutlineSchema.default({ enabled: false, color: "#000000", widthPx: 4 }),
+  /** Stacked/multi-stroke outline layers drawn behind `textOutline` (see TextStrokeSchema).
+   * Empty (default) = unchanged single-outline behavior. */
+  textStrokes: z.array(TextStrokeSchema).default([]),
   textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
   textGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
   textDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
@@ -395,6 +448,8 @@ export const BubbleSchema = z.object({
     backgroundColor: "#ffffff",
     opacity: 1,
   }),
+  /** Optional gaussian/motion blur of the text block (see TextBlurSchema). */
+  textBlur: TextBlurSchema.default({ enabled: false, kind: "gaussian", radiusPx: 4, angleDeg: 0 }),
   text: z.record(z.string(), z.string()).default({}),
   /**
    * Per-language overrides — every field here falls back to the bubble's own
@@ -409,17 +464,25 @@ export const BubbleSchema = z.object({
   alignOverride: z.record(z.string(), TextAlignSchema).optional(),
   directionOverride: z.record(z.string(), TextDirectionSchema).optional(),
   balloonAwareWrapOverride: z.record(z.string(), z.boolean()).optional(),
+  hyphenateOverride: z.record(z.string(), z.boolean()).optional(),
   textOutlineOverride: z.record(z.string(), TextOutlineSchema).optional(),
+  textStrokesOverride: z.record(z.string(), z.array(TextStrokeSchema)).optional(),
   textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
   textGlowOverride: z.record(z.string(), EffectGlowSchema).optional(),
   textDropShadowOverride: z.record(z.string(), EffectShadowSchema).optional(),
   textScreentoneOverride: z.record(z.string(), BubbleScreentoneSchema).optional(),
+  textBlurOverride: z.record(z.string(), TextBlurSchema).optional(),
   /** Manual assignment, not derived from geometry — which Panel (this page's
    * panels array) and which Character (project-wide) this bubble belongs to.
    * Null means unassigned; a stale id (panel/character deleted after being
    * assigned) is treated as unassigned by the report/inspector lookups. */
   panelId: z.string().nullable().default(null),
   characterId: z.string().nullable().default(null),
+  /** Projectwide semantic classification tags (see shared/src/tags.ts) — "what IS this
+   * element" (dialogue/narration/sfx/sign/…), independent of its preset/character.
+   * Stale ids (a tag deleted after assignment) are simply ignored by lookups. Default []
+   * so existing bubbles migrate unchanged. */
+  tagIds: z.array(z.string()).default([]),
   /** Manual correction of this bubble's position within its reading-order group (its
    * panel, or the page's "unassigned" bucket if it has no panel) — absent means "use
    * the automatic Y-position sort". Only meaningful relative to sibling bubbles in the
@@ -497,12 +560,15 @@ export function resolveBubbleStyle(bubble: Bubble, languageCode: string, presets
     align: resolveLangField(bubble.alignOverride, languageCode, preset?.text.align, bubble.align),
     direction: resolveLangField(bubble.directionOverride, languageCode, preset?.text.direction, bubble.direction),
     balloonAwareWrap: resolveLangField(bubble.balloonAwareWrapOverride, languageCode, preset?.text.balloonAwareWrap, bubble.balloonAwareWrap),
+    hyphenate: resolveLangField(bubble.hyphenateOverride, languageCode, preset?.text.hyphenate, bubble.hyphenate),
     color: resolvePresetField(preset?.text.color, bubble.color),
     textOutline: resolveLangField(bubble.textOutlineOverride, languageCode, preset?.text.textOutline, bubble.textOutline),
+    textStrokes: resolveLangField(bubble.textStrokesOverride, languageCode, preset?.text.textStrokes, bubble.textStrokes ?? []),
     textGradient: resolveLangField(bubble.textGradientOverride, languageCode, preset?.text.textGradient, bubble.textGradient),
     textGlow: resolveLangField(bubble.textGlowOverride, languageCode, preset?.text.textGlow, bubble.textGlow),
     textDropShadow: resolveLangField(bubble.textDropShadowOverride, languageCode, preset?.text.textDropShadow, bubble.textDropShadow),
     textScreentone: resolveLangField(bubble.textScreentoneOverride, languageCode, preset?.text.textScreentone, bubble.textScreentone),
+    textBlur: resolveLangField(bubble.textBlurOverride, languageCode, preset?.text.textBlur, bubble.textBlur ?? DEFAULT_TEXT_BLUR),
   };
 }
 
@@ -600,6 +666,8 @@ export const CurvedTextElementSchema = z.object({
   align: TextAlignSchema.default("center"),
   color: z.string().default("#000000"),
   textOutline: TextOutlineSchema.default({ enabled: false, color: "#000000", widthPx: 4 }),
+  /** Stacked/multi-stroke outline layers drawn behind `textOutline` (see TextStrokeSchema). */
+  textStrokes: z.array(TextStrokeSchema).default([]),
   textGradient: TextGradientSchema.default({ enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 }),
   textGlow: EffectGlowSchema.default({ enabled: false, color: "#66e0ff", blurPx: 16 }),
   textDropShadow: EffectShadowSchema.default({ enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 }),
@@ -613,19 +681,26 @@ export const CurvedTextElementSchema = z.object({
     backgroundColor: "#ffffff",
     opacity: 1,
   }),
+  /** Optional gaussian/motion blur of the text (see TextBlurSchema). */
+  textBlur: TextBlurSchema.default({ enabled: false, kind: "gaussian", radiusPx: 4, angleDeg: 0 }),
   text: z.record(z.string(), z.string()).default({}),
   /** Same per-language override pattern as Bubble's fontSizeOverride etc. */
   fontSizeOverride: z.record(z.string(), z.number().positive()).optional(),
   fontFamilyOverride: z.record(z.string(), z.string()).optional(),
   alignOverride: z.record(z.string(), TextAlignSchema).optional(),
   textOutlineOverride: z.record(z.string(), TextOutlineSchema).optional(),
+  textStrokesOverride: z.record(z.string(), z.array(TextStrokeSchema)).optional(),
   textGradientOverride: z.record(z.string(), TextGradientSchema).optional(),
   textGlowOverride: z.record(z.string(), EffectGlowSchema).optional(),
   textDropShadowOverride: z.record(z.string(), EffectShadowSchema).optional(),
   textScreentoneOverride: z.record(z.string(), BubbleScreentoneSchema).optional(),
+  textBlurOverride: z.record(z.string(), TextBlurSchema).optional(),
   /** Same live-preset-link idea as Bubble.presetId — only the text-style subset of a
    * preset applies (curved text has no bubble background). */
   presetId: z.string().nullable().default(null),
+  /** See Bubble.tagIds — same projectwide semantic tags (e.g. a curved SFX title tagged
+   * `sfx`), so tag-based bulk restyling reaches curved texts too. */
+  tagIds: z.array(z.string()).default([]),
   /** See Bubble.locked's doc comment — same semantics, same reason for `.optional()`
    * instead of `.default(false)`. */
   locked: z.boolean().optional(),
@@ -645,10 +720,12 @@ export function resolveCurvedTextStyle(el: CurvedTextElement, languageCode: stri
     align: resolveLangField(el.alignOverride, languageCode, preset?.text.align, el.align),
     color: resolvePresetField(preset?.text.color, el.color),
     textOutline: resolveLangField(el.textOutlineOverride, languageCode, preset?.text.textOutline, el.textOutline),
+    textStrokes: resolveLangField(el.textStrokesOverride, languageCode, preset?.text.textStrokes, el.textStrokes ?? []),
     textGradient: resolveLangField(el.textGradientOverride, languageCode, preset?.text.textGradient, el.textGradient),
     textGlow: resolveLangField(el.textGlowOverride, languageCode, preset?.text.textGlow, el.textGlow),
     textDropShadow: resolveLangField(el.textDropShadowOverride, languageCode, preset?.text.textDropShadow, el.textDropShadow),
     textScreentone: resolveLangField(el.textScreentoneOverride, languageCode, preset?.text.textScreentone, el.textScreentone),
+    textBlur: resolveLangField(el.textBlurOverride, languageCode, preset?.text.textBlur, el.textBlur ?? DEFAULT_TEXT_BLUR),
   };
 }
 

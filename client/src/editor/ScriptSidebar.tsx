@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { ScriptDocument } from "../../../shared/src/script";
 import { scriptPageDisplayLabel } from "../../../shared/src/script";
 import type { PageLayout } from "../../../shared/src/layoutSchema";
+import type { Tag } from "../../../shared/src/tags";
 import type { LanguageDef } from "../../../shared/src/languages";
 import type { Character } from "../../../shared/src/characters";
 import type { GlossaryEntry } from "../../../shared/src/glossary";
@@ -26,6 +27,9 @@ interface Props {
    * page's panels/dialogue straight from its bubbles instead of starting empty. */
   layout: PageLayout;
   readingDirection: ReadingDirection;
+  /** Project tags — a bubble carrying an `excludeFromQa`-flagged tag is treated as
+   * non-dialogue when generating a script page from the layout (like `isEffect`). */
+  tags: Tag[];
   /** Omitted (not just falsy) when nothing is selected, so ScriptPanelCard's
    * "insert into bubble" button is entirely absent rather than merely disabled —
    * only the clipboard-copy button remains in that case. */
@@ -33,7 +37,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function ScriptSidebar({ open, volumeId, page, layout, readingDirection, onInsertIntoBubble, onClose }: Props) {
+export function ScriptSidebar({ open, volumeId, page, layout, readingDirection, tags, onInsertIntoBubble, onClose }: Props) {
   const { t } = useTranslation();
   const [doc, setDoc] = useState<ScriptDocument | null>(null);
   const [languages, setLanguages] = useState<LanguageDef[]>([]);
@@ -104,7 +108,7 @@ export function ScriptSidebar({ open, volumeId, page, layout, readingDirection, 
   }
 
   function handleCreateAndLink() {
-    update({ pages: [...currentDoc.pages, scriptPageFromLayout(page, layout, readingDirection)] });
+    update({ pages: [...currentDoc.pages, scriptPageFromLayout(page, layout, readingDirection, tags)] });
   }
 
   function handleUnlink() {

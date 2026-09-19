@@ -265,3 +265,42 @@ describe("POST /:id/layouts/import-zip", () => {
     expect(imported.body).toMatchObject({ page: "page_02" });
   });
 });
+
+// Placed last on purpose: it writes a new saved page (page_tag), and the GET /reports
+// tests above assert on the exact set/order of saved pages, so adding one earlier would
+// perturb them.
+describe("POST /:id/tag-restyle (volume-wide tag bulk restyle)", () => {
+  it("assigns the preset to every element carrying the tag, leaving untagged ones untouched", async () => {
+    const layout = {
+      page: "page_tag",
+      sourceImage: "page_01.png",
+      imageWidth: 4,
+      imageHeight: 4,
+      bubbles: [
+        { id: "t1", shape: "rect", x: 1, y: 1, width: 2, height: 2, text: { en: "boom" }, tagIds: ["sfx-tag"] },
+        { id: "t2", shape: "rect", x: 1, y: 1, width: 2, height: 2, text: { en: "hi" }, tagIds: [] },
+      ],
+      images: [],
+      curvedTexts: [],
+      panels: [],
+    };
+    const save = await api.put(`/api/volumes/${VOLUME_ID}/pages/page_tag/layout`).send(layout);
+    expect(save.status).toBe(200);
+
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/tag-restyle`).send({ tagId: "sfx-tag", presetId: "preset-x" });
+    expect(res.status).toBe(200);
+    expect(res.body.elementsChanged).toBeGreaterThanOrEqual(1);
+    expect(res.body.pagesChanged).toBeGreaterThanOrEqual(1);
+
+    const get = await api.get(`/api/volumes/${VOLUME_ID}/pages/page_tag/layout`);
+    const b1 = (get.body.bubbles as { id: string; presetId: string | null }[]).find((b) => b.id === "t1");
+    const b2 = (get.body.bubbles as { id: string; presetId: string | null }[]).find((b) => b.id === "t2");
+    expect(b1?.presetId).toBe("preset-x");
+    expect(b2?.presetId).toBeNull();
+  });
+
+  it("rejects a body without a tagId", async () => {
+    const res = await api.post(`/api/volumes/${VOLUME_ID}/tag-restyle`).send({ presetId: null });
+    expect(res.status).toBe(400);
+  });
+});

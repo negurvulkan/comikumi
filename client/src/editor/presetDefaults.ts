@@ -10,8 +10,12 @@ export const DEFAULT_TEXT: Required<PresetTextFields> = {
   align: "center",
   direction: "ltr",
   balloonAwareWrap: true,
+  hyphenate: true,
   color: "#000000",
   textOutline: { enabled: false, color: "#000000", widthPx: 4 },
+  // Seeded with one example layer so first enabling the toggle shows a visible stacked
+  // outline (drawn behind textOutline); the user adds/edits layers from there.
+  textStrokes: [{ color: "#ffffff", widthPx: 8 }],
   textGradient: { enabled: false, colorStart: "#ffffff", colorEnd: "#6c8cff", angleDeg: 0 },
   textScreentone: {
     enabled: false,
@@ -25,6 +29,7 @@ export const DEFAULT_TEXT: Required<PresetTextFields> = {
   },
   textGlow: { enabled: false, color: "#66e0ff", blurPx: 16 },
   textDropShadow: { enabled: false, color: "#000000", blurPx: 8, offsetXPx: 4, offsetYPx: 4 },
+  textBlur: { enabled: false, kind: "gaussian", radiusPx: 4, angleDeg: 0 },
 };
 
 export const DEFAULT_BACKGROUND: Required<PresetBackgroundFields> = {
